@@ -1,0 +1,977 @@
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;600&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: linear-gradient(135deg, #fff0f5 0%, #ffe4e1 100%);
+  color: #333;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+h1 {
+  font-family: "Dancing Script", cursive;
+  font-size: 3.8rem;
+  color: #db7093;
+  text-align: center;
+  margin: 30px 0 10px;
+}
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 30px;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  z-index: 10;
+  border-radius: 50px;
+}
+.nav button {
+  padding: 12px 24px;
+  background: #db7093;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+.nav button:hover {
+  transform: scale(1.08);
+  background: #c71585;
+}
+
+/* Gift Box */
+.proposal-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.proposal-container {
+  position: relative;
+  width: 340px;
+  height: 260px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.gift-box {
+  position: absolute;
+  inset: 0;
+  background: #c71585;
+  border-radius: 12px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transition: all 0.6s;
+}
+.lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: #ff69b4;
+  z-index: 3;
+  transition: transform 0.7s ease-in-out;
+}
+.bow {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  background: #ffd700;
+  border-radius: 50%;
+}
+.bow:before,
+.bow:after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 70px;
+  background: #ffd700;
+  top: -20px;
+}
+.bow:before {
+  left: -20px;
+  transform: rotate(-45deg);
+}
+.bow:after {
+  right: -20px;
+  transform: rotate(45deg);
+}
+.body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 190px;
+  background: #c71585;
+}
+.ribbon-horizontal {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  width: 100%;
+  height: 25px;
+  background: #ffd700;
+  z-index: 2;
+}
+.ribbon-vertical {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 100%;
+  background: #ffd700;
+  z-index: 2;
+}
+.box-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: bold;
+  z-index: 4;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.reveal-content {
+  display: none;
+}
+.opened .lid {
+  transform: translateY(-120px) rotate(-28deg);
+}
+.opened .gift-box {
+  transform: scale(0.82) translateY(50px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.letter-card {
+  margin-top: 30px;
+  background: linear-gradient(160deg, #fff9fb, #fff0f5);
+  border: 2px solid #f9a8c9;
+  border-radius: 24px;
+  padding: 40px 36px 36px;
+  max-width: 480px;
+  width: 90vw;
+  box-shadow: 0 20px 60px rgba(219, 112, 147, 0.35);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(50px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.letter-envelope-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, #ff85b3, #ffb3d1, #ff85b3);
+  border-radius: 24px 24px 0 0;
+}
+
+.letter-hearts {
+  position: relative;
+  height: 44px;
+  margin-bottom: 8px;
+}
+.float-emoji {
+  position: absolute;
+  font-size: 1.4rem;
+  animation: floatEmoji 3s ease-in-out infinite alternate;
+}
+@keyframes floatEmoji {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-12px); }
+}
+
+.letter-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 2.6rem;
+  color: #c71585;
+  margin: 0 0 14px;
+}
+
+.letter-body {
+  font-size: 1.05rem;
+  color: #666;
+  line-height: 1.9;
+  margin-bottom: 20px;
+}
+.proposal-question {
+  font-family: "Dancing Script", cursive;
+  font-size: 2.8rem;
+  color: #db7093;
+  margin: 18px 0 28px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+
+.proposal-btns {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.yes-btn {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  border: none;
+  padding: 16px 44px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(199, 21, 133, 0.45);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.yes-btn:hover {
+  transform: scale(1.12) rotate(-2deg);
+  box-shadow: 0 0 30px #ff69b4;
+}
+
+.no-btn {
+  background: #eee;
+  color: #999;
+  border: 2px dashed #ccc;
+  padding: 14px 30px;
+  font-size: 1.05rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background 0.2s;
+  user-select: none;
+}
+.no-btn:hover {
+  background: #fce4ec;
+  color: #e91e63;
+}
+
+.media-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+.media-gallery img {
+  width: 180px;
+  border-radius: 12px;
+  transition: transform 0.4s;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+.media-gallery img:hover {
+  transform: scale(1.08);
+}
+
+/* Timeline */
+.timeline-page h1 {
+  margin-bottom: 40px;
+}
+.timeline {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: #db7093;
+  transform: translateX(-50%);
+}
+.timeline-item {
+  position: relative;
+  margin: 80px 0;
+  opacity: 0;
+  transition: all 0.8s;
+}
+.timeline-item.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.timeline-item.left .content {
+  margin-left: 60px;
+  text-align: left;
+}
+.timeline-item.right .content {
+  margin-right: 60px;
+  text-align: right;
+  margin-left: auto;
+}
+.dot {
+  position: absolute;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border: 4px solid #db7093;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+.content {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+.content img {
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 15px;
+}
+.photo-name {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.4rem;
+  color: #db7093;
+  text-align: center;
+  margin: 8px 0 0;
+  letter-spacing: 1px;
+}
+.year {
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  color: #db7093;
+  display: block;
+}
+
+/* Auto-navigate countdown banner */
+.auto-nav-banner {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 30px rgba(199, 21, 133, 0.5);
+  z-index: 999;
+  animation: slideUp 0.4s ease;
+  white-space: nowrap;
+}
+.auto-nav-banner strong {
+  font-size: 1.3rem;
+  min-width: 28px;
+  display: inline-block;
+  text-align: center;
+}
+.auto-nav-banner button {
+  background: rgba(255,255,255,0.25);
+  border: 1.5px solid white;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.auto-nav-banner button:hover {
+  background: rgba(255,255,255,0.45);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(30px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.gallery-subtitle {
+  text-align: center;
+  color: #db7093;
+  font-size: 1rem;
+  margin-bottom: 24px;
+}
+
+/* Gallery */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+}
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+.photo-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.5s;
+}
+.photo-card:hover img {
+  transform: scale(1.08);
+}
+.video-card {
+  background: #000;
+  border-radius: 15px;
+}
+.gallery-video {
+  width: 100%;
+  border-radius: 15px;
+  display: block;
+  max-height: 320px;
+  object-fit: cover;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.photo-card:hover .overlay {
+  opacity: 1;
+}
+
+/* Quiz */
+.quiz-page {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.progress {
+  height: 8px;
+  background: #db7093;
+  border-radius: 4px;
+  margin-bottom: 30px;
+  transition: width 0.4s;
+}
+.question {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 20px 0;
+  text-align: center;
+}
+.options button {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin: 12px 0;
+  background: white;
+  border: 2px solid #db7093;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: 0.3s;
+}
+.options button:hover:not(:disabled) {
+  background: #ffe4e1;
+  transform: translateX(8px);
+}
+.correct {
+  color: #4caf50;
+  font-weight: bold;
+}
+.wrong {
+  color: #f44336;
+  font-weight: bold;
+}
+.quiz-end {
+  text-align: center;
+  padding: 40px;
+}
+
+/* Countdown */
+.countdown-wrap {
+  text-align: center;
+  padding: 40px 20px;
+}
+.countdown-date {
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  color: #c71585;
+  margin: 0 0 8px;
+}
+.countdown-label {
+  color: #999;
+  font-size: 1rem;
+  margin-bottom: 36px;
+}
+.countdown-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+.countdown-box {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  border-radius: 20px;
+  padding: 22px 28px;
+  min-width: 90px;
+  box-shadow: 0 8px 25px rgba(199,21,133,0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.countdown-num {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  font-family: "Poppins", sans-serif;
+}
+.countdown-unit {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.85);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.countdown-footer {
+  color: #db7093;
+  font-size: 1.1rem;
+  font-family: "Dancing Script", cursive;
+  font-size: 1.6rem;
+}
+
+/* Confetti */
+.confetti {
+  position: fixed;
+  top: -20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: fall linear forwards;
+  z-index: 100;
+}
+@keyframes fall {
+  to {
+    transform: translateY(110vh) rotate(800deg);
+    opacity: 0;
+  }
+}
+
+/* Floating hearts background */
+.hearts {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+.hearts span {
+  position: absolute;
+  bottom: -60px;
+  font-size: 28px;
+  opacity: 0.7;
+  animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-120vh) rotate(360deg);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.8rem;
+  }
+  .proposal-container {
+    width: 280px;
+    height: 210px;
+    margin: 60px auto;
+  }
+  .reveal-content {
+    top: 240px;
+  }
+  .media-gallery img {
+    width: 140px;
+  }
+  .nav button {
+    padding: 10px 18px;
+    font-size: 0.95rem;
+  }
+  .timeline::before {
+    left: 30px;
+  }
+  .timeline-item.left .content,
+  .timeline-item.right .content {
+    margin-left: 60px;
+    margin-right: 0;
+    text-align: left;
+  }
+}
+
+
+/* ── Dreams Dashboard ── */
+.dream-page {
+  padding: 20px;
+  text-align: center;
+}
+.dream-hero {
+  margin-bottom: 40px;
+}
+.dream-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 3.6rem;
+  color: #c71585;
+  margin-bottom: 10px;
+}
+.dream-subtitle {
+  color: #999;
+  font-size: 1.1rem;
+}
+.dream-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto 50px;
+}
+.dream-card {
+  background: linear-gradient(160deg, #fff9fb, #fff0f5);
+  border: 2px solid #f9a8c9;
+  border-radius: 20px;
+  padding: 32px 24px;
+  box-shadow: 0 8px 25px rgba(219,112,147,0.2);
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.dream-card.dream-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.dream-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 16px 40px rgba(199,21,133,0.25);
+}
+.dream-emoji {
+  font-size: 3rem;
+  margin-bottom: 14px;
+}
+.dream-card-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.6rem;
+  color: #c71585;
+  margin: 0 0 10px;
+}
+.dream-card-desc {
+  color: #888;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+.dream-footer {
+  margin-top: 20px;
+  padding: 30px;
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  border-radius: 20px;
+  max-width: 500px;
+  margin: 0 auto 40px;
+  color: white;
+}
+.dream-footer p {
+  margin: 6px 0;
+  font-size: 1.1rem;
+}
+.dream-names {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem !important;
+}
+
+/* ── Dream Form ── */
+.dream-form-wrap {
+  max-width: 540px;
+  margin: 0 auto 50px;
+  background: linear-gradient(160deg, #fff9fb, #fff0f5);
+  border: 2px solid #f9a8c9;
+  border-radius: 24px;
+  padding: 36px 32px;
+  box-shadow: 0 12px 40px rgba(219,112,147,0.2);
+  text-align: center;
+}
+.dream-form-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  color: #c71585;
+  margin: 0 0 6px;
+}
+.dream-form-sub {
+  color: #999;
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+.dream-input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dream-input-emoji { font-size: 1.5rem; }
+.dream-input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 2px solid #f9a8c9;
+  border-radius: 50px;
+  font-size: 1rem;
+  outline: none;
+  font-family: "Poppins", sans-serif;
+  transition: border 0.2s;
+  background: white;
+}
+.dream-input:focus { border-color: #c71585; }
+.dream-save-btn {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  border: none;
+  padding: 15px 44px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(199,21,133,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.dream-save-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 28px #ff69b4;
+}
+.saved-dreams-wrap {
+  max-width: 500px;
+  margin: 0 auto 40px;
+  text-align: left;
+}
+.saved-dreams-wrap h3 {
+  font-family: "Dancing Script", cursive;
+  color: #c71585;
+  font-size: 1.6rem;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.saved-dream-item {
+  background: white;
+  border: 1.5px solid #f9a8c9;
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(219,112,147,0.1);
+}
+
+/* ── Surprise Overlay ── */
+.surprise-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.surprise-card {
+  background: linear-gradient(160deg, #fff0f8, #ffe4f0);
+  border: 3px solid #ff85b3;
+  border-radius: 28px;
+  padding: 40px 32px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(199,21,133,0.4);
+  position: relative;
+  animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes popIn {
+  from { opacity:0; transform: scale(0.7); }
+  to   { opacity:1; transform: scale(1); }
+}
+.surprise-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.surprise-star {
+  font-size: 1.6rem;
+  animation: floatEmoji 2.5s ease-in-out infinite alternate;
+}
+.surprise-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 2.4rem;
+  color: #c71585;
+  margin: 0 0 12px;
+}
+.surprise-msg {
+  color: #555;
+  font-size: 1.05rem;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+.surprise-dreams-list {
+  text-align: left;
+  margin: 0 auto 24px;
+  max-width: 400px;
+}
+.surprise-dream-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: white;
+  border: 1.5px solid #f9a8c9;
+  border-radius: 14px;
+  padding: 10px 18px;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
+  box-shadow: 0 3px 10px rgba(219,112,147,0.12);
+}
+.surprise-dream-emoji { font-size: 1.4rem; }
+.surprise-date-label {
+  color: #999;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+.surprise-target-date {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem;
+  color: #c71585;
+  margin-bottom: 28px;
+}
+
+/* ── Multi Countdowns ── */
+.surprise-countdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.mini-countdown {
+  background: white;
+  border: 1.5px solid #f9a8c9;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(219,112,147,0.1);
+}
+.mini-label {
+  font-size: 0.8rem;
+  color: #c71585;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mini-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.mini-box {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mini-num {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+.mini-unit {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.surprise-close {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(199,21,133,0.4);
+  transition: transform 0.2s;
+}
+.surprise-close:hover { transform: scale(1.08); }
+
+/* ── Two dream forms side by side ── */
+.dream-forms-row {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 50px;
+}
+.dream-forms-row .dream-form-wrap {
+  flex: 1;
+  min-width: 280px;
+  max-width: 440px;
+}
+.dream-form-avatar {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+}
+.dream-saved-badge {
+  margin-top: 14px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 50px;
+  padding: 10px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  display: inline-block;
+}
+.surprise-person-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.6rem;
+  margin: 16px 0 8px;
+  color: #c71585;
+}

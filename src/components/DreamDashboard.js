@@ -251,7 +251,11 @@ export default function DreamDashboard() {
   const [savedAt,      setSavedAt]      = useState(() => { const s = localStorage.getItem("dd_savedat"); return s ? new Date(s) : null; });
   const [editMode,     setEditMode]     = useState(false);
   const [mood,         setMood]         = useState(() => localStorage.getItem("dd_mood") || "");
-  const [showSurprise, setShowSurprise] = useState(false);
+  const [showSurprise, setShowSurprise] = useState(() => {
+    // auto-show saved dreams when the page loads if they exist
+    const s = localStorage.getItem("dd_saved");
+    try { return JSON.parse(s || "[]").some(d => d.trim()); } catch { return false; }
+  });
   const [showCat,      setShowCat]      = useState(null);
   const confettiRef = useRef(null);
 

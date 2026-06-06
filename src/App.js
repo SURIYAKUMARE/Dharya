@@ -5,6 +5,7 @@ import ProposalBox from "./components/ProposalBox";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import DreamDashboard from "./components/DreamDashboard";
 import LoveLetter from "./components/LoveLetter";
+import SecretUniverse from "./components/SecretUniverse";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -107,12 +108,13 @@ function AnniversaryBadge() {
 
 /* ── App ── */
 const NAV = [
-  { key: "box",     label: "Proposal Box" },
-  { key: "journey", label: "Our Journey"  },
-  { key: "gallery", label: "Memory Lane"  },
-  { key: "quiz",    label: "Love Quiz"    },
-  { key: "dream",   label: "Dreams 💫"   },
-  { key: "letters", label: "Letters 💌"  },
+  { key: "box",      label: "Proposal Box"  },
+  { key: "journey",  label: "Our Journey"   },
+  { key: "gallery",  label: "Memory Lane"   },
+  { key: "quiz",     label: "Love Quiz"     },
+  { key: "dream",    label: "Dreams 💫"    },
+  { key: "letters",  label: "Letters 💌"   },
+  { key: "universe", label: "Universe 🌌"  },
 ];
 
 export default function App() {
@@ -129,7 +131,8 @@ export default function App() {
       case "gallery": return <MemoryGallery setPage={setPage} />;
       case "quiz":    return <RelationshipQuiz setPage={setPage} />;
       case "dream":   return <DreamDashboard />;
-      case "letters": return <LoveLetter setPage={setPage} />;
+      case "letters":  return <LoveLetter setPage={setPage} />;
+      case "universe": return <SecretUniverse setPage={setPage} />;
       default:        return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };

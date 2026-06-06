@@ -242,29 +242,41 @@ function SurpriseOverlay({ sadhanaDreams, categories: cats, progress, savedAt, o
 /*  Main Dashboard                             */
 /* ─────────────────────────────────────────── */
 export default function DreamDashboard() {
-  const [inputs,       setInputs]       = useState(["","","","",""]);
-  const [dreamCats,    setDreamCats]    = useState(["","","","",""]);
-  const [dreamProg,    setDreamProg]    = useState([0,0,0,0,0]);
-  const [saved,        setSaved]        = useState([]);
-  const [savedCats,    setSavedCats]    = useState([]);
-  const [savedProg,    setSavedProg]    = useState([0,0,0,0,0]);
-  const [savedAt,      setSavedAt]      = useState(null); // timestamp of when dreams were saved
+  const [inputs,       setInputs]       = useState(() => JSON.parse(localStorage.getItem("dd_inputs")  || '["","","","",""]'));
+  const [dreamCats,    setDreamCats]    = useState(() => JSON.parse(localStorage.getItem("dd_cats")    || '["","","","",""]'));
+  const [dreamProg,    setDreamProg]    = useState(() => JSON.parse(localStorage.getItem("dd_prog")    || '[0,0,0,0,0]'));
+  const [saved,        setSaved]        = useState(() => JSON.parse(localStorage.getItem("dd_saved")   || '[]'));
+  const [savedCats,    setSavedCats]    = useState(() => JSON.parse(localStorage.getItem("dd_scats")   || '[]'));
+  const [savedProg,    setSavedProg]    = useState(() => JSON.parse(localStorage.getItem("dd_sprog")   || '[0,0,0,0,0]'));
+  const [savedAt,      setSavedAt]      = useState(() => { const s = localStorage.getItem("dd_savedat"); return s ? new Date(s) : null; });
   const [editMode,     setEditMode]     = useState(false);
-  const [mood,         setMood]         = useState("");
+  const [mood,         setMood]         = useState(() => localStorage.getItem("dd_mood") || "");
   const [showSurprise, setShowSurprise] = useState(false);
-  const [showCat,      setShowCat]      = useState(null); // which input row has cat dropdown open
+  const [showCat,      setShowCat]      = useState(null);
   const confettiRef = useRef(null);
 
   const handleSave = () => {
     if (!inputs.some(d => d.trim())) return;
+    const now = new Date();
     setSaved([...inputs]);
     setSavedCats([...dreamCats]);
     setSavedProg([...dreamProg]);
-    setSavedAt(new Date()); // capture exact save time
+    setSavedAt(now);
     setEditMode(false);
+    // persist to localStorage
+    localStorage.setItem("dd_saved",   JSON.stringify(inputs));
+    localStorage.setItem("dd_scats",   JSON.stringify(dreamCats));
+    localStorage.setItem("dd_sprog",   JSON.stringify(dreamProg));
+    localStorage.setItem("dd_savedat", now.toISOString());
     spawnConfetti();
     setTimeout(() => setShowSurprise(true), 900);
   };
+
+  // Persist inputs/cats/prog as user types
+  useEffect(() => { localStorage.setItem("dd_inputs", JSON.stringify(inputs)); }, [inputs]);
+  useEffect(() => { localStorage.setItem("dd_cats",   JSON.stringify(dreamCats)); }, [dreamCats]);
+  useEffect(() => { localStorage.setItem("dd_prog",   JSON.stringify(dreamProg)); }, [dreamProg]);
+  useEffect(() => { localStorage.setItem("dd_mood",   mood); }, [mood]);
 
   const handleEdit = () => {
     setInputs([...saved]);
@@ -275,8 +287,8 @@ export default function DreamDashboard() {
 
   const handleProgressChange = (i, val) => {
     if (saved.length > 0 && !editMode) {
-      // update live progress on saved view
       const n = [...savedProg]; n[i] = Number(val); setSavedProg(n);
+      localStorage.setItem("dd_sprog", JSON.stringify(n));
     } else {
       const n = [...dreamProg]; n[i] = Number(val); setDreamProg(n);
     }

@@ -1581,3 +1581,319 @@ h1 {
   background: #fff0f8;
   transform: scale(1.2);
 }
+
+/* ══════════════════════════════════════════ */
+/*  Active Nav Button                         */
+/* ══════════════════════════════════════════ */
+.nav button.nav-active {
+  background: #c71585;
+  box-shadow: 0 0 16px rgba(199,21,133,0.5);
+  transform: scale(1.08);
+}
+
+/* ══════════════════════════════════════════ */
+/*  Anniversary Badge                         */
+/* ══════════════════════════════════════════ */
+.anniv-badge {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 999;
+  background: rgba(255,255,255,0.92);
+  border: 2px solid #f9a8c9;
+  border-radius: 50px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(199,21,133,0.2);
+  backdrop-filter: blur(8px);
+}
+.anniv-icon { font-size: 1.3rem; }
+.anniv-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.anniv-days {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c71585;
+  font-family: "Poppins", sans-serif;
+}
+.anniv-next {
+  font-size: 0.7rem;
+  color: #aaa;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ══════════════════════════════════════════ */
+/*  Shooting Star + Wish Overlay              */
+/* ══════════════════════════════════════════ */
+.shooting-star {
+  position: fixed;
+  width: 3px;
+  height: 80px;
+  background: linear-gradient(180deg, white, rgba(255,215,0,0.8), transparent);
+  border-radius: 50%;
+  right: -100px;
+  animation: shootAcross 1.2s ease-in forwards;
+  pointer-events: none;
+  z-index: 200;
+  transform: rotate(-35deg);
+  box-shadow: 0 0 10px 2px rgba(255,220,80,0.6);
+}
+@keyframes shootAcross {
+  0%   { right: -50px;    opacity: 1; }
+  100% { right: 110vw;    opacity: 0; }
+}
+
+.wish-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  animation: fadeInUp 0.5s ease;
+}
+.wish-card {
+  background: linear-gradient(160deg, #0a0a2e, #1a0a3e);
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: 28px;
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 440px;
+  width: 90vw;
+  box-shadow: 0 0 60px rgba(199,21,133,0.5), 0 0 120px rgba(255,215,0,0.2);
+  animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.wish-stars-row {
+  font-size: 1.6rem;
+  letter-spacing: 8px;
+  margin-bottom: 20px;
+  animation: floatEmoji 2s ease-in-out infinite alternate;
+}
+.wish-text {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.8rem;
+  color: #ffd700;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.wish-sub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ══════════════════════════════════════════ */
+/*  Love Letters Page                         */
+/* ══════════════════════════════════════════ */
+.letter-page {
+  padding: 20px;
+  position: relative;
+  min-height: 80vh;
+}
+.letter-page-hero {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.letter-page-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 3.2rem;
+  color: #c71585;
+  margin-bottom: 8px;
+}
+.letter-page-sub {
+  color: #aaa;
+  font-size: 1rem;
+}
+
+/* Falling petals */
+.petal-rain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.petal {
+  position: absolute;
+  top: -40px;
+  font-size: 1.4rem;
+  animation: petalFall linear infinite;
+  opacity: 0.6;
+}
+@keyframes petalFall {
+  0%   { transform: translateY(-40px) rotate(0deg);    opacity: 0.7; }
+  100% { transform: translateY(110vh) rotate(360deg);  opacity: 0; }
+}
+
+/* Envelope cards grid */
+.letter-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 28px;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.letter-envelope-card {
+  cursor: pointer;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(199,21,133,0.18);
+  transition: transform 0.3s, box-shadow 0.3s;
+  position: relative;
+  background: white;
+}
+.letter-envelope-card:hover {
+  transform: translateY(-8px) rotate(-1deg);
+  box-shadow: 0 20px 50px rgba(199,21,133,0.3);
+}
+
+.envelope-flap {
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(135deg, #ff85b3, #c71585);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  position: absolute;
+  top: 0;
+  z-index: 1;
+}
+.envelope-body {
+  padding: 80px 24px 28px;
+  background: linear-gradient(160deg, #fff9fb, #fff0f5);
+  border: 2px solid #f9a8c9;
+  border-radius: 20px;
+  text-align: center;
+}
+.envelope-heart {
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+  animation: floatEmoji 3s ease-in-out infinite alternate;
+}
+.envelope-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 1.4rem;
+  color: #c71585;
+  margin: 0 0 6px;
+}
+.envelope-date {
+  font-size: 0.8rem;
+  color: #bbb;
+  margin-bottom: 18px;
+}
+.envelope-open-btn {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  transition: transform 0.2s;
+}
+.envelope-open-btn:hover { transform: scale(1.08); }
+
+/* Read overlay */
+.letter-read-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.letter-read-card {
+  background: linear-gradient(160deg, #fffdf0, #fff8f0);
+  border: 2px solid #f0d090;
+  border-radius: 24px;
+  padding: 48px 40px 40px;
+  max-width: 540px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+  position: relative;
+  opacity: 0;
+  transform: scale(0.85) translateY(30px);
+  transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.letter-read-card.letter-revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.letter-read-ribbon {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, #ffd700, #c71585, #ffd700);
+  border-radius: 24px 24px 0 0;
+}
+.letter-read-stamp {
+  font-size: 2.6rem;
+  margin-bottom: 12px;
+}
+.letter-read-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  color: #c71585;
+  margin: 0 0 4px;
+}
+.letter-read-date {
+  font-size: 0.85rem;
+  color: #bbb;
+  margin-bottom: 16px;
+}
+.letter-read-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #ff85b3, #c71585);
+  margin: 0 auto 24px;
+  border-radius: 2px;
+}
+.letter-read-body {
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  color: #555;
+  line-height: 1.9;
+  text-align: left;
+  white-space: pre-wrap;
+  background: rgba(255,255,255,0.7);
+  border-radius: 16px;
+  padding: 20px 24px;
+  border: 1px solid #f0d0c0;
+  margin-bottom: 28px;
+}
+.letter-read-close {
+  background: linear-gradient(135deg, #ff69b4, #c71585);
+  color: white;
+  border: none;
+  padding: 13px 36px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 6px 20px rgba(199,21,133,0.35);
+  transition: transform 0.2s;
+}
+.letter-read-close:hover { transform: scale(1.06); }
+
+/* ══════════════════════════════════════════ */
+/*  Responsive tweaks                         */
+/* ══════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .anniv-badge { top: auto; bottom: 90px; right: 12px; }
+  .letter-read-card { padding: 36px 20px 28px; }
+  .letter-read-body { font-size: 0.9rem; padding: 14px 16px; }
+  .wish-text { font-size: 1.4rem; }
+}

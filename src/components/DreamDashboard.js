@@ -29,7 +29,7 @@ const MOOD_OPTIONS = [
 /*  Live Countdown                             */
 /* ─────────────────────────────────────────── */
 function LiveCountdown({ targetDate, label }) {
-  const calc = () => {
+  const [t, setT] = useState(() => {
     const diff = new Date(targetDate) - new Date();
     if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
     return {
@@ -38,8 +38,7 @@ function LiveCountdown({ targetDate, label }) {
       m: Math.floor((diff / 60000) % 60),
       s: Math.floor((diff / 1000) % 60),
     };
-  };
-  const [t, setT] = useState(calc());
+  });
   useEffect(() => {
     const id = setInterval(() => {
       const diff = new Date(targetDate) - new Date();
@@ -123,18 +122,16 @@ function LoveNoteCard() {
   const [idx, setIdx] = useState(0);
   const [fade, setFade] = useState(true);
 
-  const next = () => {
-    setFade(false);
-    setTimeout(() => {
-      setIdx(i => (i + 1) % LOVE_NOTES.length);
-      setFade(true);
-    }, 300);
-  };
-
   useEffect(() => {
-    const id = setInterval(next, 5000);
+    const id = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % LOVE_NOTES.length);
+        setFade(true);
+      }, 300);
+    }, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="love-note-card">

@@ -198,7 +198,7 @@ function ScratchCard() {
 const SECRET_MSGS = [
   { hint: "Our first meeting date (DD/MM/YYYY)", key: "19/06/2023", msg: "That day, my heart said: 'She's the one.' I've never doubted it since. 💙" },
   { hint: "The month we started (word, e.g. May)", key: "may",       msg: "May 2026 — the month the rest of my life began. Every May will mean you now. 🌸" },
-  { hint: "My nickname for you (one word 🥰)",    key: "moon",       msg: "My moon — you light up my darkest nights without even knowing it. 🌙💕" },
+  { hint: "My nickname for you (one word 🥰)",    key: "fruad",      msg: "My fruad — you light up my darkest nights without even knowing it. 🌙💕" },
   { hint: "How many dreams you wrote (number)",   key: "5",          msg: "5 dreams — and I promise to make every single one come true, one by one. 💍" },
 ];
 

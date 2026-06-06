@@ -4,11 +4,18 @@ import MemoryGallery from "./components/MemoryGallery";
 import ProposalBox from "./components/ProposalBox";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import DreamDashboard from "./components/DreamDashboard";
+import LoginPage from "./components/LoginPage";
 import "./App.css";
 
 export default function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [page, setPage] = useState("box");
   const [boxOpened, setBoxOpened] = useState(false);
+
+  if (!loggedIn) {
+    return <LoginPage onLogin={() => setLoggedIn(true)} />;
+  }
+
   const renderPage = () => {
     switch (page) {
       case "box":

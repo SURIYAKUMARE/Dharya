@@ -35,8 +35,7 @@ export default function JourneyTimeline({ setPage }) {
   ];
 
   const itemRefs = useRef([]);
-  const [countdown, setCountdown] = useState(null); // null = not started
-  const timerRef = useRef(null);
+  const [countdown, setCountdown] = useState(null);
   const countdownRef = useRef(null);
 
   // Scroll-to-bottom detection

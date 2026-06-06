@@ -3,24 +3,27 @@ import { useState, useEffect } from "react";
 function Countdown({ setPage }) {
   const target = new Date("2027-05-20T00:00:00");
 
-  const calc = () => {
-    const now = new Date();
-    const diff = target - now;
-    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-    return {
-      days:    Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours:   Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / (1000 * 60)) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
-    };
-  };
-
-  const [time, setTime] = useState(calc());
+  const [time, setTime] = useState({
+    days:    Math.floor((new Date("2027-05-20T00:00:00") - new Date()) / (1000 * 60 * 60 * 24)),
+    hours:   Math.floor(((new Date("2027-05-20T00:00:00") - new Date()) / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor(((new Date("2027-05-20T00:00:00") - new Date()) / (1000 * 60)) % 60),
+    seconds: Math.floor(((new Date("2027-05-20T00:00:00") - new Date()) / 1000) % 60),
+  });
 
   useEffect(() => {
-    const t = setInterval(() => setTime(calc()), 1000);
+    const t = setInterval(() => {
+      const now = new Date();
+      const diff = target - now;
+      if (diff <= 0) { setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 }); return; }
+      setTime({
+        days:    Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours:   Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    }, 1000);
     return () => clearInterval(t);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="countdown-wrap">

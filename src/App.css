@@ -2484,3 +2484,178 @@ h1 {
   cursor: pointer; color: #999; line-height: 1;
 }
 .polaroid-lb-close:hover { color: #c71585; }
+
+/* ══════════════════════════════════════════ */
+/*  Shared: Games / Magic tabs                */
+/* ══════════════════════════════════════════ */
+.games-page, .magic-page {
+  padding: 20px; text-align: center;
+}
+.games-hero, .magic-hero { margin-bottom: 40px; }
+.games-title, .magic-title {
+  font-family: "Dancing Script", cursive;
+  font-size: 3rem; color: #c71585; margin-bottom: 8px;
+}
+.games-sub, .magic-sub { color: #aaa; font-size: 1rem; }
+.games-tabs {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; margin-bottom: 32px;
+}
+.games-tab {
+  padding: 10px 26px; border-radius: 50px;
+  border: 2px solid #f9a8c9; background: white;
+  color: #c71585; font-weight: 600; font-size: 0.95rem;
+  cursor: pointer; font-family: "Poppins", sans-serif;
+  transition: all 0.2s;
+}
+.games-tab:hover { background: #fff0f8; transform: scale(1.04); }
+.games-tab.active { background: linear-gradient(135deg,#ff69b4,#c71585); color: white; border-color: #c71585; }
+.games-content { max-width: 600px; margin: 0 auto; }
+
+/* ── Would You Rather ── */
+.wyr-wrap { text-align: center; }
+.wyr-progress-bar { height: 6px; background: #fce4f0; border-radius: 50px; margin-bottom: 10px; overflow: hidden; }
+.wyr-progress-fill { height: 100%; background: linear-gradient(90deg,#ff85b3,#c71585); border-radius: 50px; transition: width 0.4s; }
+.wyr-counter { font-size: 0.8rem; color: #bbb; margin-bottom: 10px; }
+.wyr-q { font-family:"Dancing Script",cursive; font-size: 2rem; color: #c71585; margin-bottom: 24px; }
+.wyr-options { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.wyr-btn {
+  width: 100%; max-width: 480px; padding: 18px 22px;
+  background: white; border: 2px solid #f9a8c9;
+  border-radius: 16px; font-size: 1rem; cursor: pointer;
+  font-family: "Poppins",sans-serif; text-align: left;
+  display: flex; align-items: center; gap: 14px;
+  transition: all 0.2s; position: relative;
+}
+.wyr-btn:hover:not(:disabled) { border-color: #c71585; transform: scale(1.02); background: #fff0f8; }
+.wyr-or-letter {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #f9a8c9; color: white; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; flex-shrink: 0;
+}
+.wyr-btn.wyr-selected { border-color: #c71585; background: linear-gradient(135deg,#fff0f8,#fce4f0); box-shadow: 0 0 16px rgba(199,21,133,0.2); }
+.wyr-btn.wyr-selected .wyr-or-letter { background: #c71585; }
+.wyr-btn.wyr-faded { opacity: 0.4; }
+.wyr-or-badge {
+  font-size: 0.85rem; font-weight: 700; color: #f9a8c9;
+  border: 2px solid #f9a8c9; border-radius: 50px;
+  padding: 6px 18px; background: white;
+}
+.wyr-done, .ttl-done {
+  padding: 30px 20px; text-align: center;
+  background: linear-gradient(160deg,#fff9fb,#fff0f5);
+  border: 2px solid #f9a8c9; border-radius: 24px;
+}
+.wyr-done-icon, .ttl-done-icon { font-size: 3rem; margin-bottom: 12px; }
+.wyr-done h3, .ttl-done h3 { font-family:"Dancing Script",cursive; font-size: 1.8rem; color: #c71585; margin-bottom: 16px; }
+.wyr-summary { text-align: left; margin-bottom: 18px; }
+.wyr-ans-item { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #fce4f0; font-size:0.95rem; color:#555; }
+.wyr-ans-num { background:#c71585; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; flex-shrink:0; margin-top:2px; }
+.wyr-summary-note { font-family:"Dancing Script",cursive; font-size:1.2rem; color:#c71585; margin-bottom:18px; line-height:1.5; }
+.wyr-restart { background:linear-gradient(135deg,#ff69b4,#c71585); color:white; border:none; padding:12px 32px; border-radius:50px; font-size:1rem; font-weight:700; cursor:pointer; font-family:"Poppins",sans-serif; box-shadow:0 6px 20px rgba(199,21,133,0.3); transition:transform 0.2s; }
+.wyr-restart:hover { transform:scale(1.06); }
+
+/* ── Two Truths & A Lie ── */
+.ttl-wrap { text-align: center; }
+.ttl-round { font-size:0.8rem; color:#bbb; margin-bottom:8px; }
+.ttl-q { font-family:"Dancing Script",cursive; font-size:2rem; color:#c71585; margin-bottom:8px; }
+.ttl-hint { font-size:0.85rem; color:#aaa; margin-bottom:22px; }
+.ttl-btn {
+  width:100%; padding:16px 20px; margin-bottom:12px;
+  background:white; border:2px solid #f9a8c9;
+  border-radius:14px; font-size:0.95rem; cursor:pointer;
+  font-family:"Poppins",sans-serif; text-align:left;
+  display:flex; align-items:center; gap:14px;
+  transition:all 0.3s;
+}
+.ttl-btn:hover:not(:disabled) { border-color:#c71585; background:#fff0f8; }
+.ttl-num { width:28px; height:28px; border-radius:50%; background:#f9a8c9; color:white; font-weight:700; font-size:0.8rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ttl-btn.ttl-lie   { border-color:#ef4444; background:#fff5f5; }
+.ttl-btn.ttl-lie   .ttl-num { background:#ef4444; }
+.ttl-btn.ttl-wrong { border-color:#f87171; background:#fff5f5; opacity:0.7; }
+.ttl-btn.ttl-truth { opacity:0.5; }
+.ttl-reveal { background:white; border:2px solid #f9a8c9; border-radius:16px; padding:20px; margin-top:16px; animation:fadeInUp 0.3s ease; }
+.ttl-reveal-title { font-size:1.1rem; font-weight:700; color:#c71585; margin-bottom:10px; }
+.ttl-reveal-text { font-family:"Dancing Script",cursive; font-size:1.2rem; color:#666; line-height:1.5; margin-bottom:0; }
+.ttl-done-msg { color:#888; font-size:1rem; margin-bottom:20px; }
+
+/* ── Story Book ── */
+.book-wrap { max-width: 540px; margin: 0 auto; text-align: center; }
+.book-heading { font-family:"Dancing Script",cursive; font-size:2rem; color:#c71585; margin-bottom:6px; }
+.book-sub { color:#aaa; font-size:0.9rem; margin-bottom:22px; }
+.book-page {
+  border: 3px solid #f9a8c9; border-radius: 24px;
+  padding: 36px 32px; min-height: 260px;
+  box-shadow: 0 12px 40px rgba(199,21,133,0.15);
+  transition: opacity 0.35s, transform 0.35s;
+  text-align: left; position: relative;
+}
+.book-flip-out { opacity: 0; transform: translateX(-30px) scale(0.97); }
+.book-flip-in  { opacity: 0; transform: translateX(30px)  scale(0.97); }
+.book-art { font-size: 3.5rem; margin-bottom: 10px; text-align: center; }
+.book-page-num { font-size:0.75rem; color:#bbb; text-align:center; margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+.book-chapter-title { font-family:"Dancing Script",cursive; font-size:1.6rem; margin-bottom:16px; text-align:center; }
+.book-text { font-size:1rem; color:#555; line-height:1.9; margin:0; }
+.book-controls { display:flex; align-items:center; justify-content:center; gap:20px; margin-top:22px; }
+.book-btn { background:white; border:2px solid #f9a8c9; color:#c71585; padding:10px 24px; border-radius:50px; font-weight:600; cursor:pointer; font-family:"Poppins",sans-serif; transition:all 0.2s; }
+.book-btn:hover:not(:disabled) { background:#fff0f8; transform:scale(1.04); }
+.book-btn:disabled { opacity:0.35; cursor:default; }
+.book-dots { display:flex; gap:8px; }
+.book-dot { width:10px; height:10px; border-radius:50%; background:#f9a8c9; cursor:pointer; transition:all 0.2s; }
+.book-dot.active { transform:scale(1.3); }
+.book-end { margin-top:20px; padding:18px 24px; background:linear-gradient(135deg,#fff9c4,#fffde7); border-radius:16px; font-family:"Dancing Script",cursive; font-size:1.2rem; color:#b45309; }
+
+/* ── Flower Garden ── */
+.garden-wrap { max-width:560px; margin:0 auto; text-align:center; }
+.garden-heading { font-family:"Dancing Script",cursive; font-size:2rem; color:#c71585; margin-bottom:6px; }
+.garden-sub { color:#aaa; font-size:0.9rem; margin-bottom:18px; }
+.garden-stats { display:flex; justify-content:center; gap:24px; margin-bottom:22px; flex-wrap:wrap; }
+.garden-stat { background:linear-gradient(160deg,#fff9fb,#fff0f5); border:2px solid #f9a8c9; border-radius:16px; padding:14px 24px; }
+.garden-stat span { font-size:2rem; font-weight:700; color:#c71585; display:block; }
+.garden-stat p { font-size:0.8rem; color:#aaa; margin:4px 0 0; }
+.garden-bed {
+  min-height:160px; background:linear-gradient(180deg,#87CEEB 0%,#b8f0b8 60%,#6db86d 100%);
+  border-radius:24px; padding:24px; display:flex;
+  flex-wrap:wrap; gap:16px; justify-content:center;
+  align-items:flex-end; border:2px solid #a0d0a0;
+  box-shadow:inset 0 -4px 12px rgba(0,0,0,0.1), 0 8px 24px rgba(100,180,100,0.2);
+  margin-bottom:22px; position:relative;
+}
+.garden-empty { color:rgba(255,255,255,0.8); font-size:0.95rem; align-self:center; }
+.garden-flower { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.garden-flower-emoji { font-size:2rem; transition:transform 0.3s; }
+.garden-flower:hover .garden-flower-emoji { transform:scale(1.3) rotate(10deg); }
+.garden-flower-date { font-size:0.65rem; color:rgba(255,255,255,0.85); font-weight:600; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:20px; }
+.garden-new .garden-flower-emoji { animation:popIn 0.5s ease; }
+.garden-water-btn { background:linear-gradient(135deg,#34d399,#059669); color:white; border:none; padding:14px 36px; border-radius:50px; font-size:1.05rem; font-weight:700; cursor:pointer; font-family:"Poppins",sans-serif; box-shadow:0 6px 20px rgba(5,150,105,0.35); transition:transform 0.2s; margin-bottom:14px; }
+.garden-water-btn:hover { transform:scale(1.06); }
+.garden-done-today { background:#e8f5e9; border:2px solid #a5d6a7; border-radius:14px; padding:12px 20px; color:#2e7d32; font-weight:600; margin-bottom:14px; }
+.garden-note { font-family:"Dancing Script",cursive; font-size:1.1rem; color:#c71585; margin-top:8px; }
+
+/* ── Time Capsule ── */
+.tc-form, .tc-sealed-view, .tc-opened { max-width:480px; margin:0 auto; text-align:center; }
+.tc-heading { font-family:"Dancing Script",cursive; font-size:2rem; color:#c71585; margin-bottom:6px; }
+.tc-sub { color:#aaa; font-size:0.9rem; margin-bottom:22px; }
+.tc-textarea { width:100%; padding:16px; border:2px solid #f9a8c9; border-radius:16px; font-size:0.95rem; font-family:"Poppins",sans-serif; resize:vertical; outline:none; background:#fff9fb; transition:border 0.2s; box-sizing:border-box; margin-bottom:16px; }
+.tc-textarea:focus { border-color:#c71585; }
+.tc-date-label { display:block; font-size:0.85rem; font-weight:600; color:#c71585; margin-bottom:8px; text-align:left; }
+.tc-date-input { width:100%; padding:12px 16px; border:2px solid #f9a8c9; border-radius:50px; font-size:0.95rem; font-family:"Poppins",sans-serif; outline:none; background:white; box-sizing:border-box; margin-bottom:18px; transition:border 0.2s; }
+.tc-date-input:focus { border-color:#c71585; }
+.tc-btn { background:linear-gradient(135deg,#ff69b4,#c71585); color:white; border:none; padding:14px 40px; border-radius:50px; font-size:1.05rem; font-weight:700; cursor:pointer; font-family:"Poppins",sans-serif; box-shadow:0 6px 20px rgba(199,21,133,0.35); transition:transform 0.2s, opacity 0.2s; }
+.tc-btn:hover:not(:disabled) { transform:scale(1.06); }
+.tc-btn:disabled { opacity:0.5; cursor:default; }
+.tc-seal-icon { font-size:3.5rem; margin-bottom:12px; animation:floatEmoji 3s ease-in-out infinite alternate; }
+.tc-seal-title { font-family:"Dancing Script",cursive; font-size:2rem; color:#c71585; margin-bottom:10px; }
+.tc-seal-msg { color:#aaa; margin-bottom:18px; }
+.tc-days-left { font-size:1.1rem; color:#c71585; font-weight:700; margin-bottom:8px; }
+.tc-open-date { font-family:"Dancing Script",cursive; font-size:1.3rem; color:#888; margin-bottom:24px; }
+.tc-open-ready { background:#e8f5e9; border:2px solid #a5d6a7; border-radius:14px; padding:12px 20px; color:#2e7d32; font-weight:600; margin-bottom:16px; }
+.tc-open-btn { background:linear-gradient(135deg,#34d399,#059669); }
+.tc-opened { padding:24px; background:linear-gradient(160deg,#fffde7,#fff9c4); border:2px solid #f0d090; border-radius:24px; box-shadow:0 12px 40px rgba(0,0,0,0.1); }
+.tc-open-stars { display:flex; justify-content:center; gap:8px; font-size:1.6rem; margin-bottom:14px; }
+.tc-open-stars span { animation:sparkBurst 0.8s ease forwards; }
+.tc-open-title { font-family:"Dancing Script",cursive; font-size:1.8rem; color:#c71585; margin-bottom:18px; }
+.tc-open-msg { background:white; border-radius:16px; padding:20px; margin-bottom:20px; border:1px solid #f0d090; text-align:left; }
+.tc-msg-text { font-family:"Poppins",sans-serif; font-size:0.95rem; color:#555; white-space:pre-wrap; line-height:1.8; margin:0 0 12px; }
+.tc-open-from { font-size:0.8rem; color:#bbb; margin:0; }

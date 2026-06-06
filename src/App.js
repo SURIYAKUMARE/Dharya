@@ -7,6 +7,8 @@ import DreamDashboard from "./components/DreamDashboard";
 import LoveLetter from "./components/LoveLetter";
 import SecretUniverse from "./components/SecretUniverse";
 import SadhanaWorld from "./components/SadhanaWorld";
+import LoveGames from "./components/LoveGames";
+import MagicCorner from "./components/MagicCorner";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -117,6 +119,8 @@ const NAV = [
   { key: "letters",  label: "Letters 💌"   },
   { key: "universe", label: "Universe 🌌"  },
   { key: "world",    label: "My World 🌸"  },
+  { key: "games",   label: "Games 🎮"     },
+  { key: "magic",   label: "Magic ✨"     },
 ];
 
 export default function App() {
@@ -136,6 +140,8 @@ export default function App() {
       case "letters":  return <LoveLetter setPage={setPage} />;
       case "universe": return <SecretUniverse setPage={setPage} />;
       case "world":    return <SadhanaWorld setPage={setPage} />;
+      case "games":    return <LoveGames setPage={setPage} />;
+      case "magic":    return <MagicCorner setPage={setPage} />;
       default:        return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };

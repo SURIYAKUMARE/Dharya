@@ -1492,3 +1492,92 @@ h1 {
   75%       { transform: translateX(-3px); }
   90%       { transform: translateX(3px); }
 }
+
+/* ══════════════════════════════════════════ */
+/*  Floating Music Player                     */
+/* ══════════════════════════════════════════ */
+.music-player {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid #f9a8c9;
+  border-radius: 50px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 28px rgba(199, 21, 133, 0.25);
+  backdrop-filter: blur(10px);
+  animation: slideUp 0.5s ease;
+}
+
+.music-icon {
+  font-size: 1.2rem;
+  animation: floatEmoji 2s ease-in-out infinite alternate;
+}
+
+.music-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.music-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #c71585;
+  font-family: "Poppins", sans-serif;
+  white-space: nowrap;
+}
+
+/* Animated equalizer bars */
+.music-dots {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+}
+
+.music-bar {
+  display: inline-block;
+  width: 3px;
+  height: 4px;
+  background: #f9a8c9;
+  border-radius: 2px;
+  transition: height 0.1s;
+}
+
+.music-bar.playing {
+  animation: equalizer 0.6s ease-in-out infinite alternate;
+}
+
+.music-bar:nth-child(1) { animation-delay: 0s; }
+.music-bar:nth-child(2) { animation-delay: 0.15s; }
+.music-bar:nth-child(3) { animation-delay: 0.3s; }
+.music-bar:nth-child(4) { animation-delay: 0.45s; }
+
+@keyframes equalizer {
+  0%   { height: 3px;  background: #f9a8c9; }
+  25%  { height: 10px; background: #ff69b4; }
+  50%  { height: 6px;  background: #c71585; }
+  75%  { height: 13px; background: #ff69b4; }
+  100% { height: 4px;  background: #f9a8c9; }
+}
+
+.music-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: background 0.2s, transform 0.2s;
+  line-height: 1;
+}
+
+.music-btn:hover {
+  background: #fff0f8;
+  transform: scale(1.2);
+}

@@ -13,6 +13,9 @@ import TonightPromise from "./components/TonightPromise";
 import SurpriseBox from "./components/SurpriseBox";
 import MoodBoard from "./components/MoodBoard";
 import LoveNotesWall from "./components/LoveNotesWall";
+import SuryaMind from "./components/SuryaMind";
+import FuturePlans from "./components/FuturePlans";
+import OurVows from "./components/OurVows";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -129,6 +132,9 @@ const NAV = [
   { key: "surprise",label: "Surprises 🎁"  },
   { key: "mood",    label: "Mood 🌈"       },
   { key: "notes",   label: "Notes 📝"      },
+  { key: "mind",    label: "His Mind 💭"   },
+  { key: "future",  label: "Future 🗺️"   },
+  { key: "vows",    label: "Vows 💒"       },
 ];
 
 export default function App() {
@@ -154,6 +160,9 @@ export default function App() {
       case "surprise": return <SurpriseBox />;
       case "mood":     return <MoodBoard />;
       case "notes":    return <LoveNotesWall />;
+      case "mind":     return <SuryaMind />;
+      case "future":   return <FuturePlans />;
+      case "vows":     return <OurVows />;
       default:        return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };

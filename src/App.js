@@ -9,8 +9,10 @@ import SecretUniverse from "./components/SecretUniverse";
 import SadhanaWorld from "./components/SadhanaWorld";
 import LoveGames from "./components/LoveGames";
 import MagicCorner from "./components/MagicCorner";
-import ChatWithSurya from "./components/ChatWithSurya";
 import TonightPromise from "./components/TonightPromise";
+import SurpriseBox from "./components/SurpriseBox";
+import MoodBoard from "./components/MoodBoard";
+import LoveNotesWall from "./components/LoveNotesWall";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -123,8 +125,10 @@ const NAV = [
   { key: "world",    label: "My World 🌸"  },
   { key: "games",   label: "Games 🎮"     },
   { key: "magic",   label: "Magic ✨"      },
-  { key: "chat",    label: "Chat 💬"       },
-  { key: "tonight", label: "Tonight 🌙"   },
+  { key: "tonight", label: "Tonight 🌙"    },
+  { key: "surprise",label: "Surprises 🎁"  },
+  { key: "mood",    label: "Mood 🌈"       },
+  { key: "notes",   label: "Notes 📝"      },
 ];
 
 export default function App() {
@@ -146,8 +150,10 @@ export default function App() {
       case "world":    return <SadhanaWorld setPage={setPage} />;
       case "games":    return <LoveGames setPage={setPage} />;
       case "magic":    return <MagicCorner setPage={setPage} />;
-      case "chat":     return <ChatWithSurya />;
       case "tonight":  return <TonightPromise />;
+      case "surprise": return <SurpriseBox />;
+      case "mood":     return <MoodBoard />;
+      case "notes":    return <LoveNotesWall />;
       default:        return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };

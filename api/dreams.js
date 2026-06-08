@@ -1,8 +1,8 @@
-// GET /api/dreams  — fetch saved dreams
+// GET  /api/dreams — fetch saved dreams
 // POST /api/dreams — save dreams
-import clientPromise from "./_db.js";
+const clientPromise = require("./_db");
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -10,8 +10,7 @@ export default async function handler(req, res) {
 
   try {
     const client = await clientPromise;
-    const db     = client.db("dharya");
-    const col    = db.collection("dreams");
+    const col    = client.db("dharya").collection("dreams");
 
     if (req.method === "GET") {
       const doc = await col.findOne({ _id: "sadhana" });
@@ -33,4 +32,4 @@ export default async function handler(req, res) {
     console.error(err);
     return res.status(500).json({ error: err.message });
   }
-}
+};

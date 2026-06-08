@@ -1,9 +1,9 @@
 // Generic GET/POST for any key-value data document
 // GET  /api/data?key=garden
-// POST /api/data        body: { key, value }
-import clientPromise from "./_db.js";
+// POST /api/data  body: { key, value }
+const clientPromise = require("./_db");
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -11,8 +11,7 @@ export default async function handler(req, res) {
 
   try {
     const client = await clientPromise;
-    const db     = client.db("dharya");
-    const col    = db.collection("appdata");
+    const col    = client.db("dharya").collection("appdata");
 
     if (req.method === "GET") {
       const key = req.query.key;
@@ -24,11 +23,7 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const { key, value } = req.body;
       if (!key) return res.status(400).json({ error: "key required" });
-      await col.updateOne(
-        { _id: key },
-        { $set: { value } },
-        { upsert: true }
-      );
+      await col.updateOne({ _id: key }, { $set: { value } }, { upsert: true });
       return res.status(200).json({ ok: true });
     }
 
@@ -37,4 +32,4 @@ export default async function handler(req, res) {
     console.error(err);
     return res.status(500).json({ error: err.message });
   }
-}
+};

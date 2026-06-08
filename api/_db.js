@@ -1,13 +1,14 @@
 // Shared MongoDB connection — reused across serverless function invocations
-import { MongoClient } from "mongodb";
+const { MongoClient } = require("mongodb");
 
 const uri = process.env.MONGODB_URI;
-let client;
-let clientPromise;
 
 if (!uri) {
   throw new Error("Missing MONGODB_URI environment variable");
 }
+
+let client;
+let clientPromise;
 
 if (process.env.NODE_ENV === "development") {
   if (!global._mongoClientPromise) {
@@ -20,4 +21,4 @@ if (process.env.NODE_ENV === "development") {
   clientPromise = client.connect();
 }
 
-export default clientPromise;
+module.exports = clientPromise;

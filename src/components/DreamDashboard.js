@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getDreams, saveDreams, dbGet, dbSet } from "../api";
 
 /* ─────────────────────────────────────────── */
 /*  Constants                                  */
@@ -242,24 +243,41 @@ function SurpriseOverlay({ sadhanaDreams, categories: cats, progress, savedAt, o
 /*  Main Dashboard                             */
 /* ─────────────────────────────────────────── */
 export default function DreamDashboard() {
-  const [inputs,       setInputs]       = useState(() => JSON.parse(localStorage.getItem("dd_inputs")  || '["","","","",""]'));
-  const [dreamCats,    setDreamCats]    = useState(() => JSON.parse(localStorage.getItem("dd_cats")    || '["","","","",""]'));
-  const [dreamProg,    setDreamProg]    = useState(() => JSON.parse(localStorage.getItem("dd_prog")    || '[0,0,0,0,0]'));
-  const [saved,        setSaved]        = useState(() => JSON.parse(localStorage.getItem("dd_saved")   || '[]'));
-  const [savedCats,    setSavedCats]    = useState(() => JSON.parse(localStorage.getItem("dd_scats")   || '[]'));
-  const [savedProg,    setSavedProg]    = useState(() => JSON.parse(localStorage.getItem("dd_sprog")   || '[0,0,0,0,0]'));
-  const [savedAt,      setSavedAt]      = useState(() => { const s = localStorage.getItem("dd_savedat"); return s ? new Date(s) : null; });
+  const [inputs,       setInputs]       = useState(["","","","",""]);
+  const [dreamCats,    setDreamCats]    = useState(["","","","",""]);
+  const [dreamProg,    setDreamProg]    = useState([0,0,0,0,0]);
+  const [saved,        setSaved]        = useState([]);
+  const [savedCats,    setSavedCats]    = useState([]);
+  const [savedProg,    setSavedProg]    = useState([0,0,0,0,0]);
+  const [savedAt,      setSavedAt]      = useState(null);
   const [editMode,     setEditMode]     = useState(false);
-  const [mood,         setMood]         = useState(() => localStorage.getItem("dd_mood") || "");
-  const [showSurprise, setShowSurprise] = useState(() => {
-    // auto-show saved dreams when the page loads if they exist
-    const s = localStorage.getItem("dd_saved");
-    try { return JSON.parse(s || "[]").some(d => d.trim()); } catch { return false; }
-  });
+  const [mood,         setMood]         = useState("");
+  const [showSurprise, setShowSurprise] = useState(false);
   const [showCat,      setShowCat]      = useState(null);
+  const [loading,      setLoading]      = useState(true);
   const confettiRef = useRef(null);
 
-  const handleSave = () => {
+  // Load from MongoDB on mount
+  useEffect(() => {
+    (async () => {
+      const d = await getDreams();
+      if (d && d.inputs) {
+        setInputs(d.inputs);
+        setDreamCats(d.cats  || ["","","","",""]);
+        setDreamProg(d.prog  || [0,0,0,0,0]);
+        setSaved(d.inputs);
+        setSavedCats(d.cats  || []);
+        setSavedProg(d.prog  || [0,0,0,0,0]);
+        setSavedAt(d.savedAt ? new Date(d.savedAt) : null);
+        if (d.inputs.some(x => x.trim())) setShowSurprise(true);
+      }
+      const m = await dbGet("dd_mood", "");
+      if (m) setMood(m);
+      setLoading(false);
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSave = async () => {
     if (!inputs.some(d => d.trim())) return;
     const now = new Date();
     setSaved([...inputs]);
@@ -267,20 +285,15 @@ export default function DreamDashboard() {
     setSavedProg([...dreamProg]);
     setSavedAt(now);
     setEditMode(false);
-    // persist to localStorage
-    localStorage.setItem("dd_saved",   JSON.stringify(inputs));
-    localStorage.setItem("dd_scats",   JSON.stringify(dreamCats));
-    localStorage.setItem("dd_sprog",   JSON.stringify(dreamProg));
-    localStorage.setItem("dd_savedat", now.toISOString());
+    await saveDreams(inputs, dreamCats, dreamProg, now);
     spawnConfetti();
     setTimeout(() => setShowSurprise(true), 900);
   };
 
-  // Persist inputs/cats/prog as user types
-  useEffect(() => { localStorage.setItem("dd_inputs", JSON.stringify(inputs)); }, [inputs]);
-  useEffect(() => { localStorage.setItem("dd_cats",   JSON.stringify(dreamCats)); }, [dreamCats]);
-  useEffect(() => { localStorage.setItem("dd_prog",   JSON.stringify(dreamProg)); }, [dreamProg]);
-  useEffect(() => { localStorage.setItem("dd_mood",   mood); }, [mood]);
+  // Persist mood to MongoDB when it changes
+  useEffect(() => {
+    if (!loading) dbSet("dd_mood", mood);
+  }, [mood]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEdit = () => {
     setInputs([...saved]);
@@ -289,10 +302,10 @@ export default function DreamDashboard() {
     setEditMode(true);
   };
 
-  const handleProgressChange = (i, val) => {
+  const handleProgressChange = async (i, val) => {
     if (saved.length > 0 && !editMode) {
       const n = [...savedProg]; n[i] = Number(val); setSavedProg(n);
-      localStorage.setItem("dd_sprog", JSON.stringify(n));
+      await saveDreams(saved, savedCats, n, savedAt);
     } else {
       const n = [...dreamProg]; n[i] = Number(val); setDreamProg(n);
     }
@@ -321,6 +334,13 @@ export default function DreamDashboard() {
 
   const isEditing = saved.length === 0 || editMode;
   const displayProg = isEditing ? dreamProg : savedProg;
+
+  if (loading) return (
+    <div className="db-loading">
+      <div className="db-loading-icon">💙</div>
+      <p>Loading your dreams...</p>
+    </div>
+  );
 
   return (
     <div className="dream-page">

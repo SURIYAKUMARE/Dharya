@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { dbGet, dbSet } from "../api";
 
 /* ══════════════════════════════════════════
    1. STORY BOOK
@@ -108,17 +109,20 @@ const FLOWER_TYPES = ["🌸","🌺","🌻","🌹","🌷","💐","🌼","🪷"];
 const GROWTH_STAGES = ["🌱","🌿","🪴","🌸"];
 
 function FlowerGarden() {
-  const [garden, setGarden] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("fg_garden") || "[]"); } catch { return []; }
-  });
+  const [garden, setGarden] = useState([]);
   const [watered, setWatered] = useState(false);
   const [newFlower, setNewFlower] = useState(null);
+  const [lastVisit, setLastVisit] = useState("");
+
+  useEffect(() => {
+    dbGet("fg_garden", []).then(g => { if (Array.isArray(g)) setGarden(g); });
+    dbGet("fg_lastvisit", "").then(v => { if (v) setLastVisit(v); });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const todayKey = new Date().toDateString();
-  const lastVisit = localStorage.getItem("fg_lastvisit");
   const alreadyWatered = lastVisit === todayKey;
 
-  const water = () => {
+  const water = async () => {
     if (alreadyWatered) return;
     const flower = {
       id: Date.now(),
@@ -126,14 +130,14 @@ function FlowerGarden() {
       stage: 0,
       date: new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short" }),
     };
-    // grow existing flowers
     const grown = garden.map(f => ({ ...f, stage: Math.min(f.stage + 1, GROWTH_STAGES.length - 1) }));
     const updated = [...grown, flower];
     setGarden(updated);
     setNewFlower(flower.id);
     setWatered(true);
-    localStorage.setItem("fg_garden", JSON.stringify(updated));
-    localStorage.setItem("fg_lastvisit", todayKey);
+    setLastVisit(todayKey);
+    await dbSet("fg_garden", updated);
+    await dbSet("fg_lastvisit", todayKey);
     setTimeout(() => setNewFlower(null), 1500);
   };
 
@@ -180,11 +184,23 @@ function FlowerGarden() {
    3. TIME CAPSULE
 ══════════════════════════════════════════ */
 function TimeCapsule() {
-  const [msg,      setMsg]      = useState(() => localStorage.getItem("tc_msg") || "");
-  const [openDate, setOpenDate] = useState(() => localStorage.getItem("tc_date") || "");
-  const [sealed,   setSealed]   = useState(() => !!localStorage.getItem("tc_sealed"));
+  const [msg,      setMsg]      = useState("");
+  const [openDate, setOpenDate] = useState("");
+  const [sealed,   setSealed]   = useState(false);
   const [canOpen,  setCanOpen]  = useState(false);
   const [opened,   setOpened]   = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      dbGet("tc_msg", ""),
+      dbGet("tc_date", ""),
+      dbGet("tc_sealed", false),
+    ]).then(([m, d, s]) => {
+      if (m) setMsg(m);
+      if (d) setOpenDate(d);
+      if (s) setSealed(true);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!sealed || !openDate) return;
@@ -198,20 +214,20 @@ function TimeCapsule() {
     return () => clearInterval(id);
   }, [sealed, openDate]);
 
-  const seal = () => {
+  const seal = async () => {
     if (!msg.trim() || !openDate) return;
-    localStorage.setItem("tc_msg",    msg);
-    localStorage.setItem("tc_date",   openDate);
-    localStorage.setItem("tc_sealed", "1");
+    await dbSet("tc_msg",    msg);
+    await dbSet("tc_date",   openDate);
+    await dbSet("tc_sealed", true);
     setSealed(true);
   };
 
   const open = () => { setOpened(true); };
 
-  const reset = () => {
-    localStorage.removeItem("tc_msg");
-    localStorage.removeItem("tc_date");
-    localStorage.removeItem("tc_sealed");
+  const reset = async () => {
+    await dbSet("tc_msg",    "");
+    await dbSet("tc_date",   "");
+    await dbSet("tc_sealed", false);
     setMsg(""); setOpenDate(""); setSealed(false); setOpened(false); setCanOpen(false);
   };
 

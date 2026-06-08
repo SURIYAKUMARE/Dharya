@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { dbGet, dbSet } from "../api";
 
 const PLAN_CATEGORIES = [
   {
@@ -65,11 +66,18 @@ export default function FuturePlans() {
   const [checked, setChecked] = useState(loadChecked);
   const [active,  setActive]  = useState(0);
 
+  // Load from MongoDB on mount
+  useEffect(() => {
+    dbGet(STORAGE_KEY, {}).then(val => {
+      if (val && typeof val === "object") setChecked(val);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const toggle = (catIdx, planIdx) => {
-    const key = `${catIdx}_${planIdx}`;
+    const key  = `${catIdx}_${planIdx}`;
     setChecked(prev => {
       const next = { ...prev, [key]: !prev[key] };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      dbSet(STORAGE_KEY, next);
       return next;
     });
   };

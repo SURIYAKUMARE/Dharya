@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { dbGet, dbSet } from "../api";
 
 /* ══════════════════════════════════════════
    Time-of-day greeting
@@ -166,29 +167,32 @@ function DreamSelector() {
    Love Meter — "How much did you feel loved today?"
 ══════════════════════════════════════════ */
 function DailyLoveFeel() {
-  const [rating, setRating]   = useState(null);
-  const [saved,  setSaved]    = useState(() => localStorage.getItem("tp_rating_"+new Date().toDateString()));
+  const [rating, setRating] = useState(null);
+  const [saved,  setSaved]  = useState(null);
+  const todayKey = "tp_rating_" + new Date().toDateString();
+
+  useEffect(() => {
+    dbGet(todayKey, null).then(v => { if (v) setSaved(Number(v)); });
+  }, [todayKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const FEELS = [
-    { val:1, emoji:"😶", label:"A little" },
-    { val:2, emoji:"🙂", label:"Okay"     },
-    { val:3, emoji:"😊", label:"Good"     },
-    { val:4, emoji:"🥰", label:"A lot"    },
-    { val:5, emoji:"💖", label:"Endlessly"},
+    { val:1, emoji:"😶", label:"A little"  },
+    { val:2, emoji:"🙂", label:"Okay"      },
+    { val:3, emoji:"😊", label:"Good"      },
+    { val:4, emoji:"🥰", label:"A lot"     },
+    { val:5, emoji:"💖", label:"Endlessly" },
   ];
-
   const RESPONSES = {
-    1: "Even a little is a start. I'm going to work harder to make sure you feel it more tomorrow 💙",
-    2: "I'll do better tomorrow. You deserve to feel it completely, every day 🌸",
-    3: "Good! But I want you to feel it even more. Working on it 💙",
-    4: "That makes me so happy 🥰 You deserve to feel loved like this every single day.",
-    5: "Endlessly — that's exactly how I love you too 💍🌟",
+    1:"Even a little is a start. I'm going to work harder to make sure you feel it more tomorrow 💙",
+    2:"I'll do better tomorrow. You deserve to feel it completely, every day 🌸",
+    3:"Good! But I want you to feel it even more. Working on it 💙",
+    4:"That makes me so happy 🥰 You deserve to feel loved like this every single day.",
+    5:"Endlessly — that's exactly how I love you too 💍🌟",
   };
 
-  const save = (val) => {
-    setRating(val);
-    localStorage.setItem("tp_rating_"+new Date().toDateString(), val);
-    setSaved(val);
+  const save = async (val) => {
+    setRating(val); setSaved(val);
+    await dbSet(todayKey, val);
   };
 
   return (
@@ -196,20 +200,16 @@ function DailyLoveFeel() {
       <h4 className="daily-feel-heading">💓 How loved did you feel today?</h4>
       {saved ? (
         <div className="daily-feel-saved">
-          <p className="daily-feel-saved-emoji">{FEELS[Number(saved)-1].emoji}</p>
-          <p className="daily-feel-saved-label">{FEELS[Number(saved)-1].label}</p>
-          <p className="daily-feel-response">"{RESPONSES[Number(saved)]}"</p>
+          <p className="daily-feel-saved-emoji">{FEELS[saved-1].emoji}</p>
+          <p className="daily-feel-saved-label">{FEELS[saved-1].label}</p>
+          <p className="daily-feel-response">"{RESPONSES[saved]}"</p>
           <p className="daily-feel-from">— Surya 💙</p>
         </div>
       ) : (
         <>
           <div className="daily-feel-options">
             {FEELS.map(f => (
-              <button
-                key={f.val}
-                className={`daily-feel-btn ${rating === f.val ? "daily-feel-active" : ""}`}
-                onClick={() => save(f.val)}
-              >
+              <button key={f.val} className={`daily-feel-btn ${rating===f.val?"daily-feel-active":""}`} onClick={() => save(f.val)}>
                 <span className="daily-feel-emoji">{f.emoji}</span>
                 <span className="daily-feel-label">{f.label}</span>
               </button>

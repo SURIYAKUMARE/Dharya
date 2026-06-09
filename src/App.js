@@ -16,6 +16,7 @@ import LoveNotesWall from "./components/LoveNotesWall";
 import SuryaMind from "./components/SuryaMind";
 import FuturePlans from "./components/FuturePlans";
 import OurVows from "./components/OurVows";
+import SuryaEditPanel from "./components/SuryaEditPanel";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -137,12 +138,15 @@ const NAV = [
   { key: "vows",    label: "Vows 💒"       },
 ];
 
+const NAV_SURYA_EXTRA = { key: "edit", label: "✏️ Edit Mode" };
+
 export default function App() {
+  const [user,      setUser]      = useState(null); // "sadhana" | "surya"
   const [loggedIn,  setLoggedIn]  = useState(false);
   const [page,      setPage]      = useState("box");
   const [boxOpened, setBoxOpened] = useState(false);
 
-  if (!loggedIn) return <LoginPage onLogin={() => setLoggedIn(true)} />;
+  if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
 
   const renderPage = () => {
     switch (page) {
@@ -150,29 +154,36 @@ export default function App() {
       case "journey": return <JourneyTimeline setPage={setPage} />;
       case "gallery": return <MemoryGallery setPage={setPage} />;
       case "quiz":    return <RelationshipQuiz setPage={setPage} />;
-      case "dream":   return <DreamDashboard />;
-      case "letters":  return <LoveLetter setPage={setPage} />;
-      case "universe": return <SecretUniverse setPage={setPage} />;
-      case "world":    return <SadhanaWorld setPage={setPage} />;
+      case "dream":   return <DreamDashboard user={user} />;
+      case "letters":  return <LoveLetter setPage={setPage} user={user} />;
+      case "universe": return <SecretUniverse setPage={setPage} user={user} />;
+      case "world":    return <SadhanaWorld setPage={setPage} user={user} />;
       case "games":    return <LoveGames setPage={setPage} />;
-      case "magic":    return <MagicCorner setPage={setPage} />;
-      case "tonight":  return <TonightPromise />;
-      case "surprise": return <SurpriseBox />;
-      case "mood":     return <MoodBoard />;
-      case "notes":    return <LoveNotesWall />;
-      case "mind":     return <SuryaMind />;
-      case "future":   return <FuturePlans />;
-      case "vows":     return <OurVows />;
+      case "magic":    return <MagicCorner setPage={setPage} user={user} />;
+      case "tonight":  return <TonightPromise user={user} />;
+      case "surprise": return <SurpriseBox user={user} />;
+      case "mood":     return <MoodBoard user={user} />;
+      case "notes":    return <LoveNotesWall user={user} />;
+      case "mind":     return <SuryaMind user={user} />;
+      case "future":   return <FuturePlans user={user} />;
+      case "vows":     return <OurVows user={user} />;
+      case "edit":     return user === "surya" ? <SuryaEditPanel setPage={setPage} /> : <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
       default:        return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };
+
+  const visibleNav = user === "surya" ? [...NAV, NAV_SURYA_EXTRA] : NAV;
 
   return (
     <div className="app">
       <MusicPlayer />
       <AnniversaryBadge />
+      {/* User badge */}
+      <div className="user-badge">
+        {user === "surya" ? "💙 Surya" : "💗 Sadhana"}
+      </div>
       <nav className="nav">
-        {NAV.map(({ key, label }) => (
+        {visibleNav.map(({ key, label }) => (
           <button key={key} onClick={() => setPage(key)} className={page === key ? "nav-active" : ""}>
             {label}
           </button>

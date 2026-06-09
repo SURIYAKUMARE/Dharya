@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const CORRECT_USER = "DHARYA";
-const CORRECT_PASS = "29/02/2008";
+const VALID_PASSWORDS = ["29/02/2008", "09/10/2007"];
 
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState("");
@@ -13,7 +13,7 @@ export default function LoginPage({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username.trim().toUpperCase() === CORRECT_USER && password === CORRECT_PASS) {
+    if (username.trim().toUpperCase() === CORRECT_USER && VALID_PASSWORDS.includes(password)) {
       // spawn heart burst on success
       spawnHearts();
       setTimeout(() => onLogin(), 900);

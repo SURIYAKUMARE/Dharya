@@ -1,38 +1,29 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { dbGet } from "../api";
+
+const DEFAULT_MOMENTS = [
+  { year:"19/06/2023", title:"We Met",              desc:"At the tution a pleasant day...",       img:"/images/photo1.jpg.jpg"  },
+  { year:"17/05/2026", title:"I Proposed to her",   desc:"At midnight",                            img:"/images/photo2.jpg.jpeg" },
+  { year:"18/05/2026", title:"She Proposed to me",  desc:"At Evening",                             img:"/images/photo3.jpg.jpeg" },
+  { year:"19/05/2026", title:"We both Proposed",    desc:"At Evening",                             img:"/images/photo4.jpg.jpeg" },
+  { year:"20/05/2026", title:"We start our journey",desc:"From that day, forever together...",     img:"/images/photo5.jpg.jpeg" },
+];
 
 export default function JourneyTimeline({ setPage }) {
-  const moments = [
-    {
-      year: "19/06/2023",
-      title: "We Met",
-      desc: "At the tution a pleasant day...",
-      img: "/images/photo1.jpg.jpg",
-    },
-    {
-      year: "17/05/2026",
-      title: "I Proposed to her",
-      desc: "At midnight",
-      img: "/images/photo2.jpg.jpeg",
-    },
-    {
-      year: "18/05/2026",
-      title: "She Proposed to me",
-      desc: "At Evening",
-      img: "/images/photo3.jpg.jpeg",
-    },
-    {
-      year: "19/05/2026",
-      title: "We both Proposed",
-      desc: "At Evening",
-      img: "/images/photo4.jpg.jpeg",
-    },
-    {
-      year: "20/05/2026",
-      title: "We start our journey",
-      desc: "From that day, forever together...",
-      img: "/images/photo5.jpg.jpeg",
-    },
-  ];
+  const [moments, setMoments] = useState(DEFAULT_MOMENTS);
+
+  // Load custom timeline from MongoDB if Surya edited it
+  useEffect(() => {
+    dbGet("edit_timeline", []).then(saved => {
+      if (Array.isArray(saved) && saved.length > 0) {
+        // Keep images from defaults, merge with saved data
+        setMoments(saved.map((m, i) => ({
+          ...m,
+          img: DEFAULT_MOMENTS[i]?.img || "",
+        })));
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itemRefs = useRef([]);
   const [countdown, setCountdown] = useState(null);

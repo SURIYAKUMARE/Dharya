@@ -25,17 +25,36 @@ Today, tomorrow, and in every lifetime after this.`,
   },
 ];
 
-export default function OurVows() {
-  const [active,    setActive]    = useState(null);
-  const [revealed,  setRevealed]  = useState(false);
-  const [vowText,   setVowText]   = useState("");
-  const [sealed,    setSealed]    = useState(false);
-  const [sealing,   setSealing]   = useState(false);
-  const [editMode,  setEditMode]  = useState(false);
-  const [particles, setParticles] = useState([]);
+const DEFAULT_VOW = `Sadhana,
+
+I vow to love you not just on the easy days, but on the hard ones — when life is loud, when you are tired, when the world feels like too much.
+
+I vow to be the person you call first, the one who shows up without being asked, the hand that reaches for yours before you even have to reach.
+
+I vow to celebrate every version of you — the one who is thriving, and the one who is still finding her way.
+
+I vow to spend the rest of my life trying to be worthy of your love — and never, not for a single day, taking it for granted.
+
+You are my beginning, my present, and every future I have ever imagined.
+
+I choose you, Sadhana.
+Today, tomorrow, and in every lifetime after this.`;
+
+export default function OurVows({ user }) {
+  const [active,      setActive]      = useState(null);
+  const [revealed,    setRevealed]    = useState(false);
+  const [suryaVow,    setSuryaVow]    = useState(DEFAULT_VOW);
+  const [sadhanaVow,  setSadhanaVow]  = useState("");
+  const [sealed,      setSealed]      = useState(false);
+  const [sealing,     setSealing]     = useState(false);
+  const [editMode,    setEditMode]    = useState(false);
+  const [particles,   setParticles]   = useState([]);
 
   useEffect(() => {
-    dbGet("vow_text",   "").then(v => { if (v) setVowText(v); });
+    // Load Surya's vow (could be custom written from edit panel or the default)
+    dbGet("surya_vow_text", "").then(v => { if (v && v.trim()) setSuryaVow(v); });
+    // Load Sadhana's vow
+    dbGet("vow_text",   "").then(v => { if (v) setSadhanaVow(v); });
     dbGet("vow_sealed", false).then(s => { if (s) setSealed(true); });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -43,10 +62,10 @@ export default function OurVows() {
   const close = ()  => { setRevealed(false); setTimeout(() => setActive(null), 300); };
 
   const sealVow = async () => {
-    if (!vowText.trim()) return;
+    if (!sadhanaVow.trim()) return;
     setSealing(true);
     setParticles(Array.from({ length: 12 }, (_, i) => i));
-    await dbSet("vow_text",   vowText);
+    await dbSet("vow_text",   sadhanaVow);
     await dbSet("vow_sealed", true);
     setTimeout(() => { setSealed(true); setSealing(false); setEditMode(false); setParticles([]); }, 1600);
   };
@@ -91,8 +110,8 @@ export default function OurVows() {
           ) : (
             <div className="vow-write-area" onClick={e => e.stopPropagation()}>
               <textarea className="vow-textarea" placeholder="Write your vow to Surya here... from your heart 💗"
-                value={vowText} onChange={e => setVowText(e.target.value)} rows={5} disabled={sealing} />
-              <button className="vow-seal-btn" style={{ background:VOW2.color }} onClick={sealVow} disabled={!vowText.trim()||sealing}>
+                value={sadhanaVow} onChange={e => setSadhanaVow(e.target.value)} rows={5} disabled={sealing} />
+              <button className="vow-seal-btn" style={{ background:VOW2.color }} onClick={sealVow} disabled={!sadhanaVow.trim()||sealing}>
                 {sealing ? "Sealing... 💗" : "Seal with Love 💍"}
               </button>
             </div>
@@ -112,7 +131,7 @@ export default function OurVows() {
               {active===0?VOWS[0].title:"Sadhana's Vow"}
             </h2>
             <div className="vow-modal-divider" style={{ background: active===0?VOWS[0].color:VOW2.color }} />
-            <pre className="vow-modal-text">{active===0?VOWS[0].vow:vowText}</pre>
+            <pre className="vow-modal-text">{active===0 ? suryaVow : sadhanaVow}</pre>
             {active===1&&sealed&&(
               <button className="vow-unseal-btn" onClick={() => { close(); setTimeout(unseal,400); }}>✏️ Edit Vow</button>
             )}

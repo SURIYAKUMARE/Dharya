@@ -3775,3 +3775,203 @@ h1 {
   border-radius: 14px; padding: 16px; margin-bottom: 16px;
 }
 .ep-loading { color: #3b82f6; font-size: 1rem; padding: 16px; }
+
+/* ══════════════════════════════════════════ */
+/*  WhatsApp-style Love Chat                  */
+/* ══════════════════════════════════════════ */
+.wachat-page {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 130px);
+  max-width: 640px; margin: 0 auto;
+  border-radius: 20px; overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+  border: 1.5px solid #f9a8c9;
+  position: relative;
+}
+
+/* Header */
+.wachat-header {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg,#ff69b4,#c71585);
+  flex-shrink: 0; position: relative;
+}
+.wachat-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; flex-shrink: 0;
+}
+.wachat-header-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.wachat-name   { font-size: 1rem; font-weight: 700; color: white; }
+.wachat-status { font-size: 0.75rem; color: rgba(255,255,255,0.85); display: flex; align-items: center; gap: 5px; }
+.wachat-online-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ade80; display: inline-block;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(1.3); }
+}
+.wachat-unread-badge {
+  background: #4ade80; color: #065f46;
+  font-size: 0.75rem; font-weight: 800;
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Messages area */
+.wachat-messages {
+  flex: 1; overflow-y: auto; padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  position: relative; background: #fdf2f8;
+}
+.wachat-messages::-webkit-scrollbar { width: 4px; }
+.wachat-messages::-webkit-scrollbar-thumb { background: #f9a8c9; border-radius: 4px; }
+
+/* Subtle background pattern */
+.wachat-bg {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.04;
+  background-image: repeating-linear-gradient(45deg,#c71585 0px,#c71585 1px,transparent 1px,transparent 12px);
+  z-index: 0;
+}
+
+/* Date chip */
+.wachat-date-chip {
+  text-align: center; margin: 12px 0 8px;
+  position: relative; z-index: 1;
+}
+.wachat-date-chip::before {
+  content: attr(class);
+}
+.wachat-date-chip {
+  font-size: 0.72rem; color: #888;
+  background: rgba(255,255,255,0.85);
+  border-radius: 20px; padding: 3px 14px;
+  display: inline-block; margin: 10px auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Message rows */
+.wachat-msg-row {
+  display: flex; margin-bottom: 2px; position: relative; z-index: 1;
+}
+.wachat-msg-row.mine   { justify-content: flex-end; }
+.wachat-msg-row.theirs { justify-content: flex-start; }
+
+/* Bubbles */
+.wachat-bubble {
+  max-width: 72%; padding: 10px 14px 7px;
+  border-radius: 18px; position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  animation: fadeInUp 0.2s ease;
+}
+.bubble-mine {
+  background: linear-gradient(135deg,#ff85b3,#c71585);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.bubble-theirs {
+  background: white;
+  color: #333;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #f9a8c9;
+}
+.bubble-pending { opacity: 0.7; }
+
+.wachat-sender-name {
+  display: block; font-size: 0.7rem; font-weight: 700;
+  color: #c71585; margin-bottom: 3px;
+}
+.wachat-text {
+  font-size: 0.97rem; line-height: 1.5;
+  word-break: break-word; margin: 0 0 4px;
+  font-family: "Poppins", sans-serif;
+}
+.bubble-mine .wachat-text { color: white; }
+
+.wachat-meta {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 4px;
+}
+.wachat-time  { font-size: 0.65rem; opacity: 0.75; }
+.wachat-ticks { font-size: 0.7rem; }
+
+/* Empty state */
+.wachat-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; color: #aaa; text-align: center;
+  padding: 40px; position: relative; z-index: 1;
+}
+.wachat-empty-icon { font-size: 3.5rem; animation: floatEmoji 3s ease-in-out infinite alternate; }
+.wachat-empty p { font-size: 0.95rem; margin: 0; }
+
+/* Quick replies */
+.wachat-quick {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 12px;
+  background: white; border-top: 1px solid #fce4f0;
+  flex-shrink: 0; overflow-x: auto;
+}
+.wachat-quick::-webkit-scrollbar { display: none; }
+.wachat-quick-btn {
+  background: #fff0f8; border: 1.5px solid #f9a8c9;
+  color: #c71585; border-radius: 50px;
+  padding: 5px 12px; font-size: 0.78rem;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+  font-family: "Poppins",sans-serif; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.wachat-quick-btn:hover { background: #fce4f0; transform: scale(1.04); }
+
+/* Emoji picker */
+.wachat-emoji-picker {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 10px 12px; background: white;
+  border-top: 1px solid #fce4f0; flex-shrink: 0;
+  max-height: 120px; overflow-y: auto;
+}
+.wachat-emoji-btn {
+  font-size: 1.4rem; background: none; border: none;
+  cursor: pointer; padding: 4px; border-radius: 8px;
+  transition: background 0.15s; line-height: 1;
+}
+.wachat-emoji-btn:hover { background: #fff0f8; }
+
+/* Input bar */
+.wachat-input-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: white; border-top: 1px solid #fce4f0; flex-shrink: 0;
+}
+.wachat-emoji-toggle {
+  font-size: 1.4rem; background: none; border: none;
+  cursor: pointer; padding: 6px; border-radius: 50%;
+  transition: background 0.15s; line-height: 1; flex-shrink: 0;
+}
+.wachat-emoji-toggle:hover { background: #fff0f8; }
+.wachat-input {
+  flex: 1; padding: 11px 16px;
+  border: 1.5px solid #f9a8c9; border-radius: 50px;
+  font-size: 0.95rem; font-family:"Poppins",sans-serif;
+  outline: none; background: #fff9fb; transition: border 0.2s;
+}
+.wachat-input:focus { border-color: #c71585; }
+.wachat-send-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg,#ff69b4,#c71585);
+  color: white; border: none; font-size: 1.1rem;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(199,21,133,0.4);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.wachat-send-btn:hover:not(:disabled) { transform: scale(1.1); }
+.wachat-send-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .wachat-page { height: calc(100vh - 160px); border-radius: 12px; }
+}

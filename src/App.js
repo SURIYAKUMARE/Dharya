@@ -17,6 +17,7 @@ import SuryaMind from "./components/SuryaMind";
 import FuturePlans from "./components/FuturePlans";
 import OurVows from "./components/OurVows";
 import SuryaEditPanel from "./components/SuryaEditPanel";
+import LoveChat from "./components/LoveChat";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
@@ -132,6 +133,7 @@ const NAV = [
   { key: "future",   label: "Future 🗺️"   },
   { key: "vows",     label: "Vows 💒"       },
   { key: "tonight",  label: "Tonight 🌙"    },
+  { key: "chat",     label: "Chat 💬"       },
 ];
 
 const NAV_SURYA_EXTRA = { key: "edit", label: "✏️ Edit Mode" };
@@ -157,6 +159,7 @@ export default function App() {
       case "games":    return <LoveGames setPage={setPage} />;
       case "magic":    return <MagicCorner setPage={setPage} user={user} />;
       case "tonight":  return <TonightPromise user={user} />;
+      case "chat":     return <LoveChat user={user} />;
       case "surprise": return <SurpriseBox user={user} />;
       case "mood":     return <MoodBoard user={user} />;
       case "notes":    return <LoveNotesWall user={user} />;

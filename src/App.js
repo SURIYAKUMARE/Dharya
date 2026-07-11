@@ -16,41 +16,72 @@ import LoveNotesWall from "./components/LoveNotesWall";
 import SuryaMind from "./components/SuryaMind";
 import FuturePlans from "./components/FuturePlans";
 import OurVows from "./components/OurVows";
+
 import SuryaEditPanel from "./components/SuryaEditPanel";
 import LoveChat from "./components/LoveChat";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
-/* ── Background Music Player ── */
-const YT_VIDEO_ID = "xP4mMpPAVME";
+/* ── Background Music Player — Playlist ── */
+const PLAYLIST = [
+  { id: "xP4mMpPAVME", title: "Our Song 🌸"    },
+  { id: "R5Wa9J3Whis",  title: "Nenjame 💙"      },
+  { id: "gB1gPmtDohY",  title: "Munbe Vaa 💗"    },
+  { id: "wxmOt7Xhb6I",  title: "Kannazhaga ✨"   },
+];
 
 function MusicPlayer() {
   const playerRef    = useRef(null);
   const containerRef = useRef(null);
-  const [playing, setPlaying] = useState(true);
-  const [muted,   setMuted]   = useState(false);
-  const [ready,   setReady]   = useState(false);
+  const [playing,  setPlaying]  = useState(true);
+  const [muted,    setMuted]    = useState(false);
+  const [ready,    setReady]    = useState(false);
+  const [trackIdx, setTrackIdx] = useState(0);
 
+  const currentTrack = PLAYLIST[trackIdx];
+
+  const initPlayer = (videoId) => {
+    if (playerRef.current) {
+      try { playerRef.current.destroy(); } catch (_) {}
+    }
+    playerRef.current = new window.YT.Player(containerRef.current, {
+      videoId,
+      playerVars: { autoplay:1, controls:0, disablekb:1, fs:0, modestbranding:1, rel:0 },
+      events: {
+        onReady: (e) => { e.target.setVolume(60); e.target.playVideo(); setReady(true); setPlaying(true); },
+        onStateChange: (e) => {
+          if (e.data === window.YT.PlayerState.ENDED) {
+            // Auto advance to next track
+            setTrackIdx(i => (i + 1) % PLAYLIST.length);
+          }
+        },
+      },
+    });
+  };
+
+  // Load YouTube API once
   useEffect(() => {
     if (!window.YT) {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       document.head.appendChild(tag);
+      window.onYouTubeIframeAPIReady = () => initPlayer(PLAYLIST[0].id);
+    } else if (window.YT.Player) {
+      initPlayer(PLAYLIST[0].id);
+    } else {
+      window.onYouTubeIframeAPIReady = () => initPlayer(PLAYLIST[0].id);
     }
-    const initPlayer = () => {
-      playerRef.current = new window.YT.Player(containerRef.current, {
-        videoId: YT_VIDEO_ID,
-        playerVars: { autoplay:1, loop:1, playlist:YT_VIDEO_ID, controls:0, disablekb:1, fs:0, modestbranding:1, rel:0 },
-        events: {
-          onReady: (e) => { e.target.setVolume(60); e.target.playVideo(); setReady(true); },
-          onStateChange: (e) => { if (e.data === window.YT.PlayerState.ENDED) e.target.playVideo(); },
-        },
-      });
-    };
-    if (window.YT && window.YT.Player) { initPlayer(); }
-    else { window.onYouTubeIframeAPIReady = initPlayer; }
     return () => { if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} } };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // When track changes, load new video
+  useEffect(() => {
+    if (!ready || !playerRef.current) return;
+    try {
+      playerRef.current.loadVideoById(PLAYLIST[trackIdx].id);
+      setPlaying(true);
+    } catch (_) {}
+  }, [trackIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePlay = () => {
     if (!ready) return;
@@ -63,6 +94,8 @@ function MusicPlayer() {
     else        { playerRef.current.mute(); }
     setMuted(m => !m);
   };
+  const prevTrack = () => setTrackIdx(i => (i - 1 + PLAYLIST.length) % PLAYLIST.length);
+  const nextTrack = () => setTrackIdx(i => (i + 1) % PLAYLIST.length);
 
   return (
     <>
@@ -72,15 +105,17 @@ function MusicPlayer() {
       <div className="music-player">
         <div className="music-icon">🎵</div>
         <div className="music-info">
-          <span className="music-title">Our Song</span>
+          <span className="music-title">{currentTrack.title}</span>
           <span className="music-dots">
             {[0,1,2,3].map(i => (
               <span key={i} className={`music-bar ${playing && !muted ? "playing" : ""}`} style={{ animationDelay:`${i*0.15}s` }} />
             ))}
           </span>
         </div>
-        <button className="music-btn" onClick={toggleMute} title={muted ? "Unmute" : "Mute"}>{muted ? "🔇" : "🔊"}</button>
-        <button className="music-btn" onClick={togglePlay} title={playing ? "Pause" : "Play"}>{playing ? "⏸" : "▶️"}</button>
+        <button className="music-btn" onClick={prevTrack} title="Previous">⏮</button>
+        <button className="music-btn" onClick={toggleMute} title={muted?"Unmute":"Mute"}>{muted?"🔇":"🔊"}</button>
+        <button className="music-btn" onClick={togglePlay} title={playing?"Pause":"Play"}>{playing?"⏸":"▶️"}</button>
+        <button className="music-btn" onClick={nextTrack} title="Next">⏭</button>
       </div>
     </>
   );

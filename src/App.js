@@ -28,6 +28,7 @@ const PLAYLIST = [
   { id: "R5Wa9J3Whis",  title: "Nenjame 💙"      },
   { id: "gB1gPmtDohY",  title: "Munbe Vaa 💗"    },
   { id: "wxmOt7Xhb6I",  title: "Kannazhaga ✨"   },
+  { id: "5KH2WKISoxs",  title: "Oru Adaar Love 🌸" },
 ];
 
 function MusicPlayer() {

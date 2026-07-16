@@ -168,7 +168,7 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case "box":      return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
-      case "journey":  return <JourneyTimeline setPage={setPage} />;
+      case "journey":  return <JourneyTimeline setPage={setPage} user={user} />;
       case "gallery":  return <MemoryGallery setPage={setPage} />;
       case "dream":    return <DreamDashboard user={user} />;
       case "letters":  return <LoveLetter setPage={setPage} user={user} />;

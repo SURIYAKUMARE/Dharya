@@ -4099,3 +4099,108 @@ h1 {
   cursor: pointer; font-family: "Poppins", sans-serif; transition: background 0.2s;
 }
 .ep-photo-remove:hover { background: #fff5f5; }
+
+/* ══════════════════════════════════════════ */
+/*  Journey Timeline — Add/Edit on page       */
+/* ══════════════════════════════════════════ */
+.journey-add-btn {
+  background: linear-gradient(135deg,#ff69b4,#c71585);
+  color: white; border: none; padding: 12px 32px;
+  border-radius: 50px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; font-family:"Poppins",sans-serif;
+  box-shadow: 0 6px 20px rgba(199,21,133,0.35);
+  transition: transform 0.2s;
+}
+.journey-add-btn:hover { transform: scale(1.06); }
+
+.journey-form {
+  max-width: 500px; margin: 0 auto 36px;
+  background: linear-gradient(160deg,#fff9fb,#fff0f5);
+  border: 2px solid #f9a8c9; border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: 0 8px 28px rgba(199,21,133,0.15);
+  animation: fadeInUp 0.3s ease;
+}
+.journey-form-title {
+  font-family:"Dancing Script",cursive;
+  font-size: 1.6rem; color: #c71585; margin-bottom: 18px; text-align:center;
+}
+.journey-label {
+  display: block; font-size: 0.82rem; font-weight: 700;
+  color: #c71585; margin-bottom: 6px;
+}
+.journey-input {
+  width: 100%; padding: 11px 16px; margin-bottom: 14px;
+  border: 2px solid #f9a8c9; border-radius: 14px;
+  font-size: 0.95rem; font-family:"Poppins",sans-serif;
+  outline: none; background: white; box-sizing: border-box;
+  transition: border 0.2s; resize: vertical;
+}
+.journey-input:focus { border-color: #c71585; }
+
+.journey-photo-upload {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff0f8; border: 2px dashed #f9a8c9;
+  color: #c71585; padding: 10px 20px; border-radius: 12px;
+  cursor: pointer; font-size: 0.88rem; font-weight: 600;
+  font-family:"Poppins",sans-serif; margin-bottom: 14px;
+  transition: background 0.2s;
+}
+.journey-photo-upload:hover { background: #fce4f0; }
+.journey-photo-preview {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.journey-photo-preview img {
+  width: 90px; height: 70px; object-fit: cover;
+  border-radius: 12px; border: 2px solid #f9a8c9;
+}
+.journey-photo-remove {
+  background: none; border: 1.5px solid #f87171; color: #ef4444;
+  padding: 5px 12px; border-radius: 8px; font-size: 0.78rem;
+  cursor: pointer; font-family:"Poppins",sans-serif;
+}
+.journey-form-btns { display: flex; gap: 10px; margin-top: 6px; }
+.journey-save-btn {
+  flex: 1; background: linear-gradient(135deg,#ff69b4,#c71585);
+  color: white; border: none; padding: 13px; border-radius: 50px;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  font-family:"Poppins",sans-serif;
+  box-shadow: 0 4px 14px rgba(199,21,133,0.3); transition: opacity 0.2s;
+}
+.journey-save-btn:disabled { opacity: 0.5; cursor: default; }
+.journey-cancel-btn {
+  background: white; border: 2px solid #f9a8c9; color: #c71585;
+  padding: 13px 20px; border-radius: 50px; font-size: 0.9rem;
+  font-weight: 600; cursor: pointer; font-family:"Poppins",sans-serif;
+  transition: background 0.2s;
+}
+.journey-cancel-btn:hover { background: #fff0f8; }
+
+/* Timeline item extras */
+.journey-item-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.journey-added-by {
+  font-size: 0.72rem; background: #fff0f8;
+  color: #c71585; padding: 2px 10px; border-radius: 50px;
+  border: 1px solid #f9a8c9; font-weight: 600;
+}
+.journey-item-actions {
+  display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;
+}
+.journey-edit-btn, .journey-del-btn {
+  background: none; border: 1.5px solid #f9a8c9;
+  border-radius: 8px; padding: 4px 10px; cursor: pointer;
+  font-size: 0.85rem; transition: background 0.15s;
+}
+.journey-edit-btn:hover { background: #fff0f8; }
+.journey-del-btn:hover  { background: #fff5f5; border-color: #f87171; }
+.journey-add-card {
+  border: 2px dashed #f9a8c9 !important;
+  background: #fff9fb !important;
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 80px; transition: background 0.2s;
+}
+.journey-add-card:hover { background: #fff0f8 !important; }

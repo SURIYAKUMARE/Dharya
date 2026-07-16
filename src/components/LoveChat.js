@@ -27,6 +27,7 @@ export default function LoveChat({ user }) {
   const [showEmoji, setShowEmoji] = useState(false);
   const [online,    setOnline]    = useState(true);
   const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState("");
 
   const bottomRef  = useRef(null);
   const inputRef   = useRef(null);
@@ -57,15 +58,25 @@ export default function LoveChat({ user }) {
     (async () => {
       try {
         const res  = await fetch("/api/chat?since=1970-01-01T00:00:00.000Z");
+        if (!res.ok) {
+          const err = await res.text();
+          setError(`Server error: ${res.status} — ${err}`);
+          setOnline(false);
+          setLoading(false);
+          return;
+        }
         const data = await res.json();
         if (Array.isArray(data)) {
           allIdsRef.current = new Set(data.map(m => String(m._id)));
           setMsgs(data.sort((a,b) => new Date(a.createdAt)-new Date(b.createdAt)));
-          // mark as read
           fetch("/api/chat", { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ reader: user }) });
         }
         setOnline(true);
-      } catch { setOnline(false); }
+        setError("");
+      } catch (e) {
+        setError(`Cannot connect to server: ${e.message}`);
+        setOnline(false);
+      }
       setLoading(false);
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -115,20 +126,28 @@ export default function LoveChat({ user }) {
         headers: { "Content-Type":"application/json" },
         body:    JSON.stringify({ text: txt, sender: user, senderName }),
       });
-      if (res.ok) {
-        const { msg } = await res.json();
-        if (msg) {
-          allIdsRef.current.add(String(msg._id));
-          setMsgs(prev => [
-            ...prev.filter(m => m._id !== tempId),
-            { ...msg, pending: false }
-          ].sort((a,b) => new Date(a.createdAt)-new Date(b.createdAt)));
-        } else {
-          setMsgs(prev => prev.filter(m => m._id !== tempId));
-          await poll();
-        }
+      if (!res.ok) {
+        const errText = await res.text();
+        setError(`Send failed: ${res.status} — ${errText}`);
+        setMsgs(prev => prev.filter(m => m._id !== tempId));
+        setSending(false);
+        return;
       }
-    } catch {
+      const data = await res.json();
+      const msg  = data?.msg;
+      if (msg) {
+        allIdsRef.current.add(String(msg._id));
+        setMsgs(prev =>
+          [...prev.filter(m => m._id !== tempId), { ...msg, pending: false }]
+            .sort((a,b) => new Date(a.createdAt)-new Date(b.createdAt))
+        );
+      } else {
+        setMsgs(prev => prev.filter(m => m._id !== tempId));
+        await poll();
+      }
+      setError("");
+    } catch (e) {
+      setError(`Send error: ${e.message}`);
       setMsgs(prev => prev.filter(m => m._id !== tempId));
     }
     setSending(false);
@@ -159,6 +178,13 @@ export default function LoveChat({ user }) {
       {/* Messages */}
       <div className="wachat-messages" onClick={() => setShowEmoji(false)}>
         <div className="wachat-bg" />
+
+        {error && (
+          <div className="wachat-error">
+            ⚠️ {error}
+            <br/><small>Make sure MONGODB_URI is set in Vercel environment variables.</small>
+          </div>
+        )}
 
         {loading && (
           <div className="wachat-empty">

@@ -17,7 +17,26 @@ import LoveChat from "./components/LoveChat";
 import LoginPage from "./components/LoginPage";
 import "./App.css";
 
-/* ── Playlist ── */
+/* ── Page → Song mapping ── */
+const PAGE_SONGS = {
+  box:      "5KH2WKISoxs",  // Oru Adaar Love
+  journey:  "gB1gPmtDohY",  // Munbe Vaa
+  gallery:  "wxmOt7Xhb6I",  // Kannazhaga
+  dream:    "R5Wa9J3Whis",  // Nenjame
+  letters:  "xP4mMpPAVME",  // Our Song
+  vows:     "gB1gPmtDohY",  // Munbe Vaa
+  chat:     "xP4mMpPAVME",  // Our Song
+  mood:     "wxmOt7Xhb6I",  // Kannazhaga
+  tonight:  "R5Wa9J3Whis",  // Nenjame
+  world:    "5KH2WKISoxs",  // Oru Adaar Love
+  magic:    "xP4mMpPAVME",  // Our Song
+  surprise: "gB1gPmtDohY",  // Munbe Vaa
+  notes:    "xP4mMpPAVME",  // Our Song
+  future:   "R5Wa9J3Whis",  // Nenjame
+  edit:     "xP4mMpPAVME",  // Our Song
+};
+const DEFAULT_SONG = "xP4mMpPAVME"; // Our Song
+
 const PLAYLIST = [
   { id: "xP4mMpPAVME", title: "Our Song"         },
   { id: "R5Wa9J3Whis",  title: "Nenjame"           },
@@ -26,16 +45,16 @@ const PLAYLIST = [
   { id: "5KH2WKISoxs",  title: "Oru Adaar Love"    },
 ];
 
-function MusicPlayer() {
+function MusicPlayer({ page }) {
   const playerRef    = useRef(null);
   const containerRef = useRef(null);
   const [playing,  setPlaying]  = useState(true);
   const [muted,    setMuted]    = useState(false);
   const [ready,    setReady]    = useState(false);
-  const [trackIdx, setTrackIdx] = useState(0);
+  const [trackId,  setTrackId]  = useState(PAGE_SONGS[page] || DEFAULT_SONG);
   const [expanded, setExpanded] = useState(false);
 
-  const currentTrack = PLAYLIST[trackIdx];
+  const currentTrack = PLAYLIST.find(t => t.id === trackId) || PLAYLIST[0];
 
   const initPlayer = (videoId) => {
     if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} }
@@ -45,15 +64,14 @@ function MusicPlayer() {
       events: {
         onReady: (e) => { e.target.setVolume(60); e.target.playVideo(); setReady(true); setPlaying(true); },
         onStateChange: (e) => {
-          if (e.data === window.YT.PlayerState.ENDED)
-            setTrackIdx(i => (i + 1) % PLAYLIST.length);
+          if (e.data === window.YT.PlayerState.ENDED) e.target.playVideo(); // loop same song
         },
       },
     });
   };
 
   useEffect(() => {
-    const start = () => initPlayer(PLAYLIST[0].id);
+    const start = () => initPlayer(PAGE_SONGS[page] || DEFAULT_SONG);
     if (!window.YT) {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
@@ -64,15 +82,17 @@ function MusicPlayer() {
     return () => { if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} } };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Switch song when page changes
   useEffect(() => {
+    const newId = PAGE_SONGS[page] || DEFAULT_SONG;
+    if (newId === trackId) return; // same song, don't restart
+    setTrackId(newId);
     if (!ready || !playerRef.current) return;
-    try { playerRef.current.loadVideoById(PLAYLIST[trackIdx].id); setPlaying(true); } catch (_) {}
-  }, [trackIdx]); // eslint-disable-line react-hooks/exhaustive-deps
+    try { playerRef.current.loadVideoById(newId); setPlaying(true); } catch (_) {}
+  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const togglePlay = () => { if (!ready) return; playing ? playerRef.current.pauseVideo() : playerRef.current.playVideo(); setPlaying(p=>!p); };
   const toggleMute = () => { if (!ready) return; if (muted) { playerRef.current.unMute(); playerRef.current.setVolume(60); } else { playerRef.current.mute(); } setMuted(m=>!m); };
-  const prev = () => setTrackIdx(i => (i - 1 + PLAYLIST.length) % PLAYLIST.length);
-  const next = () => setTrackIdx(i => (i + 1) % PLAYLIST.length);
 
   return (
     <>
@@ -93,18 +113,16 @@ function MusicPlayer() {
         {expanded && (
           <div className="mp-panel">
             <p className="mp-track-name">{currentTrack.title}</p>
-            <p className="mp-track-num">{trackIdx+1} / {PLAYLIST.length}</p>
+            <p className="mp-track-num">🎵 This page's song</p>
             <div className="mp-controls">
-              <button className="mp-ctrl" onClick={prev}>⏮</button>
               <button className="mp-ctrl mp-ctrl-main" onClick={togglePlay}>{playing ? "⏸" : "▶"}</button>
-              <button className="mp-ctrl" onClick={next}>⏭</button>
               <button className="mp-ctrl" onClick={toggleMute}>{muted ? "🔇" : "🔊"}</button>
             </div>
             <div className="mp-playlist">
-              {PLAYLIST.map((t, i) => (
-                <button key={i} className={`mp-plist-item ${i===trackIdx?"mp-plist-active":""}`} onClick={() => setTrackIdx(i)}>
-                  {i===trackIdx ? "▶ " : ""}{t.title}
-                </button>
+              {PLAYLIST.map((t) => (
+                <div key={t.id} className={`mp-plist-item ${t.id===trackId?"mp-plist-active":""}`}>
+                  {t.id===trackId ? "▶ " : ""}{t.title}
+                </div>
               ))}
             </div>
           </div>
@@ -194,7 +212,7 @@ export default function App() {
 
   return (
     <div className="app-v2">
-      <MusicPlayer />
+      <MusicPlayer page={page} />
 
       {/* Top bar */}
       <header className="topbar">

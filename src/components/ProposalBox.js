@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { dbGet } from "../api";
 
 const WISHES = [
   "May every day with you be more beautiful than the last 🌟",
@@ -9,13 +10,25 @@ const WISHES = [
 ];
 
 export default function ProposalBox({ opened, setOpened, setPage }) {
-  const [letterOpen, setLetterOpen] = useState(false);
-  const [noPos, setNoPos] = useState({ x: null, y: null });
-  const [noClicks, setNoClicks] = useState(0);
-  const [showWish, setShowWish] = useState(false);
-  const [wishIdx, setWishIdx] = useState(0);
-  const [stars, setStars] = useState([]);
+  const [letterOpen,   setLetterOpen]   = useState(false);
+  const [noPos,        setNoPos]        = useState({ x: null, y: null });
+  const [noClicks,     setNoClicks]     = useState(0);
+  const [showWish,     setShowWish]     = useState(false);
+  const [wishIdx,      setWishIdx]      = useState(0);
+  const [stars,        setStars]        = useState([]);
+  const [letterTitle,  setLetterTitle]  = useState("My Dearest Moon,");
+  const [letterBody,   setLetterBody]   = useState("Every moment with you has been magical ✨\nYou are the reason I smile every day 🌸\nMy heart beats only for you 💓");
+  const [propQuestion, setPropQuestion] = useState("Will You Marry Me? 💍");
+  const [yesBtnText,   setYesBtnText]   = useState("💍 Yes, I Will!");
   const noBtnRef = useRef(null);
+
+  // Load custom text from MongoDB (written by Surya in edit panel)
+  useEffect(() => {
+    dbGet("prop_title",    "My Dearest Moon,").then(v => { if (v) setLetterTitle(v); });
+    dbGet("prop_body",     "").then(v => { if (v) setLetterBody(v); });
+    dbGet("prop_question", "Will You Marry Me? 💍").then(v => { if (v) setPropQuestion(v); });
+    dbGet("prop_yes_btn",  "💍 Yes, I Will!").then(v => { if (v) setYesBtnText(v); });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleOpen = () => {
     if (!opened) {
@@ -107,16 +120,14 @@ export default function ProposalBox({ opened, setOpened, setPage }) {
               </span>
             ))}
           </div>
-          <h2 className="letter-title">My Dearest Moon,</h2>
-          <p className="letter-body">
-            Every moment with you has been magical ✨<br />
-            You are the reason I smile every day 🌸<br />
-            My heart beats only for you 💓
+          <h2 className="letter-title">{letterTitle}</h2>
+          <p className="letter-body" style={{ whiteSpace:"pre-line" }}>
+            {letterBody}
           </p>
-          <div className="proposal-question">Will You Marry Me? 💍</div>
+          <div className="proposal-question">{propQuestion}</div>
           <div className="proposal-btns">
             <button className="yes-btn" onClick={handleYes}>
-              💍 Yes, I Will!
+              {yesBtnText}
             </button>
             <button
               ref={noBtnRef}

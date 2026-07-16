@@ -3864,7 +3864,7 @@ h1 {
 /* ══════════════════════════════════════════ */
 .wachat-page {
   display: flex; flex-direction: column;
-  height: calc(100vh - 130px);
+  height: calc(100vh - 180px);  /* topbar ~60px + bottom tabs ~80px + some padding */
   max-width: 640px; margin: 0 auto;
   border-radius: 20px; overflow: hidden;
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);

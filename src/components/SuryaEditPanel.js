@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { dbGet, dbSet } from "../api";
+import { dbGet, dbSet, uploadPhoto, getPhoto, deletePhoto } from "../api";
 
 /* ══════════════════════════════════════════
    ALL editable sections
@@ -130,34 +130,77 @@ function TimelineEditor() {
     { year:"19/05/2026", title:"We both Proposed",    desc:"At Evening" },
     { year:"20/05/2026", title:"We start our journey",desc:"From that day, forever together..." },
   ];
-  const [moments, setMoments] = useState([]);
-  const [ok, setOk] = useState(false);
-  const [loading, setLd] = useState(true);
+  const [moments,   setMoments]   = useState([]);
+  const [photos,    setPhotos]    = useState({});
+  const [uploading, setUploading] = useState({});
+  const [ok,        setOk]        = useState(false);
+  const [loading,   setLd]        = useState(true);
 
   useEffect(() => {
-    dbGet("edit_timeline", DEFAULT).then(v => { setMoments(Array.isArray(v) && v.length ? v : DEFAULT); setLd(false); });
+    dbGet("edit_timeline", DEFAULT).then(async v => {
+      const data = Array.isArray(v) && v.length ? v : DEFAULT;
+      setMoments(data);
+      const map = {};
+      for (let i = 0; i < data.length; i++) {
+        const p = await getPhoto(`timeline_img_${i}`);
+        if (p) map[i] = p;
+      }
+      setPhotos(map);
+      setLd(false);
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const upd    = (i, f, v) => setMoments(p => p.map((m,j) => j===i ? {...m,[f]:v} : m));
   const add    = ()  => setMoments(p => [...p, {year:"",title:"",desc:""}]);
-  const remove = (i) => setMoments(p => p.filter((_,j) => j!==i));
-  const save   = async () => { await dbSet("edit_timeline", moments); setOk(true); setTimeout(() => setOk(false), 2000); };
+  const remove = async (i) => {
+    setMoments(p => p.filter((_,j) => j!==i));
+    await deletePhoto(`timeline_img_${i}`);
+    setPhotos(prev => { const n={...prev}; delete n[i]; return n; });
+  };
 
-  if (loading) return <p className="ep-loading">Loading...</p>;
+  const handlePhoto = async (i, file) => {
+    if (!file) return;
+    if (file.size > 2.5*1024*1024) { alert("Max 2MB per image."); return; }
+    setUploading(p => ({...p,[i]:true}));
+    const b64 = await uploadPhoto(`timeline_img_${i}`, file);
+    setPhotos(p => ({...p,[i]:b64}));
+    setUploading(p => ({...p,[i]:false}));
+  };
+  const removePhoto = async (i) => {
+    await deletePhoto(`timeline_img_${i}`);
+    setPhotos(p => { const n={...p}; delete n[i]; return n; });
+  };
+
+  const save = async () => { await dbSet("edit_timeline", moments); setOk(true); setTimeout(()=>setOk(false),2000); };
+
+  if (loading) return <p className="ep-loading">Loading timeline...</p>;
   return (
     <>
       {moments.map((m,i) => (
         <div key={i} className="ep-block">
-          <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"6px"}}>
-            <input className="ep-input" style={{flex:1}} value={m.year}  placeholder="Date" onChange={e => upd(i,"year",e.target.value)} />
-            <input className="ep-input" style={{flex:2}} value={m.title} placeholder="Title" onChange={e => upd(i,"title",e.target.value)} />
-            <button className="ep-list-del" onClick={() => remove(i)}>✕</button>
+          <div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"8px"}}>
+            <input className="ep-input" style={{flex:"0 0 130px"}} value={m.year}  placeholder="Date e.g. 19/06/2023" onChange={e=>upd(i,"year",e.target.value)} />
+            <input className="ep-input" style={{flex:1}} value={m.title} placeholder="Title" onChange={e=>upd(i,"title",e.target.value)} />
+            <button className="ep-list-del" onClick={()=>remove(i)}>✕</button>
           </div>
-          <textarea className="ep-textarea" rows={2} value={m.desc} placeholder="Description" onChange={e => upd(i,"desc",e.target.value)} />
+          <textarea className="ep-textarea" rows={2} value={m.desc} placeholder="Description" onChange={e=>upd(i,"desc",e.target.value)} style={{marginBottom:"10px"}} />
+          <div className="ep-photo-row">
+            {photos[i] ? (
+              <div className="ep-photo-preview">
+                <img src={photos[i]} alt={`moment-${i}`} className="ep-photo-img" />
+                <button className="ep-photo-remove" onClick={()=>removePhoto(i)}>✕ Remove</button>
+              </div>
+            ) : (
+              <label className="ep-photo-upload">
+                {uploading[i] ? "Uploading... ⏳" : "📷 Upload Photo"}
+                <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>handlePhoto(i,e.target.files[0])} />
+              </label>
+            )}
+          </div>
         </div>
       ))}
       <button className="ep-add-btn" style={{marginBottom:"12px"}} onClick={add}>＋ Add Moment</button><br/>
-      <button className="ep-save-btn" onClick={save}>{ok ? "✅ Saved!" : "Save Timeline 💙"}</button>
+      <button className="ep-save-btn" onClick={save}>{ok?"✅ Saved!":"Save Timeline 💙"}</button>
     </>
   );
 }

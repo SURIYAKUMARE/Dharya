@@ -4077,3 +4077,25 @@ h1 {
 }
 .ep-list-order button:disabled { opacity: 0.3; cursor: default; }
 .ep-list-text { flex: 1; font-size: 0.88rem; color: #444; word-break: break-word; }
+
+/* ── Timeline photo upload in edit panel ── */
+.ep-photo-row { margin-top: 8px; }
+.ep-photo-upload {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #eff6ff; border: 2px dashed #93c5fd;
+  color: #3b82f6; padding: 10px 20px; border-radius: 12px;
+  cursor: pointer; font-size: 0.88rem; font-weight: 600;
+  font-family: "Poppins", sans-serif; transition: background 0.2s;
+}
+.ep-photo-upload:hover { background: #dbeafe; }
+.ep-photo-preview { display: flex; align-items: center; gap: 12px; }
+.ep-photo-img {
+  width: 80px; height: 60px; object-fit: cover;
+  border-radius: 10px; border: 2px solid #93c5fd;
+}
+.ep-photo-remove {
+  background: none; border: 1.5px solid #f87171; color: #ef4444;
+  padding: 5px 12px; border-radius: 8px; font-size: 0.78rem;
+  cursor: pointer; font-family: "Poppins", sans-serif; transition: background 0.2s;
+}
+.ep-photo-remove:hover { background: #fff5f5; }

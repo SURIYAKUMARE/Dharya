@@ -56,3 +56,34 @@ export async function saveDreams(inputs, cats, prog, savedAt) {
     body: JSON.stringify({ inputs, cats, prog, savedAt }),
   });
 }
+
+// ── Photo upload/fetch ────────────────────────────────────────
+export async function uploadPhoto(key, file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target.result; // data:image/...;base64,...
+      await apiFetch("/upload", {
+        method: "POST",
+        body: JSON.stringify({ key, base64 }),
+      });
+      resolve(base64);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function getPhoto(key) {
+  try {
+    const res = await fetch(`/api/upload?key=${encodeURIComponent(key)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data;
+  } catch { return null; }
+}
+
+export async function deletePhoto(key) {
+  try {
+    await fetch(`/api/upload?key=${encodeURIComponent(key)}`, { method: "DELETE" });
+  } catch {}
+}

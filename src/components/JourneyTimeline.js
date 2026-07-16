@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { dbGet } from "../api";
+import { dbGet, getPhoto } from "../api";
 
 const DEFAULT_MOMENTS = [
   { year:"19/06/2023", title:"We Met",              desc:"At the tution a pleasant day...",       img:"/images/photo1.jpg.jpg"  },
@@ -12,15 +12,19 @@ const DEFAULT_MOMENTS = [
 export default function JourneyTimeline({ setPage }) {
   const [moments, setMoments] = useState(DEFAULT_MOMENTS);
 
-  // Load custom timeline from MongoDB if Surya edited it
+  // Load custom timeline from MongoDB (edited by Surya)
   useEffect(() => {
-    dbGet("edit_timeline", []).then(saved => {
+    dbGet("edit_timeline", []).then(async saved => {
       if (Array.isArray(saved) && saved.length > 0) {
-        // Keep images from defaults, merge with saved data
-        setMoments(saved.map((m, i) => ({
-          ...m,
-          img: DEFAULT_MOMENTS[i]?.img || "",
-        })));
+        // Load uploaded photos for each moment
+        const enriched = await Promise.all(saved.map(async (m, i) => {
+          const uploaded = await getPhoto(`timeline_img_${i}`);
+          return {
+            ...m,
+            img: uploaded || DEFAULT_MOMENTS[i]?.img || "",
+          };
+        }));
+        setMoments(enriched);
       }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

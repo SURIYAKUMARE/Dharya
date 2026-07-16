@@ -1,24 +1,19 @@
-// Shared MongoDB connection with connection pooling
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient } = require("mongodb");
 
 const uri = process.env.MONGODB_URI;
+if (!uri) throw new Error("MONGODB_URI environment variable is not set");
 
-if (!uri) {
-  throw new Error("MONGODB_URI environment variable is not set");
-}
-
+// Simple options — no ServerApi strict mode (causes SSL issues on some Node versions)
 const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
 };
 
 let client;
 let clientPromise;
 
-// In development, reuse connection across hot-reloads
 if (process.env.NODE_ENV !== "production") {
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
@@ -26,7 +21,6 @@ if (process.env.NODE_ENV !== "production") {
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production, create a new connection
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
 }

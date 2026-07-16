@@ -2,10 +2,40 @@
 
 * { box-sizing: border-box; }
 
+/* ══ Theme: Sadhana = Pink (default), Surya = Green ══ */
+:root {
+  --primary:        #c71585;
+  --primary-light:  #ff69b4;
+  --primary-pale:   #fff0f5;
+  --primary-soft:   #fce4f0;
+  --primary-border: #f9a8c9;
+  --primary-text:   #c71585;
+  --bg-gradient:    linear-gradient(135deg, #fff0f5 0%, #ffe4e1 100%);
+  --nav-gradient:   linear-gradient(135deg, #ff69b4, #c71585);
+  --btn-gradient:   linear-gradient(135deg, #ff69b4, #c71585);
+  --btn-shadow:     rgba(199,21,133,0.35);
+  --heading-color:  #c71585;
+}
+
+/* Surya's green theme */
+.theme-surya {
+  --primary:        #15803d;
+  --primary-light:  #4ade80;
+  --primary-pale:   #f0fdf4;
+  --primary-soft:   #dcfce7;
+  --primary-border: #86efac;
+  --primary-text:   #15803d;
+  --bg-gradient:    linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  --nav-gradient:   linear-gradient(135deg, #4ade80, #15803d);
+  --btn-gradient:   linear-gradient(135deg, #4ade80, #15803d);
+  --btn-shadow:     rgba(21,128,61,0.35);
+  --heading-color:  #15803d;
+}
+
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
-  background: linear-gradient(135deg, #fff0f5 0%, #ffe4e1 100%);
+  background: var(--bg-gradient);
   color: #333;
   min-height: 100vh;
   overflow-x: hidden;
@@ -14,7 +44,7 @@ body {
 h1 {
   font-family: "Dancing Script", cursive;
   font-size: 3.2rem;
-  color: #c71585;
+  color: var(--heading-color);
   text-align: center;
   margin: 20px 0 8px;
 }
@@ -4315,3 +4345,88 @@ h1 {
   font-size: 0.82rem; margin: 12px; text-align: center;
   position: relative; z-index: 1; line-height: 1.6;
 }
+
+/* ══════════════════════════════════════════ */
+/*  Surya Green Theme Overrides               */
+/* (apply when .theme-surya is on body/root)  */
+/* ══════════════════════════════════════════ */
+.theme-surya body,
+.theme-surya { background: var(--bg-gradient); }
+
+.theme-surya .topbar           { border-bottom-color: var(--primary-border); }
+.theme-surya .topbar-title     { color: var(--primary); }
+.theme-surya .topbar-current   { color: var(--primary); background: var(--primary-pale); border-color: var(--primary-border); }
+.theme-surya .topbar-user      { background: var(--btn-gradient); }
+.theme-surya .topbar-menu-btn  { border-color: var(--primary-border); color: var(--primary); }
+.theme-surya .topbar-menu-btn:hover { background: var(--primary-pale); }
+.theme-surya .anniv-badge-v2   { color: var(--primary); background: var(--primary-pale); border-color: var(--primary-border); }
+.theme-surya .nav-drawer       { }
+.theme-surya .nav-item:hover   { background: var(--primary-pale); color: var(--primary); }
+.theme-surya .nav-item-active  { background: linear-gradient(135deg,var(--primary-pale),var(--primary-soft)); color: var(--primary); }
+.theme-surya .nav-group-label  { color: #888; }
+.theme-surya .bottom-tabs      { border-top-color: var(--primary-border); }
+.theme-surya .btab-active      { background: var(--primary-pale); }
+.theme-surya .btab-active .btab-icon { filter: drop-shadow(0 0 6px rgba(21,128,61,0.5)); }
+.theme-surya .nav-active,
+.theme-surya .nav button.nav-active { background: var(--primary); box-shadow: 0 0 16px var(--btn-shadow); }
+.theme-surya .mp-pill          { border-color: var(--primary-border); }
+.theme-surya .mp-ctrl          { background: var(--primary-pale); border-color: var(--primary-border); color: var(--primary); }
+.theme-surya .mp-ctrl-main     { background: var(--btn-gradient); }
+.theme-surya .mp-plist-active  { background: var(--primary-soft); color: var(--primary); }
+.theme-surya .mp-panel         { border-color: var(--primary-border); }
+.theme-surya .mp-track-name    { color: var(--primary); }
+
+/* Buttons */
+.theme-surya .yes-btn,
+.theme-surya .dream-save-btn,
+.theme-surya .wall-add-btn,
+.theme-surya .gallery-add-btn,
+.theme-surya .journey-add-btn,
+.theme-surya .journey-save-btn,
+.theme-surya .ep-save-btn,
+.theme-surya .wachat-send-btn,
+.theme-surya .compliment-btn,
+.theme-surya .love-meter-btn   { background: var(--btn-gradient) !important; box-shadow: 0 6px 20px var(--btn-shadow) !important; }
+
+/* Nav buttons */
+.theme-surya .nav button       { background: #15803d; }
+.theme-surya .nav button:hover { background: #166534; }
+
+/* Headings & accents */
+.theme-surya h1,
+.theme-surya .dream-title,
+.theme-surya .letter-page-title,
+.theme-surya .vows-title,
+.theme-surya .ep-title,
+.theme-surya .games-title,
+.theme-surya .magic-title,
+.theme-surya .universe-title,
+.theme-surya .sadhana-world-title { color: var(--primary) !important; }
+
+/* Inputs & cards */
+.theme-surya .dream-input:focus,
+.theme-surya .wachat-input:focus,
+.theme-surya .ep-input:focus,
+.theme-surya .ep-textarea:focus,
+.theme-surya .journey-input:focus,
+.theme-surya .gallery-caption-input:focus { border-color: var(--primary) !important; }
+.theme-surya .dream-input { border-color: var(--primary-border) !important; }
+
+/* Chat */
+.theme-surya .wachat-header    { background: var(--btn-gradient); }
+.theme-surya .bubble-mine      { background: var(--btn-gradient); }
+.theme-surya .wachat-quick-btn { border-color: var(--primary-border); color: var(--primary); background: var(--primary-pale); }
+.theme-surya .wachat-quick-btn:hover { background: var(--primary-soft); }
+.theme-surya .wachat-online-dot { background: #4ade80; }
+
+/* Progress bars */
+.theme-surya .fp-progress-fill,
+.theme-surya .dream-progress-bar-fill,
+.theme-surya .scratch-prog-fill,
+.theme-surya .wyr-progress-fill { background: linear-gradient(90deg,var(--primary-light),var(--primary)) !important; }
+
+/* Hearts background */
+.theme-surya .hearts span { filter: hue-rotate(120deg); }
+
+/* Body background for Surya */
+body.theme-surya { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important; }

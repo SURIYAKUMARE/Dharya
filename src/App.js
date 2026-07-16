@@ -183,6 +183,9 @@ export default function App() {
 
   if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
 
+  // Apply theme to body
+  document.body.className = user === "surya" ? "theme-surya" : "";
+
   const renderPage = () => {
     switch (page) {
       case "box":      return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
@@ -211,7 +214,7 @@ export default function App() {
   const navigate = (key) => { setPage(key); setNavOpen(false); };
 
   return (
-    <div className="app-v2">
+    <div className={`app-v2 ${user === "surya" ? "theme-surya" : ""}`}>
       <MusicPlayer page={page} />
 
       {/* Top bar */}

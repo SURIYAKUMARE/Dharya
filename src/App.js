@@ -282,6 +282,9 @@ export default function App() {
         {[
           { key:"box",     icon:"🎁" },
           { key:"chat",    icon:"💬" },
+/
+
+
           { key:"dream",   icon:"💫" },
           { key:"letters", icon:"💌" },
           { key:"gallery", icon:"📸" },
@@ -295,7 +298,7 @@ export default function App() {
         </button>
       </nav>
 
-      <main className="main-content">{renderPage()}</main>
+      <main className="main-content" key={page}>{renderPage()}</main>
 
       {/* Floating hearts */}
       <div className="hearts">

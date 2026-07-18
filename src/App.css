@@ -4711,3 +4711,266 @@ body.theme-surya { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)
 .sn-modal-title { font-size:1.4rem; font-weight:700; color:#333; margin:0 0 6px; }
 .sn-modal-author { font-size:0.78rem; color:#888; margin-bottom:16px; }
 .sn-modal-content { font-family:"Poppins",sans-serif; font-size:0.95rem; color:#555; white-space:pre-wrap; line-height:1.8; background:rgba(255,255,255,0.6); border-radius:14px; padding:14px 16px; margin:0; }
+
+/* ══════════════════════════════════════════ */
+/*  GLOBAL ANIMATION SYSTEM                   */
+/* ══════════════════════════════════════════ */
+
+/* ── Page entrance ── */
+.main-content { animation: pageEnter 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes pageEnter {
+  from { opacity:0; transform:translateY(18px) scale(0.98); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    }
+}
+
+/* ── Staggered card entrance ── */
+.sn-card, .photo-card, .letter-envelope-card,
+.sb-item, .vow-card, .ep-card, .fp-item,
+.date-item, .playlist-item, .wyr-btn, .ttl-btn {
+  animation: cardSlideIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+.sn-card:nth-child(1)  { animation-delay:0.05s; }
+.sn-card:nth-child(2)  { animation-delay:0.1s;  }
+.sn-card:nth-child(3)  { animation-delay:0.15s; }
+.sn-card:nth-child(4)  { animation-delay:0.2s;  }
+.sn-card:nth-child(5)  { animation-delay:0.25s; }
+.sn-card:nth-child(6)  { animation-delay:0.3s;  }
+.sn-card:nth-child(n+7){ animation-delay:0.35s; }
+.photo-card:nth-child(1)  { animation-delay:0.04s; }
+.photo-card:nth-child(2)  { animation-delay:0.08s; }
+.photo-card:nth-child(3)  { animation-delay:0.12s; }
+.photo-card:nth-child(4)  { animation-delay:0.16s; }
+.photo-card:nth-child(5)  { animation-delay:0.20s; }
+.photo-card:nth-child(n+6){ animation-delay:0.24s; }
+@keyframes cardSlideIn {
+  from { opacity:0; transform:translateY(24px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    }
+}
+
+/* ── Hero sections entrance ── */
+.sn-header, .sb-hero, .vows-hero, .ep-hero, .dream-hero,
+.letter-page-hero, .timeline-page h1,
+.sadhana-world-hero, .games-hero, .magic-hero, .universe-hero {
+  animation: heroFadeDown 0.6s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes heroFadeDown {
+  from { opacity:0; transform:translateY(-20px); }
+  to   { opacity:1; transform:translateY(0);     }
+}
+
+/* ── Button ripple ── */
+.yes-btn, .sn-add-btn, .sn-save-btn, .dream-save-btn,
+.gallery-add-btn, .journey-add-btn, .journey-save-btn,
+.wall-add-btn, .compliment-btn, .love-meter-btn,
+.wachat-send-btn, .login-btn, .ep-save-btn {
+  position: relative; overflow: hidden;
+}
+.yes-btn::after, .sn-add-btn::after, .sn-save-btn::after,
+.dream-save-btn::after, .gallery-add-btn::after,
+.journey-add-btn::after, .wachat-send-btn::after, .login-btn::after {
+  content:""; position:absolute; inset:0;
+  background:rgba(255,255,255,0.2);
+  transform:scaleX(0); transform-origin:left;
+  transition:transform 0.4s ease;
+  pointer-events:none;
+}
+.yes-btn:hover::after, .sn-add-btn:hover::after, .sn-save-btn:hover::after,
+.dream-save-btn:hover::after, .gallery-add-btn:hover::after,
+.journey-add-btn:hover::after, .wachat-send-btn:hover::after, .login-btn:hover::after {
+  transform:scaleX(1);
+}
+
+/* ── Topbar slide down ── */
+.topbar { animation: slideDown 0.35s ease both; }
+@keyframes slideDown {
+  from { transform:translateY(-100%); opacity:0; }
+  to   { transform:translateY(0);     opacity:1; }
+}
+
+/* ── Bottom tabs slide up ── */
+.bottom-tabs { animation: slideUpFade 0.4s ease both; }
+@keyframes slideUpFade {
+  from { transform:translateX(-50%) translateY(60px); opacity:0; }
+  to   { transform:translateX(-50%) translateY(0);    opacity:1; }
+}
+
+/* ── Nav drawer animation ── */
+.nav-drawer { transition: right 0.32s cubic-bezier(0.4,0,0.2,1); }
+.nav-backdrop { animation: backdropFade 0.25s ease; }
+@keyframes backdropFade {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+/* ── Music player bounce in ── */
+.music-player-v2 { animation: bouncePop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.6s both; }
+@keyframes bouncePop {
+  from { transform:scale(0); opacity:0; }
+  to   { transform:scale(1); opacity:1; }
+}
+
+/* ── Floating hearts enhanced ── */
+.hearts span {
+  animation: floatUp linear infinite, sway 4s ease-in-out infinite alternate;
+}
+@keyframes sway {
+  from { margin-left:-10px; }
+  to   { margin-left: 10px; }
+}
+
+/* ── Chat message entrance ── */
+.wachat-msg-row { animation: msgPop 0.25s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+.wachat-msg-row.mine   { transform-origin: right bottom; }
+.wachat-msg-row.theirs { transform-origin: left  bottom; }
+@keyframes msgPop {
+  from { opacity:0; transform:scale(0.85) translateY(10px); }
+  to   { opacity:1; transform:scale(1)    translateY(0);    }
+}
+
+/* ── Timeline items ── */
+.timeline-item { transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,1,0.36,1); }
+.timeline-item.left  { transform:translateX(-40px); }
+.timeline-item.right { transform:translateX( 40px); }
+.timeline-item.visible { transform:translateX(0); }
+
+/* ── Note card hover glow ── */
+.sn-card:hover { box-shadow:0 12px 32px rgba(0,0,0,0.15), 0 0 0 2px rgba(0,0,0,0.06); }
+
+/* ── Photo card hover ── */
+.photo-card { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s; }
+.photo-card:hover { transform:scale(1.04) rotate(0.5deg); box-shadow:0 16px 40px rgba(0,0,0,0.2); }
+
+/* ── Polaroid hover ── */
+.polaroid { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s; }
+.polaroid:hover { transform:scale(1.1) rotate(0deg) !important; box-shadow:0 20px 50px rgba(0,0,0,0.3); }
+
+/* ── Surprise box shake ── */
+.sb-shake { animation: sbBigShake 0.55s ease; }
+@keyframes sbBigShake {
+  0%,100%{ transform:translateX(0) rotate(0); }
+  15%    { transform:translateX(-6px) rotate(-3deg); }
+  30%    { transform:translateX(6px)  rotate(3deg);  }
+  45%    { transform:translateX(-5px) rotate(-2deg); }
+  60%    { transform:translateX(5px)  rotate(2deg);  }
+  75%    { transform:translateX(-3px) rotate(-1deg); }
+  90%    { transform:translateX(3px)  rotate(1deg);  }
+}
+
+/* ── Surprise box open bounce ── */
+.sb-item.sb-opened { animation: openBounce 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+@keyframes openBounce {
+  0%  { transform:scale(1);   }
+  40% { transform:scale(1.08);}
+  70% { transform:scale(0.97);}
+  100%{ transform:scale(1);   }
+}
+
+/* ── Overlay pop-in ── */
+.sb-modal, .sn-modal, .vow-modal, .letter-read-card,
+.surprise-card, .gallery-lightbox-inner {
+  animation: overlayPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+@keyframes overlayPop {
+  from { opacity:0; transform:scale(0.8) translateY(20px); }
+  to   { opacity:1; transform:scale(1)   translateY(0);    }
+}
+
+/* ── Login card entrance ── */
+.login-card {
+  animation: loginPop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+@keyframes loginPop {
+  from { opacity:0; transform:scale(0.88) translateY(30px); }
+  to   { opacity:1; transform:scale(1)    translateY(0);    }
+}
+
+/* ── Stars twinkle ── */
+.sky-star { animation: starTwinkle 2s ease-in-out infinite alternate, starPulse 3s ease-in-out infinite; }
+@keyframes starPulse {
+  0%,100%{ box-shadow:0 0 6px currentColor; }
+  50%    { box-shadow:0 0 18px currentColor, 0 0 30px currentColor; }
+}
+
+/* ── Heartbeat pulse ── */
+.hb-heart { transition:transform 0.15s cubic-bezier(0.175,0.885,0.32,1.275); }
+.hb-pulse  { transform:scale(1.4) !important; }
+
+/* ── Storybook page flip ── */
+.book-page { transition:opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+.book-flip-out { opacity:0 !important; transform:translateX(-30px) scale(0.96) !important; }
+.book-flip-in  { opacity:0 !important; transform:translateX( 30px) scale(0.96) !important; }
+
+/* ── Progress bars animate on mount ── */
+.fp-progress-fill,
+.dream-progress-bar-fill,
+.love-meter-bar,
+.scratch-prog-fill { transition:width 0.5s cubic-bezier(0.22,1,0.36,1); }
+
+/* ── Tab active indicator slide ── */
+.games-tab, .sb-tab, .sn-filter-btn {
+  transition:background 0.25s, color 0.25s, border-color 0.25s, transform 0.2s;
+}
+.games-tab.active, .sb-tab-active-surya, .sb-tab-active-sadhana, .sn-filter-active {
+  transform:scale(1.05);
+}
+
+/* ── Compliment card burst ── */
+.compliment-card { transition:transform 0.3s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.3s; }
+.compliment-burst { transform:scale(1.04) !important; box-shadow:0 0 32px rgba(199,21,133,0.35) !important; }
+
+/* ── Dream jar fill pulse ── */
+.dream-jar-fill { transition:height 1s cubic-bezier(0.22,1,0.36,1); }
+
+/* ── Mood btn hover bounce ── */
+.mood-btn:hover, .dream-sel-btn:hover, .daily-feel-btn:hover { transform:scale(1.12) !important; }
+
+/* ── Nav item hover slide ── */
+.nav-item { transition:all 0.18s ease; }
+.nav-item:hover { transform:translateX(6px); }
+.nav-item-active { transform:translateX(6px); }
+
+/* ── Gift box lid open animation enhancement ── */
+.opened .lid { transition:transform 0.8s cubic-bezier(0.175,0.885,0.32,1.275) !important; }
+.opened .gift-box { transition:all 0.8s cubic-bezier(0.22,1,0.36,1) !important; }
+
+/* ── Letter card float up ── */
+.letter-card { animation:floatUp2 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes floatUp2 {
+  from { opacity:0; transform:translateY(40px) scale(0.95); }
+  to   { opacity:1; transform:translateY(0)    scale(1);    }
+}
+
+/* ── Wishing star trail ── */
+.star-shooting::after {
+  content:"✨";
+  position:absolute; top:-8px; left:-16px;
+  font-size:0.8rem; animation:trailFade 0.8s ease forwards;
+}
+@keyframes trailFade {
+  from { opacity:1; transform:scale(1); }
+  to   { opacity:0; transform:scale(0.3) translateX(-20px); }
+}
+
+/* ── Scroll reveal for timeline ── */
+@keyframes revealLeft {
+  from { opacity:0; transform:translateX(-50px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes revealRight {
+  from { opacity:0; transform:translateX(50px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.timeline-item.left.visible  { animation:revealLeft  0.6s cubic-bezier(0.22,1,0.36,1) both; }
+.timeline-item.right.visible { animation:revealRight 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Journey add form entrance ── */
+.journey-form { animation: cardSlideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Gallery upload form entrance ── */
+.gallery-upload-form { animation: cardSlideIn 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Vow particle burst ── */
+.vow-particle { animation:vowBurst 1.8s ease forwards; }
+
+/* ── Surprise particle burst ── */
+.vow-particles span { animation:sparkBurst 0.9s ease forwards; }

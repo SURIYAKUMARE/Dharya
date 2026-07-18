@@ -282,9 +282,6 @@ export default function App() {
         {[
           { key:"box",     icon:"🎁" },
           { key:"chat",    icon:"💬" },
-/
-
-
           { key:"dream",   icon:"💫" },
           { key:"letters", icon:"💌" },
           { key:"gallery", icon:"📸" },

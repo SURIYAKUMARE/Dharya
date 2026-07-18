@@ -3955,9 +3955,6 @@ h1 {
   text-align: center; margin: 12px 0 8px;
   position: relative; z-index: 1;
 }
-.wachat-date-chip::before {
-  content: attr(class);
-}
 .wachat-date-chip {
   font-size: 0.72rem; color: #888;
   background: rgba(255,255,255,0.85);

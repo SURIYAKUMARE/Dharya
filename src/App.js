@@ -6,6 +6,7 @@ import DreamDashboard from "./components/DreamDashboard";
 import LoveLetter from "./components/LoveLetter";
 import SadhanaWorld from "./components/SadhanaWorld";
 import MagicCorner from "./components/MagicCorner";
+import StudyNotes from "./components/StudyNotes";
 import TonightPromise from "./components/TonightPromise";
 import SurpriseBox from "./components/SurpriseBox";
 import MoodBoard from "./components/MoodBoard";
@@ -169,6 +170,7 @@ const NAV_GROUPS = [
   ]},
   { label:"✨ Magic",       pages:[
     { key:"magic",    icon:"✨", label:"Magic"       },
+    { key:"study",    icon:"📚", label:"Study"       },
     { key:"surprise", icon:"🎁", label:"Surprises"   },
     { key:"chat",     icon:"💬", label:"Chat"        },
   ]},
@@ -195,6 +197,7 @@ export default function App() {
       case "letters":  return <LoveLetter setPage={setPage} user={user} />;
       case "world":    return <SadhanaWorld setPage={setPage} user={user} />;
       case "magic":    return <MagicCorner setPage={setPage} user={user} />;
+      case "study":    return <StudyNotes user={user} />;
       case "tonight":  return <TonightPromise user={user} />;
       case "chat":     return <LoveChat user={user} />;
       case "surprise": return <SurpriseBox user={user} />;

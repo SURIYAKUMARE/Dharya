@@ -4488,3 +4488,75 @@ body.theme-surya { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)
   border-radius: 16px; margin-bottom: 16px;
   border: 2px solid rgba(255,255,255,0.5);
 }
+
+/* ── Chat: edit/delete/photo ── */
+.wachat-attach-btn {
+  font-size:1.3rem; cursor:pointer; padding:6px 8px;
+  border-radius:50%; transition:background 0.15s; flex-shrink:0;
+  line-height:1; background:none; border:none;
+}
+.wachat-attach-btn:hover { background:#fff0f8; }
+
+.wachat-img {
+  max-width:220px; max-height:200px; border-radius:12px;
+  display:block; margin-bottom:4px; cursor:zoom-in;
+  object-fit:cover;
+}
+
+.wachat-img-preview {
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px; background:white;
+  border-top:1px solid #fce4f0; flex-shrink:0;
+}
+.wachat-img-preview img {
+  width:60px; height:50px; object-fit:cover;
+  border-radius:8px; border:1.5px solid #f9a8c9;
+}
+.wachat-img-preview button {
+  background:none; border:1.5px solid #f87171; color:#ef4444;
+  border-radius:50%; width:24px; height:24px; font-size:0.75rem;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+
+.wachat-deleted {
+  font-style:italic; color:rgba(255,255,255,0.6); font-size:0.85rem; margin:0;
+}
+.bubble-theirs .wachat-deleted { color:#aaa; }
+
+.wachat-edited {
+  font-size:0.62rem; opacity:0.7; margin-left:4px; font-style:italic;
+}
+
+/* Context menu */
+.wachat-menu {
+  position:absolute; bottom:calc(100% + 6px); right:0;
+  background:white; border:1.5px solid #f9a8c9;
+  border-radius:14px; padding:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
+  display:flex; flex-direction:column; gap:2px; z-index:50;
+  min-width:130px; animation:fadeInUp 0.15s ease;
+}
+.wachat-menu button {
+  background:none; border:none; padding:8px 14px;
+  font-size:0.88rem; cursor:pointer; text-align:left;
+  border-radius:8px; font-family:"Poppins",sans-serif;
+  color:#555; transition:background 0.15s;
+}
+.wachat-menu button:hover { background:#fff0f8; color:#c71585; }
+.wachat-bubble { position:relative; }
+
+/* Edit inline */
+.wachat-edit-wrap { display:flex; flex-direction:column; gap:6px; }
+.wachat-edit-input {
+  background:rgba(255,255,255,0.25); border:1.5px solid rgba(255,255,255,0.5);
+  border-radius:8px; padding:6px 10px; color:white;
+  font-family:"Poppins",sans-serif; font-size:0.93rem; outline:none; width:100%;
+}
+.bubble-theirs .wachat-edit-input { background:#fff0f8; border-color:#f9a8c9; color:#333; }
+.wachat-edit-btns { display:flex; gap:6px; justify-content:flex-end; }
+.wachat-edit-btns button {
+  background:rgba(255,255,255,0.3); border:none; color:white;
+  width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:0.85rem;
+  display:flex; align-items:center; justify-content:center;
+}
+.bubble-theirs .wachat-edit-btns button { background:#fce4f0; color:#c71585; }

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { dbGet, dbSet } from "../api";
+import { dbGet } from "../api";
 
 /* ══════════════════════════════════════════
    1. COMPLIMENT MACHINE

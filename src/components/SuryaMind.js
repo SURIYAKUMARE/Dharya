@@ -57,11 +57,13 @@ function getTimeSlot() {
   return "night";
 }
 
-export default function SuryaMind() {
+export default function SuryaMind({ user }) {
   const [slot,       setSlot]       = useState(getTimeSlot()); // eslint-disable-line no-unused-vars
   const [thoughtIdx, setThoughtIdx] = useState(0);
   const [fadeIn,     setFadeIn]     = useState(true);
   const [factIdx,    setFactIdx]    = useState(0);
+
+  const isSurya = user === "surya";
 
   // rotate thought every 4s
   useEffect(() => {
@@ -91,7 +93,11 @@ export default function SuryaMind() {
     <div className="mind-page">
       <div className="mind-hero">
         <h1 className="mind-title">💭 Surya's Mind</h1>
-        <p className="mind-sub">A window into what Surya is thinking right now 🌸</p>
+        <p className="mind-sub">
+          {isSurya
+            ? "Your own thoughts — right here, right now 🌿"
+            : "A window into what Surya is thinking right now 🌸"}
+        </p>
       </div>
 
       {/* Time indicator */}

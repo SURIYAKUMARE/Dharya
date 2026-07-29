@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { dbGet } from "../api";
 
-const MOODS = [
+const MOODS_DEFAULT = [
   {
     key: "happy",
     emoji: "😊",
@@ -10,7 +11,6 @@ const MOODS = [
     quote: "Your happiness lights up every room and every heart near you 🌻",
     song: "Kannazhaga — Dhibu Ninan Thomas",
     activity: "Go outside, feel the sun, and let today be exactly as good as you are 🌅",
-    vibe: "golden",
   },
   {
     key: "loved",
@@ -21,7 +21,6 @@ const MOODS = [
     quote: "You deserve every drop of love you're feeling right now — and infinitely more 💗",
     song: "Oru Adaar Love — Omar Lulu",
     activity: "Write down one thing that made you feel loved today — treasure it 💌",
-    vibe: "pink",
   },
   {
     key: "calm",
@@ -32,7 +31,6 @@ const MOODS = [
     quote: "Peace is a superpower — and you wear it beautifully 🌿",
     song: "Nee Naan Mudhal — D. Imman",
     activity: "Make yourself a warm drink, sit somewhere comfortable, and just breathe 🍵",
-    vibe: "green",
   },
   {
     key: "dreamy",
@@ -43,7 +41,6 @@ const MOODS = [
     quote: "Dreams are just the future knocking early — and yours are about to open the door 🌙",
     song: "Nenjame — Yuvan Shankar Raja",
     activity: "Write down one dream you have for your future — even the ones that feel too big 💫",
-    vibe: "purple",
   },
   {
     key: "missing",
@@ -54,7 +51,6 @@ const MOODS = [
     quote: "Missing someone this much means the love is real — and it is 💙",
     song: "Munbe Vaa — A.R. Rahman",
     activity: "Look at something that reminds you of a happy memory — hold that feeling close 🌊",
-    vibe: "blue",
   },
   {
     key: "tired",
@@ -65,7 +61,6 @@ const MOODS = [
     quote: "Rest is not weakness — it's how you come back stronger 🌙",
     song: "Uyirey Uyirey — Haricharan",
     activity: "Put everything down. Take a proper rest. You've earned it more than you know 💤",
-    vibe: "grey",
   },
   {
     key: "excited",
@@ -76,13 +71,30 @@ const MOODS = [
     quote: "That energy you have right now? Channel it — big things are coming for you 🚀",
     song: "Kaadhal Vandhadhum — D. Imman",
     activity: "Do one thing today that scares you a little — the good kind of scared 🎯",
-    vibe: "orange",
   },
 ];
 
-export default function MoodBoard() {
+export default function MoodBoard({ user }) {
   const [selected, setSelected] = useState(null);
   const [revealed, setRevealed] = useState(false);
+  const [moods, setMoods] = useState(MOODS_DEFAULT);
+  const isSurya = user === "surya";
+
+  // Load custom quotes/activities from edit panel
+  useEffect(() => {
+    Promise.all(
+      MOODS_DEFAULT.map(m =>
+        Promise.all([
+          dbGet(`mood_quote_${m.key}`, ""),
+          dbGet(`mood_activity_${m.key}`, ""),
+        ]).then(([q, a]) => ({
+          ...m,
+          quote:    q && q.trim() ? q.trim() : m.quote,
+          activity: a && a.trim() ? a.trim() : m.activity,
+        }))
+      )
+    ).then(setMoods);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pick = (mood) => {
     if (selected?.key === mood.key) return;
@@ -97,15 +109,19 @@ export default function MoodBoard() {
       style={{ background: selected ? selected.bg : "linear-gradient(135deg,#fff0f5,#fce4f0)", transition: "background 0.6s ease" }}
     >
       <div className="mb-hero">
-        <h1 className="mb-title" style={{ color: selected ? selected.color : "#c71585" }}>
+        <h1 className="mb-title" style={{ color: selected ? selected.color : "var(--primary)" }}>
           🌈 Mood Board
         </h1>
-        <p className="mb-sub">Tell Surya how you're feeling — he has something for every mood 💙</p>
+        <p className="mb-sub">
+          {isSurya
+            ? "How are you feeling today? Your mood matters too 💙"
+            : "Tell Surya how you're feeling — he has something for every mood 💙"}
+        </p>
       </div>
 
       {/* Mood picker */}
       <div className="mb-picker">
-        {MOODS.map(m => (
+        {moods.map(m => (
           <button
             key={m.key}
             className={`mb-mood-btn ${selected?.key === m.key ? "mb-active" : ""}`}

@@ -16,30 +16,26 @@ const TIME_DATA = {
   morning: {
     emoji: "☀️",
     sky: "linear-gradient(180deg,#ffe0b2 0%,#fff9c4 50%,#e3f2fd 100%)",
-    greeting: "Good Morning, Sadhana ☀️",
+    greeting: (name) => `Good Morning, ${name} ☀️`,
     sub: "A brand new day — and my first thought was you 🌸",
-    bg: "#fff9c4",
   },
   afternoon: {
     emoji: "🌤️",
     sky: "linear-gradient(180deg,#e3f2fd 0%,#b3e5fc 50%,#e1f5fe 100%)",
-    greeting: "Good Afternoon, Sadhana 🌤️",
+    greeting: (name) => `Good Afternoon, ${name} 🌤️`,
     sub: "Hope your day is as beautiful as you are 💙",
-    bg: "#e3f2fd",
   },
   evening: {
     emoji: "🌅",
     sky: "linear-gradient(180deg,#ff7043 0%,#ff8a65 30%,#ffb74d 60%,#ffe0b2 100%)",
-    greeting: "Good Evening, Sadhana 🌅",
+    greeting: (name) => `Good Evening, ${name} 🌅`,
     sub: "The day is ending — and I'm thinking of you 💖",
-    bg: "#fff3e0",
   },
   night: {
     emoji: "🌙",
     sky: "linear-gradient(180deg,#0d0d2b 0%,#1a1a4e 40%,#2d1b69 100%)",
-    greeting: "Good Night, My Moon 🌙",
+    greeting: (name) => `Good Night, ${name === "Sadhana" ? "My Moon" : name} 🌙`,
     sub: "The stars are out — and so is my love for you ✨",
-    bg: "#1a1a4e",
   },
 };
 
@@ -225,20 +221,20 @@ function DailyLoveFeel() {
 /* ══════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════ */
-export default function TonightPromise() {
+export default function TonightPromise({ user }) {
   const [tod,     setTod]     = useState(getTimeOfDay());
   const [promise, setPromise] = useState("");
+  const name = user === "surya" ? "Surya" : "Sadhana";
+  const isNight = tod === "night";
 
   useEffect(() => {
     const id = setInterval(() => setTod(getTimeOfDay()), 60000);
-    // pick today's promise
     const dayIdx = Math.floor(Date.now() / 86400000) % PROMISES.length;
     setPromise(PROMISES[dayIdx]);
     return () => clearInterval(id);
   }, []);
 
   const data = TIME_DATA[tod];
-  const isNight = tod === "night";
 
   return (
     <div className="tonight-page" style={{ background: data.sky }}>
@@ -264,7 +260,7 @@ export default function TonightPromise() {
       <div className="tonight-hero">
         <div className="tonight-emoji">{data.emoji}</div>
         <h1 className="tonight-greeting" style={{ color: isNight ? "#ffd700" : "#c71585" }}>
-          {data.greeting}
+          {data.greeting(name)}
         </h1>
         <p className="tonight-sub" style={{ color: isNight ? "rgba(255,255,255,0.75)" : "#888" }}>
           {data.sub}

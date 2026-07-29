@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { dbGet, dbSet } from "../api";
 
 /* ══════════════════════════════════════════
    1. COMPLIMENT MACHINE
@@ -76,7 +77,7 @@ function ComplimentMachine() {
 /* ══════════════════════════════════════════
    2. OUR PLAYLIST
 ══════════════════════════════════════════ */
-const PLAYLIST = [
+const DEFAULT_PLAYLIST = [
   {
     title: "Oru Adaar Love",
     artist: "Omar Lulu",
@@ -121,13 +122,31 @@ const PLAYLIST = [
 
 function OurPlaylist() {
   const [expanded, setExpanded] = useState(null);
+  const [playlist, setPlaylist] = useState(DEFAULT_PLAYLIST);
+
+  useEffect(() => {
+    Promise.all(
+      DEFAULT_PLAYLIST.map((s, i) =>
+        Promise.all([
+          dbGet(`playlist_title_${i+1}`, ""),
+          dbGet(`playlist_artist_${i+1}`, ""),
+          dbGet(`playlist_note_${i+1}`, ""),
+        ]).then(([t, a, n]) => ({
+          ...s,
+          title:  t && t.trim() ? t.trim() : s.title,
+          artist: a && a.trim() ? a.trim() : s.artist,
+          note:   n && n.trim() ? n.trim() : s.note,
+        }))
+      )
+    ).then(setPlaylist);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="playlist-wrap">
       <h3 className="playlist-heading">🎵 Our Playlist</h3>
       <p className="playlist-sub">Songs that hold our story 🌸</p>
       <div className="playlist-list">
-        {PLAYLIST.map((s, i) => (
+        {playlist.map((s, i) => (
           <div
             key={i}
             className={`playlist-item ${expanded === i ? "expanded" : ""}`}

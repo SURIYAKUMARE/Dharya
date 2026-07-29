@@ -62,9 +62,10 @@ function loadChecked() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
 }
 
-export default function FuturePlans() {
+export default function FuturePlans({ user }) {
   const [checked, setChecked] = useState(loadChecked);
   const [active,  setActive]  = useState(0);
+  const isSurya = user === "surya";
 
   // Load from MongoDB on mount
   useEffect(() => {
@@ -92,7 +93,11 @@ export default function FuturePlans() {
     <div className="fp-page">
       <div className="fp-hero">
         <h1 className="fp-title">Our Future Plans 🗺️</h1>
-        <p className="fp-sub">Everything Surya wants to do with you — tick them off as they happen 💙</p>
+        <p className="fp-sub">
+          {isSurya
+            ? "Everything you planned to do with her — tick them off as they happen 💙"
+            : "Everything Surya wants to do with you — tick them off as they happen 💙"}
+        </p>
       </div>
 
       {/* Overall progress */}

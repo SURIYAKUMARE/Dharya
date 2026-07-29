@@ -93,8 +93,14 @@ export default function StudyNotes({ user }) {
 
   /* ── filtered notes ── */
   const visible = notes.filter(n => {
-    const matchFilter = filter==="all" || filter==="mine"?n.author===user : filter==="theirs"?n.author===other : n.subject===filter;
-    const matchSearch = !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase());
+    let matchFilter = false;
+    if (filter === "all")    matchFilter = true;
+    else if (filter === "mine")   matchFilter = n.author === user;
+    else if (filter === "theirs") matchFilter = n.author === other;
+    else matchFilter = n.subject === filter;
+    const matchSearch = !search ||
+      n.title.toLowerCase().includes(search.toLowerCase()) ||
+      n.content.toLowerCase().includes(search.toLowerCase());
     return matchFilter && matchSearch;
   });
 
@@ -115,13 +121,16 @@ export default function StudyNotes({ user }) {
       <div className="sn-toolbar">
         <input className="sn-search" placeholder="🔍 Search notes..." value={search} onChange={e=>setSearch(e.target.value)} />
         <div className="sn-filters">
-          {["all","mine","theirs",...SUBJECTS].map(f=>(
-            <button key={f} className={`sn-filter-btn ${filter===f?"sn-filter-active":""}`}
-              onClick={()=>setFilter(f)}>
-              {f==="all"?"All":f==="mine"?`Mine (${user})`:`f`==="theirs"?`Theirs`:f}
-              {f==="mine"?` ${user==="surya"?"💙":"💗"}`:f==="theirs"?` ${user==="surya"?"💗":"💙"}`:""}
-            </button>
-          ))}
+          {["all","mine","theirs",...SUBJECTS].map(f => {
+            let label = f;
+            if (f === "all")    label = "All 📚";
+            else if (f === "mine")   label = `Mine ${user==="surya"?"💙":"💗"}`;
+            else if (f === "theirs") label = `Theirs ${user==="surya"?"💗":"💙"}`;
+            return (
+              <button key={f} className={`sn-filter-btn ${filter===f?"sn-filter-active":""}`}
+                onClick={() => setFilter(f)}>{label}</button>
+            );
+          })}
         </div>
       </div>
 

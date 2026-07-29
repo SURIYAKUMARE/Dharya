@@ -98,23 +98,35 @@ export default function OurVows({ user }) {
           <div className="vow-card-wax" style={{ background:VOWS[0].color }}>{VOWS[0].emoji}</div>
           <h3 className="vow-card-title" style={{ color:VOWS[0].color }}>{VOWS[0].title}</h3>
           <p className="vow-card-from">Written by Surya 💙</p>
-          <button className="vow-read-btn" style={{ background:VOWS[0].color }}>Read Vow 💙</button>
+          {user === "surya" ? (
+            <button className="vow-read-btn" style={{ background:VOWS[0].color }}>Read My Vow 💙</button>
+          ) : (
+            <button className="vow-read-btn" style={{ background:VOWS[0].color }}>Read Vow 💙</button>
+          )}
         </div>
         {/* Sadhana's vow */}
         <div className="vow-card" style={{ borderColor:VOW2.color, background:VOW2.bg }}>
           <div className="vow-card-wax" style={{ background:VOW2.color }}>{VOW2.emoji}</div>
           <h3 className="vow-card-title" style={{ color:VOW2.color }}>Sadhana's Vow</h3>
           <p className="vow-card-from">Written by Sadhana 💗</p>
-          {sealed && !editMode ? (
-            <div className="vow-sealed-badge" onClick={() => open(1)}>🔒 Sealed with love — tap to read</div>
+          {user === "surya" ? (
+            /* Surya only sees read view */
+            sealed
+              ? <div className="vow-sealed-badge" onClick={() => open(1)}>🔒 Sealed with love — tap to read</div>
+              : <p style={{color:"#aaa",fontSize:"0.85rem",fontStyle:"italic"}}>Sadhana hasn't written her vow yet 🌸</p>
           ) : (
-            <div className="vow-write-area" onClick={e => e.stopPropagation()}>
-              <textarea className="vow-textarea" placeholder="Write your vow to Surya here... from your heart 💗"
-                value={sadhanaVow} onChange={e => setSadhanaVow(e.target.value)} rows={5} disabled={sealing} />
-              <button className="vow-seal-btn" style={{ background:VOW2.color }} onClick={sealVow} disabled={!sadhanaVow.trim()||sealing}>
-                {sealing ? "Sealing... 💗" : "Seal with Love 💍"}
-              </button>
-            </div>
+            /* Sadhana can write/edit */
+            sealed && !editMode ? (
+              <div className="vow-sealed-badge" onClick={() => open(1)}>🔒 Sealed with love — tap to read</div>
+            ) : (
+              <div className="vow-write-area" onClick={e => e.stopPropagation()}>
+                <textarea className="vow-textarea" placeholder="Write your vow to Surya here... from your heart 💗"
+                  value={sadhanaVow} onChange={e => setSadhanaVow(e.target.value)} rows={5} disabled={sealing} />
+                <button className="vow-seal-btn" style={{ background:VOW2.color }} onClick={sealVow} disabled={!sadhanaVow.trim()||sealing}>
+                  {sealing ? "Sealing... 💗" : "Seal with Love 💍"}
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>

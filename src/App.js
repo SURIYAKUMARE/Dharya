@@ -1,4 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Gift, Map, Image, Lightbulb, Star, Mail, Heart,
+  StickyNote, Flower2, Palette, Moon, Calendar,
+  Sparkles, BookOpen, PartyPopper, MessageCircle,
+  Globe, Brain, Gamepad2, Edit3, Lock, Shield,
+  Music2, ChevronRight, MoreHorizontal
+} from "lucide-react";
 import JourneyTimeline from "./components/JourneyTimeline";
 import MemoryGallery from "./components/MemoryGallery";
 import ProposalBox from "./components/ProposalBox";
@@ -46,53 +54,53 @@ const PLAYLIST = [
   { id:"5KH2WKISoxs", title:"Oru Adaar Love" },
 ];
 
-/* nav groups — user-aware labels injected at render time */
+/* nav groups */
 const NAV_GROUPS_BASE = [
-  { id:"story",   label:"💛 Our Story", pages:[
-    { key:"box",     icon:"🎁", label:"Proposal"  },
-    { key:"journey", icon:"🗺️", label:"Journey"   },
-    { key:"gallery", icon:"📸", label:"Gallery"   },
-    { key:"quiz",    icon:"💡", label:"Quiz"      },
+  { id:"story",   label:"Our Story", pages:[
+    { key:"box",     icon:<Gift size={18}/>,    label:"Proposal"  },
+    { key:"journey", icon:<Map size={18}/>,     label:"Journey"   },
+    { key:"gallery", icon:<Image size={18}/>,   label:"Gallery"   },
+    { key:"quiz",    icon:<Lightbulb size={18}/>, label:"Quiz"    },
   ]},
-  { id:"love",    label:"💌 Love Corner", pages:[
-    { key:"dream",   icon:"💫", label:"Dreams"    },
-    { key:"letters", icon:"💌", label:"Letters"   },
-    { key:"vows",    icon:"💒", label:"Vows"      },
-    { key:"notes",   icon:"📝", label:"Notes"     },
+  { id:"love",    label:"Love Corner", pages:[
+    { key:"dream",   icon:<Star size={18}/>,    label:"Dreams"    },
+    { key:"letters", icon:<Mail size={18}/>,    label:"Letters"   },
+    { key:"vows",    icon:<Heart size={18}/>,   label:"Vows"      },
+    { key:"notes",   icon:<StickyNote size={18}/>, label:"Notes"  },
   ]},
-  { id:"her",     label:"🌸 For Her", pages:[
-    { key:"world",   icon:"🌸", label:"Sadhana's World" },
-    { key:"mood",    icon:"🌈", label:"Mood Board"      },
-    { key:"tonight", icon:"🌙", label:"Tonight"         },
-    { key:"future",  icon:"🗓️", label:"Future Plans"   },
+  { id:"her",     label:"For Her", pages:[
+    { key:"world",   icon:<Flower2 size={18}/>, label:"Sadhana's World" },
+    { key:"mood",    icon:<Palette size={18}/>, label:"Mood Board"      },
+    { key:"tonight", icon:<Moon size={18}/>,    label:"Tonight"         },
+    { key:"future",  icon:<Calendar size={18}/>, label:"Future Plans"  },
   ]},
-  { id:"magic",   label:"✨ Magic Corner", pages:[
-    { key:"magic",   icon:"✨", label:"Magic"       },
-    { key:"study",   icon:"📚", label:"Study Notes" },
-    { key:"surprise",icon:"🎁", label:"Surprises"   },
-    { key:"chat",    icon:"💬", label:"Chat"        },
+  { id:"magic",   label:"Magic Corner", pages:[
+    { key:"magic",    icon:<Sparkles size={18}/>,     label:"Magic"       },
+    { key:"study",    icon:<BookOpen size={18}/>,     label:"Study Notes" },
+    { key:"surprise", icon:<PartyPopper size={18}/>,  label:"Surprises"   },
+    { key:"chat",     icon:<MessageCircle size={18}/>, label:"Chat"       },
   ]},
-  { id:"universe",label:"🌌 Universe", pages:[
-    { key:"secret",  icon:"🌌", label:"Secret Universe" },
-    { key:"mind",    icon:"💭", label:"Surya's Mind"    },
-    { key:"games",   icon:"🎮", label:"Love Games"      },
+  { id:"universe",label:"Universe", pages:[
+    { key:"secret",  icon:<Globe size={18}/>,    label:"Secret Universe" },
+    { key:"mind",    icon:<Brain size={18}/>,    label:"Surya's Mind"    },
+    { key:"games",   icon:<Gamepad2 size={18}/>, label:"Love Games"      },
   ]},
 ];
 
 /* bottom-tab configs per user */
 const BOTTOM_TABS_SADHANA = [
-  { key:"box",     icon:"🎁", label:"Gift"    },
-  { key:"chat",    icon:"💬", label:"Chat"    },
-  { key:"dream",   icon:"💫", label:"Dreams"  },
-  { key:"letters", icon:"💌", label:"Letters" },
-  { key:"gallery", icon:"📸", label:"Gallery" },
+  { key:"box",     icon:<Gift size={20}/>,           label:"Proposal" },
+  { key:"gallery", icon:<Image size={20}/>,          label:"Gallery"  },
+  { key:"dream",   icon:<Star size={20}/>,           label:"Dreams"   },
+  { key:"letters", icon:<Mail size={20}/>,           label:"Letters"  },
+  { key:"chat",    icon:<MessageCircle size={20}/>,  label:"Chat"     },
 ];
 const BOTTOM_TABS_SURYA = [
-  { key:"box",     icon:"🎁", label:"Gift"    },
-  { key:"chat",    icon:"💬", label:"Chat"    },
-  { key:"gallery", icon:"📸", label:"Gallery" },
-  { key:"notes",   icon:"📝", label:"Notes"   },
-  { key:"edit",    icon:"✏️", label:"Edit"    },
+  { key:"box",     icon:<Gift size={20}/>,           label:"Proposal" },
+  { key:"gallery", icon:<Image size={20}/>,          label:"Gallery"  },
+  { key:"notes",   icon:<StickyNote size={20}/>,     label:"Notes"    },
+  { key:"chat",    icon:<MessageCircle size={20}/>,  label:"Chat"     },
+  { key:"edit",    icon:<Edit3 size={20}/>,          label:"Edit"     },
 ];
 
 /* ─────────────────────────────────────────────
@@ -121,26 +129,26 @@ function LockScreen({ user, onUnlock }) {
     <div className={`lock-screen ${isSurya ? "lock-screen-surya" : ""}`}>
       <div className="lock-bg-blur" />
       <div className={`lock-card ${shake ? "login-shake" : ""}`}>
-        <div className="lock-icon">{isSurya ? "🔒" : "🔒"}</div>
+        <div className="lock-icon">{isSurya ? "🌿" : "🌸"}</div>
         <h2 className="lock-title">App Locked</h2>
         <p className="lock-sub">Enter your password to continue</p>
         <form onSubmit={tryUnlock} autoComplete="off">
           <input
             className="login-input"
             type="password"
-            placeholder="Enter password..."
+            placeholder="Password..."
             value={pin}
             onChange={e => { setPin(e.target.value); setError(""); }}
             autoFocus
-            style={{ marginBottom:"14px", textAlign:"center", letterSpacing:"4px" }}
+            style={{ marginBottom: "14px", textAlign: "center", letterSpacing: "5px" }}
           />
           {error && <p className="login-error">{error}</p>}
           <button type="submit" className="login-btn">
-            {isSurya ? "Unlock 💙" : "Unlock 💗"}
+            {isSurya ? "Unlock 🌿" : "Unlock 🌸"}
           </button>
         </form>
         <p className="lock-hint">
-          {isSurya ? "💙 Surya's private space" : "💗 Sadhana's private space"}
+          {isSurya ? "Surya's private space 💙" : "Sadhana's private space 💗"}
         </p>
       </div>
     </div>
@@ -154,7 +162,7 @@ function PrivacyShield({ user, onDismiss }) {
   return (
     <div className="privacy-shield" onClick={onDismiss}>
       <div className="privacy-shield-inner">
-        <div className="privacy-shield-icon">{user === "surya" ? "💚" : "🌸"}</div>
+        <div className="privacy-shield-icon">{user === "surya" ? "🌿" : "🌸"}</div>
         <p className="privacy-shield-text">Tap anywhere to continue</p>
         <p className="privacy-shield-sub">Content hidden 🛡️</p>
       </div>
@@ -374,7 +382,7 @@ export default function App() {
       {tabHidden && (
         <div className="tab-blur-overlay" onClick={() => setTabHidden(false)}>
           <div className="tab-blur-inner">
-            <div className="tab-blur-icon">{isSurya ? "💚" : "🌸"}</div>
+            <div className="tab-blur-icon">{isSurya ? "🌿" : "🌸"}</div>
             <p>Tap to continue</p>
           </div>
         </div>
@@ -396,7 +404,7 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-left">
           <div className="topbar-brand">
-            <span className="topbar-logo">{isSurya ? "💚" : "💗"}</span>
+            <div className="topbar-logo">{isSurya ? "🌿" : "💗"}</div>
             <span className="topbar-title">Dharya</span>
           </div>
         </div>
@@ -404,15 +412,19 @@ export default function App() {
         <div className="topbar-center">
           {currentLabel && (
             <span className="topbar-current">
-              {currentLabel.icon}&nbsp;{currentLabel.label}
+              {currentLabel.label}
             </span>
           )}
         </div>
 
         <div className="topbar-right">
           <AnniversaryBadge />
-          <button className="topbar-icon-btn" onClick={() => setPrivacyMode(v => !v)} title="Privacy shield" aria-label="Privacy shield">🛡️</button>
-          <button className="topbar-icon-btn" onClick={() => setLocked(true)} title="Lock" aria-label="Lock">🔒</button>
+          <button className="topbar-icon-btn" onClick={() => setPrivacyMode(v => !v)} title="Privacy" aria-label="Privacy shield">
+            <Shield size={16} />
+          </button>
+          <button className="topbar-icon-btn" onClick={() => setLocked(true)} title="Lock" aria-label="Lock app">
+            <Lock size={16} />
+          </button>
           <button className="topbar-menu-btn" onClick={() => setNavOpen(n => !n)} aria-label="Menu">
             <span className={`hamburger ${navOpen ? "open" : ""}`}>
               <span /><span /><span />
@@ -428,12 +440,11 @@ export default function App() {
       <nav className={`nav-drawer ${navOpen ? "nav-drawer-open" : ""}`}>
         <div className="nav-drawer-header">
           <div className="nav-drawer-brand">
-            <span>{isSurya ? "💚" : "💗"}</span>
-            <span>Dharya</span>
+            <div className="nav-drawer-brand-logo">{isSurya ? "🌿" : "💗"}</div>
+            <span className="nav-drawer-brand-name">Dharya</span>
           </div>
           <div className="nav-drawer-user">
-            <span className="nav-drawer-username">{isSurya ? "Surya 💙" : "Sadhana 💗"}</span>
-            <span className="nav-drawer-days"><AnniversaryBadge /></span>
+            <span className="nav-drawer-username">{isSurya ? "Surya" : "Sadhana"}</span>
           </div>
           <button className="nav-drawer-close" onClick={() => setNavOpen(false)}>✕</button>
         </div>
@@ -451,7 +462,7 @@ export default function App() {
                   >
                     <span className="nav-item-icon">{p.icon}</span>
                     <span className="nav-item-label">{p.label}</span>
-                    {page === p.key && <span className="nav-item-dot" />}
+                    {page === p.key && <ChevronRight size={14} style={{opacity:0.6}} />}
                   </button>
                 ))}
               </div>
@@ -460,14 +471,14 @@ export default function App() {
 
           {/* Privacy section */}
           <div className="nav-group">
-            <p className="nav-group-label">🔐 Privacy</p>
+            <p className="nav-group-label">Privacy</p>
             <div className="nav-group-items">
               <button className="nav-item" onClick={() => { setNavOpen(false); setLocked(true); }}>
-                <span className="nav-item-icon">🔒</span>
+                <span className="nav-item-icon"><Lock size={18}/></span>
                 <span className="nav-item-label">Lock App</span>
               </button>
               <button className="nav-item" onClick={() => { setNavOpen(false); setPrivacyMode(true); }}>
-                <span className="nav-item-icon">🛡️</span>
+                <span className="nav-item-icon"><Shield size={18}/></span>
                 <span className="nav-item-label">Privacy Shield</span>
               </button>
             </div>
@@ -476,11 +487,12 @@ export default function App() {
           {/* Surya-only: Edit panel */}
           {isSurya && (
             <div className="nav-group">
-              <p className="nav-group-label">🛠️ Surya Only</p>
+              <p className="nav-group-label">Admin</p>
               <div className="nav-group-items">
                 <button className={`nav-item ${page==="edit"?"nav-item-active":""}`} onClick={() => navigate("edit")}>
-                  <span className="nav-item-icon">✏️</span>
+                  <span className="nav-item-icon"><Edit3 size={18}/></span>
                   <span className="nav-item-label">Edit Panel</span>
+                  {page==="edit" && <ChevronRight size={14} style={{opacity:0.6}} />}
                 </button>
               </div>
             </div>
@@ -501,19 +513,35 @@ export default function App() {
           </button>
         ))}
         <button className="btab" onClick={() => setNavOpen(true)}>
-          <span className="btab-icon">☰</span>
+          <span className="btab-icon"><MoreHorizontal size={20}/></span>
           <span className="btab-label">More</span>
         </button>
       </nav>
 
-      {/* ── Page content ── */}
-      <main className="main-content" key={page}>{renderPage()}</main>
+      {/* ── Page content with Framer Motion transitions ── */}
+      <AnimatePresence mode="wait">
+        <motion.main
+          className="main-content"
+          key={page}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+        >
+          {renderPage()}
+        </motion.main>
+      </AnimatePresence>
 
-      {/* Floating hearts */}
+      {/* Floating ambient particles */}
       <div className="hearts" aria-hidden="true">
-        {[...Array(6)].map((_, i) => (
-          <span key={i} style={{ left:`${8+i*16}%`, animationDelay:`${i*1.4}s`, animationDuration:`${7+i}s` }}>
-            {isSurya ? "🍃" : "❤️"}
+        {[...Array(5)].map((_, i) => (
+          <span key={i} style={{
+            left: `${10 + i * 18}%`,
+            animationDelay: `${i * 1.8}s`,
+            animationDuration: `${10 + i * 1.5}s`,
+            fontSize: `${16 + (i % 2) * 8}px`,
+          }}>
+            {isSurya ? "🍃" : "✨"}
           </span>
         ))}
       </div>

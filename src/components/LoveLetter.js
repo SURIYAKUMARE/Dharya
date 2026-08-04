@@ -78,7 +78,11 @@ export default function LoveLetter({ setPage, user }) {
 
       <div className="letter-page-hero">
         <h1 className="letter-page-title">Letters For You 💌</h1>
-        <p className="letter-page-sub">Words Surya wrote, just for Sadhana's eyes 🌸</p>
+        <p className="letter-page-sub">
+          {user === "surya"
+            ? "The letters you wrote — from your heart 💙"
+            : "Words Surya wrote, just for your eyes 🌸"}
+        </p>
       </div>
 
       {/* Letter Cards Grid */}

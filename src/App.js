@@ -5,7 +5,7 @@ import {
   StickyNote, Flower2, Palette, Moon, Calendar,
   Sparkles, BookOpen, PartyPopper, MessageCircle,
   Globe, Brain, Gamepad2, Edit3, Lock, Shield,
-  Music2, ChevronRight, MoreHorizontal
+  ChevronRight, MoreHorizontal
 } from "lucide-react";
 import JourneyTimeline from "./components/JourneyTimeline";
 import MemoryGallery from "./components/MemoryGallery";
@@ -29,6 +29,35 @@ import SuryaMind from "./components/SuryaMind";
 import LoveGames from "./components/LoveGames";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import "./App.css";
+
+/* ── useTilt: exported mouse-tracked 3D card tilt hook ── */
+export function useTilt(strength = 12) {
+  const ref = useRef(null);
+  const onMove = useCallback((e) => {
+    const el = ref.current; if (!el) return;
+    const r  = el.getBoundingClientRect();
+    const x  = ((e.clientX - r.left) / r.width  - 0.5) * 2;
+    const y  = ((e.clientY - r.top)  / r.height - 0.5) * 2;
+    el.style.transform = `perspective(900px) rotateX(${-y * strength}deg) rotateY(${x * strength}deg) scale3d(1.02,1.02,1.02)`;
+    const shine = el.querySelector(".tilt-shine");
+    if (shine) {
+      shine.style.background = `radial-gradient(circle at ${(x+1)*50}% ${(y+1)*50}%, rgba(255,255,255,0.12) 0%, transparent 65%)`;
+      shine.style.opacity = "1";
+    }
+  }, [strength]);
+  const onLeave = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)";
+    el.style.transition = "transform 0.55s cubic-bezier(0.34,1.56,0.64,1)";
+    const shine = el.querySelector(".tilt-shine");
+    if (shine) shine.style.opacity = "0";
+  }, []);
+  const onEnter = useCallback(() => {
+    const el = ref.current; if (!el) return;
+    el.style.transition = "transform 0.1s ease-out";
+  }, []);
+  return { ref, onMouseMove: onMove, onMouseLeave: onLeave, onMouseEnter: onEnter };
+}
 
 /* ─────────────────────────────────────────────
    CONSTANTS
@@ -110,6 +139,7 @@ function LockScreen({ user, onUnlock }) {
   const [pin,   setPin]   = useState("");
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
+  const tilt = useTilt(8);
 
   const correctPass = user === "surya" ? "09/10/2007" : "29/02/2008";
   const isSurya     = user === "surya";
@@ -128,7 +158,16 @@ function LockScreen({ user, onUnlock }) {
   return (
     <div className={`lock-screen ${isSurya ? "lock-screen-surya" : ""}`}>
       <div className="lock-bg-blur" />
-      <div className={`lock-card ${shake ? "login-shake" : ""}`}>
+      <div className="orb-3d orb-3d-1" aria-hidden="true" />
+      <div className="orb-3d orb-3d-2" aria-hidden="true" />
+      <div
+        ref={tilt.ref}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
+        onMouseEnter={tilt.onMouseEnter}
+        className={`lock-card tilt-card ${shake ? "login-shake" : ""}`}
+      >
+        <div className="tilt-shine" />
         <div className="lock-icon">{isSurya ? "🌿" : "🌸"}</div>
         <h2 className="lock-title">App Locked</h2>
         <p className="lock-sub">Enter your password to continue</p>
@@ -376,6 +415,10 @@ export default function App() {
 
   return (
     <div className={`app-v2 ${isSurya ? "theme-surya" : ""} ${tabHidden ? "app-tab-blurred" : ""}`}>
+      {/* 3D depth background orbs */}
+      <div className="orb-3d orb-3d-1" aria-hidden="true" />
+      <div className="orb-3d orb-3d-2" aria-hidden="true" />
+      <div className="orb-3d orb-3d-3" aria-hidden="true" />
       <MusicPlayer page={page} />
 
       {/* Tab-switch blur */}
@@ -518,15 +561,16 @@ export default function App() {
         </button>
       </nav>
 
-      {/* ── Page content with Framer Motion transitions ── */}
+      {/* ── Page content with 3D transitions ── */}
       <AnimatePresence mode="wait">
         <motion.main
           className="main-content"
           key={page}
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+          initial={{ opacity: 0, rotateX: 8, y: 40, scale: 0.96, filter: "blur(6px)" }}
+          animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1, filter: "blur(0px)" }}
+          exit={{ opacity: 0, rotateX: -6, y: -30, scale: 0.97, filter: "blur(4px)" }}
+          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+          style={{ transformPerspective: 1000, transformStyle: "preserve-3d" }}
         >
           {renderPage()}
         </motion.main>

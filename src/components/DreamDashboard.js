@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, Sparkles, Heart, TrendingUp, Edit3, CheckCircle, ChevronDown, X, Mail } from "lucide-react";
 import { getDreams, saveDreams, dbGet, dbSet } from "../api";
+import { useTilt } from "../App";
 
 const DREAM_COME_TRUE_YEARS = 4;
 const emojis     = ["🌟","💖","🌈","✨","🦋"];
@@ -53,10 +54,12 @@ function LiveCountdown({ targetDate, label }) {
 function addTime(base, ms) { return new Date(new Date(base).getTime() + ms); }
 const MS = { "1 Year":365*86400000, "4 Years":4*365*86400000, "10 Years":10*365*86400000 };
 
-/* ── Love Note Card ── */
+/* ── Love Note Card with 3D tilt ── */
 function LoveNoteCard() {
   const [idx, setIdx] = useState(0);
   const [fade, setFade] = useState(true);
+  const tilt = useTilt(5);
+
   useEffect(() => {
     const id = setInterval(() => {
       setFade(false);
@@ -67,6 +70,10 @@ function LoveNoteCard() {
 
   return (
     <motion.div
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      onMouseEnter={tilt.onMouseEnter}
       initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2, duration:0.5 }}
       style={{
         margin:"0 0 24px", padding:"28px 28px 24px",
@@ -76,7 +83,10 @@ function LoveNoteCard() {
         backdropFilter:"blur(12px)", position:"relative", overflow:"hidden",
       }}
     >
+      <div className="tilt-shine" style={{borderRadius:"24px"}}/>
       <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg, transparent, #EC4899, #8B5CF6, transparent)" }} />
+      {/* floating orb */}
+      <div style={{position:"absolute",top:"-30px",right:"-30px",width:"100px",height:"100px",background:"radial-gradient(circle,rgba(236,72,153,0.12) 0%,transparent 70%)",borderRadius:"50%",filter:"blur(15px)",pointerEvents:"none"}}/>
       <Mail size={20} style={{ color:"#EC4899", marginBottom:"12px", opacity:0.8 }} />
       <p style={{
         fontFamily:"'Inter',sans-serif", fontSize:"0.95rem", fontWeight:500,
@@ -288,19 +298,20 @@ export default function DreamDashboard({ user }) {
       <MoodPicker mood={mood} onChange={setMood} />
 
       {/* Dream Form */}
-      <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.35,duration:0.5}}
-        style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"24px", padding:"32px 28px", marginBottom:"24px", position:"relative", overflow:"hidden" }}
+      <motion.div
+        initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.4, duration:0.5 }}
+        style={{
+          background:"rgba(9,4,21,0.82)", border:"1px solid rgba(232,48,90,0.14)",
+          borderRadius:"24px", padding:"28px 24px", marginBottom:"8px",
+          backdropFilter:"blur(18px)",
+          boxShadow:"0 16px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset",
+          position:"relative",
+        }}
       >
-        <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg, transparent, #EC4899, #8B5CF6, transparent)" }}/>
-        <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"20px" }}>
-          <div style={{ width:"44px", height:"44px", background:`linear-gradient(135deg,${isSurya?"#10B981":"#EC4899"},${isSurya?"#06B6D4":"#8B5CF6"})`, borderRadius:"12px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.3rem", flexShrink:0, boxShadow:`0 8px 20px ${isSurya?"rgba(16,185,129,0.3)":"rgba(236,72,153,0.3)"}` }}>
-            {isSurya?"💙":"💗"}
-          </div>
-          <div>
-            <h2 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.1rem", fontWeight:800, color:"#fff", margin:"0 0 2px", letterSpacing:"-0.2px" }}>{name}'s 5 Dreams</h2>
-            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.8rem", color:"rgba(255,255,255,0.35)", margin:0 }}>Write your biggest dreams below</p>
-          </div>
-        </div>
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:"linear-gradient(90deg, transparent, #e8305a, #6b2fa0, transparent)", borderRadius:"24px 24px 0 0" }} />
+        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"rgba(232,48,90,0.7)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", marginBottom:"20px" }}>
+          ✨ {isEditing ? "Write your dreams" : "Your dreams"} — {name}
+        </p>
 
         {(isEditing ? inputs : saved).map((val,i) => (
           <div key={i} style={{ marginBottom:"16px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:"16px", padding:"16px" }}>

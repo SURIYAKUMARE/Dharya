@@ -188,14 +188,18 @@ function TwoTruthsLie() {
 /* ══════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════ */
-export default function LoveGames({ setPage }) {
+export default function LoveGames({ setPage, user }) {
   const [tab, setTab] = useState("wyr");
 
   return (
     <div className="games-page">
       <div className="games-hero">
         <h1 className="games-title">Love Games 🎮</h1>
-        <p className="games-sub">Fun little games Surya made just for you 💕</p>
+        <p className="games-sub">
+          {user === "surya"
+            ? "Games you made — play together 💙"
+            : "Fun little games Surya made just for you 💕"}
+        </p>
       </div>
       <div className="games-tabs">
         <button className={`games-tab ${tab === "wyr" ? "active" : ""}`} onClick={() => setTab("wyr")}>

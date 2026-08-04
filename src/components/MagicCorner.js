@@ -297,7 +297,7 @@ function TimeCapsule() {
 /* ══════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════ */
-export default function MagicCorner({ setPage }) {
+export default function MagicCorner({ setPage, user }) {
   const [tab, setTab] = useState("story");
 
   const TABS = [
@@ -310,7 +310,11 @@ export default function MagicCorner({ setPage }) {
     <div className="magic-page">
       <div className="magic-hero">
         <h1 className="magic-title">Magic Corner ✨</h1>
-        <p className="magic-sub">Three special things Surya made only for you 🌸</p>
+        <p className="magic-sub">
+          {user === "surya"
+            ? "Three special things you built — your magic 🌿"
+            : "Three special things Surya made only for you 🌸"}
+        </p>
       </div>
       <div className="games-tabs">
         {TABS.map(t => (

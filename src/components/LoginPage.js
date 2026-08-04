@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Eye, EyeOff, ArrowRight, Heart } from "lucide-react";
+import { useTilt } from "../App";
 
 const CORRECT_USER = "DHARYA";
 const USERS = {
@@ -86,6 +87,7 @@ export default function LoginPage({ onLogin }) {
   const [bursts,   setBursts]   = useState([]);
   const [focused,  setFocused]  = useState(null);
   const [mounted,  setMounted]  = useState(false);
+  const tilt = useTilt(10);
 
   useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
@@ -137,6 +139,31 @@ export default function LoginPage({ onLogin }) {
       {/* Particles */}
       <Particles theme={theme} />
 
+      {/* 3D rotating ring */}
+      <div style={{
+        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <div style={{
+          width: "600px", height: "600px", borderRadius: "50%",
+          border: `1px solid ${theme.primary}18`,
+          animation: "ring3DSpin 20s linear infinite",
+          position: "absolute",
+        }} />
+        <div style={{
+          width: "450px", height: "450px", borderRadius: "50%",
+          border: `1px solid ${theme.secondary}12`,
+          animation: "ring3DSpin 14s linear infinite reverse",
+          position: "absolute",
+        }} />
+        <div style={{
+          width: "300px", height: "300px", borderRadius: "50%",
+          border: `1px solid ${theme.primary}10`,
+          animation: "ring3DSpin 9s linear infinite",
+          position: "absolute",
+        }} />
+      </div>
+
       {/* Burst hearts on success */}
       {bursts.map(h => (
         <span key={h.id} style={{
@@ -152,7 +179,11 @@ export default function LoginPage({ onLogin }) {
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
-        className={shake ? "login-shake" : ""}
+        ref={tilt.ref}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
+        onMouseEnter={tilt.onMouseEnter}
+        className={`tilt-card ${shake ? "login-shake" : ""}`}
         style={{
           position: "relative",
           zIndex: 10,
@@ -166,10 +197,11 @@ export default function LoginPage({ onLogin }) {
           backdropFilter: "blur(28px)",
           WebkitBackdropFilter: "blur(28px)",
           opacity: mounted ? 1 : 0,
-          transform: mounted ? "translateY(0)" : "translateY(32px)",
-          transition: "opacity 0.6s ease, transform 0.6s cubic-bezier(0.34,1.56,0.64,1)",
+          transition: "opacity 0.6s ease",
         }}
       >
+        {/* 3D shine layer */}
+        <div className="tilt-shine" style={{ borderRadius: "28px" }} />
         {/* Top gradient line */}
         <div style={{
           position: "absolute", top: 0, left: 0, right: 0, height: "2px",

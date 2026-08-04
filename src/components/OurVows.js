@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Lock, Unlock, Pen, X, Sparkles } from "lucide-react";
 import { dbGet, dbSet } from "../api";
+import { useTilt } from "../App";
 
 const DEFAULT_SURYA_VOW = `Sadhana,
 
@@ -52,7 +53,6 @@ export default function OurVows({ user }) {
   const [sealing,    setSealing]    = useState(false);
   const [editMode,   setEditMode]   = useState(false);
   const [particles,  setParticles]  = useState([]);
-  const [hoveredCard,setHoveredCard]= useState(null);
 
   useEffect(() => {
     dbGet("surya_vow_text","").then(v => { if (v?.trim()) setSuryaVow(v); });
@@ -60,8 +60,8 @@ export default function OurVows({ user }) {
     dbGet("vow_sealed",false).then(s => { if (s) setSealed(true); });
   }, []); // eslint-disable-line
 
-  const openVow = (i) => { setActive(i); setRevealed(false); setTimeout(()=>setRevealed(true),300); };
-  const closeVow = () => { setRevealed(false); setTimeout(()=>setActive(null),300); };
+  const openVow  = (i) => { setActive(i); setRevealed(false); setTimeout(()=>setRevealed(true),300); };
+  const closeVow = ()  => { setRevealed(false); setTimeout(()=>setActive(null),300); };
 
   const sealVow = async () => {
     if (!sadhanaVow.trim()) return;
@@ -72,13 +72,79 @@ export default function OurVows({ user }) {
     setTimeout(() => { setSealed(true); setSealing(false); setEditMode(false); setParticles([]); }, 1600);
   };
 
-  const unseal = async () => {
-    await dbSet("vow_sealed",false);
-    setSealed(false); setEditMode(true);
-  };
-
+  const unseal = async () => { await dbSet("vow_sealed",false); setSealed(false); setEditMode(true); };
   const getVowText = (i) => i===0 ? suryaVow : sadhanaVow;
   const card = (i) => VOW_CARDS[i];
+
+  /* ── 3D tilt vow card ── */
+  function VowCard({ c, i }) {
+    const tilt = useTilt(7);
+    return (
+      <motion.div
+        ref={tilt.ref}
+        onMouseMove={tilt.onMouseMove}
+        onMouseLeave={tilt.onMouseLeave}
+        onMouseEnter={tilt.onMouseEnter}
+        initial={{opacity:0,y:24,rotateX:8}} animate={{opacity:1,y:0,rotateX:0}}
+        transition={{delay:0.1+i*0.15,duration:0.55,type:"spring",bounce:0.35}}
+        style={{ background:c.gradient, border:`1px solid ${c.border}`, borderRadius:"24px", padding:"28px", position:"relative", overflow:"hidden", transformPerspective:800 }}
+      >
+        {/* shine layer */}
+        <div className="tilt-shine" style={{borderRadius:"24px"}}/>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,transparent,${c.accent},transparent)`,opacity:0.8}}/>
+        {/* floating glow orb */}
+        <div style={{position:"absolute",top:"-40px",right:"-40px",width:"120px",height:"120px",background:`radial-gradient(circle,${c.glow} 0%,transparent 70%)`,borderRadius:"50%",pointerEvents:"none",filter:"blur(20px)"}}/>
+
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:"16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:"14px"}}>
+            <div style={{width:"52px",height:"52px",background:`linear-gradient(135deg,${c.accent},#8B5CF6)`,borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem",flexShrink:0,boxShadow:`0 8px 20px ${c.glow}`,animation:"avatarDepth 6s ease-in-out infinite alternate"}}>
+              {c.avatar}
+            </div>
+            <div>
+              <h3 style={{fontFamily:"'Manrope',sans-serif",fontSize:"1.1rem",fontWeight:800,color:"#fff",margin:"0 0 4px",letterSpacing:"-0.2px"}}>{c.name}</h3>
+              <p style={{fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",color:"rgba(255,255,255,0.4)",margin:0}}>{c.from}</p>
+            </div>
+          </div>
+          <div style={{flexShrink:0}}>
+            {i===0 ? (
+              <button onClick={()=>openVow(0)}
+                style={{display:"flex",alignItems:"center",gap:"7px",padding:"10px 18px",background:`linear-gradient(90deg,${c.accent},#8B5CF6)`,border:"none",borderRadius:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.8rem",fontWeight:700,color:"#fff",boxShadow:`0 6px 18px ${c.glow}`,transition:"transform 0.22s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.22s",whiteSpace:"nowrap"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px) scale(1.04)";e.currentTarget.style.boxShadow=`0 14px 32px ${c.glow}`;}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=`0 6px 18px ${c.glow}`;}}>
+                <Unlock size={13}/> Read Vow
+              </button>
+            ) : user==="surya" ? (
+              sealed
+                ? <button onClick={()=>openVow(1)} style={{display:"flex",alignItems:"center",gap:"7px",padding:"10px 18px",background:`linear-gradient(90deg,${c.accent},#8B5CF6)`,border:"none",borderRadius:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.8rem",fontWeight:700,color:"#fff",boxShadow:`0 6px 18px ${c.glow}`,whiteSpace:"nowrap"}}>
+                    <Lock size={13}/> Read Sealed Vow
+                  </button>
+                : <div style={{padding:"8px 14px",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"10px"}}>
+                    <p style={{fontFamily:"'Inter',sans-serif",fontSize:"0.75rem",color:"rgba(255,255,255,0.3)",margin:0,fontStyle:"italic"}}>Not written yet 🌸</p>
+                  </div>
+            ) : (
+              sealed && !editMode
+                ? <button onClick={()=>openVow(1)} style={{display:"flex",alignItems:"center",gap:"7px",padding:"10px 18px",background:`linear-gradient(90deg,${c.accent},#8B5CF6)`,border:"none",borderRadius:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.8rem",fontWeight:700,color:"#fff",boxShadow:`0 6px 18px ${c.glow}`,whiteSpace:"nowrap"}}>
+                    <Lock size={13}/> View My Vow
+                  </button>
+                : null
+            )}
+          </div>
+        </div>
+
+        {i===1 && user==="sadhana" && (!sealed||editMode) && (
+          <div style={{marginTop:"20px"}}>
+            <textarea placeholder="Write your vow to Surya here… from your heart 💗" value={sadhanaVow} onChange={e=>setSadhanaVow(e.target.value)}
+              rows={5} disabled={sealing}
+              style={{width:"100%",boxSizing:"border-box",padding:"14px 16px",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"14px",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:"0.9rem",outline:"none",resize:"vertical",lineHeight:1.7,minHeight:"120px"}}/>
+            <button onClick={sealVow} disabled={!sadhanaVow.trim()||sealing}
+              style={{marginTop:"12px",display:"flex",alignItems:"center",gap:"8px",padding:"13px 28px",background:(!sadhanaVow.trim()||sealing)?"rgba(255,255,255,0.05)":`linear-gradient(90deg,${c.accent},#8B5CF6)`,border:"none",borderRadius:"13px",cursor:(!sadhanaVow.trim()||sealing)?"not-allowed":"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.88rem",fontWeight:700,color:"#fff",boxShadow:sadhanaVow.trim()?`0 8px 24px ${c.glow}`:"none",opacity:(!sadhanaVow.trim()||sealing)?0.4:1}}>
+              {sealing?<><Sparkles size={14}/> Sealing…</>:<><Lock size={14}/> Seal with Love 💍</>}
+            </button>
+          </div>
+        )}
+      </motion.div>
+    );
+  }
 
   return (
     <div style={{ maxWidth:"640px", margin:"0 auto", padding:"8px 4px 60px" }}>
@@ -103,80 +169,8 @@ export default function OurVows({ user }) {
       </motion.div>
 
       {/* Vow Cards */}
-      <div style={{ display:"flex", flexDirection:"column", gap:"16px", marginBottom:"40px" }}>
-        {VOW_CARDS.map((c,i) => (
-          <motion.div key={c.id}
-            initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.1+i*0.15,duration:0.5,type:"spring"}}
-            onHoverStart={()=>setHoveredCard(i)} onHoverEnd={()=>setHoveredCard(null)}
-            style={{
-              background: c.gradient,
-              border:`1px solid ${c.border}`,
-              borderRadius:"24px", padding:"28px",
-              boxShadow: hoveredCard===i ? `0 24px 60px rgba(0,0,0,0.3), 0 0 40px ${c.glow}` : "0 8px 32px rgba(0,0,0,0.2)",
-              transform: hoveredCard===i ? "translateY(-4px)" : "translateY(0)",
-              transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-              position:"relative", overflow:"hidden",
-            }}
-          >
-            <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:`linear-gradient(90deg, transparent, ${c.accent}, transparent)`, opacity:0.8 }}/>
-
-            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"16px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
-                <div style={{ width:"52px", height:"52px", background:`linear-gradient(135deg, ${c.accent}, ${i===0?"#8B5CF6":"#8B5CF6"})`, borderRadius:"14px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.5rem", flexShrink:0, boxShadow:`0 8px 20px ${c.glow}` }}>
-                  {c.avatar}
-                </div>
-                <div>
-                  <h3 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.1rem", fontWeight:800, color:"#fff", margin:"0 0 4px", letterSpacing:"-0.2px" }}>{c.name}</h3>
-                  <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.75rem", color:"rgba(255,255,255,0.4)", margin:0 }}>{c.from}</p>
-                </div>
-              </div>
-              {/* Action area */}
-              <div style={{ flexShrink:0 }}>
-                {i===0 ? (
-                  <button onClick={()=>openVow(0)}
-                    style={{ display:"flex", alignItems:"center", gap:"7px", padding:"10px 18px", background:`linear-gradient(90deg, ${c.accent}, #8B5CF6)`, border:"none", borderRadius:"12px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.8rem", fontWeight:700, color:"#fff", boxShadow:`0 6px 18px ${c.glow}`, transition:"transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s", whiteSpace:"nowrap" }}
-                    onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 12px 28px ${c.glow}`;}}
-                    onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=`0 6px 18px ${c.glow}`;}}
-                  >
-                    <Unlock size={13}/> Read Vow
-                  </button>
-                ) : user==="surya" ? (
-                  sealed
-                    ? <button onClick={()=>openVow(1)} style={{ display:"flex", alignItems:"center", gap:"7px", padding:"10px 18px", background:`linear-gradient(90deg, ${c.accent}, #8B5CF6)`, border:"none", borderRadius:"12px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.8rem", fontWeight:700, color:"#fff", boxShadow:`0 6px 18px ${c.glow}`, whiteSpace:"nowrap" }}>
-                        <Lock size={13}/> Read Sealed Vow
-                      </button>
-                    : <div style={{ padding:"8px 14px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"10px" }}>
-                        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.75rem", color:"rgba(255,255,255,0.3)", margin:0, fontStyle:"italic" }}>Not written yet 🌸</p>
-                      </div>
-                ) : (
-                  sealed && !editMode
-                    ? <button onClick={()=>openVow(1)} style={{ display:"flex", alignItems:"center", gap:"7px", padding:"10px 18px", background:`linear-gradient(90deg, ${c.accent}, #8B5CF6)`, border:"none", borderRadius:"12px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.8rem", fontWeight:700, color:"#fff", boxShadow:`0 6px 18px ${c.glow}`, whiteSpace:"nowrap" }}>
-                        <Lock size={13}/> View My Vow
-                      </button>
-                    : null
-                )}
-              </div>
-            </div>
-
-            {/* Sadhana's write area */}
-            {i===1 && user==="sadhana" && (!sealed || editMode) && (
-              <div style={{ marginTop:"20px" }}>
-                <textarea
-                  placeholder="Write your vow to Surya here… from your heart 💗"
-                  value={sadhanaVow}
-                  onChange={e=>setSadhanaVow(e.target.value)}
-                  rows={5}
-                  disabled={sealing}
-                  style={{ width:"100%", boxSizing:"border-box", padding:"14px 16px", background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"14px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", outline:"none", resize:"vertical", lineHeight:1.7, minHeight:"120px" }}
-                />
-                <button onClick={sealVow} disabled={!sadhanaVow.trim()||sealing}
-                  style={{ marginTop:"12px", display:"flex", alignItems:"center", gap:"8px", padding:"13px 28px", background: (!sadhanaVow.trim()||sealing)?"rgba(255,255,255,0.05)":`linear-gradient(90deg, ${c.accent}, #8B5CF6)`, border:"none", borderRadius:"13px", cursor: (!sadhanaVow.trim()||sealing)?"not-allowed":"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.88rem", fontWeight:700, color:"#fff", boxShadow: sadhanaVow.trim()?`0 8px 24px ${c.glow}`:"none", transition:"all 0.22s", opacity: (!sadhanaVow.trim()||sealing)?0.4:1 }}>
-                  {sealing ? <><Sparkles size={14}/> Sealing…</> : <><Lock size={14}/> Seal with Love 💍</>}
-                </button>
-              </div>
-            )}
-          </motion.div>
-        ))}
+      <div style={{ display:"flex", flexDirection:"column", gap:"20px", marginBottom:"40px" }}>
+        {VOW_CARDS.map((c,i) => <VowCard key={c.id} c={c} i={i}/>)}
       </div>
 
       {/* Footer */}
@@ -186,37 +180,49 @@ export default function OurVows({ user }) {
         <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:800, color:"#fff", margin:0, letterSpacing:"-0.2px" }}>Surya &amp; Sadhana — Forever 💍</p>
       </motion.div>
 
-      {/* Vow Modal */}
+      {/* Vow Modal — 3D flip entrance */}
       <AnimatePresence>
         {active !== null && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:9000, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px", backdropFilter:"blur(14px)" }} onClick={closeVow}>
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:9000,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px",backdropFilter:"blur(18px)"}}
+            onClick={closeVow}>
             <motion.div
-              initial={{opacity:0,scale:0.9,y:30}} animate={{opacity:revealed?1:0,scale:revealed?1:0.9,y:revealed?0:30}}
-              exit={{opacity:0,scale:0.9}} transition={{type:"spring",duration:0.5}}
-              style={{ background:"rgba(10,5,18,0.98)", border:`1px solid ${card(active).border}`, borderRadius:"28px", padding:"40px 32px", maxWidth:"520px", width:"100%", position:"relative", boxShadow:`0 40px 100px rgba(0,0,0,0.6), 0 0 80px ${card(active).glow}`, maxHeight:"80vh", overflowY:"auto" }}
-              onClick={e=>e.stopPropagation()}
-            >
-              <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:`linear-gradient(90deg, transparent, ${card(active).accent}, transparent)`, borderRadius:"28px 28px 0 0" }}/>
-              <button onClick={closeVow} style={{ position:"absolute", top:"16px", right:"16px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"50%", width:"32px", height:"32px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(255,255,255,0.5)" }}>
+              initial={{opacity:0,rotateX:20,scale:0.85,y:40}}
+              animate={{opacity:revealed?1:0,rotateX:revealed?0:20,scale:revealed?1:0.85,y:revealed?0:40}}
+              exit={{opacity:0,rotateX:-12,scale:0.88,y:20}}
+              transition={{type:"spring",stiffness:200,damping:22}}
+              style={{background:"rgba(10,5,18,0.98)",border:`1px solid ${card(active).border}`,borderRadius:"28px",padding:"40px 32px",maxWidth:"520px",width:"100%",position:"relative",boxShadow:`0 40px 100px rgba(0,0,0,0.7),0 0 80px ${card(active).glow},inset 0 1px 0 rgba(255,255,255,0.07)`,maxHeight:"80vh",overflowY:"auto",transformPerspective:900,transformStyle:"preserve-3d"}}
+              onClick={e=>e.stopPropagation()}>
+              {/* top gradient line */}
+              <div style={{position:"absolute",top:0,left:0,right:0,height:"2px",background:`linear-gradient(90deg,transparent,${card(active).accent},#8B5CF6,${card(active).accent},transparent)`,borderRadius:"28px 28px 0 0"}}/>
+              {/* floating glow */}
+              <div style={{position:"absolute",top:"-60px",left:"50%",transform:"translateX(-50%)",width:"200px",height:"200px",background:`radial-gradient(circle,${card(active).glow} 0%,transparent 70%)`,borderRadius:"50%",filter:"blur(30px)",pointerEvents:"none"}}/>
+              <button onClick={closeVow} style={{position:"absolute",top:"16px",right:"16px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"50%",width:"32px",height:"32px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.5)",transition:"transform 0.22s,background 0.2s"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="rotate(90deg)";e.currentTarget.style.background="rgba(255,255,255,0.12)";}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.background="rgba(255,255,255,0.06)";}}>
                 <X size={14}/>
               </button>
-              <div style={{ textAlign:"center", marginBottom:"24px" }}>
-                <div style={{ width:"60px", height:"60px", background:`linear-gradient(135deg, ${card(active).accent}, #8B5CF6)`, borderRadius:"16px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.8rem", margin:"0 auto 14px", boxShadow:`0 10px 28px ${card(active).glow}` }}>{card(active).avatar}</div>
-                <h2 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.5rem", fontWeight:800, color:"#fff", margin:"0 0 4px", letterSpacing:"-0.3px" }}>{card(active).name}</h2>
-                <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.78rem", color:"rgba(255,255,255,0.3)", margin:0 }}>{card(active).from}</p>
+              <div style={{textAlign:"center",marginBottom:"24px"}}>
+                <div style={{width:"60px",height:"60px",background:`linear-gradient(135deg,${card(active).accent},#8B5CF6)`,borderRadius:"16px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.8rem",margin:"0 auto 14px",boxShadow:`0 10px 28px ${card(active).glow}`,animation:"avatarDepth 5s ease-in-out infinite alternate"}}>
+                  {card(active).avatar}
+                </div>
+                <h2 style={{fontFamily:"'Manrope',sans-serif",fontSize:"1.5rem",fontWeight:800,color:"#fff",margin:"0 0 4px",letterSpacing:"-0.3px"}}>{card(active).name}</h2>
+                <p style={{fontFamily:"'Inter',sans-serif",fontSize:"0.78rem",color:"rgba(255,255,255,0.3)",margin:0}}>{card(active).from}</p>
               </div>
-              <div style={{ width:"40px", height:"2px", background:`linear-gradient(90deg, transparent, ${card(active).accent}, transparent)`, margin:"0 auto 24px" }}/>
-              <pre style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.92rem", color:"rgba(255,255,255,0.75)", whiteSpace:"pre-wrap", lineHeight:1.9, margin:0 }}>
+              <div style={{width:"40px",height:"2px",background:`linear-gradient(90deg,transparent,${card(active).accent},transparent)`,margin:"0 auto 24px"}}/>
+              <pre style={{fontFamily:"'Inter',sans-serif",fontSize:"0.92rem",color:"rgba(255,255,255,0.75)",whiteSpace:"pre-wrap",lineHeight:1.9,margin:0}}>
                 {getVowText(active)}
               </pre>
-              {active===1 && sealed && (
+              {active===1&&sealed&&(
                 <button onClick={()=>{closeVow();setTimeout(unseal,400);}}
-                  style={{ marginTop:"20px", display:"flex", alignItems:"center", gap:"7px", padding:"11px 22px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"12px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", fontWeight:600, color:"rgba(255,255,255,0.5)" }}>
+                  style={{marginTop:"20px",display:"flex",alignItems:"center",gap:"7px",padding:"11px 22px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.82rem",fontWeight:600,color:"rgba(255,255,255,0.5)"}}>
                   <Pen size={13}/> Edit Vow
                 </button>
               )}
               <button onClick={closeVow}
-                style={{ width:"100%", marginTop:"20px", padding:"14px", background:`linear-gradient(90deg, ${card(active).accent}, #8B5CF6)`, border:"none", borderRadius:"14px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", fontWeight:700, color:"#fff", boxShadow:`0 8px 24px ${card(active).glow}` }}>
+                style={{width:"100%",marginTop:"20px",padding:"14px",background:`linear-gradient(90deg,${card(active).accent},#8B5CF6)`,border:"none",borderRadius:"14px",cursor:"pointer",fontFamily:"'Inter',sans-serif",fontSize:"0.9rem",fontWeight:700,color:"#fff",boxShadow:`0 8px 24px ${card(active).glow}`,transition:"transform 0.22s,box-shadow 0.22s"}}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 16px 40px ${card(active).glow}`;}}
+                onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=`0 8px 24px ${card(active).glow}`;}}>
                 Close 💕
               </button>
             </motion.div>

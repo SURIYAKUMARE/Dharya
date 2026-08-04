@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dharya — Our Love Wall ❤️</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<!-- ░░░ CANVAS — particles/petals/stars ░░░ -->
+<canvas id="ambientCanvas"></canvas>
+
+<!-- ░░░ CUSTOM CURSOR ░░░ -->
+<div id="cursorDot"></div>
+<div id="cursorRing"></div>
+
+<!-- ░░░ MUSIC PLAYER ░░░ -->
+<div id="musicPlayer" class="music-player">
+  <div class="mp-vinyl" id="mpVinyl">
+    <div class="mp-vinyl-inner">♪</div>
+  </div>
+  <div class="mp-info">
+    <span id="mpTrackName">Our Song</span>
+    <span id="mpArtist">♡ For You</span>
+  </div>
+  <div class="mp-controls">
+    <button id="mpPrev" aria-label="Previous">
+      <svg viewBox="0 0 24 24"><path d="M19 20L9 12l10-8v16zM5 19V5h2v14H5z"/></svg>
+    </button>
+    <button id="mpPlay" class="mp-play-btn" aria-label="Play">
+      <svg id="mpPlayIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button id="mpNext" aria-label="Next">
+      <svg viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zm14 1h-2v14h2V5z"/></svg>
+    </button>
+  </div>
+  <div class="mp-vol-wrap">
+    <svg viewBox="0 0 24 24" class="mp-vol-icon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+    <input type="range" id="mpVolume" min="0" max="1" step="0.01" value="0.6" aria-label="Volume"/>
+  </div>
+</div>
+
+<!-- ░░░ NAV ░░░ -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">
+    <span class="logo-icon">❤</span>
+    <span class="logo-text">Dharya</span>
+  </a>
+  <div class="nav-links" id="navLinks">
+    <a href="#timeline"  data-label="01">Timeline</a>
+    <a href="#gallery"   data-label="02">Gallery</a>
+    <a href="#letter"    data-label="03">Letter</a>
+    <a href="#memories"  data-label="04">Memories</a>
+    <a href="#countdown" data-label="05">Together</a>
+    <a href="#secret"    data-label="06">Secret</a>
+  </div>
+  <button class="nav-burger" id="navBurger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="nav-drawer" id="navDrawer">
+  <button class="drawer-close" id="drawerClose">✕</button>
+  <a href="#timeline"  onclick="closeDrawer()">Timeline</a>
+  <a href="#gallery"   onclick="closeDrawer()">Gallery</a>
+  <a href="#letter"    onclick="closeDrawer()">Letter</a>
+  <a href="#memories"  onclick="closeDrawer()">Memories</a>
+  <a href="#countdown" onclick="closeDrawer()">Together</a>
+  <a href="#secret"    onclick="closeDrawer()">Secret</a>
+</div>
+
+<!-- ░░░░░░░░░░░░░░░░░░ HERO ░░░░░░░░░░░░░░░░░░ -->
+<section id="hero" class="hero">
+  <div class="hero-noise"></div>
+  <div class="hero-gradient-orb orb-1"></div>
+  <div class="hero-gradient-orb orb-2"></div>
+  <div class="hero-gradient-orb orb-3"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">
+      <span class="eyebrow-line"></span>
+      A Love Story
+      <span class="eyebrow-line"></span>
+    </p>
+    <h1 class="hero-title">
+      <span class="hero-title-top">Our</span>
+      <span class="hero-title-main">Love Wall</span>
+    </h1>
+    <p class="hero-sub">Every memory, every smile, every heartbeat belongs here.</p>
+    <p class="hero-quote" id="heroQuote"><span id="heroQuoteText"></span><span class="cursor-blink">|</span></p>
+    <div class="hero-actions">
+      <a href="#timeline" class="btn-primary">
+        <span>Enter Our World</span>
+        <div class="btn-shine"></div>
+      </a>
+      <a href="#secret" class="btn-ghost">
+        <span>Secret Message</span>
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num" id="heroStat">0</span><span class="stat-label">Days Together</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Love</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">1</span><span class="stat-label">Forever</span></div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ TIMELINE ░░░░░░░░░░░░░░░░░░ -->
+<section id="timeline" class="section">
+  <div class="section-head">
+    <span class="tag">Our Journey</span>
+    <h2 class="section-title">Love Timeline</h2>
+    <p class="section-sub">Every chapter of our beautiful story</p>
+  </div>
+  <div class="timeline-wrap" id="timelineWrap"></div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ GALLERY ░░░░░░░░░░░░░░░░░░ -->
+<section id="gallery" class="section">
+  <div class="section-head">
+    <span class="tag">Captured Moments</span>
+    <h2 class="section-title">Photo Gallery</h2>
+    <p class="section-sub">A thousand words in every frame</p>
+  </div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+</section>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox">
+  <div class="lb-bg" id="lbBg"></div>
+  <div class="lb-frame">
+    <img id="lbImg" src="" alt=""/>
+    <p id="lbCap"></p>
+    <button class="lb-close" id="lbClose">
+      <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="lb-nav lb-prev" id="lbPrev">‹</button>
+    <button class="lb-nav lb-next" id="lbNext">›</button>
+  </div>
+</div>
+
+<!-- ░░░░░░░░░░░░░░░░░░ LETTER ░░░░░░░░░░░░░░░░░░ -->
+<section id="letter" class="section">
+  <div class="section-head">
+    <span class="tag">For You Only</span>
+    <h2 class="section-title">A Letter From My Heart</h2>
+    <p class="section-sub">Words I carry with me every day</p>
+  </div>
+  <div class="letter-scene">
+    <div class="envelope-wrap" id="envelopeWrap">
+      <div class="envelope" id="envelope">
+        <div class="env-shadow"></div>
+        <div class="env-back"></div>
+        <div class="env-left"></div>
+        <div class="env-right"></div>
+        <div class="env-bottom"></div>
+        <div class="env-flap" id="envFlap"></div>
+        <div class="env-seal" id="envSeal">
+          <span class="seal-heart">❤</span>
+          <span class="seal-ring"></span>
+        </div>
+        <div class="env-lines">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+      <p class="env-cta">Click to open ↑</p>
+    </div>
+    <div class="letter-paper" id="letterPaper">
+      <div class="paper-header">
+        <div class="paper-rose">🌹</div>
+        <div class="paper-date" id="paperDate"></div>
+      </div>
+      <h3 class="paper-salutation">My Dearest Sadhana,</h3>
+      <div class="paper-body" id="paperBody"></div>
+      <div class="paper-sign">
+        <p>Forever yours,</p>
+        <p class="sign-name">Surya ❤️</p>
+      </div>
+      <button class="letter-close-btn" id="letterClose">Close 💌</button>
+    </div>
+  </div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ MEMORY WALL ░░░░░░░░░░░░░░░░░░ -->
+<section id="memories" class="section">
+  <div class="section-head">
+    <span class="tag">Our Pinboard</span>
+    <h2 class="section-title">Memory Wall</h2>
+    <p class="section-sub">Pin your sweetest memories here</p>
+  </div>
+  <div class="mem-toolbar">
+    <button class="add-mem-btn" id="addMemBtn">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      Add Memory
+    </button>
+  </div>
+  <div class="memory-wall" id="memoryWall"></div>
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalBox">
+      <button class="modal-x" id="modalX">✕</button>
+      <h3 class="modal-title">✦ New Memory</h3>
+      <input  type="text" id="memTitle" placeholder="Title…"        class="m-input"/>
+      <textarea id="memBody" placeholder="Write your memory…"       class="m-textarea" rows="4"></textarea>
+      <div class="m-colors" id="mColors"></div>
+      <div class="m-btns">
+        <button class="m-save" id="mSave">Save Memory 💕</button>
+        <button class="m-cancel" id="mCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ COUNTDOWN ░░░░░░░░░░░░░░░░░░ -->
+<section id="countdown" class="section">
+  <div class="section-head">
+    <span class="tag">Every Second Counts</span>
+    <h2 class="section-title">Together Since</h2>
+    <p class="section-sub">May 20, 2026 — the day everything changed</p>
+  </div>
+  <div class="cd-grid">
+    <div class="cd-unit"><div class="cd-card"><span class="cd-num" id="cdD">000</span></div><span class="cd-lbl">Days</span></div>
+    <div class="cd-dot">:</div>
+    <div class="cd-unit"><div class="cd-card"><span class="cd-num" id="cdH">00</span></div><span class="cd-lbl">Hours</span></div>
+    <div class="cd-dot">:</div>
+    <div class="cd-unit"><div class="cd-card"><span class="cd-num" id="cdM">00</span></div><span class="cd-lbl">Minutes</span></div>
+    <div class="cd-dot">:</div>
+    <div class="cd-unit"><div class="cd-card"><span class="cd-num" id="cdS">00</span></div><span class="cd-lbl">Seconds</span></div>
+  </div>
+  <div class="love-meter-wrap">
+    <p class="lm-top">Love Level</p>
+    <div class="lm-track"><div class="lm-fill" id="lmFill"></div></div>
+    <p class="lm-bottom">Infinity ❤️</p>
+  </div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ SECRET ░░░░░░░░░░░░░░░░░░ -->
+<section id="secret" class="section">
+  <div class="section-head">
+    <span class="tag">🔐 Hidden For You</span>
+    <h2 class="section-title">Secret Message</h2>
+    <p class="section-sub">Click all five hearts to reveal…</p>
+  </div>
+  <div class="secret-box">
+    <div class="secret-lock-side" id="secretLock">
+      <div class="secret-hearts" id="secretHearts">
+        <span data-i="0">🤍</span><span data-i="1">🤍</span>
+        <span data-i="2">🤍</span><span data-i="3">🤍</span>
+        <span data-i="4">🤍</span>
+      </div>
+      <p class="secret-hint">Click each heart in order</p>
+      <div class="secret-or"><span>or</span></div>
+      <div class="secret-pw">
+        <input type="password" id="pwInput" placeholder="Enter password…"/>
+        <button id="pwBtn">✦ Unlock</button>
+      </div>
+    </div>
+    <div class="secret-reveal-side" id="secretReveal">
+      <div class="reveal-glow"></div>
+      <p class="reveal-tag">✦ ✧ ✦ ✧ ✦</p>
+      <h3 class="reveal-title">You Found It…</h3>
+      <p class="reveal-msg" id="revealMsg"></p>
+      <button class="reveal-lock" id="revealLock">🔐 Lock Again</button>
+    </div>
+  </div>
+</section>
+
+<!-- ░░░░░░░░░░░░░░░░░░ FOOTER ░░░░░░░░░░░░░░░░░░ -->
+<footer class="footer">
+  <div class="footer-orb"></div>
+  <div class="footer-hearts" id="footerHearts"></div>
+  <div class="footer-divider"><span>❤</span></div>
+  <h2 class="footer-title">Forever &amp; Always</h2>
+  <p class="footer-sub">Made with love, for love, forever.</p>
+  <p class="footer-copy">Dharya © 2026</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

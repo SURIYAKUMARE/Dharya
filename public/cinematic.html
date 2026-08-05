@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dharya — A Love Story</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400;1,600&family=Dancing+Script:wght@700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Inter',sans-serif;cursor:none}
+
+/* ── custom cursor ── */
+#cursor{position:fixed;width:12px;height:12px;border-radius:50%;background:rgba(255,182,193,0.9);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform 0.1s,width 0.3s,height 0.3s;box-shadow:0 0 20px rgba(255,105,135,0.8),0 0 40px rgba(255,105,135,0.4)}
+#cursor-ring{position:fixed;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,182,193,0.4);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform 0.18s ease-out,width 0.3s,height 0.3s,border-color 0.3s}
+#cursor.hover{width:20px;height:20px}
+#cursor-ring.hover{width:56px;height:56px;border-color:rgba(255,182,193,0.7)}
+
+/* ── scenes ── */
+.scene{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.8s}
+.scene.active{opacity:1;pointer-events:all}
+
+/* ── Scene 1: Opening ── */
+#scene-open{background:radial-gradient(ellipse at 50% 60%,#0d0008 0%,#000 70%)}
+
+/* ambient particles canvas */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* heart */
+#heart-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:32px;cursor:pointer}
+#heart-svg{width:140px;height:140px;filter:drop-shadow(0 0 30px #ff1a6e) drop-shadow(0 0 80px rgba(255,26,110,0.4))}
+#heart-svg path{fill:url(#heartGrad)}
+.open-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,5vw,3.4rem);font-weight:300;font-style:italic;color:#fff;letter-spacing:2px;text-align:center;text-shadow:0 0 60px rgba(255,182,193,0.4);line-height:1.3}
+.open-sub{font-family:'Dancing Script',cursive;font-size:clamp(1.1rem,2.5vw,1.6rem);color:rgba(255,182,193,0.7);letter-spacing:1px;text-align:center}
+.click-hint{font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:300;color:rgba(255,255,255,0.3);letter-spacing:3px;text-transform:uppercase;margin-top:8px;animation:hintPulse 2.5s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{opacity:0.3}50%{opacity:0.7}}
+
+/* ── Scene 2: Canvas (tree growth + sky) ── */
+#scene-tree{background:transparent;z-index:5}
+#tree-canvas{position:fixed;inset:0;z-index:5}
+
+/* sky gradient behind tree */
+#sky{position:fixed;inset:0;z-index:1;
+  background:linear-gradient(180deg,
+    #1a0a2e 0%,#2d1250 10%,
+    #4a1a5c 22%,#7b2d5c 35%,
+    #c05070 50%,#e87060 62%,
+    #f5a060 72%,#ffd080 82%,
+    #ffe8b0 90%,#fff5e0 100%)}
+#mountains{position:fixed;bottom:0;left:0;right:0;height:45%;z-index:2;pointer-events:none}
+#birds-canvas{position:fixed;inset:0;z-index:3;pointer-events:none}
+
+/* message overlay */
+#msg-overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0}
+.msg-card{background:rgba(255,255,255,0.07);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,0.15);border-radius:32px;padding:52px 48px;max-width:min(600px,90vw);text-align:center;box-shadow:0 40px 100px rgba(0,0,0,0.4),0 0 80px rgba(255,105,135,0.12)}
+.msg-card h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:600;font-style:italic;color:#fff;margin-bottom:16px;text-shadow:0 0 40px rgba(255,182,193,0.5)}
+.msg-card p{font-family:'Dancing Script',cursive;font-size:clamp(1.1rem,2.5vw,1.55rem);color:rgba(255,230,240,0.88);line-height:1.8;margin-bottom:28px}
+.msg-card .sig{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;color:rgba(255,182,193,0.7)}
+.replay-btn{display:inline-flex;align-items:center;gap:8px;margin-top:24px;padding:12px 28px;background:rgba(255,105,135,0.15);border:1.5px solid rgba(255,182,193,0.4);border-radius:50px;color:rgba(255,255,255,0.8);font-family:'Inter',sans-serif;font-size:0.82rem;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(10px)}
+.replay-btn:hover{background:rgba(255,105,135,0.3);border-color:rgba(255,182,193,0.8);color:#fff;transform:translateY(-2px)}
+.top-ribbon{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,182,193,0.7),rgba(255,105,135,0.9),rgba(255,182,193,0.7),transparent);border-radius:32px 32px 0 0}
+
+/* loading bar */
+#loader{position:fixed;inset:0;background:#000;z-index:9990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+#loader-bar-wrap{width:200px;height:2px;background:rgba(255,255,255,0.1);border-radius:2px}
+#loader-bar{height:100%;width:0%;background:linear-gradient(90deg,#ff1a6e,#ff9a8b);border-radius:2px;transition:width 0.3s}
+#loader-txt{font-family:'Inter',sans-serif;font-size:0.72rem;color:rgba(255,255,255,0.3);letter-spacing:3px;text-transform:uppercase}
+
+/* butterflies */
+.butterfly{position:fixed;pointer-events:none;z-index:25;font-size:1.4rem;opacity:0}
+
+/* confetti */
+.confetti-piece{position:fixed;pointer-events:none;z-index:24;border-radius:2px;opacity:0}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-style:italic;color:rgba(255,255,255,0.5);letter-spacing:2px">Dharya</div>
+  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+  <div id="loader-txt">Loading your story…</div>
+</div>
+
+<!-- Custom cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- BG canvas (ambient particles) -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- Scene 1: Opening Heart -->
+<div id="scene-open" class="scene">
+  <div id="heart-wrap">
+    <svg id="heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="heartGrad" cx="50%" cy="40%">
+          <stop offset="0%" stop-color="#ff8fab"/>
+          <stop offset="40%" stop-color="#ff1a6e"/>
+          <stop offset="100%" stop-color="#9b003e"/>
+        </radialGradient>
+        <filter id="heartBloom">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path filter="url(#heartBloom)" d="M50 85 C50 85 5 55 5 28 C5 12 17 2 30 2 C38 2 45 6 50 13 C55 6 62 2 70 2 C83 2 95 12 95 28 C95 55 50 85 50 85Z"/>
+    </svg>
+    <div class="open-title" id="open-title" style="opacity:0">A Love Story</div>
+    <div class="open-sub" id="open-sub" style="opacity:0">Surya &amp; Sadhana</div>
+    <div class="click-hint" id="click-hint" style="opacity:0">Touch the heart to begin</div>
+  </div>
+</div>
+
+<!-- Scene 2: Tree + Sky -->
+<div id="scene-tree" class="scene">
+  <div id="sky"></div>
+  <svg id="mountains" viewBox="0 0 1440 400" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,400 L0,200 L180,80 L360,180 L540,60 L720,150 L900,40 L1080,140 L1260,70 L1440,160 L1440,400Z" fill="rgba(20,8,40,0.7)"/>
+    <path d="M0,400 L0,280 L200,160 L400,240 L600,140 L800,220 L1000,120 L1200,200 L1440,130 L1440,400Z" fill="rgba(30,10,55,0.85)"/>
+    <path d="M0,400 L0,340 L240,250 L480,310 L720,230 L960,300 L1200,250 L1440,290 L1440,400Z" fill="rgba(15,5,30,0.92)"/>
+  </svg>
+  <canvas id="birds-canvas"></canvas>
+  <canvas id="tree-canvas"></canvas>
+</div>
+
+<!-- Final message overlay -->
+<div id="msg-overlay">
+  <div class="msg-card">
+    <div class="top-ribbon"></div>
+    <h2>Our Tree of Life 🌳</h2>
+    <p id="msg-text">Every branch is a memory we've made.<br/>Every leaf is a moment I cherish with you.<br/>Every flower is a promise I'll keep — forever.</p>
+    <div class="sig">— Surya, for Sadhana 💍</div>
+    <button class="replay-btn" onclick="location.reload()">↺ &nbsp;Watch Again</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   DHARYA — Cinematic Tree of Life
+   Stack: GSAP + Canvas 2D
+══════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const PI2 = Math.PI * 2;
+const rand = (a,b) => a + Math.random()*(b-a);
+const lerp = (a,b,t) => a+(b-a)*t;
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+
+/* ── Loader ── */
+let loaded = 0;
+const loadStep = pct => {
+  $('loader-bar').style.width = pct+'%';
+  if(pct >= 100){ setTimeout(()=>gsap.to('#loader',{opacity:0,duration:0.8,onComplete:()=>{$('loader').style.display='none';startOpening();}}), 400); }
+};
+let l=0; const loadInterval = setInterval(()=>{ l+=rand(8,18); if(l>=100){l=100;clearInterval(loadInterval);} loadStep(l); },120);
+
+/* ── Custom Cursor ── */
+const cursor=$('cursor'), cursorRing=$('cursor-ring');
+let mx=window.innerWidth/2, my=window.innerHeight/2;
+let rx=mx, ry=my;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function animCursor(){
+  rx=lerp(rx,mx,0.18); ry=lerp(ry,my,0.18);
+  cursor.style.left=mx+'px'; cursor.style.top=my+'px';
+  cursorRing.style.left=rx+'px'; cursorRing.style.top=ry+'px';
+  requestAnimationFrame(animCursor);
+})();
+document.querySelectorAll('button,#heart-wrap,.replay-btn').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cursor.classList.add('hover');cursorRing.classList.add('hover');});
+  el.addEventListener('mouseleave',()=>{cursor.classList.remove('hover');cursorRing.classList.remove('hover');});
+});
+
+/* ══ BG CANVAS — ambient particles ══ */
+const bgC = $('bg-canvas');
+const bgX = bgC.getContext('2d');
+bgC.width=window.innerWidth; bgC.height=window.innerHeight;
+window.addEventListener('resize',()=>{bgC.width=window.innerWidth;bgC.height=window.innerHeight;});
+
+const bgParticles = Array.from({length:80},()=>({
+  x:rand(0,1),y:rand(0,1),r:rand(0.5,2.5),
+  vx:rand(-0.0003,0.0003),vy:rand(-0.0006,-0.0002),
+  alpha:rand(0.1,0.6),color:Math.random()<0.5?'255,182,193':'255,215,0',
+  phase:rand(0,PI2),
+}));
+
+let bgRunning=true;
+(function bgLoop(){
+  if(!bgRunning)return;
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  bgParticles.forEach(p=>{
+    p.phase+=0.015; p.x+=p.vx; p.y+=p.vy;
+    if(p.y<-0.01)p.y=1; if(p.x<0)p.x=1; if(p.x>1)p.x=0;
+    const a=p.alpha*(0.6+Math.sin(p.phase)*0.4);
+    // mouse attraction
+    const dx=mx/bgC.width-p.x, dy=my/bgC.height-p.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<0.12){p.x+=dx*0.0004;p.y+=dy*0.0004;}
+    bgX.beginPath(); bgX.arc(p.x*bgC.width,p.y*bgC.height,p.r,0,PI2);
+    bgX.fillStyle=`rgba(${p.color},${a})`; bgX.fill();
+  });
+  requestAnimationFrame(bgLoop);
+})();
+</script>
+
+<script>
+/* ══ SCENE 1 — Opening ══ */
+function startOpening(){
+  $('scene-open').classList.add('active');
+  gsap.timeline()
+    .to('#heart-svg',{scale:0,opacity:0,duration:0})
+    .to('#heart-svg',{scale:1,opacity:1,duration:1.4,ease:'elastic.out(1,0.5)'})
+    .to('#open-title',{opacity:1,y:0,duration:1.1,ease:'power3.out'},'-=0.3')
+    .to('#open-sub',{opacity:1,duration:0.9,ease:'power2.out'},'-=0.4')
+    .to('#click-hint',{opacity:1,duration:0.8},'-=0.2');
+
+  // heartbeat
+  gsap.to('#heart-svg',{
+    scale:1.12,duration:0.28,ease:'power2.in',
+    yoyo:true,repeat:-1,repeatDelay:0.8,
+  });
+
+  // glow pulse
+  gsap.to('#heart-svg',{
+    filter:'drop-shadow(0 0 55px #ff1a6e) drop-shadow(0 0 120px rgba(255,26,110,0.5))',
+    duration:0.9,ease:'power2.inOut',yoyo:true,repeat:-1
+  });
+
+  $('heart-wrap').addEventListener('click',onHeartClick,{once:true});
+}
+
+/* ══ Heart click → seed drop → tree ══ */
+function onHeartClick(){
+  gsap.timeline()
+    // heartbeat stops, heart implodes into seed
+    .to('#heart-svg',{scale:0.12,filter:'drop-shadow(0 0 8px #ffd700)',duration:0.6,ease:'back.in(3)'})
+    .to('#open-title,#open-sub,#click-hint',{opacity:0,y:-20,duration:0.4,stagger:0.06},'-=0.2')
+    // transition to tree scene
+    .call(()=>{
+      $('scene-open').classList.remove('active');
+      $('scene-tree').classList.add('active');
+      startTreeScene();
+    },null,'-=0.05');
+}
+
+/* ══ TREE SCENE ══ */
+const tC=$('tree-canvas'), tX=tC.getContext('2d');
+const bC=$('birds-canvas'), bX=bC.getContext('2d');
+
+function resizeCanvases(){
+  tC.width=bC.width=window.innerWidth;
+  tC.height=bC.height=window.innerHeight;
+}
+resizeCanvases();
+window.addEventListener('resize',resizeCanvases);
+
+const W=()=>tC.width, H=()=>tC.height;
+const CX=()=>W()/2, GY=()=>H()*0.72;
+
+/* state */
+let tPhase='seed', tTick=0, pTick=0;
+const tRand=(a,b)=>a+Math.random()*(b-a);
+const tLerp=(a,b,t)=>a+(b-a)*t;
+const tClamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* particles */
+const sakura=Array.from({length:60},()=>({
+  x:tRand(0,1),y:tRand(-0.2,1.1),r:tRand(3,7),
+  vx:tRand(-0.0015,0.0015),vy:tRand(0.0004,0.0012),
+  angle:tRand(0,Math.PI*2),spin:tRand(-0.03,0.03),
+  alpha:tRand(0.3,0.8),hue:tRand(340,360),
+}));
+const golden=Array.from({length:45},()=>({
+  x:tRand(0,1),y:tRand(0,1),r:tRand(0.5,2),
+  vx:tRand(-0.0005,0.0005),vy:tRand(-0.0008,-0.0002),
+  alpha:tRand(0.2,0.7),phase:tRand(0,Math.PI*2),
+}));
+
+/* seed */
+let seedY=-30,seedGlow=0,seedDone=false;
+
+/* tree data */
+const trunk=[];
+const branches=[];
+const leaves=[];
+const flowers=[];
+const pollen=[];
+let trunkIdx=0,trunkSeg=0,branchIdx=0,branchSeg=0,leafIdx=0,flowerIdx=0;
+let rayAlpha=0,windT=0;
+let treeDone=false;
+
+function buildTree(){
+  let tx=CX(),ty=GY(),angle=-Math.PI/2,w=15;
+  for(let i=0;i<18;i++){
+    angle+=tRand(-0.05,0.05);
+    const len=tRand(18,32);
+    const nx=tx+Math.cos(angle)*len, ny=ty+Math.sin(angle)*len;
+    trunk.push({x1:tx,y1:ty,x2:nx,y2:ny,w:w*(1-i/18*0.6),angle,progress:0});
+    tx=nx;ty=ny;w*=0.9;
+  }
+  function addB(x1,y1,a,w,d){
+    if(d>5||w<1)return;
+    const len=tRand(28,62)*(1-d*0.12);
+    const ang=a+tRand(-0.4,0.4);
+    const x2=x1+Math.cos(ang)*len, y2=y1+Math.sin(ang)*len;
+    branches.push({x1,y1,x2,y2,w,ang,d,progress:0});
+    if(d>=2){
+      for(let i=0;i<tRand(3,9);i++){
+        const t=tRand(0.3,1);
+        leaves.push({
+          x:tLerp(x1,x2,t)+tRand(-14,14),y:tLerp(y1,y2,t)+tRand(-12,12),
+          size:tRand(5,16),angle:tRand(0,Math.PI*2),
+          sway:tRand(-0.05,0.05),swaySpd:tRand(0.015,0.04),
+          bloom:0,alpha:0,hue:tRand(120,155),sat:tRand(55,90),lit:tRand(28,52),
+        });
+      }
+      if(d>=3&&Math.random()<0.38) flowers.push({x:x2,y:y2,r:tRand(3,7),bloom:0,alpha:0});
+    }
+    if(Math.random()<0.78)addB(x2,y2,ang-tRand(0.3,0.68),w*0.62,d+1);
+    if(Math.random()<0.78)addB(x2,y2,ang+tRand(0.3,0.68),w*0.62,d+1);
+  }
+  trunk.slice(12).forEach((s,i)=>{
+    addB(s.x2,s.y2,s.angle-0.55-i*0.03,5.5,1);
+    addB(s.x2,s.y2,s.angle+0.55+i*0.03,5.5,1);
+  });
+}
+
+/* birds */
+const birds=Array.from({length:8},(_,i)=>({
+  x:tRand(-0.2,0.2),y:tRand(0.08,0.35),
+  vx:tRand(0.0015,0.003),vy:tRand(-0.0002,0.0002),
+  phase:tRand(0,Math.PI*2),spd:tRand(0.06,0.1),size:tRand(6,10),
+}));
+
+function drawBird(x,y,size,phase){
+  const flap=Math.sin(phase)*0.6;
+  bX.beginPath();
+  bX.moveTo(x,y);
+  bX.quadraticCurveTo(x-size*0.7,y-size*flap,x-size*1.4,y);
+  bX.moveTo(x,y);
+  bX.quadraticCurveTo(x+size*0.7,y-size*flap,x+size*1.4,y);
+  bX.strokeStyle='rgba(20,5,40,0.6)';bX.lineWidth=1.5;bX.stroke();
+}
+</script>
+
+<script>
+/* ══ DRAW FUNCTIONS ══ */
+function drawSky(){
+  // parallax mountain shift with mouse
+  const shift=(mx/window.innerWidth-0.5)*18;
+  document.getElementById('mountains').style.transform=`translateX(${shift}px)`;
+}
+
+function drawSakura(){
+  sakura.forEach(p=>{
+    p.angle+=p.spin; p.x+=p.vx; p.y+=p.vy;
+    if(p.y>1.15){p.y=-0.05;p.x=tRand(0,1);}
+    if(p.x<0)p.x=1; if(p.x>1)p.x=0;
+    tX.save(); tX.translate(p.x*W(),p.y*H()); tX.rotate(p.angle);
+    // petal shape
+    tX.beginPath();
+    tX.ellipse(0,0,p.r,p.r*1.7,0,0,Math.PI*2);
+    tX.fillStyle=`hsla(${p.hue},80%,80%,${p.alpha})`; tX.fill();
+    tX.restore();
+  });
+}
+
+function drawGoldenDust(t){
+  golden.forEach(p=>{
+    p.phase+=0.02; p.x+=p.vx; p.y+=p.vy;
+    if(p.y<-0.02)p.y=1.02; if(p.x<0)p.x=1; if(p.x>1)p.x=0;
+    const a=p.alpha*(0.5+Math.sin(p.phase)*0.5)*t;
+    tX.beginPath(); tX.arc(p.x*W(),p.y*H(),p.r,0,Math.PI*2);
+    tX.fillStyle=`rgba(255,215,80,${a})`; tX.fill();
+  });
+}
+
+function drawSeed(t){
+  const fy=tLerp(-40,GY(),tClamp(t/0.75,0,1));
+  const bounce=t>0.75?Math.sin((t-0.75)/0.25*Math.PI)*16*(1-(t-0.75)/0.25*0.6):0;
+  const sy=fy-bounce;
+  // ground crack glow on landing
+  if(t>0.82){
+    const cr=tX.createRadialGradient(CX(),GY(),0,CX(),GY(),(t-0.82)*8*160);
+    cr.addColorStop(0,'rgba(255,215,80,0.55)'); cr.addColorStop(0.4,'rgba(255,182,193,0.15)'); cr.addColorStop(1,'transparent');
+    tX.fillStyle=cr; tX.fillRect(0,0,W(),H());
+    // dust particles
+    for(let i=0;i<3;i++){
+      const da=(t-0.82)*3+i*Math.PI*0.4;
+      const dr=(t-0.82)*140;
+      tX.beginPath(); tX.arc(CX()+Math.cos(da)*dr,GY()+Math.sin(da)*dr*0.4,tRand(1,4),0,Math.PI*2);
+      tX.fillStyle=`rgba(200,150,100,${0.6*(1-(t-0.82)*1.2)})`; tX.fill();
+    }
+  }
+  // glow
+  const glowR=16+seedGlow*70;
+  const sg=tX.createRadialGradient(CX(),sy,0,CX(),sy,glowR);
+  sg.addColorStop(0,'rgba(255,215,80,0.95)'); sg.addColorStop(0.4,'rgba(255,182,193,0.35)'); sg.addColorStop(1,'transparent');
+  tX.fillStyle=sg; tX.fillRect(CX()-glowR,sy-glowR,glowR*2,glowR*2);
+  // seed body
+  tX.save(); tX.translate(CX(),sy);
+  tX.beginPath(); tX.ellipse(0,0,5,8,0,0,Math.PI*2);
+  const sb=tX.createRadialGradient(0,-2,0,0,0,8);
+  sb.addColorStop(0,'#fffde7'); sb.addColorStop(0.4,'rgba(255,200,50,1)'); sb.addColorStop(1,'#7a5c10');
+  tX.fillStyle=sb; tX.fill();
+  // tiny sprout hint
+  if(t>0.88){
+    const spt=(t-0.88)/0.12;
+    tX.beginPath(); tX.moveTo(0,0); tX.lineTo(0,-spt*22);
+    tX.strokeStyle=`rgba(80,160,80,${spt*0.7})`; tX.lineWidth=2; tX.stroke();
+  }
+  tX.restore();
+  seedGlow=tLerp(seedGlow,t>0.84?1:0,0.07);
+}
+
+function drawRoots(rp){
+  // simple ground line with glow
+  const gg=tX.createLinearGradient(CX()-180,GY(),CX()+180,GY());
+  gg.addColorStop(0,'transparent'); gg.addColorStop(0.5,`rgba(80,160,80,${rp*0.5})`); gg.addColorStop(1,'transparent');
+  tX.fillStyle=gg; tX.fillRect(0,GY()-1,W(),3);
+  // animated roots
+  for(let i=0;i<6;i++){
+    const a=Math.PI*0.2+(Math.PI*0.6/5)*i + Math.PI/2;
+    const rlen=tRand(60,120)*rp;
+    tX.beginPath(); tX.moveTo(CX(),GY());
+    const cx1=CX()+Math.cos(a-0.3)*rlen*0.5;
+    const cy1=GY()+Math.sin(a-0.3)*rlen*0.5;
+    const cx2=CX()+Math.cos(a+0.2)*rlen*0.8;
+    const cy2=GY()+Math.sin(a+0.2)*rlen*0.8;
+    const ex=CX()+Math.cos(a)*rlen, ey=GY()+Math.sin(a)*rlen;
+    tX.bezierCurveTo(cx1,cy1,cx2,cy2,ex,ey);
+    tX.strokeStyle=`rgba(${80+i*5},${50+i*3},${20},${rp*0.65})`; tX.lineWidth=2-i*0.2; tX.lineCap='round'; tX.stroke();
+  }
+}
+
+function drawTrunk(idx,seg){
+  trunk.forEach((s,i)=>{
+    if(i>idx)return;
+    const t=i===idx?seg:1; if(t<=0)return;
+    const x2=tLerp(s.x1,s.x2,t),y2=tLerp(s.y1,s.y2,t);
+    tX.beginPath(); tX.moveTo(s.x1,s.y1); tX.lineTo(x2,y2);
+    const bk=tX.createLinearGradient(s.x1-s.w,0,s.x1+s.w,0);
+    bk.addColorStop(0,'rgba(55,28,8,1)'); bk.addColorStop(0.5,'rgba(101,67,33,1)'); bk.addColorStop(1,'rgba(65,38,12,1)');
+    tX.strokeStyle=bk; tX.lineWidth=s.w; tX.lineCap='round'; tX.stroke();
+    // highlight
+    tX.beginPath(); tX.moveTo(s.x1+s.w*0.15,s.y1); tX.lineTo(x2+s.w*0.15,y2);
+    tX.strokeStyle='rgba(180,120,60,0.14)'; tX.lineWidth=s.w*0.22; tX.stroke();
+  });
+}
+
+function drawBranches(idx,seg){
+  branches.forEach((b,i)=>{
+    if(i>idx)return;
+    const t=i===idx?seg:1; if(t<=0)return;
+    const x2=tLerp(b.x1,b.x2,t),y2=tLerp(b.y1,b.y2,t);
+    tX.beginPath(); tX.moveTo(b.x1,b.y1); tX.lineTo(x2,y2);
+    tX.strokeStyle=`hsl(${25+b.d*3},${58-b.d*4}%,${28+b.d*3}%)`; tX.lineWidth=Math.max(0.6,b.w); tX.lineCap='round'; tX.stroke();
+  });
+}
+
+function drawLeaf(l){
+  if(l.alpha<0.01)return;
+  tX.save(); tX.translate(l.x,l.y);
+  const sw=Math.sin(tTick*l.swaySpd)*l.sway+windT*0.3;
+  tX.rotate(l.angle+sw); tX.scale(l.bloom,l.bloom);
+  const s=l.size;
+  tX.beginPath();
+  tX.moveTo(0,0); tX.bezierCurveTo(s*0.55,-s*0.9,s,-s*0.3,0,-s*1.7);
+  tX.bezierCurveTo(-s,-s*0.3,-s*0.55,-s*0.9,0,0);
+  const lg=tX.createLinearGradient(0,0,0,-s*1.7);
+  lg.addColorStop(0,`hsla(${l.hue},${l.sat}%,${l.lit}%,${l.alpha})`);
+  lg.addColorStop(0.5,`hsla(${l.hue+10},${l.sat-5}%,${l.lit+12}%,${l.alpha})`);
+  lg.addColorStop(1,`hsla(${l.hue-5},${l.sat}%,${l.lit-5}%,${l.alpha*0.75})`);
+  tX.fillStyle=lg; tX.fill();
+  tX.beginPath(); tX.moveTo(0,0); tX.lineTo(0,-s*1.6);
+  tX.strokeStyle=`rgba(30,100,30,${l.alpha*0.25})`; tX.lineWidth=0.55; tX.stroke();
+  tX.restore();
+}
+
+function drawFlower(f){
+  if(f.alpha<0.01||f.bloom<0.01)return;
+  tX.save(); tX.translate(f.x,f.y); tX.scale(f.bloom,f.bloom);
+  const R=f.r, N=5;
+  for(let i=0;i<N;i++){
+    const a=(Math.PI*2/N)*i;
+    tX.beginPath();
+    tX.ellipse(Math.cos(a)*R*0.88,Math.sin(a)*R*0.88,R*0.52,R*0.3,a,0,Math.PI*2);
+    // pink/white petals
+    tX.fillStyle=`rgba(255,${170+Math.sin(a)*40},${200+Math.cos(a)*30},${f.alpha*0.82})`; tX.fill();
+  }
+  tX.beginPath(); tX.arc(0,0,R*0.4,0,Math.PI*2);
+  const cg=tX.createRadialGradient(0,0,0,0,0,R*0.4);
+  cg.addColorStop(0,'rgba(255,235,60,1)'); cg.addColorStop(1,'rgba(220,170,30,0.8)');
+  tX.fillStyle=cg; tX.fill();
+  tX.restore();
+}
+
+function drawPollen(){
+  for(let i=pollen.length-1;i>=0;i--){
+    const p=pollen[i];
+    p.x+=p.vx+windT*2; p.y+=p.vy; p.vy+=0.04; p.life-=0.015; p.alpha=p.life;
+    if(p.life<=0){pollen.splice(i,1);continue;}
+    tX.beginPath(); tX.arc(p.x,p.y,p.r,0,Math.PI*2);
+    tX.fillStyle=`rgba(255,240,120,${p.alpha*0.8})`; tX.fill();
+  }
+}
+
+function drawLightRays(){
+  if(rayAlpha<0.005)return;
+  const topX=CX(),topY=GY()-160;
+  for(let i=0;i<7;i++){
+    const a=-Math.PI/2+(i-3)*0.2+windT*0.02;
+    const len=H()*0.6;
+    const gr=tX.createLinearGradient(topX,topY,topX+Math.cos(a)*len,topY+Math.sin(a)*len);
+    gr.addColorStop(0,`rgba(255,230,130,${rayAlpha*0.15})`); gr.addColorStop(1,'transparent');
+    tX.beginPath(); tX.moveTo(topX,topY);
+    tX.lineTo(topX+Math.cos(a-0.035)*len,topY+Math.sin(a-0.035)*len);
+    tX.lineTo(topX+Math.cos(a+0.035)*len,topY+Math.sin(a+0.035)*len);
+    tX.closePath(); tX.fillStyle=gr; tX.fill();
+  }
+  // tree aura
+  const aura=tX.createRadialGradient(CX(),GY()*0.55,0,CX(),GY()*0.55,H()*0.4);
+  aura.addColorStop(0,`rgba(255,230,130,${rayAlpha*0.08})`); aura.addColorStop(0.5,`rgba(255,182,193,${rayAlpha*0.06})`); aura.addColorStop(1,'transparent');
+  tX.fillStyle=aura; tX.fillRect(0,0,W(),H());
+}
+
+function drawBirds(){
+  bX.clearRect(0,0,bC.width,bC.height);
+  birds.forEach((b,i)=>{
+    b.phase+=b.spd; b.x+=b.vx; b.y+=b.vy+Math.sin(b.phase*0.3)*0.00015;
+    if(b.x>1.3){b.x=-0.3; b.y=tRand(0.08,0.35);}
+    drawBird(b.x*bC.width,b.y*bC.height,b.size,b.phase);
+  });
+}
+</script>
+
+<script>
+/* ══ MAIN TREE LOOP ══ */
+function startTreeScene(){
+  buildTree();
+  let raf;
+  function loop(){
+    raf=requestAnimationFrame(loop);
+    tTick++; pTick++;
+    windT=Math.sin(tTick*0.016)*0.07+(mx/window.innerWidth-0.5)*0.12;
+    tX.clearRect(0,0,W(),H());
+    drawSky();
+    drawLightRays();
+    drawBranches(branchIdx,branchSeg);
+    drawTrunk(trunkIdx,trunkSeg);
+
+    /* Phase machine */
+    if(tPhase==='seed'){
+      const t=tClamp(pTick/60,0,1);
+      drawSeed(t);
+      if(pTick>=78){tPhase='roots';pTick=0;}
+
+    }else if(tPhase==='roots'){
+      const rp=tClamp(pTick/70,0,1);
+      drawRoots(rp);
+      if(pTick>=85){tPhase='trunk';pTick=0;trunkIdx=0;trunkSeg=0;}
+
+    }else if(tPhase==='trunk'){
+      drawRoots(1);
+      trunkSeg=tClamp(pTick/6,0,1);
+      if(trunkSeg>=1){trunkIdx++;pTick=0;trunkSeg=0;}
+      if(trunkIdx>=trunk.length){trunkIdx=trunk.length-1;trunkSeg=1;tPhase='branches';pTick=0;branchIdx=0;branchSeg=0;}
+
+    }else if(tPhase==='branches'){
+      drawRoots(1);
+      branchSeg=tClamp(pTick/4,0,1);
+      if(branchSeg>=1){branchIdx++;pTick=0;branchSeg=0;}
+      if(branchIdx>=branches.length){branchIdx=branches.length-1;branchSeg=1;tPhase='leaves';pTick=0;leafIdx=0;}
+
+    }else if(tPhase==='leaves'){
+      drawRoots(1);
+      if(pTick%2===0&&leafIdx<leaves.length)leafIdx+=3;
+      leaves.forEach((l,i)=>{
+        if(i<leafIdx){l.bloom=tLerp(l.bloom,1,0.07);l.alpha=tLerp(l.alpha,1,0.06);}
+        drawLeaf(l);
+      });
+      if(leafIdx>=leaves.length&&leaves.every(l=>l.bloom>0.92)){tPhase='flowers';pTick=0;flowerIdx=0;}
+
+    }else if(tPhase==='flowers'){
+      drawRoots(1);
+      leaves.forEach(l=>drawLeaf(l));
+      if(pTick%3===0&&flowerIdx<flowers.length)flowerIdx+=2;
+      flowers.forEach((f,i)=>{
+        if(i<flowerIdx){f.bloom=tLerp(f.bloom,1,0.06);f.alpha=tLerp(f.alpha,1,0.06);}
+        drawFlower(f);
+      });
+      rayAlpha=tLerp(rayAlpha,1,0.015);
+      if(flowerIdx>=flowers.length&&!treeDone){
+        treeDone=true;
+        setTimeout(showFinalScene,1200);
+      }
+
+    }else if(tPhase==='wind'){
+      drawRoots(1);
+      leaves.forEach(l=>{l.angle+=Math.sin(tTick*l.swaySpd+l.x)*0.0008;drawLeaf(l);});
+      flowers.forEach(f=>{f.r=4+Math.sin(tTick*0.022+f.x)*0.5;drawFlower(f);});
+      if(Math.random()<0.07&&leaves.length){
+        const l=leaves[Math.floor(Math.random()*leaves.length)];
+        pollen.push({x:l.x,y:l.y,vx:tRand(-0.8,0.8)+windT*3,vy:tRand(-1.8,-0.4),r:tRand(0.8,2.2),alpha:1,life:1});
+      }
+      drawPollen();
+      // falling sakura petals amplified
+      sakura.forEach(p=>{p.vy+=0.00005;});
+    }
+
+    drawSakura();
+    drawGoldenDust(tClamp((tTick-80)/120,0,1));
+    drawBirds();
+  }
+  loop();
+}
+
+/* ══ FINAL SCENE ══ */
+function showFinalScene(){
+  tPhase='wind';
+
+  /* butterflies */
+  for(let i=0;i<8;i++){
+    const b=document.createElement('div');
+    b.className='butterfly';
+    b.textContent=['🦋','🌸','✨','💕','🌺','💫','🌷','⭐'][i];
+    b.style.left=tRand(10,85)+'%';
+    b.style.top=tRand(10,70)+'%';
+    document.body.appendChild(b);
+    gsap.to(b,{
+      opacity:1,duration:0.6,delay:i*0.15,
+      x:()=>tRand(-60,60),y:()=>tRand(-40,40),
+      ease:'power2.out',
+    });
+    // float animation
+    gsap.to(b,{
+      x:`+=${tRand(-80,80)}`,y:`+=${tRand(-50,50)}`,
+      duration:tRand(4,7),delay:i*0.15+0.8,
+      ease:'sine.inOut',yoyo:true,repeat:-1,
+    });
+  }
+
+  /* confetti */
+  const colors=['#ff1a6e','#ff9a8b','#ffd700','#ff82b0','#fff','#ffc0cb','#87ceeb'];
+  for(let i=0;i<90;i++){
+    const c=document.createElement('div');
+    c.className='confetti-piece';
+    c.style.width=tRand(5,10)+'px'; c.style.height=tRand(5,10)+'px';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.left=tRand(10,90)+'%'; c.style.top='-10px';
+    c.style.borderRadius=Math.random()<0.5?'50%':'2px';
+    document.body.appendChild(c);
+    gsap.to(c,{
+      opacity:1,y:window.innerHeight+20,
+      x:tRand(-120,120), rotation:tRand(-360,360),
+      duration:tRand(2.5,5),delay:tRand(0,1.8),
+      ease:'power1.in',
+      onComplete(){c.remove();}
+    });
+  }
+
+  /* fade in message card */
+  gsap.timeline({delay:0.6})
+    .to('#msg-overlay',{opacity:1,duration:0.5})
+    .from('.msg-card',{scale:0.85,y:30,duration:0.9,ease:'back.out(1.4)'},'-=0.2')
+    .from('.msg-card h2',{opacity:0,y:15,duration:0.6},'-=0.4')
+    .from('#msg-text',{opacity:0,y:10,duration:0.7},'-=0.3')
+    .from('.sig',{opacity:0,duration:0.5},'-=0.2')
+    .from('.replay-btn',{opacity:0,y:8,duration:0.4},'-=0.15');
+
+  document.getElementById('msg-overlay').style.pointerEvents='all';
+}
+
+/* ══ MOUSE interaction on tree canvas ══ */
+tC.addEventListener('click',e=>{
+  if(tPhase!=='wind'&&tPhase!=='flowers')return;
+  const r=tC.getBoundingClientRect();
+  const cx=e.clientX-r.left, cy=e.clientY-r.top;
+  // burst pollen at click
+  for(let i=0;i<20;i++){
+    const angle=tRand(0,Math.PI*2);
+    const spd=tRand(1,4);
+    pollen.push({
+      x:cx,y:cy,
+      vx:Math.cos(angle)*spd,vy:Math.sin(angle)*spd-2,
+      r:tRand(1,3),alpha:1,life:1,
+    });
+  }
+  // heart sparkles at cursor
+  for(let i=0;i<6;i++){
+    const s=document.createElement('div');
+    s.style.cssText=`position:fixed;left:${e.clientX}px;top:${e.clientY}px;font-size:${tRand(12,22)}px;pointer-events:none;z-index:9990;`;
+    s.textContent=['💖','✨','🌸','💕','⭐','💫'][i];
+    document.body.appendChild(s);
+    gsap.to(s,{x:tRand(-60,60),y:tRand(-80,-20),opacity:0,scale:tRand(0.5,1.4),duration:tRand(0.8,1.4),ease:'power2.out',onComplete(){s.remove();}});
+  }
+});
+
+/* hover ripple on leaves */
+tC.addEventListener('mousemove',e=>{
+  if(tPhase!=='wind')return;
+  const r=tC.getBoundingClientRect();
+  const hx=e.clientX-r.left, hy=e.clientY-r.top;
+  leaves.forEach(l=>{
+    const dx=l.x-hx, dy=l.y-hy;
+    if(dx*dx+dy*dy<800){l.sway=Math.sin(hx*0.02)*0.12;}
+  });
+});
+
+/* ══ KEYBOARD — skip / replay ══ */
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key===' '){
+    if(document.getElementById('scene-open').classList.contains('active'))
+      $('heart-wrap').click();
+  }
+  if(e.key==='r'||e.key==='R') location.reload();
+});
+</script>
+</body>
+</html>

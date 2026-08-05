@@ -4,9 +4,13 @@ import { useTilt } from "../App";
 
 const CORRECT_USER = "DHARYA";
 const USERS = {
-  "29/02/2008": "sadhana",
-  "09/10/2007": "surya",
+  "29/02/2008":  "sadhana",
+  "09/10/2007":  "surya",
+  "password123456": "demo",
 };
+
+/* Demo account — auto-fill button on login page */
+const DEMO_PASSWORD = "password123456";
 
 const THEMES = {
   sadhana: {
@@ -38,6 +42,21 @@ const THEMES = {
     orb1:      "rgba(0,217,126,0.22)",
     orb2:      "rgba(6,182,212,0.16)",
     particles: ["🌿","✦","·","✧","◦","🍃","∘","🌱","⭐","💚"],
+  },
+  demo: {
+    primary:   "#f59e0b",
+    secondary: "#ec4899",
+    glow:      "rgba(245,158,11,0.28)",
+    avatar:    "👀",
+    burst:     ["✨","⭐","💫","🌟","🎉","🎊","💥","🔥"],
+    greeting:  "Demo Preview —",
+    name:      "Dharya",
+    sub:       "Exploring as a guest 👀",
+    btnText:   "Enter demo",
+    bg:        "linear-gradient(160deg,#0a0800 0%,#120e00 50%,#1a1400 100%)",
+    orb1:      "rgba(245,158,11,0.20)",
+    orb2:      "rgba(236,72,153,0.14)",
+    particles: ["✨","⭐","💫","🌟","◦","✦","·","✧","🎉","◈"],
   },
   default: {
     primary:   "#ff1a6e",
@@ -207,7 +226,12 @@ export default function LoginPage({ onLogin }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (username.trim().toUpperCase() === CORRECT_USER && USERS[password]) {
+    // Accept "DHARYA" or "ADMIN" as username; demo password maps to demo user
+    const uname = username.trim().toUpperCase();
+    const validUser = USERS[password];
+    const validUsername = uname === CORRECT_USER || uname === "ADMIN";
+
+    if (validUsername && validUser) {
       const user = USERS[password];
       setBursts(Array.from({ length: 20 }, (_, i) => ({
         id: i, left: `${2 + i * 4.8}%`,
@@ -216,13 +240,20 @@ export default function LoginPage({ onLogin }) {
         sym: theme.burst[i % theme.burst.length],
         size: `${20 + (i % 3) * 8}px`,
       })));
-      setTimeout(() => setSuccess({ name: THEMES[user].name }), 400);
+      setTimeout(() => setSuccess({ name: THEMES[user]?.name || "Guest" }), 400);
       setTimeout(() => onLogin(user), 1800);
     } else {
-      setError(username.trim().toUpperCase() !== CORRECT_USER ? "That name doesn't match 💔" : "Wrong password, try again 🔐");
+      setError(!validUsername ? "That name doesn't match 💔" : "Wrong password, try again 🔐");
       setShake(true);
       setTimeout(() => { setShake(false); setError(""); }, 800);
     }
+  };
+
+  /* Auto-fill demo credentials */
+  const fillDemo = () => {
+    setUsername("ADMIN");
+    setPassword(DEMO_PASSWORD);
+    setError("");
   };
 
   const inputStyle = (isFoc, valid) => ({
@@ -483,9 +514,31 @@ export default function LoginPage({ onLogin }) {
         {/* Footer */}
         <div style={{
           marginTop:"28px", textAlign:"center",
-          display:"flex", flexDirection:"column", alignItems:"center", gap:"10px",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:"12px",
           opacity:mounted?1:0, transition:"opacity 0.8s ease 0.9s",
         }}>
+          {/* Demo account button */}
+          <button
+            type="button"
+            onClick={fillDemo}
+            style={{
+              display:"flex", alignItems:"center", gap:7,
+              padding:"9px 20px",
+              background:"rgba(245,158,11,0.08)",
+              border:"1.5px solid rgba(245,158,11,0.3)",
+              borderRadius:"50px", cursor:"pointer",
+              fontFamily:"'Inter',sans-serif", fontSize:"0.78rem", fontWeight:700,
+              color:"#f59e0b",
+              transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.background="rgba(245,158,11,0.14)";e.currentTarget.style.boxShadow="0 6px 20px rgba(245,158,11,0.2)";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.background="rgba(245,158,11,0.08)";e.currentTarget.style.boxShadow="none";}}
+          >
+            <span>👀</span>
+            <span>Try Demo Account</span>
+            <span style={{fontSize:"0.68rem",opacity:0.7}}>→</span>
+          </button>
+
           <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
             <Heart size={9} fill={`${theme.primary}44`} stroke="none"/>
             <p style={{

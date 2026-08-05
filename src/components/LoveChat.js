@@ -52,12 +52,142 @@ const WA_STYLE = `
 }
 .wa-avatar {
   width: 42px; height: 42px; border-radius: 50%;
-  background: linear-gradient(135deg,#e8305a,#6b2fa0);
+  background: linear-gradient(135deg,#ff1a6e,#8b3fc8);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.3rem; flex-shrink: 0;
-  box-shadow: 0 0 0 2px rgba(232,48,90,0.35);
+  box-shadow: 0 0 0 2px rgba(255,26,110,0.35);
 }
 .wa-header-info { flex: 1; min-width: 0; }
+.wa-call-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: none; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  flex-shrink: 0;
+}
+.wa-call-btn.voice { background: rgba(37,211,102,0.12); color: #25d366; border: 1px solid rgba(37,211,102,0.3); }
+.wa-call-btn.video { background: rgba(255,26,110,0.10); color: #ff1a6e;  border: 1px solid rgba(255,26,110,0.3); }
+.wa-call-btn:hover { transform: scale(1.15) translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.wa-call-btn.voice:hover { background: rgba(37,211,102,0.22); box-shadow: 0 6px 18px rgba(37,211,102,0.3); }
+.wa-call-btn.video:hover { background: rgba(255,26,110,0.20); box-shadow: 0 6px 18px rgba(255,26,110,0.3); }
+
+/* ── CALL SCREEN ── */
+.call-screen {
+  position: fixed; inset: 0; z-index: 9990;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 30% 20%, rgba(37,211,102,0.14) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(255,26,110,0.14) 0%, transparent 60%),
+              #050810;
+  backdrop-filter: blur(2px);
+}
+.call-screen-video {
+  background: #050810;
+  justify-content: stretch;
+}
+.call-bg-pulse {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+.call-bg-pulse span {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  border-radius: 50%; border: 1px solid rgba(37,211,102,0.2);
+  animation: callRipple 2.4s ease-out infinite;
+}
+.call-bg-pulse span:nth-child(1) { width: 220px; height: 220px; animation-delay: 0s; }
+.call-bg-pulse span:nth-child(2) { width: 320px; height: 320px; animation-delay: 0.7s; }
+.call-bg-pulse span:nth-child(3) { width: 430px; height: 430px; animation-delay: 1.4s; }
+@keyframes callRipple {
+  0%   { transform: translate(-50%,-50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%,-50%) scale(1.2); opacity: 0; }
+}
+.call-avatar {
+  width: 110px; height: 110px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff1a6e, #8b3fc8);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3.2rem; position: relative; z-index: 1;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.08), 0 20px 60px rgba(0,0,0,0.5);
+  animation: floatEmoji 3s ease-in-out infinite alternate;
+}
+.call-avatar.ringing { animation: callAvatarPulse 1s ease-in-out infinite; }
+@keyframes callAvatarPulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(37,211,102,0.3), 0 20px 60px rgba(0,0,0,0.5); }
+  50%     { box-shadow: 0 0 0 14px rgba(37,211,102,0.12), 0 20px 60px rgba(0,0,0,0.5); }
+}
+.call-name {
+  font-family: 'Cormorant Garamond', serif; font-size: 2rem;
+  font-weight: 600; font-style: italic; color: #fff;
+  margin: 18px 0 6px; text-shadow: 0 0 30px rgba(255,26,110,0.3); z-index: 1;
+}
+.call-status {
+  font-family: 'Inter', sans-serif; font-size: 0.88rem;
+  color: rgba(255,255,255,0.5); z-index: 1; display: flex; align-items: center; gap: 6px;
+}
+.call-status .dot { width: 7px; height: 7px; border-radius: 50%; background: #25d366; animation: dotBlink2 1.2s ease-in-out infinite; }
+.call-timer {
+  font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 600;
+  color: rgba(255,255,255,0.7); z-index: 1; margin-top: 4px;
+  letter-spacing: 2px; font-variant-numeric: tabular-nums;
+}
+
+/* video panels */
+.call-video-remote {
+  flex: 1; width: 100%; background: #000; object-fit: cover;
+  display: block;
+}
+.call-video-local {
+  position: absolute; bottom: 120px; right: 16px;
+  width: 110px; height: 150px; border-radius: 14px;
+  object-fit: cover; border: 2px solid rgba(255,255,255,0.15);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  background: #111; z-index: 2;
+}
+.call-video-off {
+  flex: 1; width: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 4rem;
+}
+
+/* action buttons */
+.call-actions {
+  display: flex; gap: 18px; align-items: center; justify-content: center;
+  padding: 28px 20px 36px; z-index: 2; position: relative;
+  flex-shrink: 0;
+}
+.call-act-btn {
+  width: 58px; height: 58px; border-radius: 50%; border: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.call-act-btn:hover { transform: scale(1.12) translateY(-3px); }
+.call-act-btn.mute   { background: rgba(255,255,255,0.12); color: #fff; }
+.call-act-btn.cam    { background: rgba(255,255,255,0.12); color: #fff; }
+.call-act-btn.end    { background: linear-gradient(135deg,#ef4444,#b91c1c); color: #fff; width: 68px; height: 68px; font-size: 1.6rem; box-shadow: 0 8px 28px rgba(239,68,68,0.55); }
+.call-act-btn.speaker { background: rgba(255,255,255,0.12); color: #fff; }
+.call-act-btn.active { background: rgba(37,211,102,0.2); color: #25d366; border: 1px solid rgba(37,211,102,0.4); }
+
+/* incoming call toast */
+.incoming-call-toast {
+  position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 9995; background: rgba(9,4,21,0.97);
+  border: 1.5px solid rgba(37,211,102,0.4);
+  border-radius: 20px; padding: 16px 20px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.6), 0 0 30px rgba(37,211,102,0.15);
+  backdrop-filter: blur(20px); min-width: 280px;
+  animation: slideDown 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideDown {
+  from { transform: translateX(-50%) translateY(-30px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+.incoming-info { flex: 1; }
+.incoming-type { font-size: 0.68rem; font-weight: 700; color: #25d366; text-transform: uppercase; letter-spacing: 1px; }
+.incoming-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-style: italic; color: #fff; margin: 2px 0 0; }
+.incoming-btns { display: flex; gap: 10px; }
+.incoming-btns button { width: 44px; height: 44px; border-radius: 50%; border: none; font-size: 1.3rem; cursor: pointer; transition: all 0.2s; }
+.incoming-btns .accept { background: linear-gradient(135deg,#25d366,#128c7e); box-shadow: 0 4px 14px rgba(37,211,102,0.5); animation: callAvatarPulse 1.2s ease-in-out infinite; }
+.incoming-btns .decline { background: linear-gradient(135deg,#ef4444,#b91c1c); box-shadow: 0 4px 14px rgba(239,68,68,0.4); }
 .wa-name { font-family: 'Inter',sans-serif; font-size: 0.95rem; font-weight: 700; color: #fff; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wa-status { font-family: 'Inter',sans-serif; font-size: 0.72rem; color: rgba(255,255,255,0.45); display: flex; align-items: center; gap: 5px; }
 .wa-online-dot { width: 6px; height: 6px; border-radius: 50%; background: #25d366; display: inline-block; animation: dotBlink2 2s ease-in-out infinite; }
@@ -229,6 +359,251 @@ function injectWaStyles() {
   document.head.appendChild(s);
 }
 
+/* ══════════════════════════════════════
+   WEBRTC CALL HOOK
+══════════════════════════════════════ */
+const ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+];
+
+function useCallSignal(room, onSignal) {
+  const sinceRef = useRef(new Date().toISOString());
+  const timerRef = useRef(null);
+
+  const send = useCallback(async (from, type, data) => {
+    try {
+      await fetch("/api/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room, from, type, data }),
+      });
+    } catch (e) { console.warn("signal send failed", e); }
+  }, [room]);
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/signal?room=${room}&since=${sinceRef.current}`);
+        if (!res.ok) return;
+        const items = await res.json();
+        if (items.length) {
+          sinceRef.current = items[items.length - 1].createdAt;
+          items.forEach(onSignal);
+        }
+      } catch {}
+    };
+    timerRef.current = setInterval(poll, 1500);
+    return () => clearInterval(timerRef.current);
+  }, [room, onSignal]);
+
+  return { send };
+}
+
+/* ══════════════════════════════════════
+   CALL SCREEN COMPONENT
+══════════════════════════════════════ */
+function fmt(sec) {
+  const m = Math.floor(sec / 60).toString().padStart(2, "0");
+  const s = (sec % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function CallScreen({ user, otherName, mode, onEnd }) {
+  const [callState, setCallState]   = useState("ringing"); // ringing | connected | ended
+  const [muted,     setMuted]       = useState(false);
+  const [camOff,    setCamOff]      = useState(false);
+  const [speaker,   setSpeaker]     = useState(true);
+  const [elapsed,   setElapsed]     = useState(0);
+
+  const pcRef        = useRef(null);
+  const localRef     = useRef(null); // eslint-disable-line no-unused-vars
+  const remoteRef    = useRef(null);
+  const localStream  = useRef(null);
+  const remoteVidRef = useRef(null);
+  const localVidRef  = useRef(null);
+  const timerRef     = useRef(null);
+
+  const room = "call_dharya_2026";
+
+  const handleSignal = useCallback(async (sig) => {
+    if (sig.from === user) return;
+    const pc = pcRef.current;
+    if (!pc) return;
+
+    if (sig.type === "offer") {
+      await pc.setRemoteDescription(new RTCSessionDescription(sig.data));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      send(user, "answer", answer);
+    } else if (sig.type === "answer") {
+      if (pc.signalingState !== "stable")
+        await pc.setRemoteDescription(new RTCSessionDescription(sig.data));
+    } else if (sig.type === "ice") {
+      try { await pc.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
+    } else if (sig.type === "end") {
+      cleanup(); onEnd();
+    }
+  }, [user]); // eslint-disable-line
+
+  const { send } = useCallSignal(room, handleSignal);
+
+  const cleanup = useCallback(() => {
+    clearInterval(timerRef.current);
+    if (localStream.current) localStream.current.getTracks().forEach(t => t.stop());
+    if (pcRef.current) { try { pcRef.current.close(); } catch {} pcRef.current = null; }
+    fetch(`/api/signal?room=${room}`, { method: "DELETE" }).catch(() => {});
+  }, [room]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const constraints = mode === "video"
+          ? { audio: true, video: { facingMode: "user" } }
+          : { audio: true, video: false };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        localStream.current = stream;
+
+        if (localVidRef.current && mode === "video") {
+          localVidRef.current.srcObject = stream;
+        }
+
+        const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+        pcRef.current = pc;
+
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        pc.ontrack = (e) => {
+          remoteRef.current = e.streams[0];
+          if (remoteVidRef.current) remoteVidRef.current.srcObject = e.streams[0];
+        };
+
+        pc.onicecandidate = (e) => {
+          if (e.candidate) send(user, "ice", e.candidate);
+        };
+
+        pc.onconnectionstatechange = () => {
+          if (pc.connectionState === "connected") {
+            setCallState("connected");
+            timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+          }
+          if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+            setCallState("ended");
+            cleanup(); setTimeout(onEnd, 800);
+          }
+        };
+
+        // Caller creates offer
+        if (user === "surya") {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          send(user, "offer", offer);
+        }
+
+        setCallState("ringing");
+      } catch (err) {
+        console.warn("Media error:", err.message);
+        // No camera/mic — still show UI
+        setCallState("ringing");
+      }
+    })();
+    return () => { cancelled = true; cleanup(); };
+  }, []); // eslint-disable-line
+
+  const toggleMute = () => {
+    if (localStream.current)
+      localStream.current.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
+    setMuted(m => !m);
+  };
+  const toggleCam = () => {
+    if (localStream.current)
+      localStream.current.getVideoTracks().forEach(t => { t.enabled = !t.enabled; });
+    setCamOff(c => !c);
+  };
+  const endCall = () => {
+    send(user, "end", {});
+    cleanup(); onEnd();
+  };
+
+  const isVideo = mode === "video";
+  const isConnected = callState === "connected";
+
+  return (
+    <div className={`call-screen ${isVideo ? "call-screen-video" : ""}`}>
+      {/* Background pulse rings — voice only */}
+      {!isVideo && (
+        <div className="call-bg-pulse">
+          <span/><span/><span/>
+        </div>
+      )}
+
+      {isVideo ? (
+        /* ── Video layout ── */
+        <>
+          {remoteRef.current
+            ? <video ref={remoteVidRef} className="call-video-remote" autoPlay playsInline />
+            : <div className="call-video-off" style={{ background:"#050810" }}>
+                <div style={{ textAlign:"center" }}>
+                  <div style={{ fontSize:"4rem", marginBottom:12 }}>
+                    {user === "surya" ? "💗" : "💚"}
+                  </div>
+                  <p style={{ color:"rgba(255,255,255,0.4)", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem" }}>
+                    {isConnected ? "Camera off" : "Connecting..."}
+                  </p>
+                </div>
+              </div>
+          }
+          {mode === "video" && <video ref={localVidRef} className="call-video-local" autoPlay muted playsInline />}
+          {/* Overlay name + timer */}
+          <div style={{ position:"absolute", top:20, left:0, right:0, textAlign:"center", zIndex:3 }}>
+            <div className="call-name" style={{ fontSize:"1.4rem" }}>{otherName}</div>
+            {isConnected
+              ? <div className="call-timer">{fmt(elapsed)}</div>
+              : <div className="call-status"><span className="dot"/>{callState === "ringing" ? "Ringing..." : "Connecting..."}</div>
+            }
+          </div>
+        </>
+      ) : (
+        /* ── Voice layout ── */
+        <>
+          <div className={`call-avatar ${callState === "ringing" ? "ringing" : ""}`}>
+            {user === "surya" ? "💗" : "💚"}
+          </div>
+          <div className="call-name">{otherName}</div>
+          {isConnected
+            ? <div className="call-timer">{fmt(elapsed)}</div>
+            : <div className="call-status">
+                <span className="dot"/>
+                {callState === "ringing" ? "Ringing..." : "Connecting..."}
+              </div>
+          }
+        </>
+      )}
+
+      {/* Action buttons */}
+      <div className="call-actions">
+        <button className={`call-act-btn mute ${muted ? "active" : ""}`} onClick={toggleMute} title={muted?"Unmute":"Mute"}>
+          {muted ? "🔇" : "🎤"}
+        </button>
+        {isVideo && (
+          <button className={`call-act-btn cam ${camOff ? "active" : ""}`} onClick={toggleCam} title={camOff?"Cam on":"Cam off"}>
+            {camOff ? "📵" : "📹"}
+          </button>
+        )}
+        <button className="call-act-btn end" onClick={endCall} title="End call">📵</button>
+        {!isVideo && (
+          <button className={`call-act-btn speaker ${speaker ? "active" : ""}`} onClick={()=>setSpeaker(v=>!v)} title="Speaker">
+            {speaker ? "🔊" : "🔈"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function LoveChat({ user }) {
   const [msgs,      setMsgs]      = useState([]);
   const [input,     setInput]     = useState("");
@@ -241,6 +616,10 @@ export default function LoveChat({ user }) {
   const [editText,  setEditText]  = useState("");
   const [menuId,    setMenuId]    = useState(null);
   const [imgPreview,setImgPreview]= useState(null);
+  // ── Call state ──
+  const [callMode,    setCallMode]    = useState(null);      // null | "voice" | "video"
+  const [incomingCall,setIncomingCall]= useState(null);      // { from, mode } | null
+  const [callActive,  setCallActive]  = useState(false);
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
@@ -251,6 +630,45 @@ export default function LoveChat({ user }) {
 
   const senderName = user === "surya" ? "Surya 💙" : "Sadhana 💗";
   const otherName  = user === "surya" ? "Sadhana 💗" : "Surya 💙";
+  const callRoom   = "call_dharya_2026";
+
+  /* ── Start a call: signal the other person ── */
+  const startCall = useCallback(async (mode) => {
+    setCallMode(mode);
+    setCallActive(true);
+    // signal the other side
+    try {
+      await fetch("/api/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room: callRoom, from: user, type: "incoming_call", data: { mode } }),
+      });
+    } catch {}
+  }, [user, callRoom]);
+
+  /* ── Poll for incoming call signals (separate from WebRTC ICE signals) ── */
+  const incomingSinceRef = useRef(new Date().toISOString());
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (callActive) return; // already in call
+      try {
+        const res = await fetch(`/api/signal?room=${callRoom}&since=${incomingSinceRef.current}`);
+        if (!res.ok) return;
+        const items = await res.json();
+        for (const sig of items) {
+          incomingSinceRef.current = sig.createdAt;
+          if (sig.from !== user && sig.type === "incoming_call" && !callActive) {
+            setIncomingCall({ from: sig.from, mode: sig.data?.mode || "voice" });
+            setTimeout(() => setIncomingCall(null), 30000); // auto-dismiss after 30s
+          }
+          if (sig.from !== user && sig.type === "end" && callActive) {
+            setCallActive(false); setCallMode(null);
+          }
+        }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(id);
+  }, [user, callActive, callRoom]);
 
   const merge = (prev, incoming) => {
     const result = [...prev];
@@ -365,16 +783,44 @@ export default function LoveChat({ user }) {
 
   return (
     <div className="wa-page" onClick={()=>{setMenuId(null);setShowEmoji(false);}}>
+      {/* ── Active call screen overlay ── */}
+      {callActive && callMode && (
+        <CallScreen
+          user={user}
+          otherName={otherName}
+          mode={callMode}
+          onEnd={() => { setCallActive(false); setCallMode(null); }}
+        />
+      )}
+
+      {/* ── Incoming call toast ── */}
+      {incomingCall && !callActive && (
+        <div className="incoming-call-toast">
+          <div style={{ fontSize:"2rem" }}>{incomingCall.mode === "video" ? "📹" : "📞"}</div>
+          <div className="incoming-info">
+            <div className="incoming-type">{incomingCall.mode === "video" ? "Video Call" : "Voice Call"}</div>
+            <div className="incoming-name">{otherName}</div>
+          </div>
+          <div className="incoming-btns">
+            <button className="accept" onClick={() => { setIncomingCall(null); setCallMode(incomingCall.mode); setCallActive(true); }}>📞</button>
+            <button className="decline" onClick={() => { setIncomingCall(null); fetch("/api/signal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room:callRoom,from:user,type:"end",data:{}})}); }}>📵</button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="wa-header">
-        <div className="wa-avatar">{user==="surya"?"💗":"💙"}</div>
+        <div className="wa-avatar">{user==="surya"?"💗":"💚"}</div>
         <div className="wa-header-info">
           <span className="wa-name">{otherName}</span>
           <span className="wa-status">
             {online?<><span className="wa-online-dot"/>online</>:"connecting..."}
           </span>
         </div>
-        <span style={{fontSize:"0.75rem",color:"rgba(255,255,255,0.25)",fontFamily:"'Inter',sans-serif"}}>💑 Dharya</span>
+        {/* Voice call button */}
+        <button className="wa-call-btn voice" title="Voice call" onClick={() => startCall("voice")}>📞</button>
+        {/* Video call button */}
+        <button className="wa-call-btn video" title="Video call" onClick={() => startCall("video")}>📹</button>
       </div>
 
       {/* Messages */}

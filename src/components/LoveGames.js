@@ -194,6 +194,9 @@ export default function LoveGames({ setPage, user }) {
   return (
     <div className="games-page">
       <div className="games-hero">
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(232,48,90,0.08)", border:"1px solid rgba(232,48,90,0.22)", borderRadius:"50px", marginBottom:"14px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#ff6b8e", letterSpacing:"1.5px", textTransform:"uppercase" }}>
+          🎮 Love Games
+        </div>
         <h1 className="games-title">Love Games 🎮</h1>
         <p className="games-sub">
           {user === "surya"
@@ -206,7 +209,7 @@ export default function LoveGames({ setPage, user }) {
           💭 Would You Rather
         </button>
         <button className={`games-tab ${tab === "ttl" ? "active" : ""}`} onClick={() => setTab("ttl")}>
-          🤔 Two Truths & A Lie
+          🤔 Two Truths &amp; A Lie
         </button>
       </div>
       <div className="games-content">

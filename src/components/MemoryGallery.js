@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, Upload, X, Trash2, ChevronRight, Image } from "lucide-react";
+import { Camera, Upload, X, Trash2, Image } from "lucide-react";
 import { useTilt } from "../App";
 
 const DEFAULT_MEDIA = [
@@ -81,8 +81,7 @@ export default function MemoryGallery({ setPage, user }) {
   const [uploading, setUploading] = useState(false);
   const [lightbox,  setLightbox]  = useState(null);
   const [form,      setForm]      = useState({ caption:"", file:null, preview:"" });
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
+  // countdown removed — auto-next disabled
   const fileRef      = useRef(null);
 
   useEffect(() => { fetchGallery().then(items => { setUploaded(items); setLoading(false); }); }, []);
@@ -125,18 +124,7 @@ export default function MemoryGallery({ setPage, user }) {
     ...uploaded.map(u => ({ type:"image", src:u.base64, msg:u.caption, addedBy:u.addedBy, _id:u._id, isUploaded:true })),
   ];
 
-  const handleScroll = useCallback(() => {
-    const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 60;
-    if (atBottom && countdown === null) setCountdown(8);
-  }, [countdown]);
-
-  useEffect(() => { window.addEventListener("scroll", handleScroll); return () => window.removeEventListener("scroll", handleScroll); }, [handleScroll]);
-  useEffect(() => {
-    if (countdown === null) return;
-    if (countdown === 0) { setPage("dream"); return; }
-    countdownRef.current = setTimeout(() => setCountdown(c => c-1), 1000);
-    return () => clearTimeout(countdownRef.current);
-  }, [countdown, setPage]);
+  // Auto-next disabled — user navigates manually
 
   const inputStyle = { width:"100%", boxSizing:"border-box", padding:"13px 16px", background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"13px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", outline:"none" };
 
@@ -262,14 +250,7 @@ export default function MemoryGallery({ setPage, user }) {
         )}
       </AnimatePresence>
 
-      {countdown !== null && (
-        <div className="auto-nav-banner">
-          <ChevronRight size={14} style={{opacity:0.6}}/> Moving to Dreams in
-          <strong>{countdown}s</strong>
-          <button onClick={() => { clearTimeout(countdownRef.current); setPage("dream"); }}>Go Now</button>
-          <button onClick={() => { clearTimeout(countdownRef.current); setCountdown(null); }}>Stay</button>
-        </div>
-      )}
+      {/* auto-next banner removed */}
     </div>
   );
 }

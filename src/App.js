@@ -2,10 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Gift, Map, Image, Lightbulb, Star, Mail, Heart,
-  StickyNote, Flower2, Palette, Moon, Calendar,
-  Sparkles, BookOpen, PartyPopper, MessageCircle,
-  Globe, Brain, Gamepad2, Edit3, Lock, Shield,
-  ChevronRight, MoreHorizontal
+  StickyNote, Flower2, MessageCircle,
+  Globe, Edit3, Lock, Shield,
+  ChevronRight, MoreHorizontal, PartyPopper
 } from "lucide-react";
 import JourneyTimeline from "./components/JourneyTimeline";
 import MemoryGallery from "./components/MemoryGallery";
@@ -13,24 +12,16 @@ import ProposalBox from "./components/ProposalBox";
 import DreamDashboard from "./components/DreamDashboard";
 import LoveLetter from "./components/LoveLetter";
 import SadhanaWorld from "./components/SadhanaWorld";
-import MagicCorner from "./components/MagicCorner";
-import StudyNotes from "./components/StudyNotes";
-import TonightPromise from "./components/TonightPromise";
 import SurpriseBox from "./components/SurpriseBox";
-import MoodBoard from "./components/MoodBoard";
 import LoveNotesWall from "./components/LoveNotesWall";
-import FuturePlans from "./components/FuturePlans";
 import OurVows from "./components/OurVows";
 import SuryaEditPanel from "./components/SuryaEditPanel";
 import LoveChat from "./components/LoveChat";
 import LoginPage from "./components/LoginPage";
-import SecretUniverse from "./components/SecretUniverse";
-import SuryaMind from "./components/SuryaMind";
-import LoveGames from "./components/LoveGames";
 import RelationshipQuiz from "./components/RelationshipQuiz";
+import FlowerGarden from "./components/FlowerGarden";
 import "./App.css";
 
-/* ── useTilt: exported mouse-tracked 3D card tilt hook ── */
 export function useTilt(strength = 12) {
   const ref = useRef(null);
   const onMove = useCallback((e) => {
@@ -59,18 +50,13 @@ export function useTilt(strength = 12) {
   return { ref, onMouseMove: onMove, onMouseLeave: onLeave, onMouseEnter: onEnter };
 }
 
-/* ─────────────────────────────────────────────
-   CONSTANTS
-───────────────────────────────────────────── */
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 min idle → auto-lock
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 
 const PAGE_SONGS = {
   box:"5KH2WKISoxs", journey:"gB1gPmtDohY", gallery:"wxmOt7Xhb6I",
   dream:"R5Wa9J3Whis", letters:"xP4mMpPAVME", vows:"gB1gPmtDohY",
-  chat:"xP4mMpPAVME", mood:"wxmOt7Xhb6I", tonight:"R5Wa9J3Whis",
-  world:"5KH2WKISoxs", magic:"xP4mMpPAVME", surprise:"gB1gPmtDohY",
-  notes:"xP4mMpPAVME", future:"R5Wa9J3Whis", edit:"xP4mMpPAVME",
-  secret:"R5Wa9J3Whis", mind:"gB1gPmtDohY", games:"5KH2WKISoxs",
+  chat:"xP4mMpPAVME", world:"5KH2WKISoxs", surprise:"gB1gPmtDohY",
+  notes:"xP4mMpPAVME", edit:"xP4mMpPAVME", garden:"R5Wa9J3Whis",
   quiz:"wxmOt7Xhb6I",
 };
 const DEFAULT_SONG = "xP4mMpPAVME";
@@ -83,44 +69,34 @@ const PLAYLIST = [
   { id:"5KH2WKISoxs", title:"Oru Adaar Love" },
 ];
 
-/* nav groups */
 const NAV_GROUPS_BASE = [
-  { id:"story",   label:"Our Story", pages:[
-    { key:"box",     icon:<Gift size={18}/>,    label:"Proposal"  },
-    { key:"journey", icon:<Map size={18}/>,     label:"Journey"   },
-    { key:"gallery", icon:<Image size={18}/>,   label:"Gallery"   },
-    { key:"quiz",    icon:<Lightbulb size={18}/>, label:"Quiz"    },
+  { id:"story", label:"Our Story", pages:[
+    { key:"box",     icon:<Gift size={18}/>,       label:"Proposal"  },
+    { key:"journey", icon:<Map size={18}/>,        label:"Journey"   },
+    { key:"gallery", icon:<Image size={18}/>,      label:"Gallery"   },
+    { key:"quiz",    icon:<Lightbulb size={18}/>,  label:"Quiz"      },
   ]},
-  { id:"love",    label:"Love Corner", pages:[
-    { key:"dream",   icon:<Star size={18}/>,    label:"Dreams"    },
-    { key:"letters", icon:<Mail size={18}/>,    label:"Letters"   },
-    { key:"vows",    icon:<Heart size={18}/>,   label:"Vows"      },
-    { key:"notes",   icon:<StickyNote size={18}/>, label:"Notes"  },
+  { id:"love", label:"Love Corner", pages:[
+    { key:"dream",   icon:<Star size={18}/>,       label:"Dreams"    },
+    { key:"letters", icon:<Mail size={18}/>,       label:"Letters"   },
+    { key:"vows",    icon:<Heart size={18}/>,      label:"Vows"      },
+    { key:"notes",   icon:<StickyNote size={18}/>, label:"Notes"     },
   ]},
-  { id:"her",     label:"For Her", pages:[
-    { key:"world",   icon:<Flower2 size={18}/>, label:"Sadhana's World" },
-    { key:"mood",    icon:<Palette size={18}/>, label:"Mood Board"      },
-    { key:"tonight", icon:<Moon size={18}/>,    label:"Tonight"         },
-    { key:"future",  icon:<Calendar size={18}/>, label:"Future Plans"  },
+  { id:"her", label:"For Her", pages:[
+    { key:"world",   icon:<Flower2 size={18}/>,    label:"Sadhana's World" },
+    { key:"garden",  icon:<Flower2 size={18}/>,    label:"Garden"          },
+    { key:"surprise",icon:<PartyPopper size={18}/>,label:"Surprises"       },
+    { key:"chat",    icon:<MessageCircle size={18}/>, label:"Chat"         },
   ]},
-  { id:"magic",   label:"Magic Corner", pages:[
-    { key:"magic",    icon:<Sparkles size={18}/>,     label:"Magic"       },
-    { key:"study",    icon:<BookOpen size={18}/>,     label:"Study Notes" },
-    { key:"surprise", icon:<PartyPopper size={18}/>,  label:"Surprises"   },
-    { key:"chat",     icon:<MessageCircle size={18}/>, label:"Chat"       },
-  ]},
-  { id:"universe",label:"Universe", pages:[
-    { key:"secret",  icon:<Globe size={18}/>,    label:"Secret Universe" },
-    { key:"mind",    icon:<Brain size={18}/>,    label:"Surya's Mind"    },
-    { key:"games",   icon:<Gamepad2 size={18}/>, label:"Love Games"      },
+  { id:"secret", label:"Secret", pages:[
+    { key:"secret-universe", icon:<Globe size={18}/>, label:"Secret Universe" },
   ]},
 ];
 
-/* bottom-tab configs per user */
 const BOTTOM_TABS_SADHANA = [
   { key:"box",     icon:<Gift size={20}/>,           label:"Proposal" },
   { key:"gallery", icon:<Image size={20}/>,          label:"Gallery"  },
-  { key:"dream",   icon:<Star size={20}/>,           label:"Dreams"   },
+  { key:"garden",  icon:<Flower2 size={20}/>,        label:"Garden"   },
   { key:"letters", icon:<Mail size={20}/>,           label:"Letters"  },
   { key:"chat",    icon:<MessageCircle size={20}/>,  label:"Chat"     },
 ];
@@ -132,71 +108,48 @@ const BOTTOM_TABS_SURYA = [
   { key:"edit",    icon:<Edit3 size={20}/>,          label:"Edit"     },
 ];
 
-/* ─────────────────────────────────────────────
-   LOCK SCREEN
-───────────────────────────────────────────── */
+/* ─── LOCK SCREEN ─── */
 function LockScreen({ user, onUnlock }) {
-  const [pin,   setPin]   = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
   const tilt = useTilt(8);
-
   const correctPass = user === "surya" ? "09/10/2007" : "29/02/2008";
-  const isSurya     = user === "surya";
-
+  const isSurya = user === "surya";
   const tryUnlock = (e) => {
     e && e.preventDefault();
-    if (pin === correctPass) {
-      onUnlock();
-    } else {
+    if (pin === correctPass) { onUnlock(); }
+    else {
       setError("Wrong password 🔐");
       setShake(true);
       setTimeout(() => { setShake(false); setError(""); setPin(""); }, 700);
     }
   };
-
   return (
     <div className={`lock-screen ${isSurya ? "lock-screen-surya" : ""}`}>
       <div className="lock-bg-blur" />
-      <div className="orb-3d orb-3d-1" aria-hidden="true" />
-      <div className="orb-3d orb-3d-2" aria-hidden="true" />
-      <div
-        ref={tilt.ref}
-        onMouseMove={tilt.onMouseMove}
-        onMouseLeave={tilt.onMouseLeave}
-        onMouseEnter={tilt.onMouseEnter}
-        className={`lock-card tilt-card ${shake ? "login-shake" : ""}`}
-      >
+      <div className="orb-3d orb-3d-1" />
+      <div className="orb-3d orb-3d-2" />
+      <div ref={tilt.ref} onMouseMove={tilt.onMouseMove} onMouseLeave={tilt.onMouseLeave} onMouseEnter={tilt.onMouseEnter}
+        className={`lock-card tilt-card ${shake ? "login-shake" : ""}`}>
         <div className="tilt-shine" />
         <div className="lock-icon">{isSurya ? "🌿" : "🌸"}</div>
         <h2 className="lock-title">App Locked</h2>
         <p className="lock-sub">Enter your password to continue</p>
         <form onSubmit={tryUnlock} autoComplete="off">
-          <input
-            className="login-input"
-            type="password"
-            placeholder="Password..."
-            value={pin}
-            onChange={e => { setPin(e.target.value); setError(""); }}
-            autoFocus
-            style={{ marginBottom: "14px", textAlign: "center", letterSpacing: "5px" }}
-          />
+          <input className="login-input" type="password" placeholder="Password..."
+            value={pin} onChange={e => { setPin(e.target.value); setError(""); }} autoFocus
+            style={{ marginBottom:"14px", textAlign:"center", letterSpacing:"5px" }} />
           {error && <p className="login-error">{error}</p>}
-          <button type="submit" className="login-btn">
-            {isSurya ? "Unlock 🌿" : "Unlock 🌸"}
-          </button>
+          <button type="submit" className="login-btn">{isSurya ? "Unlock 🌿" : "Unlock 🌸"}</button>
         </form>
-        <p className="lock-hint">
-          {isSurya ? "Surya's private space 💙" : "Sadhana's private space 💗"}
-        </p>
+        <p className="lock-hint">{isSurya ? "Surya's private space 💙" : "Sadhana's private space 💗"}</p>
       </div>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────
-   PRIVACY SHIELD
-───────────────────────────────────────────── */
+/* ─── PRIVACY SHIELD ─── */
 function PrivacyShield({ user, onDismiss }) {
   return (
     <div className="privacy-shield" onClick={onDismiss}>
@@ -209,18 +162,15 @@ function PrivacyShield({ user, onDismiss }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   MUSIC PLAYER
-───────────────────────────────────────────── */
+/* ─── MUSIC PLAYER ─── */
 function MusicPlayer({ page }) {
   const playerRef    = useRef(null);
   const containerRef = useRef(null);
-  const [playing,  setPlaying]  = useState(true);
-  const [muted,    setMuted]    = useState(false);
-  const [ready,    setReady]    = useState(false);
-  const [trackId,  setTrackId]  = useState(PAGE_SONGS[page] || DEFAULT_SONG);
-  const [expanded, setExpanded] = useState(false);
-
+  const [playing, setPlaying] = useState(true);
+  const [muted,   setMuted]   = useState(false);
+  const [ready,   setReady]   = useState(false);
+  const [trackId, setTrackId] = useState(PAGE_SONGS[page] || DEFAULT_SONG);
+  const [expanded,setExpanded]= useState(false);
   const currentTrack = PLAYLIST.find(t => t.id === trackId) || PLAYLIST[0];
 
   const initPlayer = (videoId) => {
@@ -238,14 +188,12 @@ function MusicPlayer({ page }) {
   useEffect(() => {
     const start = () => initPlayer(PAGE_SONGS[page] || DEFAULT_SONG);
     if (!window.YT) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(tag);
-      window.onYouTubeIframeAPIReady = start;
+      const tag = document.createElement("script"); tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag); window.onYouTubeIframeAPIReady = start;
     } else if (window.YT.Player) { start(); }
     else { window.onYouTubeIframeAPIReady = start; }
     return () => { if (playerRef.current) { try { playerRef.current.destroy(); } catch (_) {} } };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const newId = PAGE_SONGS[page] || DEFAULT_SONG;
@@ -253,7 +201,7 @@ function MusicPlayer({ page }) {
     setTrackId(newId);
     if (!ready || !playerRef.current) return;
     try { playerRef.current.loadVideoById(newId); setPlaying(true); } catch (_) {}
-  }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page]); // eslint-disable-line
 
   const togglePlay = () => { if (!ready) return; playing ? playerRef.current.pauseVideo() : playerRef.current.playVideo(); setPlaying(p=>!p); };
   const toggleMute = () => { if (!ready) return; if (muted) { playerRef.current.unMute(); playerRef.current.setVolume(60); } else { playerRef.current.mute(); } setMuted(m=>!m); };
@@ -275,7 +223,7 @@ function MusicPlayer({ page }) {
         {expanded && (
           <div className="mp-panel">
             <p className="mp-track-name">{currentTrack.title}</p>
-            <p className="mp-track-num">🎵 This page's song</p>
+            <p className="mp-track-num">🎵 Now playing</p>
             <div className="mp-controls">
               <button className="mp-ctrl mp-ctrl-main" onClick={togglePlay}>{playing ? "⏸" : "▶"}</button>
               <button className="mp-ctrl" onClick={toggleMute}>{muted ? "🔇" : "🔊"}</button>
@@ -294,9 +242,7 @@ function MusicPlayer({ page }) {
   );
 }
 
-/* ─────────────────────────────────────────────
-   ANNIVERSARY BADGE
-───────────────────────────────────────────── */
+/* ─── ANNIVERSARY BADGE ─── */
 const TOGETHER_SINCE = new Date("2026-05-20T00:00:00");
 function AnniversaryBadge() {
   const [days, setDays] = useState(0);
@@ -314,9 +260,7 @@ function AnniversaryBadge() {
   );
 }
 
-/* ─────────────────────────────────────────────
-   MAIN APP
-───────────────────────────────────────────── */
+/* ─── MAIN APP ─── */
 export default function App() {
   const [user,        setUser]        = useState(null);
   const [loggedIn,    setLoggedIn]    = useState(false);
@@ -327,18 +271,15 @@ export default function App() {
   const [privacyMode, setPrivacyMode] = useState(false);
   const [tabHidden,   setTabHidden]   = useState(false);
   const [idleWarning, setIdleWarning] = useState(false);
+  const idleRef = useRef(null);
+  const warnRef = useRef(null);
 
-  const idleRef    = useRef(null);
-  const warnRef    = useRef(null);
-
-  /* ── Idle timer ── */
   const resetIdle = useCallback(() => {
     if (locked) return;
     setIdleWarning(false);
-    clearTimeout(idleRef.current);
-    clearTimeout(warnRef.current);
+    clearTimeout(idleRef.current); clearTimeout(warnRef.current);
     warnRef.current = setTimeout(() => setIdleWarning(true), IDLE_TIMEOUT_MS - 30000);
-    idleRef.current = setTimeout(() => setLocked(true),      IDLE_TIMEOUT_MS);
+    idleRef.current = setTimeout(() => setLocked(true), IDLE_TIMEOUT_MS);
   }, [locked]);
 
   useEffect(() => {
@@ -346,25 +287,16 @@ export default function App() {
     const events = ["mousemove","mousedown","keydown","touchstart","scroll","click"];
     events.forEach(e => window.addEventListener(e, resetIdle, { passive:true }));
     resetIdle();
-    return () => {
-      events.forEach(e => window.removeEventListener(e, resetIdle));
-      clearTimeout(idleRef.current);
-      clearTimeout(warnRef.current);
-    };
+    return () => { events.forEach(e => window.removeEventListener(e, resetIdle)); clearTimeout(idleRef.current); clearTimeout(warnRef.current); };
   }, [loggedIn, resetIdle]);
 
-  /* ── Tab visibility blur ── */
   useEffect(() => {
     if (!loggedIn) return;
-    const onVis = () => {
-      if (document.hidden) setTabHidden(true);
-      else setTimeout(() => setTabHidden(false), 500);
-    };
+    const onVis = () => { if (document.hidden) setTabHidden(true); else setTimeout(() => setTabHidden(false), 500); };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [loggedIn]);
 
-  /* ── Back button → lock ── */
   useEffect(() => {
     if (!loggedIn) return;
     window.history.pushState(null, "", window.location.href);
@@ -373,38 +305,29 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [loggedIn]);
 
-  /* ── Screens ── */
   if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
   if (locked)    return <LockScreen user={user} onUnlock={() => { setLocked(false); resetIdle(); }} />;
 
-  /* apply theme */
   document.body.className = user === "surya" ? "theme-surya" : "";
-
   const isSurya = user === "surya";
 
   const renderPage = () => {
     switch (page) {
-      case "box":      return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
-      case "journey":  return <JourneyTimeline setPage={setPage} user={user} />;
-      case "gallery":  return <MemoryGallery setPage={setPage} user={user} />;
-      case "dream":    return <DreamDashboard user={user} />;
-      case "letters":  return <LoveLetter setPage={setPage} user={user} />;
-      case "world":    return <SadhanaWorld setPage={setPage} user={user} />;
-      case "magic":    return <MagicCorner setPage={setPage} user={user} />;
-      case "study":    return <StudyNotes user={user} />;
-      case "tonight":  return <TonightPromise user={user} />;
-      case "chat":     return <LoveChat user={user} />;
-      case "surprise": return <SurpriseBox user={user} />;
-      case "mood":     return <MoodBoard user={user} />;
-      case "notes":    return <LoveNotesWall user={user} />;
-      case "future":   return <FuturePlans user={user} />;
-      case "vows":     return <OurVows user={user} />;
-      case "secret":   return <SecretUniverse setPage={setPage} />;
-      case "mind":     return <SuryaMind user={user} />;
-      case "games":    return <LoveGames setPage={setPage} />;
-      case "quiz":     return <RelationshipQuiz setPage={setPage} />;
-      case "edit":     return isSurya ? <SuryaEditPanel /> : <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
-      default:         return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
+      case "box":              return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
+      case "journey":          return <JourneyTimeline setPage={setPage} user={user} />;
+      case "gallery":          return <MemoryGallery setPage={setPage} user={user} />;
+      case "dream":            return <DreamDashboard user={user} />;
+      case "letters":          return <LoveLetter setPage={setPage} user={user} />;
+      case "world":            return <SadhanaWorld setPage={setPage} user={user} />;
+      case "garden":           return <FlowerGarden user={user} />;
+      case "chat":             return <LoveChat user={user} />;
+      case "surprise":         return <SurpriseBox user={user} />;
+      case "notes":            return <LoveNotesWall user={user} />;
+      case "vows":             return <OurVows user={user} />;
+      case "secret-universe":  return <SecretUniverse setPage={setPage} />;
+      case "quiz":             return <RelationshipQuiz setPage={setPage} />;
+      case "edit":             return isSurya ? <SuryaEditPanel /> : <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
+      default:                 return <ProposalBox opened={boxOpened} setOpened={setBoxOpened} setPage={setPage} />;
     }
   };
 
@@ -415,13 +338,11 @@ export default function App() {
 
   return (
     <div className={`app-v2 ${isSurya ? "theme-surya" : ""} ${tabHidden ? "app-tab-blurred" : ""}`}>
-      {/* 3D depth background orbs */}
       <div className="orb-3d orb-3d-1" aria-hidden="true" />
       <div className="orb-3d orb-3d-2" aria-hidden="true" />
       <div className="orb-3d orb-3d-3" aria-hidden="true" />
       <MusicPlayer page={page} />
 
-      {/* Tab-switch blur */}
       {tabHidden && (
         <div className="tab-blur-overlay" onClick={() => setTabHidden(false)}>
           <div className="tab-blur-inner">
@@ -431,10 +352,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Privacy shield */}
       {privacyMode && <PrivacyShield user={user} onDismiss={() => setPrivacyMode(false)} />}
 
-      {/* Idle warning */}
       {idleWarning && !locked && (
         <div className="idle-warning-banner">
           <span>🔒 Locking in 30s</span>
@@ -443,7 +362,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Top bar ── */}
       <header className="topbar">
         <div className="topbar-left">
           <div className="topbar-brand">
@@ -451,15 +369,9 @@ export default function App() {
             <span className="topbar-title">Dharya</span>
           </div>
         </div>
-
         <div className="topbar-center">
-          {currentLabel && (
-            <span className="topbar-current">
-              {currentLabel.label}
-            </span>
-          )}
+          {currentLabel && <span className="topbar-current">{currentLabel.label}</span>}
         </div>
-
         <div className="topbar-right">
           <AnniversaryBadge />
           <button className="topbar-icon-btn" onClick={() => setPrivacyMode(v => !v)} title="Privacy" aria-label="Privacy shield">
@@ -476,10 +388,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Nav drawer backdrop ── */}
       {navOpen && <div className="nav-backdrop" onClick={() => setNavOpen(false)} />}
 
-      {/* ── Nav drawer ── */}
       <nav className={`nav-drawer ${navOpen ? "nav-drawer-open" : ""}`}>
         <div className="nav-drawer-header">
           <div className="nav-drawer-brand">
@@ -491,18 +401,13 @@ export default function App() {
           </div>
           <button className="nav-drawer-close" onClick={() => setNavOpen(false)}>✕</button>
         </div>
-
         <div className="nav-drawer-body">
           {NAV_GROUPS_BASE.map(g => (
             <div key={g.id} className="nav-group">
               <p className="nav-group-label">{g.label}</p>
               <div className="nav-group-items">
                 {g.pages.map(p => (
-                  <button
-                    key={p.key}
-                    className={`nav-item ${page === p.key ? "nav-item-active" : ""}`}
-                    onClick={() => navigate(p.key)}
-                  >
+                  <button key={p.key} className={`nav-item ${page === p.key ? "nav-item-active" : ""}`} onClick={() => navigate(p.key)}>
                     <span className="nav-item-icon">{p.icon}</span>
                     <span className="nav-item-label">{p.label}</span>
                     {page === p.key && <ChevronRight size={14} style={{opacity:0.6}} />}
@@ -511,8 +416,6 @@ export default function App() {
               </div>
             </div>
           ))}
-
-          {/* Privacy section */}
           <div className="nav-group">
             <p className="nav-group-label">Privacy</p>
             <div className="nav-group-items">
@@ -526,8 +429,6 @@ export default function App() {
               </button>
             </div>
           </div>
-
-          {/* Surya-only: Edit panel */}
           {isSurya && (
             <div className="nav-group">
               <p className="nav-group-label">Admin</p>
@@ -543,14 +444,9 @@ export default function App() {
         </div>
       </nav>
 
-      {/* ── Bottom tab bar ── */}
       <nav className="bottom-tabs">
         {bottomTabs.map(t => (
-          <button
-            key={t.key}
-            className={`btab ${page===t.key ? "btab-active" : ""}`}
-            onClick={() => navigate(t.key)}
-          >
+          <button key={t.key} className={`btab ${page===t.key ? "btab-active" : ""}`} onClick={() => navigate(t.key)}>
             <span className="btab-icon">{t.icon}</span>
             <span className="btab-label">{t.label}</span>
           </button>
@@ -561,30 +457,23 @@ export default function App() {
         </button>
       </nav>
 
-      {/* ── Page content with 3D transitions ── */}
       <AnimatePresence mode="wait">
         <motion.main
           className="main-content"
           key={page}
-          initial={{ opacity: 0, rotateX: 8, y: 40, scale: 0.96, filter: "blur(6px)" }}
-          animate={{ opacity: 1, rotateX: 0, y: 0, scale: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, rotateX: -6, y: -30, scale: 0.97, filter: "blur(4px)" }}
-          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-          style={{ transformPerspective: 1000, transformStyle: "preserve-3d" }}
+          initial={{ opacity:0, rotateX:8, y:40, scale:0.96, filter:"blur(6px)" }}
+          animate={{ opacity:1, rotateX:0, y:0, scale:1, filter:"blur(0px)" }}
+          exit={{ opacity:0, rotateX:-6, y:-30, scale:0.97, filter:"blur(4px)" }}
+          transition={{ duration:0.5, ease:[0.25,0.46,0.45,0.94] }}
+          style={{ transformPerspective:1000, transformStyle:"preserve-3d" }}
         >
           {renderPage()}
         </motion.main>
       </AnimatePresence>
 
-      {/* Floating ambient particles */}
       <div className="hearts" aria-hidden="true">
         {[...Array(5)].map((_, i) => (
-          <span key={i} style={{
-            left: `${10 + i * 18}%`,
-            animationDelay: `${i * 1.8}s`,
-            animationDuration: `${10 + i * 1.5}s`,
-            fontSize: `${16 + (i % 2) * 8}px`,
-          }}>
+          <span key={i} style={{ left:`${10+i*18}%`, animationDelay:`${i*1.8}s`, animationDuration:`${10+i*1.5}s`, fontSize:`${16+(i%2)*8}px` }}>
             {isSurya ? "🍃" : "✨"}
           </span>
         ))}

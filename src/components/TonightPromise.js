@@ -246,10 +246,10 @@ export default function TonightPromise({ user }) {
               key={i}
               className="tonight-star-dot"
               style={{
-                left: `${Math.random()*100}%`,
-                top:  `${Math.random()*50}%`,
-                animationDelay: `${Math.random()*3}s`,
-                fontSize: `${8+Math.random()*8}px`,
+                left: `${(i * 17 + 3) % 97}%`,
+                top:  `${(i * 11 + 5) % 48}%`,
+                animationDelay: `${(i * 0.37) % 3}s`,
+                fontSize: `${8 + (i % 3) * 4}px`,
               }}
             >✦</span>
           ))}

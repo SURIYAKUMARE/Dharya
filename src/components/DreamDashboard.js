@@ -288,10 +288,18 @@ export default function DreamDashboard({ user }) {
         <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(236,72,153,0.08)", border:"1px solid rgba(236,72,153,0.2)", borderRadius:"50px", marginBottom:"14px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#EC4899", letterSpacing:"1.5px", textTransform:"uppercase" }}>
           <Star size={11}/> Dream World
         </div>
-        <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"2.2rem", fontWeight:800, color:"#fff", margin:"0 0 10px", letterSpacing:"-0.5px" }}>
+        <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"2.2rem", fontWeight:800, color:"#fff", margin:"0 0 8px", letterSpacing:"-0.5px" }}>
           {name}'s Dreams {isSurya?"🌿":"🌸"}
         </h1>
         <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:0, lineHeight:1.6 }}>Every dream you write here will come true 💫</p>
+        {!isSurya && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.3}}
+            style={{ marginTop:"14px", display:"inline-flex", alignItems:"center", gap:"6px", padding:"8px 18px", background:"rgba(236,72,153,0.08)", border:"1px solid rgba(236,72,153,0.18)", borderRadius:"50px" }}>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.8rem", color:"rgba(255,255,255,0.55)", fontStyle:"italic" }}>
+              "I'll make every one of these real for you" — Surya 💙
+            </span>
+          </motion.div>
+        )}
       </motion.div>
 
       <LoveNoteCard />

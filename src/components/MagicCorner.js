@@ -103,85 +103,7 @@ function StoryBook() {
 }
 
 /* ══════════════════════════════════════════
-   2. FLOWER GARDEN
-══════════════════════════════════════════ */
-const FLOWER_TYPES = ["🌸","🌺","🌻","🌹","🌷","💐","🌼","🪷"];
-const GROWTH_STAGES = ["🌱","🌿","🪴","🌸"];
-
-function FlowerGarden() {
-  const [garden, setGarden] = useState([]);
-  const [watered, setWatered] = useState(false);
-  const [newFlower, setNewFlower] = useState(null);
-  const [lastVisit, setLastVisit] = useState("");
-
-  useEffect(() => {
-    dbGet("fg_garden", []).then(g => { if (Array.isArray(g)) setGarden(g); });
-    dbGet("fg_lastvisit", "").then(v => { if (v) setLastVisit(v); });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const todayKey = new Date().toDateString();
-  const alreadyWatered = lastVisit === todayKey;
-
-  const water = async () => {
-    if (alreadyWatered) return;
-    const flower = {
-      id: Date.now(),
-      type: FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)],
-      stage: 0,
-      date: new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short" }),
-    };
-    const grown = garden.map(f => ({ ...f, stage: Math.min(f.stage + 1, GROWTH_STAGES.length - 1) }));
-    const updated = [...grown, flower];
-    setGarden(updated);
-    setNewFlower(flower.id);
-    setWatered(true);
-    setLastVisit(todayKey);
-    await dbSet("fg_garden", updated);
-    await dbSet("fg_lastvisit", todayKey);
-    setTimeout(() => setNewFlower(null), 1500);
-  };
-
-  const bloomed = garden.filter(f => f.stage === GROWTH_STAGES.length - 1).length;
-
-  return (
-    <div className="garden-wrap">
-      <h3 className="garden-heading">🌺 Our Flower Garden</h3>
-      <p className="garden-sub">Visit every day to grow a new flower 🌱 — {garden.length} flowers planted so far!</p>
-
-      <div className="garden-stats">
-        <div className="garden-stat"><span>{garden.length}</span><p>Planted</p></div>
-        <div className="garden-stat"><span>{bloomed}</span><p>Bloomed 🌸</p></div>
-        <div className="garden-stat"><span>{Math.max(0, garden.length - bloomed)}</span><p>Growing 🌿</p></div>
-      </div>
-
-      <div className="garden-bed">
-        {garden.length === 0 && (
-          <div className="garden-empty">Press the button below to plant your first flower 🌱</div>
-        )}
-        {garden.map(f => (
-          <div key={f.id} className={`garden-flower ${newFlower === f.id ? "garden-new" : ""}`}>
-            <div className="garden-flower-emoji">{GROWTH_STAGES[f.stage] === "🌸" ? f.type : GROWTH_STAGES[f.stage]}</div>
-            <div className="garden-flower-date">{f.date}</div>
-          </div>
-        ))}
-      </div>
-
-      {alreadyWatered && !watered ? (
-        <div className="garden-done-today">✅ You watered the garden today! Come back tomorrow 🌸</div>
-      ) : watered ? (
-        <div className="garden-done-today">🌱 A new flower was planted! See you tomorrow 💕</div>
-      ) : (
-        <button className="garden-water-btn" onClick={water}>
-          💧 Water the Garden Today
-        </button>
-      )}
-      <p className="garden-note">"Every day you visit, our garden grows — just like our love 💙" — Surya</p>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════
-   3. TIME CAPSULE
+   2. TIME CAPSULE
 ══════════════════════════════════════════ */
 function TimeCapsule() {
   const [msg,      setMsg]      = useState("");
@@ -294,15 +216,11 @@ function TimeCapsule() {
   );
 }
 
-/* ══════════════════════════════════════════
-   MAIN PAGE
-══════════════════════════════════════════ */
 export default function MagicCorner({ setPage, user }) {
   const [tab, setTab] = useState("story");
 
   const TABS = [
     { key: "story",  label: "📖 Story" },
-    { key: "garden", label: "🌺 Garden" },
     { key: "capsule",label: "⏳ Capsule" },
   ];
 
@@ -312,8 +230,8 @@ export default function MagicCorner({ setPage, user }) {
         <h1 className="magic-title">Magic Corner ✨</h1>
         <p className="magic-sub">
           {user === "surya"
-            ? "Three special things you built — your magic 🌿"
-            : "Three special things Surya made only for you 🌸"}
+            ? "Your magical creations — story and time capsule 🌿"
+            : "Two special things Surya made only for you 🌸"}
         </p>
       </div>
       <div className="games-tabs">
@@ -325,7 +243,6 @@ export default function MagicCorner({ setPage, user }) {
       </div>
       <div className="games-content">
         {tab === "story"   && <StoryBook />}
-        {tab === "garden"  && <FlowerGarden />}
         {tab === "capsule" && <TimeCapsule />}
       </div>
       <div className="dream-footer" style={{ marginTop: "50px" }}>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Edit3, Trash2, Upload, X, MapPin, Clock, User, Users, ChevronRight } from "lucide-react";
+import { Plus, Edit3, Trash2, Upload, X, MapPin, Clock, User, Users } from "lucide-react";
 import { dbGet, dbSet, getPhoto, uploadPhoto, deletePhoto } from "../api";
 import { useTilt } from "../App";
 
@@ -39,8 +39,8 @@ function TiltContent({ children }) {
 function AddedByBadge({ who }) {
   const cfg = {
     surya:   { icon:<User size={11}/>,  label:"Surya",   color:"#10B981", bg:"rgba(16,185,129,0.12)" },
-    sadhana: { icon:<User size={11}/>,  label:"Sadhana", color:"#EC4899", bg:"rgba(236,72,153,0.12)" },
-    both:    { icon:<Users size={11}/>, label:"Both",    color:"#8B5CF6", bg:"rgba(139,92,246,0.12)" },
+    sadhana: { icon:<User size={11}/>,  label:"Sadhana", color:"#ff6b8e", bg:"rgba(232,48,90,0.12)" },
+    both:    { icon:<Users size={11}/>, label:"Both",    color:"#e8bb6e", bg:"rgba(201,147,42,0.12)" },
   };
   const { icon, label, color, bg } = cfg[who] || cfg.both;
   return (
@@ -59,8 +59,7 @@ export default function JourneyTimeline({ setPage, user }) {
   const [uploading, setUploading] = useState(false);
   const [saving,    setSaving]    = useState(false);
   const [form,      setForm]      = useState({ year:"", title:"", desc:"", file:null, preview:"" });
-  const [countdown, setCountdown] = useState(null);
-  const countdownRef = useRef(null);
+  const [countdown, setCountdown] = useState(null); // eslint-disable-line no-unused-vars
   const itemRefs     = useRef([]);
   const fileRef      = useRef(null);
 
@@ -114,18 +113,7 @@ export default function JourneyTimeline({ setPage, user }) {
     r.readAsDataURL(file);
   };
 
-  const handleScroll = useCallback(() => {
-    const atBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 60;
-    if (atBottom && countdown === null) setCountdown(8);
-  }, [countdown]);
-
-  useEffect(() => { window.addEventListener("scroll", handleScroll); return () => window.removeEventListener("scroll", handleScroll); }, [handleScroll]);
-  useEffect(() => {
-    if (countdown === null) return;
-    if (countdown === 0) { setPage("gallery"); return; }
-    countdownRef.current = setTimeout(() => setCountdown(c => c-1), 1000);
-    return () => clearTimeout(countdownRef.current);
-  }, [countdown, setPage]);
+  // Auto-next disabled — user navigates manually
 
   useEffect(() => {
     if (loading) return;
@@ -147,20 +135,36 @@ export default function JourneyTimeline({ setPage, user }) {
       {/* ── Header ── */}
       <motion.div initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{duration:0.5}}
         style={{ textAlign:"center", marginBottom:"40px", padding:"0 8px" }}>
-        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(236,72,153,0.08)", border:"1px solid rgba(236,72,153,0.2)", borderRadius:"50px", marginBottom:"16px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#EC4899", letterSpacing:"1.5px", textTransform:"uppercase" }}>
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(232,48,90,0.08)", border:"1px solid rgba(232,48,90,0.22)", borderRadius:"50px", marginBottom:"16px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#ff6b8e", letterSpacing:"1.5px", textTransform:"uppercase" }}>
           <MapPin size={12}/> Our Story
         </div>
-        <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"2.2rem", fontWeight:800, color:"#fff", margin:"0 0 10px", letterSpacing:"-0.5px" }}>Our Journey</h1>
-        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:0, lineHeight:1.6 }}>Every moment that made us who we are today 🌸</p>
+        <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 10px", letterSpacing:"-0.3px", textShadow:"0 0 40px rgba(232,48,90,0.25)" }}>Our Journey</h1>
+        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:"0 0 20px", lineHeight:1.6 }}>Every moment that made us who we are today 🌸</p>
+
+        {/* Live days together badge */}
+        <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} transition={{delay:0.3,type:"spring"}}
+          style={{ display:"inline-flex", alignItems:"center", gap:"16px", padding:"16px 28px", background:"rgba(9,4,21,0.8)", border:"1px solid rgba(232,48,90,0.2)", borderRadius:"20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.3)" }}>
+          <div style={{ textAlign:"center" }}>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2rem", fontWeight:600, background:"linear-gradient(135deg,#e8305a,#6b2fa0,#e8bb6e)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+              {Math.max(0,Math.floor((Date.now()-new Date("2026-05-20").getTime())/86400000))}
+            </span>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)", margin:0, textTransform:"uppercase", letterSpacing:"1px" }}>Days Together</p>
+          </div>
+          <div style={{ width:"1px", height:"36px", background:"rgba(255,255,255,0.1)" }}/>
+          <div style={{ textAlign:"center" }}>
+            <span style={{ fontSize:"1.4rem" }}>🌸</span>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)", margin:0, textTransform:"uppercase", letterSpacing:"1px" }}>Since May 20</p>
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* ── Add button ── */}
       {!adding && (
         <motion.div initial={{opacity:0}} animate={{opacity:1}} style={{ textAlign:"center", marginBottom:"36px" }}>
           <button onClick={() => { setAdding(true); setEditIdx(null); setForm({year:"",title:"",desc:"",file:null,preview:""}); }}
-            style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"12px 28px", background:"linear-gradient(90deg,#EC4899,#8B5CF6)", border:"none", borderRadius:"14px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.88rem", fontWeight:700, cursor:"pointer", boxShadow:"0 8px 24px rgba(236,72,153,0.35)", transition:"transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s" }}
-            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 16px 40px rgba(236,72,153,0.45)";}}
-            onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 8px 24px rgba(236,72,153,0.35)";}}>
+            style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"12px 28px", background:"linear-gradient(135deg,#e8305a,#8b0040)", border:"none", borderRadius:"14px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.88rem", fontWeight:700, cursor:"pointer", boxShadow:"0 10px 28px rgba(232,48,90,0.45)", transition:"transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s" }}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 18px 44px rgba(232,48,90,0.55)";}}
+            onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 10px 28px rgba(232,48,90,0.45)";}}>
             <Plus size={16} strokeWidth={2.5}/> Add a Moment
           </button>
         </motion.div>
@@ -172,7 +176,7 @@ export default function JourneyTimeline({ setPage, user }) {
           <motion.div
             initial={{opacity:0,y:-20,scale:0.97,rotateX:6}} animate={{opacity:1,y:0,scale:1,rotateX:0}}
             exit={{opacity:0,y:-16,scale:0.97}} transition={{duration:0.4,ease:[0.25,0.46,0.45,0.94]}}
-            style={{ margin:"0 0 40px", background:"rgba(255,255,255,0.055)", border:"1px solid rgba(255,255,255,0.1)", borderRadius:"24px", padding:"32px 28px", boxShadow:"0 20px 60px rgba(0,0,0,0.3)", backdropFilter:"blur(16px)", transformPerspective:800 }}
+            style={{ margin:"0 0 40px", background:"rgba(9,4,21,0.82)", border:"1px solid rgba(232,48,90,0.14)", borderRadius:"24px", padding:"32px 28px", boxShadow:"0 22px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset", backdropFilter:"blur(20px)", transformPerspective:800 }}
           >
             <h3 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.2rem", fontWeight:800, color:"#fff", margin:"0 0 24px", display:"flex", alignItems:"center", gap:"10px" }}>
               {editIdx!==null ? <><Edit3 size={18}/> Edit Moment</> : <><Plus size={18}/> Add a Moment</>}
@@ -181,7 +185,7 @@ export default function JourneyTimeline({ setPage, user }) {
               <div key={field} style={{marginBottom:"14px"}}>
                 <label style={labelStyle}>{icon} {label}</label>
                 <input style={inputStyle} placeholder={placeholder} value={form[field]} onChange={e=>setForm(f=>({...f,[field]:e.target.value}))}
-                  onFocus={e=>{e.target.style.borderColor="#EC489988";e.target.style.boxShadow="0 0 0 3px rgba(236,72,153,0.12)";}}
+                  onFocus={e=>{e.target.style.borderColor="rgba(232,48,90,0.55)";e.target.style.boxShadow="0 0 0 3px rgba(232,48,90,0.1)";}}
                   onBlur={e=>{e.target.style.borderColor="rgba(255,255,255,0.1)";e.target.style.boxShadow="none";}}/>
               </div>
             ))}
@@ -208,7 +212,7 @@ export default function JourneyTimeline({ setPage, user }) {
             </div>
             <div style={{display:"flex",gap:"12px"}}>
               <button onClick={handleSubmit} disabled={!form.year.trim()||!form.title.trim()||saving}
-                style={{flex:1,padding:"14px",background:"linear-gradient(90deg,#EC4899,#8B5CF6)",border:"none",borderRadius:"14px",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:"0.9rem",fontWeight:700,cursor:saving?"wait":"pointer",boxShadow:"0 8px 24px rgba(236,72,153,0.3)",opacity:(!form.year.trim()||!form.title.trim())?0.5:1,transition:"transform 0.2s,box-shadow 0.2s"}}
+                style={{flex:1,padding:"14px",background:"linear-gradient(135deg,#e8305a,#8b0040)",border:"none",borderRadius:"14px",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:"0.9rem",fontWeight:700,cursor:saving?"wait":"pointer",boxShadow:"0 10px 28px rgba(232,48,90,0.45)",opacity:(!form.year.trim()||!form.title.trim())?0.5:1,transition:"transform 0.2s,box-shadow 0.2s"}}
                 onMouseEnter={e=>{if(!saving)e.currentTarget.style.transform="translateY(-2px)";}} onMouseLeave={e=>{e.currentTarget.style.transform="";}}>
                 {saving?(uploading?"Uploading… ⏳":"Saving… ✦"):(editIdx!==null?"Update Moment":"Add to Journey")}
               </button>
@@ -234,12 +238,12 @@ export default function JourneyTimeline({ setPage, user }) {
               <div className="dot"/>
               <TiltContent>
                 <div style={{display:"flex",alignItems:"center",justifyContent:i%2===0?"flex-start":"flex-end",gap:"8px",marginBottom:"10px",flexWrap:"wrap"}}>
-                  <span style={{fontFamily:"'Manrope',sans-serif",fontSize:"1rem",fontWeight:800,color:"#c9a96e",display:"flex",alignItems:"center",gap:"5px"}}>
+                  <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.1rem",fontWeight:600,fontStyle:"italic",color:"#e8bb6e",display:"flex",alignItems:"center",gap:"5px"}}>
                     <Clock size={12} style={{opacity:0.6}}/> {m.year}
                   </span>
                   <AddedByBadge who={m.addedBy}/>
                 </div>
-                <h3 style={{fontFamily:"'Manrope',sans-serif",fontSize:"1.05rem",fontWeight:800,color:"#fff",margin:"0 0 8px",letterSpacing:"-0.2px"}}>{m.title}</h3>
+                <h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.2rem",fontWeight:600,fontStyle:"italic",color:"#fff",margin:"0 0 8px"}}>{m.title}</h3>
                 {m.desc && <p style={{fontFamily:"'Inter',sans-serif",fontSize:"0.875rem",color:"rgba(255,255,255,0.5)",margin:"0 0 12px",lineHeight:1.6}}>{m.desc}</p>}
                 {photos[i] && <img src={photos[i]} alt={m.title} style={{width:"100%",borderRadius:"14px",display:"block",marginTop:"4px",opacity:0.92,boxShadow:"0 8px 24px rgba(0,0,0,0.3)"}}/>}
                 <div style={{display:"flex",gap:"8px",marginTop:"14px",justifyContent:i%2===0?"flex-start":"flex-end"}}>
@@ -269,14 +273,7 @@ export default function JourneyTimeline({ setPage, user }) {
         </div>
       )}
 
-      {countdown !== null && (
-        <div className="auto-nav-banner">
-          <ChevronRight size={14} style={{opacity:0.6}}/> Moving to Gallery in
-          <strong>{countdown}s</strong>
-          <button onClick={()=>{clearTimeout(countdownRef.current);setPage("gallery");}}>Go Now</button>
-          <button onClick={()=>{clearTimeout(countdownRef.current);setCountdown(null);}}>Stay</button>
-        </div>
-      )}
+      {/* auto-next banner removed */}
     </div>
   );
 }

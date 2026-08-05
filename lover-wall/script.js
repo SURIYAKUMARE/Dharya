@@ -38,17 +38,19 @@ const TIMELINE = [
 
 /* ── GALLERY DATA ────────────────────────────────────────── */
 const GALLERY = [
-  { src:'/images/photo1.jpg.jpg',   cap:'The day we first met 💫'       },
-  { src:'/images/photo2.jpg.jpeg',  cap:'Midnight proposal 💍'          },
-  { src:'/images/photo3.jpg.jpeg',  cap:'She said yes 💖'               },
-  { src:'/images/photo4.jpg.jpeg',  cap:'We both said yes 💕'           },
-  { src:'/images/photo5.jpg.jpeg',  cap:'Our journey begins 🌸'         },
-  { src:'/images/photo11.jpg.jpg',  cap:'Every smile is gold 😊'        },
-  { src:'/images/photo12.jpg.png',  cap:'You make life beautiful 🌷'    },
-  { src:'/images/photo13.jpg.jpg',  cap:'My favourite person 💓'        },
-  { src:'/images/photo16.jpg.jpg',  cap:'You are my everything ✨'      },
-  { src:'/images/photo17.jpg.jpg',  cap:'Forever and always 💒'         },
-  { src:'/images/1000111741.jpg',   cap:'Sadhana, my love 🌹'          },
+  { src:'../public/images/photo1.jpg.jpg',   cap:'The day we first met 💫'       },
+  { src:'../public/images/photo2.jpg.jpeg',  cap:'Midnight proposal 💍'          },
+  { src:'../public/images/photo3.jpg.jpeg',  cap:'She said yes 💖'               },
+  { src:'../public/images/photo4.jpg.jpeg',  cap:'We both said yes 💕'           },
+  { src:'../public/images/photo5.jpg.jpeg',  cap:'Our journey begins 🌸'         },
+  { src:'../public/images/photo11.jpg.jpg',  cap:'Every smile is gold 😊'        },
+  { src:'../public/images/photo12.jpg.png',  cap:'You make life beautiful 🌷'    },
+  { src:'../public/images/photo13.jpg.jpg',  cap:'My favourite person 💓'        },
+  { src:'../public/images/photo16.jpg.jpg',  cap:'You are my everything ✨'      },
+  { src:'../public/images/photo17.jpg.jpg',  cap:'Forever and always 💒'         },
+  { src:'../public/images/1000111741.jpg',   cap:'Sadhana, my love 🌹'          },
+  { src:'../public/images/photo15.jpg.mp4',  cap:'A beautiful moment 🎬', type:'video' },
+  { src:'../public/images/photo81.jpg.mp4',  cap:'Together forever 🎥',   type:'video' },
 ];
 
 /* ════════════════════════════════════════════════════════════
@@ -304,11 +306,34 @@ function initReveal() {
   items.forEach((item,idx) => {
     const div = document.createElement('div');
     div.className = 'gallery-item';
-    div.innerHTML = `<img src="${item.src}" alt="${item.cap}" loading="lazy"/><div class="gallery-cap"><span>${item.cap}</span></div>`;
-    div.addEventListener('click', () => open(idx));
-    /* 3D tilt */
-    div.addEventListener('mousemove', e => tilt(e, div, 10));
-    div.addEventListener('mouseleave', () => untilt(div));
+    if (item.type === 'video') {
+      div.innerHTML = `
+        <video src="${item.src}" muted loop playsinline preload="metadata"
+          style="width:100%;display:block;border-radius:inherit;max-height:280px;object-fit:cover;"></video>
+        <div class="gallery-video-badge">▶ Video</div>
+        <div class="gallery-cap"><span>${item.cap}</span></div>`;
+      const vid = div.querySelector('video');
+      div.addEventListener('mouseenter', () => vid.play().catch(()=>{}));
+      div.addEventListener('mouseleave', () => { vid.pause(); vid.currentTime = 0; });
+      div.addEventListener('click', () => {
+        /* open video in simple overlay */
+        const ol = document.createElement('div');
+        ol.style.cssText = 'position:fixed;inset:0;background:rgba(5,2,10,0.95);z-index:9100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(20px);';
+        ol.innerHTML = `<div style="position:relative;max-width:90vw;max-height:86vh">
+          <video src="${item.src}" controls autoplay style="max-width:90vw;max-height:80vh;border-radius:16px;display:block;"></video>
+          <p style="text-align:center;color:rgba(255,255,255,0.6);font-family:Cormorant Garamond,serif;font-style:italic;margin-top:12px;">${item.cap}</p>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:-12px;right:-12px;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#e8305a,#8b0040);border:none;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(232,48,90,0.5)">✕</button>
+        </div>`;
+        ol.addEventListener('click', e => { if (e.target === ol) ol.remove(); });
+        document.body.appendChild(ol);
+      });
+    } else {
+      div.innerHTML = `<img src="${item.src}" alt="${item.cap}" loading="lazy"/><div class="gallery-cap"><span>${item.cap}</span></div>`;
+      div.addEventListener('click', () => open(idx));
+      /* 3D tilt */
+      div.addEventListener('mousemove', e => tilt(e, div, 10));
+      div.addEventListener('mouseleave', () => untilt(div));
+    }
     grid.appendChild(div);
   });
 })();
@@ -442,6 +467,7 @@ function initReveal() {
     if (el) { el.style.opacity='0'; el.style.transform='scale(0.8)'; el.style.transition='all 0.3s'; setTimeout(()=>el.remove(),300); }
     memories = memories.filter(x=>x.id!==id);
     localStorage.setItem('dharya_memories', JSON.stringify(memories));
+    showToast('🗑 Memory removed');
   }
 
   saveBtn.addEventListener('click', () => {
@@ -458,6 +484,7 @@ function initReveal() {
       renderCard(m);
     }
     closeModal();
+    showToast(editId ? '✏️ Memory updated!' : '📌 Memory pinned!');
   });
 
   addBtn.addEventListener('click', openModal);
@@ -669,4 +696,31 @@ document.addEventListener('DOMContentLoaded', () => {
   /* mark section headers for reveal */
   document.querySelectorAll('.section-head, .music-player').forEach(el => el.classList.add('reveal'));
   initReveal();
+
+  /* ── Active nav link highlight ── */
+  const sections = document.querySelectorAll('section[id]');
+  const navAs    = document.querySelectorAll('.nav-links a, .nav-drawer a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navAs.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id);
+        });
+      }
+    });
+  }, { threshold: 0.35 });
+  sections.forEach(s => observer.observe(s));
 });
+
+/* ════════════════════════════════════════════════════════════
+   19. TOAST UTILITY
+════════════════════════════════════════════════════════════ */
+function showToast(msg, duration = 2800) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('hide');
+    t.addEventListener('animationend', () => t.remove());
+  }, duration);
+}

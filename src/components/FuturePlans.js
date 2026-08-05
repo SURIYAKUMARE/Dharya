@@ -92,6 +92,9 @@ export default function FuturePlans({ user }) {
   return (
     <div className="fp-page">
       <div className="fp-hero">
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(236,72,153,0.08)", border:"1px solid rgba(236,72,153,0.2)", borderRadius:"50px", marginBottom:"14px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#EC4899", letterSpacing:"1.5px", textTransform:"uppercase" }}>
+          🗺️ Our Roadmap
+        </div>
         <h1 className="fp-title">Our Future Plans 🗺️</h1>
         <p className="fp-sub">
           {isSurya
@@ -102,12 +105,29 @@ export default function FuturePlans({ user }) {
 
       {/* Overall progress */}
       <div className="fp-progress-wrap">
-        <div className="fp-progress-bar">
-          <div className="fp-progress-fill" style={{ width:`${pct}%` }} />
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"10px" }}>
+          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"1px" }}>
+            Overall Progress
+          </span>
+          <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.88rem", fontWeight:800, color:"#EC4899" }}>
+            {pct}%
+          </span>
+        </div>
+        <div className="fp-progress-bar" style={{ position:"relative" }}>
+          <div className="fp-progress-fill" style={{ width:`${pct}%`, boxShadow:"0 0 12px rgba(236,72,153,0.5)" }} />
         </div>
         <p className="fp-progress-label">
-          <strong>{doneCount}</strong> of <strong>{total}</strong> plans ticked off 🌟 ({pct}%)
+          <strong>{doneCount}</strong> of <strong>{total}</strong> plans completed 🌟
+          {doneCount > 0 && <span style={{ marginLeft:"8px", color:"#10B981" }}>({pct}% done!)</span>}
         </p>
+        {/* Heart fill row */}
+        <div style={{ display:"flex", gap:"4px", justifyContent:"center", marginTop:"8px" }}>
+          {[...Array(10)].map((_,i) => (
+            <span key={i} style={{ fontSize:"1rem", opacity: pct >= (i+1)*10 ? 1 : 0.2, transition:"opacity 0.4s", transitionDelay:`${i*0.05}s` }}>
+              {pct >= (i+1)*10 ? "❤️" : "🤍"}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Category tabs */}

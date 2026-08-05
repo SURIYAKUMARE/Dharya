@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Lock, Unlock, Pen, X, Sparkles } from "lucide-react";
+import { Heart, Lock, Unlock, Pen, X, Sparkles, CheckCircle } from "lucide-react";
 import { dbGet, dbSet } from "../api";
 import { useTilt } from "../App";
 
@@ -166,6 +166,34 @@ export default function OurVows({ user }) {
         </div>
         <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"2.2rem", fontWeight:800, color:"#fff", margin:"0 0 10px", letterSpacing:"-0.5px" }}>Our Promises 💒</h1>
         <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:0, lineHeight:1.6 }}>Words written from the heart — promises that last forever 🌸</p>
+
+        {/* Ring ceremony visual */}
+        <motion.div
+          initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} transition={{delay:0.3,type:"spring"}}
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"16px", marginTop:"24px", padding:"18px 24px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"20px", backdropFilter:"blur(12px)" }}
+        >
+          <div style={{ textAlign:"center" }}>
+            <span style={{ fontSize:"1.8rem" }}>💙</span>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(59,130,246,0.7)", margin:"4px 0 0", textTransform:"uppercase", letterSpacing:"1px" }}>Surya</p>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px" }}>
+            <span style={{ fontSize:"1.4rem" }}>💍</span>
+            <div style={{ width:"60px", height:"1px", background:"linear-gradient(90deg,#3b82f6,#EC4899)" }}/>
+          </div>
+          <div style={{ textAlign:"center" }}>
+            <span style={{ fontSize:"1.8rem" }}>💗</span>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(236,72,153,0.7)", margin:"4px 0 0", textTransform:"uppercase", letterSpacing:"1px" }}>Sadhana</p>
+          </div>
+        </motion.div>
+
+        {/* Sadhana vow sealed status */}
+        {sealed && (
+          <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.5}}
+            style={{ display:"inline-flex", alignItems:"center", gap:"6px", marginTop:"12px", padding:"5px 14px", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", borderRadius:"50px" }}>
+            <CheckCircle size={12} style={{color:"#10B981"}}/>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#10B981" }}>Sadhana's vow is sealed 💍</span>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Vow Cards */}
@@ -176,6 +204,7 @@ export default function OurVows({ user }) {
       {/* Footer */}
       <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.6,duration:0.5}}
         style={{ textAlign:"center", padding:"28px", background:"linear-gradient(135deg,rgba(59,130,246,0.06),rgba(236,72,153,0.06))", border:"1px solid rgba(255,255,255,0.06)", borderRadius:"24px" }}>
+        <div style={{ fontSize:"1.8rem", marginBottom:"10px" }}>💍</div>
         <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.95rem", color:"rgba(255,255,255,0.5)", margin:"0 0 8px", fontStyle:"italic" }}>"A vow isn't just words — it's a direction, a promise, a life 💙"</p>
         <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:800, color:"#fff", margin:0, letterSpacing:"-0.2px" }}>Surya &amp; Sadhana — Forever 💍</p>
       </motion.div>

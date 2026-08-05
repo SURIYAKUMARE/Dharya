@@ -1128,4 +1128,97 @@ body:has(button:hover) #cursorRing{width:48px;height:48px;border-color:var(--ros
 }
 
 /* ── Ensure appearance compatibility ── */
-input[type='range'] { -webkit-appearance: none; appearance: none; }
+input[type='range'] { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+
+/* ─── VIDEO GALLERY ITEMS ─── */
+.gallery-item video {
+  width: 100%; display: block;
+  transition: transform 0.6s var(--ease);
+  border-radius: inherit;
+}
+.gallery-item:hover video { transform: scale(1.06); }
+.gallery-video-badge {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 50px; padding: 4px 10px;
+  font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.85);
+  letter-spacing: 0.8px; backdrop-filter: blur(8px);
+  pointer-events: none; z-index: 3;
+}
+
+/* ─── ENHANCED SECTION TRANSITIONS ─── */
+.section { animation: sectionReveal 0.8s var(--ease) both; }
+@keyframes sectionReveal {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── NOTE COLORS ENHANCED ─── */
+.mem-note::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* ─── ACTIVE NAV LINK INDICATOR ─── */
+.nav-links a.active { color: var(--rose-light); }
+.nav-links a.active::before { opacity: 1; transform: translateY(0); }
+
+/* ─── PHOTO LOADING SKELETON ─── */
+.gallery-item img[data-loading],
+.tl-card img[data-loading] {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s infinite;
+  min-height: 80px;
+}
+@keyframes skeletonShimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ─── TOAST NOTIFICATION ─── */
+.toast {
+  position: fixed; bottom: 32px; right: 32px; z-index: 9999;
+  padding: 14px 24px;
+  background: rgba(9,4,21,0.95);
+  border: 1px solid rgba(232,48,90,0.3);
+  border-radius: 14px; color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(232,48,90,0.12);
+  backdrop-filter: blur(20px);
+  animation: toastIn 0.35s var(--spring) forwards;
+}
+.toast.hide { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn  { from { opacity:0; transform: translateY(20px) scale(0.93); } to { opacity:1; transform: translateY(0) scale(1); } }
+@keyframes toastOut { from { opacity:1; transform: translateY(0) scale(1); } to { opacity:0; transform: translateY(10px) scale(0.93); } }
+
+/* ─── HERO SCROLL ANIMATION ENHANCED ─── */
+.hero-content {
+  transition: transform 0.05s linear, opacity 0.05s linear;
+  will-change: transform, opacity;
+}
+
+/* ─── ENVELOPE HOVER LIFT ─── */
+.envelope-wrap:hover .env-shadow {
+  transform: scaleX(1.1);
+  opacity: 0.5;
+}
+
+/* ─── RESPONSIVE POLISH ─── */
+@media (max-width: 600px) {
+  .cd-grid { gap: 6px; }
+  .cd-card { min-width: 68px; padding: 16px 10px; }
+  .cd-num  { font-size: 1.9rem; }
+  .modal-box { padding: 28px 20px; }
+  .secret-box { padding: 28px 16px; }
+  .mp-info { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

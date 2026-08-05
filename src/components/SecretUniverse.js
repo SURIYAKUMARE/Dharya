@@ -323,6 +323,9 @@ export default function SecretUniverse({ setPage }) {
   return (
     <div className="universe-page">
       <div className="universe-hero">
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"6px 18px", background:"rgba(139,92,246,0.1)", border:"1px solid rgba(139,92,246,0.25)", borderRadius:"50px", marginBottom:"14px", fontFamily:"'Inter',sans-serif", fontSize:"0.72rem", fontWeight:700, color:"#a78bfa", letterSpacing:"1.5px", textTransform:"uppercase" }}>
+          🌌 Secret Space
+        </div>
         <h1 className="universe-title">Our Secret Universe 🌌</h1>
         <p className="universe-sub">A world only Surya built — only for Sadhana 💗</p>
       </div>

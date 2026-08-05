@@ -12,12 +12,13 @@ const rand  = (a, b) => a + Math.random() * (b - a);
 const lerp  = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-/* ── Heart canopy colour palette ── */
+/* ── Heart canopy colour palette — pink & green ── */
 const PALETTE = [
   '#FF1493','#FF69B4','#FFB6C1','#ff82b0',   // hot pink, pink, blush, medium pink
-  '#FFD700','#FFC200','#FFDB58','#ffe566',   // gold, amber, warm yellow
-  '#FFF0F5','#ffffff','#fff5e6','#ffe4e1',   // cream, white, off-white
-  '#f472b6','#e879a8','#db2777','#c0196a',   // deep pinks / mauve
+  '#ff3d9a','#e91e8c','#c0106a','#f472b6',   // deep pinks
+  '#00d97e','#34ffaa','#4ade80','#86efac',   // neon green, mint green, light green
+  '#00916e','#059669','#6ee7b7','#a7f3d0',   // emerald, sage green
+  '#ffffff','#FFF0F5','#f0fff4',             // white, cream, mint white
 ];
 
 /* ── Is point inside parametric heart? ── */
@@ -68,7 +69,7 @@ export default function TreeOfLife({ onDone }) {
       const cx   = CX();
       const base = H() * 0.87;
       /* trunk top = bottom of heart canopy */
-      const top  = H() * 0.56;
+      const top  = H() * 0.62;
       const w    = Math.max(7, W() * 0.013);
       for (let i = 0; i < TRUNK_SEGS; i++) {
         const t0 = i / TRUNK_SEGS, t1 = (i + 1) / TRUNK_SEGS;
@@ -87,11 +88,11 @@ export default function TreeOfLife({ onDone }) {
       miniHearts.length = 0;
       const cx    = CX();
       /* canopy centre — sits above the trunk top */
-      const cy    = H() * 0.34;
-      /* scale: canopy ~50% of screen width, slightly taller */
-      const rx    = Math.min(W(), H()) * 0.195;
-      const ry    = Math.min(W(), H()) * 0.185;
-      const TOTAL = 580;
+      const cy    = H() * 0.38;
+      /* scale: canopy fills ~80% of screen */
+      const rx    = Math.min(W(), H()) * 0.36;
+      const ry    = Math.min(W(), H()) * 0.34;
+      const TOTAL = 900;
 
       const xMin = cx - rx * 1.08, xMax = cx + rx * 1.08;
       const yMin = cy - ry * 1.08, yMax = cy + ry * 1.08;
@@ -119,7 +120,7 @@ export default function TreeOfLife({ onDone }) {
         });
       }
       /* sort center-first for bloom effect */
-      const cc = CX(), ccY = H() * 0.34;
+      const cc = CX(), ccY = H() * 0.38;
       miniHearts.sort((a, b) =>
         Math.hypot(a.x - cc, a.y - ccY) - Math.hypot(b.x - cc, b.y - ccY)
       );
@@ -135,11 +136,12 @@ export default function TreeOfLife({ onDone }) {
       alpha: rand(0.15, 0.55), hue: rand(330, 360), phase: rand(0, PI2),
     }));
 
-    /* floating hearts */
+    /* floating hearts — pink & green */
     const floaters = Array.from({ length: 32 }, () => ({
       x: rand(0, 1), y: rand(0.7, 1.3), r: rand(4, 10),
       vx: rand(-0.0004, 0.0004), vy: rand(-0.001, -0.0003),
-      alpha: rand(0.2, 0.65), hue: rand(330, 360),
+      alpha: rand(0.2, 0.65),
+      hue: Math.random() < 0.5 ? rand(330, 360) : rand(140, 165), // pink or green
       angle: rand(0, PI2), spin: rand(-0.02, 0.02), phase: rand(0, PI2),
     }));
 
@@ -205,8 +207,8 @@ export default function TreeOfLife({ onDone }) {
 
     function drawCanopy(bp, t) {
       /* soft glow first */
-      const cc = CX(), cy = H() * 0.34;
-      const glowR = Math.min(W(), H()) * 0.32;
+      const cc = CX(), cy = H() * 0.38;
+      const glowR = Math.min(W(), H()) * 0.45;
       const grd = ctx.createRadialGradient(cc, cy, 0, cc, cy, glowR);
       grd.addColorStop(0, `rgba(255,200,200,${bp * 0.22})`);
       grd.addColorStop(0.5, `rgba(255,230,150,${bp * 0.10})`);

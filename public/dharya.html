@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DHARYA — A Love Letter</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Dancing+Script:wght@600;700&family=Cormorant+Garamond:ital,wght@0,300;1,400;1,600&family=Inter:wght@300;400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/CustomEase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pink:#FFB6C1;--hot:#FF1493;--gold:#FFD700;
+  --cream:#FFF8E7;--brown:#8B4513;--magenta:#E91E8C;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#fff;font-family:'Inter',sans-serif}
+.scene{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:none}
+.scene.active{opacity:1;pointer-events:all}
+canvas{display:block}
+
+/* ── Scene 1 ── */
+#s1{background:linear-gradient(160deg,#fff 0%,#ffe4ec 45%,#ffc2d4 100%)}
+#s1-canvas{position:absolute;inset:0;width:100%;height:100%}
+#s1-title{position:absolute;top:12%;left:50%;transform:translateX(-50%);
+  font-family:'Dancing Script',cursive;font-size:clamp(1.4rem,3.5vw,2.2rem);
+  color:#c0436b;letter-spacing:1px;text-align:center;
+  text-shadow:0 2px 20px rgba(255,20,147,0.2);pointer-events:none}
+#s1-hint{position:absolute;bottom:14%;left:50%;transform:translateX(-50%);
+  font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:300;
+  color:rgba(180,60,100,0.6);letter-spacing:3px;text-transform:uppercase;
+  animation:hintBob 2s ease-in-out infinite}
+@keyframes hintBob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
+
+/* ── Scene 2 ── */
+#s2{background:#E91E8C}
+#s2-inner{text-align:center;position:relative;z-index:2}
+#s2-wish{font-family:'Cormorant Garamond',serif;font-size:clamp(1.2rem,3vw,1.9rem);
+  font-style:italic;color:rgba(255,255,255,0.85);letter-spacing:3px;margin-bottom:18px}
+#s2-name{font-family:'Playfair Display',serif;font-size:clamp(3.5rem,12vw,8rem);
+  font-weight:700;color:#fff;letter-spacing:8px;line-height:1;
+  text-shadow:0 4px 40px rgba(0,0,0,0.25),0 0 80px rgba(255,255,255,0.3)}
+#s2-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(0.9rem,2.2vw,1.3rem);
+  font-style:italic;color:rgba(255,255,255,0.7);letter-spacing:4px;margin-top:16px}
+.s2-letter{display:inline-block;opacity:0;transform:translateY(30px) rotateX(45deg)}
+#s2-burst{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,0.25) 0%,transparent 70%);
+  pointer-events:none;opacity:0;z-index:1}
+
+/* ── Scene 3 ── */
+#s3{background:linear-gradient(180deg,#fff8f0 0%,#ffecd2 35%,#ffd9a0 65%,#ffbd70 100%)}
+#s3-canvas{position:absolute;inset:0;width:100%;height:100%}
+#s3-left{position:absolute;left:clamp(16px,4vw,60px);top:50%;transform:translateY(-50%);
+  text-align:left;z-index:10;pointer-events:none}
+.s3-line{font-family:'Dancing Script',cursive;color:#8B3A3A;opacity:0;
+  display:block;line-height:1.6}
+.s3-line.and{font-size:clamp(1rem,2.5vw,1.5rem);font-style:italic}
+.s3-line.name{font-size:clamp(2rem,5vw,3.4rem);color:#C0106A;font-weight:700}
+.s3-line.year{font-size:clamp(0.85rem,2vw,1.2rem);font-style:italic}
+#s3-gallery-link{position:absolute;right:clamp(16px,4vw,60px);bottom:clamp(80px,12vh,130px);
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.95rem;
+  color:rgba(139,58,58,0.65);letter-spacing:1px;cursor:pointer;z-index:10;
+  text-decoration:underline;text-underline-offset:4px;opacity:0;transition:color 0.2s}
+#s3-gallery-link:hover{color:#C0106A}
+#surprise-btn{position:absolute;bottom:clamp(24px,5vh,48px);right:clamp(16px,4vw,60px);
+  padding:12px 32px;background:linear-gradient(135deg,#FF1493,#c0006a);
+  border:none;border-radius:50px;color:#fff;font-family:'Playfair Display',serif;
+  font-size:0.92rem;letter-spacing:1.5px;cursor:pointer;z-index:10;opacity:0;
+  box-shadow:0 8px 30px rgba(255,20,147,0.4);transition:all 0.25s}
+#surprise-btn:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(255,20,147,0.55)}
+
+/* ── Scene 4 Modal ── */
+#s4-overlay{position:fixed;inset:0;background:rgba(10,0,20,0.82);
+  backdrop-filter:blur(10px);z-index:100;display:flex;align-items:center;
+  justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.4s}
+#s4-overlay.open{opacity:1;pointer-events:all}
+#s4-modal{background:linear-gradient(160deg,#1a0a20 0%,#2d0d35 100%);
+  border:1px solid rgba(255,182,193,0.25);border-radius:28px;
+  padding:clamp(24px,5vw,48px);max-width:min(580px,92vw);width:100%;
+  position:relative;text-align:center;
+  box-shadow:0 40px 100px rgba(0,0,0,0.6),0 0 80px rgba(255,20,147,0.12)}
+#s4-modal-top{position:absolute;top:0;left:0;right:0;height:2.5px;
+  background:linear-gradient(90deg,transparent,#FF1493,#FFD700,#FF1493,transparent);
+  border-radius:28px 28px 0 0}
+#s4-modal h2{font-family:'Playfair Display',serif;font-size:clamp(1rem,2.5vw,1.4rem);
+  color:rgba(255,182,193,0.75);letter-spacing:3px;text-transform:uppercase;
+  font-weight:400;margin-bottom:28px}
+.polaroid-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.polaroid{background:#fff;border-radius:4px;padding:10px 10px 30px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);transform:rotate(var(--r));
+  transition:transform 0.3s}
+.polaroid:hover{transform:rotate(0deg) scale(1.04)}
+.polaroid .ph{width:clamp(100px,22vw,140px);height:clamp(90px,18vw,120px);
+  background:linear-gradient(135deg,#ffd6e0,#ffadc9);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-size:2rem;
+  overflow:hidden}
+.polaroid .ph img{width:100%;height:100%;object-fit:cover}
+.polaroid .cap{font-family:'Dancing Script',cursive;font-size:0.78rem;
+  color:#555;margin-top:6px;text-align:center}
+#s4-caption{font-family:'Cormorant Garamond',serif;font-style:italic;
+  color:rgba(255,182,193,0.7);font-size:clamp(0.8rem,2vw,1rem);
+  letter-spacing:1px;margin-bottom:10px}
+.stars{color:#FFD700;font-size:1.1rem;letter-spacing:2px;margin-bottom:20px}
+#s4-close{position:absolute;top:16px;right:20px;background:none;border:none;
+  color:rgba(255,182,193,0.5);font-size:1.4rem;cursor:pointer;transition:color 0.2s}
+#s4-close:hover{color:#FF1493}
+#s4-golden-btn{padding:13px 36px;background:linear-gradient(135deg,#FFD700,#e8a800);
+  border:none;border-radius:50px;color:#3d2000;font-family:'Playfair Display',serif;
+  font-size:0.9rem;font-weight:700;letter-spacing:1.5px;cursor:pointer;
+  box-shadow:0 6px 24px rgba(255,215,0,0.45);transition:all 0.25s}
+#s4-golden-btn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(255,215,0,0.6)}
+</style>
+</head>
+<body>
+
+<!-- Scene 1: Heart & Bow -->
+<div id="s1" class="scene active">
+  <canvas id="s1-canvas"></canvas>
+  <div id="s1-title">a little something, for you 💌</div>
+  <div id="s1-hint">Pull &amp; Release the arrow ↙</div>
+</div>
+
+<!-- Scene 2: The Wish -->
+<div id="s2" class="scene">
+  <div id="s2-burst"></div>
+  <div id="s2-inner">
+    <div id="s2-wish">make a wish...</div>
+    <div id="s2-name" aria-label="DHARYA"></div>
+    <div id="s2-sub">to someone worth celebrating</div>
+  </div>
+</div>
+
+<!-- Scene 3: Blooming Tree -->
+<div id="s3" class="scene">
+  <canvas id="s3-canvas"></canvas>
+  <div id="s3-left">
+    <span class="s3-line and">and... make it count</span>
+    <span class="s3-line name">DHARYA</span>
+    <span class="s3-line year">Here's to a year that blooms 🌸</span>
+  </div>
+  <div id="s3-gallery-link" onclick="openGallery()">our love gallery →</div>
+  <button id="surprise-btn" onclick="openGallery()">✨ Surprise</button>
+</div>
+
+<!-- Scene 4: Gallery Modal -->
+<div id="s4-overlay">
+  <div id="s4-modal">
+    <div id="s4-modal-top"></div>
+    <button id="s4-close" onclick="closeGallery()">✕</button>
+    <h2>A Few Moments, Kept Safe</h2>
+    <div class="polaroid-row">
+      <div class="polaroid" style="--r:-4deg">
+        <div class="ph">💗</div>
+        <div class="cap">the first smile</div>
+      </div>
+      <div class="polaroid" style="--r:3deg">
+        <div class="ph">🌸</div>
+        <div class="cap">always blooming</div>
+      </div>
+      <div class="polaroid" style="--r:-2deg">
+        <div class="ph">✨</div>
+        <div class="cap">our favourite light</div>
+      </div>
+    </div>
+    <div id="s4-caption">the one that made me smile first</div>
+    <div class="stars">★★★★★</div>
+    <button id="s4-golden-btn" onclick="closeGallery()">A Glimpse Inside 💛</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   DHARYA — 4-Scene Romantic Experience
+   GSAP + Canvas 2D | Production Ready
+══════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const PI2 = Math.PI * 2;
+const rand = (a, b) => a + Math.random() * (b - a);
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+CustomEase.create("spring", "M0,0 C0.14,0 0.27,1.25 0.5,1 0.73,0.75 0.86,1 1,1");
+
+/* ════════════════════════════════
+   SCENE 1 — Heart & Bow (Canvas)
+════════════════════════════════ */
+const c1 = $('s1-canvas');
+const x1 = c1.getContext('2d');
+let W, H;
+
+function resize() {
+  W = c1.width  = window.innerWidth;
+  H = c1.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* — Heart SVG path helper — */
+function heartPath(ctx, cx, cy, r) {
+  const s = r / 50;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
+  ctx.beginPath();
+  ctx.moveTo(0, -15);
+  ctx.bezierCurveTo(30, -50, 70, -10, 0, 35);
+  ctx.bezierCurveTo(-70, -10, -30, -50, 0, -15);
+  ctx.restore();
+}
+
+/* — Main heart state — */
+const heart = { r: 80, pulse: 0, shimmer: 0, x: 0, y: 0 };
+
+/* — Bow & Arrow state — */
+const bow = { ax: 0, ay: 0 };      // anchor
+const arrow = { x: 0, y: 0, tx: 0, ty: 0, pulled: false, flying: false, vx: 0, vy: 0 };
+let isDragging = false;
+const MAX_PULL = 110;
+
+/* — Heart particles on explosion — */
+const hParticles = [];
+
+/* — Ambient floating particles — */
+const ambients = Array.from({ length: 50 }, () => ({
+  x: rand(0, 1), y: rand(0, 1), r: rand(1, 3),
+  vy: rand(-0.0006, -0.0002), vx: rand(-0.0003, 0.0003),
+  alpha: rand(0.2, 0.7), hue: rand(340, 360), phase: rand(0, PI2),
+}));
+
+function setBowPos() {
+  bow.ax = W * 0.12;
+  bow.ay = H * 0.78;
+  if (!isDragging && !arrow.flying) {
+    arrow.x = bow.ax;
+    arrow.y = bow.ay;
+    arrow.tx = bow.ax;
+    arrow.ty = bow.ay;
+  }
+  heart.x = W * 0.5;
+  heart.y = H * 0.44;
+}
+setBowPos();
+window.addEventListener('resize', setBowPos);
+
+/* — Mouse/Touch input — */
+let mouseX = 0, mouseY = 0;
+function getPos(e) {
+  const t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX, y: t.clientY };
+}
+function onDown(e) {
+  const { x, y } = getPos(e);
+  const dx = x - bow.ax, dy = y - bow.ay;
+  if (Math.sqrt(dx * dx + dy * dy) < 60 && !arrow.flying) {
+    isDragging = true;
+  }
+}
+function onMove(e) {
+  const { x, y } = getPos(e);
+  mouseX = x; mouseY = y;
+  if (isDragging) {
+    const dx = x - bow.ax, dy = y - bow.ay;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const pull = Math.min(dist, MAX_PULL);
+    const angle = Math.atan2(dy, dx);
+    arrow.tx = bow.ax + Math.cos(angle) * pull;
+    arrow.ty = bow.ay + Math.sin(angle) * pull;
+  }
+}
+function onUp() {
+  if (isDragging) {
+    isDragging = false;
+    const dx = bow.ax - arrow.tx, dy = bow.ay - arrow.ty;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 20) {
+      arrow.flying = true;
+      const speed = (dist / MAX_PULL) * 22;
+      const angle = Math.atan2(dy, dx);
+      arrow.vx = Math.cos(angle) * speed;
+      arrow.vy = Math.sin(angle) * speed;
+    }
+  }
+}
+c1.addEventListener('mousedown', onDown);
+c1.addEventListener('mousemove', onMove);
+c1.addEventListener('mouseup', onUp);
+c1.addEventListener('touchstart', e => { e.preventDefault(); onDown(e); }, { passive: false });
+c1.addEventListener('touchmove', e => { e.preventDefault(); onMove(e); }, { passive: false });
+c1.addEventListener('touchend', onUp);
+
+/* — Draw bow — */
+function drawBow() {
+  const ax = bow.ax, ay = bow.ay;
+  const arrowAngle = isDragging
+    ? Math.atan2(ay - arrow.ty, ax - arrow.tx)
+    : -Math.PI / 4;
+
+  x1.save();
+  x1.translate(ax, ay);
+  x1.rotate(arrowAngle - Math.PI / 2);
+
+  // bow arc
+  x1.beginPath();
+  x1.arc(0, 0, 38, -Math.PI * 0.62, Math.PI * 0.62);
+  x1.strokeStyle = '#8B4513';
+  x1.lineWidth = 4;
+  x1.lineCap = 'round';
+  x1.stroke();
+
+  // string
+  const pullX = isDragging ? -(Math.sqrt(
+    (arrow.tx - bow.ax) ** 2 + (arrow.ty - bow.ay) ** 2
+  ) * Math.min(1, 1)) : 0;
+  const stretchY = isDragging ? clamp(
+    Math.sqrt((arrow.tx - bow.ax) ** 2 + (arrow.ty - bow.ay) ** 2) / 2.5, 0, 40
+  ) : 0;
+
+  x1.beginPath();
+  x1.moveTo(0, -35);
+  x1.quadraticCurveTo(stretchY * (isDragging ? 0.8 : 0), 0, 0, 35);
+  x1.strokeStyle = 'rgba(139,69,19,0.6)';
+  x1.lineWidth = 1.5;
+  x1.stroke();
+
+  x1.restore();
+}
+
+/* — Draw arrow — */
+function drawArrow(ax, ay, angle) {
+  x1.save();
+  x1.translate(ax, ay);
+  x1.rotate(angle);
+  // shaft
+  x1.beginPath();
+  x1.moveTo(-22, 0);
+  x1.lineTo(18, 0);
+  x1.strokeStyle = '#8B4513';
+  x1.lineWidth = 2.5;
+  x1.lineCap = 'round';
+  x1.stroke();
+  // tip
+  x1.beginPath();
+  x1.moveTo(18, 0);
+  x1.lineTo(24, -4);
+  x1.lineTo(24, 4);
+  x1.closePath();
+  x1.fillStyle = '#c0c0c0';
+  x1.fill();
+  // feathers
+  x1.beginPath();
+  x1.moveTo(-22, 0);
+  x1.lineTo(-28, -6);
+  x1.lineTo(-18, 0);
+  x1.lineTo(-28, 6);
+  x1.closePath();
+  x1.fillStyle = 'rgba(255,182,193,0.85)';
+  x1.fill();
+  x1.restore();
+}
+
+/* — Draw main heart — */
+function drawHeart(cx, cy, r, glow, shimmer) {
+  // outer glow
+  const grd = x1.createRadialGradient(cx, cy - r * 0.3, 0, cx, cy, r * 1.6);
+  grd.addColorStop(0, `rgba(255,20,147,${glow * 0.35})`);
+  grd.addColorStop(0.5, `rgba(255,182,193,${glow * 0.15})`);
+  grd.addColorStop(1, 'transparent');
+  x1.fillStyle = grd;
+  x1.beginPath();
+  x1.arc(cx, cy, r * 1.6, 0, PI2);
+  x1.fill();
+
+  // heart shape
+  heartPath(x1, cx, cy - r * 0.08, r);
+  const hg = x1.createRadialGradient(cx - r * 0.2, cy - r * 0.3, 0, cx, cy, r);
+  hg.addColorStop(0, '#ffadc9');
+  hg.addColorStop(0.4, '#FF1493');
+  hg.addColorStop(1, '#a50060');
+  x1.fillStyle = hg;
+  x1.fill();
+
+  // shimmer highlight
+  heartPath(x1, cx - r * 0.1, cy - r * 0.3, r * 0.45);
+  x1.fillStyle = `rgba(255,255,255,${shimmer * 0.4})`;
+  x1.fill();
+
+  // shadow
+  x1.save();
+  heartPath(x1, cx + 4, cy + 10, r * 0.9);
+  x1.fillStyle = 'rgba(100,0,40,0.15)';
+  x1.filter = 'blur(6px)';
+  x1.fill();
+  x1.filter = 'none';
+  x1.restore();
+}
+
+/* — Explode heart — */
+function explodeHeart() {
+  for (let i = 0; i < 80; i++) {
+    const angle = rand(0, PI2);
+    const speed = rand(2, 12);
+    hParticles.push({
+      x: heart.x, y: heart.y - heart.r * 0.08,
+      vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - rand(1, 5),
+      r: rand(4, 18), alpha: 1, hue: rand(330, 360),
+      sat: rand(80, 100), lit: rand(45, 70),
+      spin: rand(-0.15, 0.15), angle: rand(0, PI2), life: 1,
+    });
+  }
+  // sfx via Web Audio
+  playPop();
+}
+
+/* — Web Audio sfx — */
+let audioCtx;
+function getAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playPop() {
+  try {
+    const ac = getAudio();
+    const osc = ac.createOscillator(), g = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.frequency.setValueAtTime(600, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, ac.currentTime + 0.25);
+    g.gain.setValueAtTime(0.4, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
+    osc.start(); osc.stop(ac.currentTime + 0.3);
+  } catch (_) {}
+}
+function playChime() {
+  try {
+    const ac = getAudio();
+    [880, 1100, 1320].forEach((f, i) => {
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      g.gain.setValueAtTime(0, ac.currentTime + i * 0.08);
+      g.gain.linearRampToValueAtTime(0.18, ac.currentTime + i * 0.08 + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + i * 0.08 + 0.5);
+      osc.start(ac.currentTime + i * 0.08);
+      osc.stop(ac.currentTime + i * 0.08 + 0.5);
+    });
+  } catch (_) {}
+}
+
+/* — S1 loop — */
+let s1Running = true;
+let heartExploded = false;
+let transitionTriggered = false;
+
+function s1Loop() {
+  if (!s1Running) return;
+  requestAnimationFrame(s1Loop);
+  x1.clearRect(0, 0, W, H);
+
+  const t = Date.now() / 1000;
+
+  // ambient particles
+  ambients.forEach(p => {
+    p.phase += 0.02; p.x += p.vx; p.y += p.vy;
+    if (p.y < -0.02) p.y = 1.02;
+    if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+    const a = p.alpha * (0.5 + Math.sin(p.phase) * 0.5);
+    x1.beginPath(); x1.arc(p.x * W, p.y * H, p.r, 0, PI2);
+    x1.fillStyle = `hsla(${p.hue},80%,70%,${a})`; x1.fill();
+  });
+
+  if (!heartExploded) {
+    // pulsing heart
+    heart.pulse = 1 + Math.sin(t * 2.2) * 0.07;
+    heart.shimmer = (Math.sin(t * 1.8) + 1) / 2;
+    drawHeart(heart.x, heart.y, heart.r * heart.pulse, 1, heart.shimmer);
+
+    // bow
+    drawBow();
+
+    // elastic arrow
+    arrow.x = lerp(arrow.x, arrow.tx, isDragging ? 0.35 : 0.18);
+    arrow.y = lerp(arrow.y, arrow.ty, isDragging ? 0.35 : 0.18);
+
+    const arrowAngle = arrow.flying
+      ? Math.atan2(arrow.vy, arrow.vx)
+      : Math.atan2(bow.ay - arrow.ty, bow.ax - arrow.tx) + Math.PI;
+
+    if (!arrow.flying) {
+      drawArrow(arrow.x, arrow.y, arrowAngle);
+      // pull string line
+      if (isDragging) {
+        x1.save();
+        x1.translate(bow.ax, bow.ay);
+        const ba = arrowAngle - Math.PI / 2 - Math.PI / 2;
+        x1.rotate(ba);
+        const sy = clamp(
+          Math.sqrt((arrow.tx - bow.ax) ** 2 + (arrow.ty - bow.ay) ** 2) / 2.5, 0, 40
+        );
+        x1.beginPath();
+        x1.moveTo(0, -35);
+        x1.lineTo(arrow.x - bow.ax, arrow.y - bow.ay);
+        x1.lineTo(0, 35);
+        x1.strokeStyle = 'rgba(139,69,19,0.5)'; x1.lineWidth = 1.5; x1.stroke();
+        x1.restore();
+      }
+    }
+
+    // flying arrow
+    if (arrow.flying) {
+      arrow.x += arrow.vx; arrow.y += arrow.vy;
+      arrow.vy += 0.18;
+      drawArrow(arrow.x, arrow.y, Math.atan2(arrow.vy, arrow.vx));
+      // hit heart
+      const dx = arrow.x - heart.x, dy = arrow.y - heart.y;
+      if (Math.sqrt(dx * dx + dy * dy) < heart.r + 10 && !transitionTriggered) {
+        transitionTriggered = true;
+        heartExploded = true;
+        explodeHeart();
+        setTimeout(goToScene2, 1100);
+      }
+      // miss — reset
+      if (arrow.x < -100 || arrow.x > W + 100 || arrow.y > H + 100) {
+        arrow.flying = false; arrow.tx = bow.ax; arrow.ty = bow.ay;
+        arrow.x = bow.ax; arrow.y = bow.ay;
+      }
+    }
+  }
+
+  // heart explosion particles
+  for (let i = hParticles.length - 1; i >= 0; i--) {
+    const p = hParticles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.28;
+    p.vx *= 0.97; p.vy *= 0.97;
+    p.life -= 0.022; p.alpha = p.life;
+    p.angle += p.spin;
+    if (p.life <= 0) { hParticles.splice(i, 1); continue; }
+    x1.save(); x1.globalAlpha = p.alpha;
+    x1.translate(p.x, p.y); x1.rotate(p.angle);
+    heartPath(x1, 0, 0, p.r);
+    x1.fillStyle = `hsl(${p.hue},${p.sat}%,${p.lit}%)`;
+    x1.fill(); x1.restore();
+    // sparkle
+    x1.save(); x1.globalAlpha = p.alpha * 0.6;
+    x1.beginPath(); x1.arc(p.x, p.y, p.r * 0.3, 0, PI2);
+    x1.fillStyle = `hsl(${p.hue + 20},100%,90%)`; x1.fill();
+    x1.restore();
+  }
+}
+
+// kick off S1
+gsap.timeline()
+  .to('#s1-title', { opacity: 1, y: 0, duration: 1, ease: 'power2.out', delay: 0.3 })
+  .to('#s1-hint',  { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.3');
+
+s1Loop();
+
+/* ════════════════════════════
+   SCENE 2 — The Wish
+════════════════════════════ */
+function goToScene2() {
+  s1Running = false;
+  // build DHARYA letter spans
+  const name = 'DHARYA';
+  $('s2-name').innerHTML = name.split('').map(l =>
+    `<span class="s2-letter" style="perspective:600px">${l}</span>`
+  ).join('');
+
+  gsap.timeline()
+    .set('#s2', { display: 'flex' })
+    .to('#s1', { opacity: 0, duration: 0.55, ease: 'power2.in' })
+    .set('#s1', { pointerEvents: 'none' })
+    .to('#s2', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.15')
+    .to('#s2-burst', { opacity: 1, scale: 1.4, duration: 1.2, ease: 'power2.out' })
+    .to('#s2-wish', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.8')
+    .to('.s2-letter', {
+      opacity: 1, y: 0, rotateX: 0,
+      duration: 0.55, stagger: 0.1,
+      ease: 'back.out(1.8)',
+    }, '-=0.3')
+    .call(playChime)
+    .to('#s2-sub', { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.2')
+    .call(() => setTimeout(goToScene3, 3000));
+
+  // init opacities
+  gsap.set('#s2-wish, #s2-sub, #s2-burst', { opacity: 0, y: 20 });
+}
+
+/* ════════════════════════════
+   SCENE 3 — Blooming Love Tree
+════════════════════════════ */
+const c3 = $('s3-canvas');
+const x3 = c3.getContext('2d');
+let W3, H3;
+function resize3() { W3 = c3.width = window.innerWidth; H3 = c3.height = window.innerHeight; }
+resize3();
+window.addEventListener('resize', resize3);
+
+/* — Tree data — */
+const treeBranches = [];
+const treeLeaves   = [];
+const treeParticles = [];
+let treeDrawn = false;
+
+/* Recursive branch builder — heart-shaped canopy target */
+function heartPoint(t) {
+  // parametric heart: scale to fit canopy
+  const scl = Math.min(W3, H3) * 0.24;
+  const px = scl * 16 * Math.pow(Math.sin(t), 3) / 16;
+  const py = -scl * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 13;
+  return { x: W3/2 + px, y: H3 * 0.48 + py };
+}
+
+function addBranch(x1b, y1b, angle, len, w, depth) {
+  if (depth > 7 || len < 5) return;
+  const x2b = x1b + Math.cos(angle) * len;
+  const y2b = y1b + Math.sin(angle) * len;
+  treeBranches.push({ x1: x1b, y1: y1b, x2: x2b, y2: y2b, w, depth, progress: 0 });
+  const spread = 0.38 + depth * 0.04;
+  const nextLen = len * (0.68 + Math.random() * 0.08);
+  const bias = (Math.random() - 0.5) * 0.25;
+  if (Math.random() < 0.82) addBranch(x2b, y2b, angle - spread + bias, nextLen, w * 0.65, depth + 1);
+  if (Math.random() < 0.82) addBranch(x2b, y2b, angle + spread + bias, nextLen, w * 0.65, depth + 1);
+  if (depth < 3 && Math.random() < 0.4) addBranch(x2b, y2b, angle + bias, nextLen * 0.8, w * 0.55, depth + 1);
+  // add leaf near tip
+  if (depth >= 4) {
+    const colors = ['#FF1493','#ff69b4','#FFB6C1','#ff82b0','#FFD700','#fff0f5','#c0106a'];
+    for (let i = 0; i < 3 + depth; i++) {
+      treeLeaves.push({
+        x: lerp(x1b, x2b, 0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 12,
+        y: lerp(y1b, y2b, 0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 12,
+        r: rand(3, 11), alpha: 0, scale: 0,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        angle: rand(0, PI2), sway: rand(-0.03, 0.03), swaySpd: rand(0.015, 0.035),
+      });
+    }
+  }
+}
+
+function buildTree3() {
+  treeBranches.length = 0; treeLeaves.length = 0;
+  const baseX = W3 / 2, baseY = H3 * 0.9;
+  // trunk + primary branches
+  addBranch(baseX, baseY, -Math.PI / 2, Math.min(H3, W3) * 0.22, 14, 0);
+}
+
+/* — Animated draw — */
+let s3Running = false, branchAnim = 0;
+const floatingHearts = Array.from({ length: 40 }, () => ({
+  x: rand(0, 1), y: rand(1, 1.4), r: rand(4, 10),
+  vx: rand(-0.0008, 0.0008), vy: rand(-0.0012, -0.0004),
+  alpha: rand(0.3, 0.8), hue: rand(330, 360), phase: rand(0, PI2),
+}));
+
+function s3Loop() {
+  if (!s3Running) return;
+  requestAnimationFrame(s3Loop);
+  x3.clearRect(0, 0, W3, H3);
+  const t = Date.now() / 1000;
+
+  // grow branches progressively
+  branchAnim = Math.min(branchAnim + 0.9, treeBranches.length);
+  const doneGrowing = branchAnim >= treeBranches.length;
+
+  treeBranches.forEach((b, i) => {
+    const p = clamp((branchAnim - i) / 1.2, 0, 1);
+    if (p <= 0) return;
+    const x2d = lerp(b.x1, b.x2, p), y2d = lerp(b.y1, b.y2, p);
+    x3.beginPath(); x3.moveTo(b.x1, b.y1); x3.lineTo(x2d, y2d);
+    const bk = `hsl(${25 + b.depth * 3},${58 - b.depth * 4}%,${28 + b.depth * 3}%)`;
+    x3.strokeStyle = bk;
+    x3.lineWidth = Math.max(0.5, b.w * (1 - b.depth * 0.04));
+    x3.lineCap = 'round'; x3.stroke();
+  });
+
+  // bloom leaves once branches done
+  if (doneGrowing) {
+    treeLeaves.forEach((l, i) => {
+      const delay = i * 0.4;
+      l.scale = clamp(l.scale + 0.04, 0, 1);
+      l.alpha = clamp(l.alpha + 0.035, 0, 1);
+      l.angle += Math.sin(t * l.swaySpd + i) * l.sway * 0.1;
+      if (l.alpha < 0.01) return;
+      x3.save(); x3.translate(l.x, l.y); x3.rotate(l.angle); x3.scale(l.scale, l.scale);
+      heartPath(x3, 0, 0, l.r);
+      x3.fillStyle = l.color + Math.floor(l.alpha * 255).toString(16).padStart(2, '0');
+      x3.fill(); x3.restore();
+    });
+    if (!treeDrawn && treeLeaves.every(l => l.alpha > 0.85)) {
+      treeDrawn = true;
+      revealS3Text();
+      playChime();
+    }
+  }
+
+  // floating hearts + sparkles
+  floatingHearts.forEach(p => {
+    p.phase += 0.018; p.x += p.vx; p.y += p.vy;
+    if (p.y < -0.12) { p.y = 1.1; p.x = rand(0, 1); }
+    const a = p.alpha * (0.5 + Math.sin(p.phase) * 0.5);
+    x3.save(); x3.globalAlpha = a; x3.translate(p.x * W3, p.y * H3);
+    heartPath(x3, 0, 0, p.r);
+    x3.fillStyle = `hsl(${p.hue},85%,65%)`; x3.fill(); x3.restore();
+  });
+}
+
+function revealS3Text() {
+  gsap.timeline()
+    .to('.s3-line.and',  { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' })
+    .to('.s3-line.name', { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' }, '-=0.2')
+    .to('.s3-line.year', { opacity: 1, x: 0, duration: 0.7, ease: 'power2.out' }, '-=0.2')
+    .to('#s3-gallery-link', { opacity: 1, duration: 0.5 }, '-=0.1')
+    .to('#surprise-btn',    { opacity: 1, y: 0, duration: 0.5, ease: 'back.out(1.6)' }, '-=0.2');
+}
+
+function goToScene3() {
+  gsap.set('.s3-line', { x: -30 });
+  gsap.set('#surprise-btn', { y: 20 });
+  buildTree3();
+  gsap.timeline()
+    .to('#s2', { opacity: 0, duration: 0.6, ease: 'power2.in' })
+    .set('#s2', { pointerEvents: 'none' })
+    .to('#s3', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.2')
+    .set('#s3', { pointerEvents: 'all' });
+  s3Running = true;
+  s3Loop();
+}
+
+/* ════════════════════════════
+   SCENE 4 — Gallery Modal
+════════════════════════════ */
+function openGallery() {
+  const ov = $('s4-overlay');
+  ov.classList.add('open');
+  gsap.fromTo('#s4-modal',
+    { scale: 0.82, y: 30, opacity: 0 },
+    { scale: 1, y: 0, opacity: 1, duration: 0.55, ease: 'back.out(1.5)' }
+  );
+  playChime();
+}
+function closeGallery() {
+  gsap.to('#s4-modal', {
+    scale: 0.9, opacity: 0, duration: 0.3, ease: 'power2.in',
+    onComplete: () => $('s4-overlay').classList.remove('open'),
+  });
+}
+
+// Close on overlay click
+$('s4-overlay').addEventListener('click', e => { if (e.target === $('s4-overlay')) closeGallery(); });
+
+// Keyboard ESC
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeGallery();
+  if (e.key === 'Enter' || e.key === ' ') {
+    if ($('s1').classList.contains('active') || $('s1').style.opacity !== '0') {
+      // trigger arrow shot shortcut
+    }
+  }
+});
+</script>
+</body>
+</html>

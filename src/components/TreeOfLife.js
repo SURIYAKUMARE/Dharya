@@ -11,11 +11,6 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-/* ── colour helpers ── */
-const gold   = (a=1) => `rgba(212,175,55,${a})`;
-const emerald= (a=1) => `rgba(52,211,153,${a})`;
-const brown  = (a=1) => `rgba(101,67,33,${a})`;
-
 export default function TreeOfLife({ onDone }) {
   const canvasRef = useRef(null);
   const stateRef  = useRef({
@@ -52,256 +47,13 @@ export default function TreeOfLife({ onDone }) {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("scroll", onScroll); };
   }, []);
 
-  /* ══════════════════════════════
-     MAIN DRAW ENGINE
-  ══════════════════════════════ */
+  /* ══ CANVAS ENGINE ══ */
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    /* ── world ── */
-    let W = canvas.width, H = canvas.height;
-    const cx = () => W / 2;
-    const ground = () => H * 0.72;
-
-    /* ── ambient particles ── */
-    const NPART = 55;
-    const particles = Array.from({ length: NPART }, () => ({
-      x: rand(0, 1), y: rand(0, 1),
-      r: rand(0.5, 2.5), speed: rand(0.0002, 0.0008),
-      angle: rand(0, PI2), drift: rand(-0.001, 0.001),
-      alpha: rand(0.1, 0.55), color: Math.random() < 0.5 ? "gold" : "emerald",
-    }));
-
-    /* ── fireflies ── */
-    const NFLY = 18;
-    const fireflies = Array.from({ length: NFLY }, () => ({
-      x: rand(0.1, 0.9), y: rand(0.3, 0.9),
-      phase: rand(0, PI2), speed: rand(0.012, 0.028),
-      r: rand(1.5, 3.5), alpha: 0,
-    }));
-
-    /* ── seed ── */
-    const seed = { x: cx(), y: -30, vy: 0, ay: 0.18, landed: false, glow: 0, scale: 1 };
-
-    /* ── roots ── */
-    const roots = [];
-    const ROOT_COUNT = 5;
-
-    /* ── trunk segments ── */
-    const trunk = [];  // { x1,y1,x2,y2,w,progress,done }
-    const TRUNK_SEGS = 14;
-
-    /* ── branches ── */
-    const branches = []; // { x1,y1,x2,y2,w,progress,depth,done,angle }
-
-    /* ── leaves ── */
-    const leaves = []; // { x,y,size,angle,sway,bloom,alpha,hue,swaySpeed }
-
-    /* ── flowers ── */
-    const flowers = []; // { x,y,r,bloom,alpha }
-
-    /* ── pollen ── */
-    const pollen = [];
-
-    /* ── light rays ── */
-    let rayAlpha = 0;
-
-    /* ── phase timings (ticks at 60fps) ── */
-    const PHASE_TICK = {
-      particles: 80,
-      seed:      60,
-      roots:     90,
-      trunk:     120,
-      branches:  140,
-      leaves:    160,
-      flowers:   80,
-      wind:      999999,
-    };
-    let phaseTick = 0;
-
-    /* ── build root paths ── */
-    function buildRoots() {
-      for (let i = 0; i < ROOT_COUNT; i++) {
-        const angle = (Math.PI * 0.15) + (Math.PI * 0.7 / (ROOT_COUNT - 1)) * i;
-        roots.push({ segs: [], angle, built: false });
-        // each root = array of {x,y} points
-        let rx = cx(), ry = ground();
-        const segs = [{ x: rx, y: ry }];
-        const len = rand(60, 130);
-        for (let s = 0; s < 12; s++) {
-          const a = angle + Math.PI / 2 + rand(-0.25, 0.25);
-          const d = rand(8, 18);
-          rx += Math.cos(a) * d;
-          ry += Math.sin(a) * d;
-          segs.push({ x: rx, y: ry });
-          if (segs.length * 12 > len) break;
-        }
-        roots[i].segs = segs;
-        roots[i].progress = 0;
-        roots[i].w = rand(1.5, 3);
-      }
-    }
-
-    /* ── build trunk ── */
-    function buildTrunk() {
-      let tx = cx(), ty = ground();
-      let angle = -Math.PI / 2;
-      let w = 16;
-      for (let i = 0; i < TRUNK_SEGS; i++) {
-        const len = rand(18, 32);
-        angle += rand(-0.04, 0.04);
-        const nx = tx + Math.cos(angle) * len;
-        const ny = ty + Math.sin(angle) * len;
-        trunk.push({ x1:tx, y1:ty, x2:nx, y2:ny, w: w * (1 - i/TRUNK_SEGS * 0.6), progress:0, done:false });
-        tx = nx; ty = ny;
-        w *= 0.91;
-      }
-    }
-
-    /* ── build branches recursively ── */
-    function addBranch(x1, y1, angle, w, depth) {
-      if (depth > 4 || w < 1.2) return;
-      const len = rand(30, 65) * (1 - depth * 0.15);
-      const a = angle + rand(-0.35, 0.35);
-      const x2 = x1 + Math.cos(a) * len;
-      const y2 = y1 + Math.sin(a) * len;
-      branches.push({ x1, y1, x2, y2, w, a, depth, progress: 0, done: false });
-      // spawn leaves near tips
-      if (depth >= 2) {
-        for (let i = 0; i < rand(3, 7); i++) {
-          const t = rand(0.4, 1);
-          leaves.push({
-            x: lerp(x1, x2, t) + rand(-12, 12),
-            y: lerp(y1, y2, t) + rand(-10, 10),
-            size: rand(6, 16),
-            angle: rand(0, PI2),
-            sway: rand(-0.03, 0.03),
-            swaySpeed: rand(0.018, 0.035),
-            bloom: 0,
-            alpha: 0,
-            hue: rand(130, 160),
-          });
-        }
-        if (depth >= 3 && Math.random() < 0.35) {
-          flowers.push({ x: x2, y: y2, r: rand(3, 7), bloom: 0, alpha: 0 });
-        }
-      }
-      // recurse
-      if (Math.random() < 0.7) addBranch(x2, y2, a - rand(0.3, 0.6), w * 0.65, depth + 1);
-      if (Math.random() < 0.7) addBranch(x2, y2, a + rand(0.3, 0.6), w * 0.65, depth + 1);
-    }
-
-    function buildBranches() {
-      // spawn from top trunk segments
-      const tops = trunk.slice(TRUNK_SEGS - 6);
-      tops.forEach((seg, i) => {
-        const baseAngle = -Math.PI / 2 + rand(-0.2, 0.2);
-        addBranch(seg.x2, seg.y2, baseAngle - 0.5 - i * 0.04, 5, 1);
-        addBranch(seg.x2, seg.y2, baseAngle + 0.5 + i * 0.04, 5, 1);
-      });
-    }
-
-    /* ── build pollen ── */
-    function spawnPollen(x, y) {
-      for (let i = 0; i < 5; i++) {
-        pollen.push({ x, y, vx: rand(-1.2, 1.2), vy: rand(-2, -0.5), alpha: 1, r: rand(1, 2.5), life: 1 });
-      }
-    }
-
-    /* ──────────────────────────────────
-       DRAW FUNCTIONS
-    ────────────────────────────────── */
-    function drawBg() {
-      W = canvas.width; H = canvas.height;
-      const grd = ctx.createLinearGradient(0, 0, 0, H);
-      grd.addColorStop(0,   "#050816");
-      grd.addColorStop(0.5, "#0B1120");
-      grd.addColorStop(1,   "#111827");
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, H);
-
-      // parallax stars
-      const mx = stateRef.current.mouse.x - 0.5;
-      const my = stateRef.current.mouse.y - 0.5;
-      ctx.save();
-      ctx.translate(mx * 18, my * 12);
-      for (let i = 0; i < 120; i++) {
-        const sx = ((i * 137.508 + 17) % 1) * W;
-        const sy = ((i * 97.3 + 7) % 1) * H * 0.75;
-        const sr = (i % 3 === 0) ? 1.2 : 0.5;
-        const sa = 0.15 + (i % 7) * 0.05;
-        ctx.beginPath(); ctx.arc(sx, sy, sr, 0, PI2);
-        ctx.fillStyle = `rgba(255,255,255,${sa})`; ctx.fill();
-      }
-      ctx.restore();
-
-      // ground glow
-      const gg = ctx.createRadialGradient(cx(), ground(), 0, cx(), ground(), 300);
-      gg.addColorStop(0, "rgba(52,211,153,0.07)");
-      gg.addColorStop(1, "transparent");
-      ctx.fillStyle = gg; ctx.fillRect(0, 0, W, H);
-
-      // ground line
-      const gl = ctx.createLinearGradient(0, ground(), 0, ground() + 8);
-      gl.addColorStop(0, "rgba(52,211,153,0.18)");
-      gl.addColorStop(1, "transparent");
-      ctx.fillStyle = gl; ctx.fillRect(0, ground(), W, 8);
-    }
-
-    function drawParticles() {
-      particles.forEach(p => {
-        p.angle += p.drift;
-        p.x += Math.cos(p.angle) * p.speed;
-        p.y += Math.sin(p.angle) * p.speed * 0.5 - 0.0004;
-        if (p.y < 0) p.y = 1; if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
-        const col = p.color === "gold" ? gold(p.alpha) : emerald(p.alpha);
-        ctx.beginPath(); ctx.arc(p.x * W, p.y * H, p.r, 0, PI2);
-        ctx.fillStyle = col; ctx.fill();
-      });
-    }
-
-    function drawFireflies(t) {
-      fireflies.forEach((f, i) => {
-        f.phase += f.speed;
-        const pulse = (Math.sin(f.phase) + 1) / 2;
-        f.alpha = pulse * 0.7;
-        f.x += Math.sin(f.phase * 0.4 + i) * 0.0008;
-        f.y += Math.cos(f.phase * 0.3 + i) * 0.0005;
-        f.x = clamp(f.x, 0.05, 0.95); f.y = clamp(f.y, 0.05, 0.95);
-        const grd = ctx.createRadialGradient(f.x*W, f.y*H, 0, f.x*W, f.y*H, f.r*4);
-        grd.addColorStop(0, gold(f.alpha)); grd.addColorStop(1, "transparent");
-        ctx.fillStyle = grd; ctx.fillRect(f.x*W-f.r*4, f.y*H-f.r*4, f.r*8, f.r*8);
-        ctx.beginPath(); ctx.arc(f.x*W, f.y*H, f.r, 0, PI2);
-        ctx.fillStyle = gold(f.alpha * 1.4); ctx.fill();
-      });
-    }
-
-    function drawSeed(progress) {
-      const t = clamp(progress, 0, 1);
-      const sy = lerp(-30, ground(), t < 0.85 ? t / 0.85 : 1);
-      const bounce = t > 0.85 ? Math.sin((t - 0.85) / 0.15 * Math.PI) * 12 : 0;
-      const fy = sy - bounce;
-      const glowR = 20 + seed.glow * 60;
-      const grd = ctx.createRadialGradient(cx(), fy, 0, cx(), fy, glowR);
-      grd.addColorStop(0, gold(0.9)); grd.addColorStop(0.4, gold(0.3)); grd.addColorStop(1, "transparent");
-      ctx.fillStyle = grd; ctx.fillRect(cx()-glowR, fy-glowR, glowR*2, glowR*2);
-      const s = 5 * clamp(seed.scale, 0.5, 1.4);
-      ctx.save(); ctx.translate(cx(), fy);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, s * 0.7, s, 0, 0, PI2);
-      const sg = ctx.createRadialGradient(0, -s*0.2, 0, 0, 0, s);
-      sg.addColorStop(0, "#fff8dc"); sg.addColorStop(0.5, gold(1)); sg.addColorStop(1, "#8B6914");
-      ctx.fillStyle = sg; ctx.fill();
-      ctx.restore();
-      seed.glow = lerp(seed.glow, t > 0.88 ? 1 : 0, 0.06);
-    }
-    return () => { cancelAnimationFrame(animRef.current); };
-  }, []); // returned early — real engine below
-
-  /* ══ REAL ENGINE (separate useEffect so the return above is valid) ══ */
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const onResize = () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; };
+    window.addEventListener("resize", onResize);
     const ctx = canvas.getContext("2d");
     let W = canvas.width, H = canvas.height;
     const cx = () => W / 2;
@@ -309,10 +61,10 @@ export default function TreeOfLife({ onDone }) {
     let tick = 0, phaseTick = 0;
     let phase = "particles";
 
-    const PI2 = Math.PI * 2;
-    const rand = (a, b) => a + Math.random() * (b - a);
-    const lerp = (a, b, t) => a + (b - a) * t;
-    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const _PI2 = Math.PI * 2;   // eslint-disable-line no-unused-vars
+    const _rand  = rand;          // eslint-disable-line no-unused-vars
+    const _lerp  = lerp;          // eslint-disable-line no-unused-vars
+    const _clamp = clamp;         // eslint-disable-line no-unused-vars
 
     /* particles */
     const particles = Array.from({ length: 55 }, () => ({

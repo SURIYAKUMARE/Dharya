@@ -1,525 +1,317 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-/* ══════════════════════════════════════════════════════
-   TREE OF LIFE — Cinematic canvas animation
-   Sequence: particles → seed drop → roots → trunk →
-   branches → leaves → flowers → wind → done
-══════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════
+   TREE OF LIFE — Heart-shaped canopy
+   Tall straight trunk + dense mini-heart canopy
+   (pink, hot pink, gold, cream, white)
+   Matches reference image exactly
+══════════════════════════════════════════════════ */
 
 const PI2 = Math.PI * 2;
-const lerp = (a, b, t) => a + (b - a) * t;
-const rand = (a, b) => a + Math.random() * (b - a);
+const rand  = (a, b) => a + Math.random() * (b - a);
+const lerp  = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ── Heart canopy colour palette ── */
+const PALETTE = [
+  '#FF1493','#FF69B4','#FFB6C1','#ff82b0',   // hot pink, pink, blush, medium pink
+  '#FFD700','#FFC200','#FFDB58','#ffe566',   // gold, amber, warm yellow
+  '#FFF0F5','#ffffff','#fff5e6','#ffe4e1',   // cream, white, off-white
+  '#f472b6','#e879a8','#db2777','#c0196a',   // deep pinks / mauve
+];
+
+/* ── Is point inside parametric heart? ── */
+function insideHeart(px, py, cx, cy, rx, ry) {
+  const nx = (px - cx) / rx;
+  const ny = (py - cy) / ry;
+  return Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * ny * ny * ny <= 0.15;
+}
 
 export default function TreeOfLife({ onDone }) {
   const canvasRef = useRef(null);
-  const stateRef  = useRef({
-    phase: "particles", // particles|seed|roots|trunk|branches|leaves|flowers|wind|done
-    tick: 0,
-    mouse: { x: 0.5, y: 0.5 },
-    scroll: 0,
-  });
   const animRef   = useRef(null);
+  const mouseRef  = useRef({ x: 0.5, y: 0.5 });
   const [done, setDone] = useState(false);
 
-  /* ── responsive canvas size ── */
-  const resize = useCallback(() => {
-    const c = canvasRef.current; if (!c) return;
-    c.width  = window.innerWidth;
-    c.height = window.innerHeight;
+  /* mouse parallax */
+  useEffect(() => {
+    const h = e => { mouseRef.current = { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight }; };
+    window.addEventListener("mousemove", h);
+    return () => window.removeEventListener("mousemove", h);
   }, []);
 
-  useEffect(() => {
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, [resize]);
-
-  /* ── mouse / scroll ── */
-  useEffect(() => {
-    const onMove = e => {
-      stateRef.current.mouse.x = e.clientX / window.innerWidth;
-      stateRef.current.mouse.y = e.clientY / window.innerHeight;
-    };
-    const onScroll = () => { stateRef.current.scroll = window.scrollY; };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("scroll",    onScroll, { passive: true });
-    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("scroll", onScroll); };
-  }, []);
-
-  /* ══ CANVAS ENGINE ══ */
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const onResize = () => { canvas.width=window.innerWidth; canvas.height=window.innerHeight; };
-    window.addEventListener("resize", onResize);
     const ctx = canvas.getContext("2d");
-    let W = canvas.width, H = canvas.height;
-    const cx = () => W / 2;
-    const ground = () => H * 0.72;
-    let tick = 0, phaseTick = 0;
-    let phase = "particles";
 
-    const _PI2 = Math.PI * 2;   // eslint-disable-line no-unused-vars
-    const _rand  = rand;          // eslint-disable-line no-unused-vars
-    const _lerp  = lerp;          // eslint-disable-line no-unused-vars
-    const _clamp = clamp;         // eslint-disable-line no-unused-vars
+    /* ── resize ── */
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener("resize", resize);
 
-    /* particles */
-    const particles = Array.from({ length: 55 }, () => ({
-      x: rand(0,1), y: rand(0,1), r: rand(0.5,2.5),
-      speed: rand(0.0003,0.0009), angle: rand(0, PI2),
-      drift: rand(-0.001,0.001), alpha: rand(0.1,0.5),
-      color: Math.random()<0.5?"gold":"emerald",
-    }));
-    const fireflies = Array.from({ length: 20 }, () => ({
-      x: rand(0.05,0.95), y: rand(0.3,0.9), phase: rand(0,PI2),
-      speed: rand(0.01,0.025), r: rand(1.5,3.5),
-    }));
+    const W = () => canvas.width, H = () => canvas.height;
+    const CX = () => W() / 2;
 
-    /* seed */
-    let seedY = -40, seedVy = 0, seedGlow = 0, seedLanded = false, seedProgress = 0;
+    /* ── state ── */
+    let tick = 0;
+    let trunkProgress = 0;   // 0→1
+    let bloomProgress = 0;   // 0→1
+    let phase = "trunk";     // trunk | bloom | wind
+    let doneFired = false;
 
-    /* roots */
-    const roots = [];
-    let rootProgress = 0;
-
-    /* trunk */
+    /* ── trunk segments ── */
     const trunk = [];
-    let trunkIdx = 0, trunkSeg = 0;
+    const TRUNK_SEGS = 24;
 
-    /* branches */
-    const branches = [];
-    let branchIdx = 0, branchSeg = 0;
-
-    /* leaves */
-    const leaves = [];
-    let leafIdx = 0;
-
-    /* flowers */
-    const flowers = [];
-    let flowerIdx = 0;
-
-    /* pollen */
-    const pollen = [];
-
-    /* light rays */
-    let rayAlpha = 0;
-
-    /* wind */
-    let windAngle = 0;
-
-    /* ── build ── */
-    const buildRoots = () => {
-      for (let i = 0; i < 6; i++) {
-        const base = Math.PI * 0.2 + (Math.PI * 0.6 / 5) * i;
-        let rx = cx(), ry = ground();
-        const pts = [{ x:rx, y:ry }];
-        let angle = base + Math.PI / 2;
-        for (let s = 0; s < 14; s++) {
-          angle += rand(-0.2, 0.2);
-          const d = rand(9, 20);
-          rx += Math.cos(angle) * d;
-          ry += Math.sin(angle) * d;
-          pts.push({ x:rx, y:ry });
-        }
-        roots.push({ pts, progress:0, w: rand(1.5, 3.5), color: `hsl(${rand(20,35)},${rand(40,60)}%,${rand(25,40)}%)` });
+    function buildTrunk() {
+      trunk.length = 0;
+      const cx   = CX();
+      const base = H() * 0.87;
+      /* trunk top = bottom of heart canopy */
+      const top  = H() * 0.56;
+      const w    = Math.max(7, W() * 0.013);
+      for (let i = 0; i < TRUNK_SEGS; i++) {
+        const t0 = i / TRUNK_SEGS, t1 = (i + 1) / TRUNK_SEGS;
+        trunk.push({
+          x1: cx, y1: lerp(base, top, t0),
+          x2: cx, y2: lerp(base, top, t1),
+          w: w * (1 - t0 * 0.4),
+        });
       }
-    };
+    }
 
-    const buildTrunk = () => {
-      let tx = cx(), ty = ground(), angle = -Math.PI/2, w = 14;
-      for (let i = 0; i < 16; i++) {
-        angle += rand(-0.045, 0.045);
-        const len = rand(18, 30);
-        const nx = tx + Math.cos(angle)*len, ny = ty + Math.sin(angle)*len;
-        trunk.push({ x1:tx,y1:ty, x2:nx,y2:ny, w:w*(1-i/16*0.55), progress:0, angle });
-        tx=nx; ty=ny; w*=0.92;
+    /* ── mini-heart canopy ── */
+    const miniHearts = [];
+
+    function buildCanopy() {
+      miniHearts.length = 0;
+      const cx    = CX();
+      /* canopy centre — sits above the trunk top */
+      const cy    = H() * 0.34;
+      /* scale: canopy ~50% of screen width, slightly taller */
+      const rx    = Math.min(W(), H()) * 0.195;
+      const ry    = Math.min(W(), H()) * 0.185;
+      const TOTAL = 580;
+
+      const xMin = cx - rx * 1.08, xMax = cx + rx * 1.08;
+      const yMin = cy - ry * 1.08, yMax = cy + ry * 1.08;
+
+      let tries = 0;
+      while (miniHearts.length < TOTAL && tries < TOTAL * 14) {
+        tries++;
+        const px = rand(xMin, xMax);
+        const py = rand(yMin, yMax);
+        if (!insideHeart(px, py, cx, cy, rx, ry)) continue;
+
+        /* bigger hearts near center */
+        const dx = (px - cx) / rx, dy = (py - cy) / ry;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const sz = rand(lerp(18, 7, dist) * 0.75, lerp(18, 7, dist) * 1.4);
+
+        miniHearts.push({
+          x: px, y: py, r: sz,
+          color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+          angle: rand(-0.5, 0.5),
+          alpha: 0, scale: 0,
+          delay: rand(0, 0.6),
+          sway: rand(-0.009, 0.009),
+          swaySpd: rand(0.012, 0.03),
+        });
       }
-    };
+      /* sort center-first for bloom effect */
+      const cc = CX(), ccY = H() * 0.34;
+      miniHearts.sort((a, b) =>
+        Math.hypot(a.x - cc, a.y - ccY) - Math.hypot(b.x - cc, b.y - ccY)
+      );
+    }
 
-    const addBranch = (x1,y1,angle,w,depth) => {
-      if (depth>5||w<1) return;
-      const len = rand(28,60)*(1-depth*0.12);
-      const a = angle + rand(-0.4,0.4);
-      const x2=x1+Math.cos(a)*len, y2=y1+Math.sin(a)*len;
-      branches.push({ x1,y1,x2,y2, w, a, depth, progress:0, done:false });
-      if (depth>=2) {
-        for (let i=0;i<rand(3,8);i++) {
-          const t=rand(0.3,1);
-          leaves.push({
-            x: lerp(x1,x2,t)+rand(-14,14), y: lerp(y1,y2,t)+rand(-12,12),
-            size:rand(5,15), angle:rand(0,PI2), sway:rand(-0.04,0.04),
-            swaySpeed:rand(0.015,0.04), bloom:0, alpha:0, hue:rand(128,158),
-            sat:rand(55,85), lit:rand(30,55),
-          });
-        }
-        if (depth>=3&&Math.random()<0.3) flowers.push({ x:x2, y:y2, r:rand(3,6), bloom:0, alpha:0 });
-      }
-      if (Math.random()<0.75) addBranch(x2,y2, a-rand(0.3,0.65), w*0.62, depth+1);
-      if (Math.random()<0.75) addBranch(x2,y2, a+rand(0.3,0.65), w*0.62, depth+1);
-    };
+    buildTrunk();
+    buildCanopy();
 
-    const buildBranches = () => {
-      trunk.slice(10).forEach((seg,i) => {
-        addBranch(seg.x2, seg.y2, seg.angle-0.55-i*0.03, 5.5, 1);
-        addBranch(seg.x2, seg.y2, seg.angle+0.55+i*0.03, 5.5, 1);
-      });
-    };
+    /* ── ambient particles ── */
+    const particles = Array.from({ length: 55 }, () => ({
+      x: rand(0, 1), y: rand(0, 1), r: rand(0.6, 2.4),
+      vx: rand(-0.0004, 0.0004), vy: rand(-0.0007, -0.0002),
+      alpha: rand(0.15, 0.55), hue: rand(330, 360), phase: rand(0, PI2),
+    }));
 
-    buildRoots(); buildTrunk(); buildBranches();
+    /* floating hearts */
+    const floaters = Array.from({ length: 32 }, () => ({
+      x: rand(0, 1), y: rand(0.7, 1.3), r: rand(4, 10),
+      vx: rand(-0.0004, 0.0004), vy: rand(-0.001, -0.0003),
+      alpha: rand(0.2, 0.65), hue: rand(330, 360),
+      angle: rand(0, PI2), spin: rand(-0.02, 0.02), phase: rand(0, PI2),
+    }));
 
-    /* ─── DRAW HELPERS ─── */
-    const drawBg = () => {
-      W=canvas.width; H=canvas.height;
-      const g=ctx.createLinearGradient(0,0,0,H);
-      g.addColorStop(0,"#050816"); g.addColorStop(0.55,"#0B1120"); g.addColorStop(1,"#111827");
-      ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    /* ── draw helpers ── */
+    function drawBg() {
+      const g = ctx.createLinearGradient(0, 0, 0, H());
+      g.addColorStop(0, "#fdf6ee");
+      g.addColorStop(0.35, "#fce8d0");
+      g.addColorStop(0.65, "#f9d5a8");
+      g.addColorStop(1, "#f5c07a");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W(), H());
 
-      // parallax stars
-      const mx=(stateRef.current.mouse.x-0.5)*20, my=(stateRef.current.mouse.y-0.5)*14;
-      for (let i=0;i<140;i++) {
-        const sx=((i*137.5+i*i*0.03)%1)*W+mx*((i%3)+1)/3;
-        const sy=((i*83.7+i*0.7)%0.7)*H+my*((i%2)+1)/2;
-        ctx.beginPath(); ctx.arc(sx,sy,(i%5===0)?1.1:0.45,0,PI2);
-        ctx.fillStyle=`rgba(255,255,255,${0.12+(i%7)*0.04})`; ctx.fill();
-      }
-
-      // ground glow
-      const gg=ctx.createRadialGradient(cx(),ground(),0,cx(),ground(),W*0.45);
-      gg.addColorStop(0,"rgba(52,211,153,0.09)"); gg.addColorStop(1,"transparent");
-      ctx.fillStyle=gg; ctx.fillRect(0,0,W,H);
-
-      // ground line
-      const gl=ctx.createLinearGradient(0,ground(),0,ground()+6);
-      gl.addColorStop(0,"rgba(52,211,153,0.22)"); gl.addColorStop(1,"transparent");
-      ctx.fillStyle=gl; ctx.fillRect(0,ground(),W,6);
-    };
-
-    const drawParticles = () => {
+      /* parallax stars */
+      const mx = (mouseRef.current.x - 0.5) * 16;
+      const my = (mouseRef.current.y - 0.5) * 10;
       particles.forEach(p => {
-        p.angle+=p.drift; p.x+=Math.cos(p.angle)*p.speed; p.y+=Math.sin(p.angle)*p.speed*0.4-0.0003;
-        if(p.y<-0.02)p.y=1.02; if(p.x<-0.02)p.x=1.02; if(p.x>1.02)p.x=-0.02;
-        ctx.beginPath(); ctx.arc(p.x*W,p.y*H,p.r,0,PI2);
-        ctx.fillStyle=p.color==="gold"?`rgba(212,175,55,${p.alpha})`:`rgba(52,211,153,${p.alpha})`; ctx.fill();
+        p.phase += 0.018; p.x += p.vx; p.y += p.vy;
+        if (p.y < -0.02) p.y = 1.02;
+        if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+        const a = p.alpha * (0.45 + Math.sin(p.phase) * 0.45);
+        ctx.beginPath();
+        ctx.arc(p.x * W() + mx * ((p.r > 1.5) ? 1 : 0.4), p.y * H() + my * 0.5, p.r, 0, PI2);
+        ctx.fillStyle = `hsla(${p.hue},80%,75%,${a})`; ctx.fill();
       });
-    };
+    }
 
-    const drawFireflies = () => {
-      fireflies.forEach((f,i) => {
-        f.phase+=f.speed;
-        const pulse=(Math.sin(f.phase)+1)/2;
-        f.x+=Math.sin(f.phase*0.4+i*1.3)*0.0007; f.y+=Math.cos(f.phase*0.3+i)*0.0004;
-        f.x=clamp(f.x,0.05,0.95); f.y=clamp(f.y,0.1,0.9);
-        const alpha=pulse*0.75;
-        if(alpha<0.05) return;
-        const grd=ctx.createRadialGradient(f.x*W,f.y*H,0,f.x*W,f.y*H,f.r*5);
-        grd.addColorStop(0,`rgba(212,175,55,${alpha})`); grd.addColorStop(1,"transparent");
-        ctx.fillStyle=grd; ctx.fillRect(f.x*W-f.r*5,f.y*H-f.r*5,f.r*10,f.r*10);
-        ctx.beginPath(); ctx.arc(f.x*W,f.y*H,f.r,0,PI2);
-        ctx.fillStyle=`rgba(255,248,200,${alpha*1.3})`; ctx.fill();
+    function drawTrunk(prog) {
+      const vis  = Math.floor(prog * trunk.length);
+      const frac = (prog * trunk.length) - vis;
+      trunk.forEach((seg, i) => {
+        if (i > vis) return;
+        const f  = i === vis ? frac : 1;
+        const y2 = lerp(seg.y1, seg.y2, f);
+        ctx.beginPath(); ctx.moveTo(seg.x1, seg.y1); ctx.lineTo(seg.x2, y2);
+        const bk = ctx.createLinearGradient(seg.x1 - seg.w, 0, seg.x1 + seg.w, 0);
+        bk.addColorStop(0, "#2d0800");
+        bk.addColorStop(0.45, "#6b1a0a");
+        bk.addColorStop(0.75, "#8B2500");
+        bk.addColorStop(1, "#2d0800");
+        ctx.strokeStyle = bk; ctx.lineWidth = seg.w; ctx.lineCap = "round"; ctx.stroke();
+        /* highlight */
+        ctx.beginPath(); ctx.moveTo(seg.x1 + seg.w * 0.15, seg.y1); ctx.lineTo(seg.x2 + seg.w * 0.15, y2);
+        ctx.strokeStyle = "rgba(180,80,30,0.18)"; ctx.lineWidth = seg.w * 0.25; ctx.stroke();
       });
-    };
+    }
 
-    const drawSeed = (t) => {
-      const fy = lerp(-40, ground(), clamp(t/0.8,0,1));
-      const bounce = t>0.8 ? Math.sin((t-0.8)/0.2*Math.PI)*14*(1-(t-0.8)/0.2*0.5) : 0;
-      const sy = fy - bounce;
-      const glowR = 18 + seedGlow*55;
-      const grd=ctx.createRadialGradient(cx(),sy,0,cx(),sy,glowR);
-      grd.addColorStop(0,"rgba(212,175,55,0.9)"); grd.addColorStop(0.5,"rgba(212,175,55,0.25)"); grd.addColorStop(1,"transparent");
-      ctx.fillStyle=grd; ctx.fillRect(cx()-glowR,sy-glowR,glowR*2,glowR*2);
-      ctx.save(); ctx.translate(cx(),sy);
-      ctx.beginPath(); ctx.ellipse(0,0,5,8,0,0,PI2);
-      const sg=ctx.createRadialGradient(0,-2,0,0,0,8);
-      sg.addColorStop(0,"#fffde7"); sg.addColorStop(0.4,`rgba(212,175,55,1)`); sg.addColorStop(1,"#7a5c10");
-      ctx.fillStyle=sg; ctx.fill();
-      ctx.restore();
-    };
-
-    const drawRoots = (progress) => {
-      roots.forEach((r,ri) => {
-        const rp = clamp((progress - ri*0.12)*1.8, 0, 1);
-        if(rp<=0) return;
-        const maxIdx = Math.floor(rp * (r.pts.length-1));
-        ctx.beginPath(); ctx.moveTo(r.pts[0].x, r.pts[0].y);
-        for(let i=1;i<=maxIdx;i++) {
-          const partial = i===maxIdx ? (rp*(r.pts.length-1)-Math.floor(rp*(r.pts.length-1))) : 1;
-          if(partial===0) break;
-          const px=lerp(r.pts[i-1].x, r.pts[i].x, partial);
-          const py=lerp(r.pts[i-1].y, r.pts[i].y, partial);
-          ctx.lineTo(px,py);
-        }
-        ctx.strokeStyle=r.color; ctx.lineWidth=r.w*(1-rp*0.3);
-        ctx.lineCap="round"; ctx.lineJoin="round";
-        ctx.globalAlpha=0.7; ctx.stroke(); ctx.globalAlpha=1;
-      });
-    };
-
-    const drawTrunk = (idx, segProg) => {
-      trunk.forEach((seg,i) => {
-        if(i>idx) return;
-        const t = i===idx ? segProg : 1;
-        if(t<=0) return;
-        const x2=lerp(seg.x1,seg.x2,t), y2=lerp(seg.y1,seg.y2,t);
-        ctx.beginPath(); ctx.moveTo(seg.x1,seg.y1); ctx.lineTo(x2,y2);
-        const bark=ctx.createLinearGradient(seg.x1-seg.w,0,seg.x1+seg.w,0);
-        bark.addColorStop(0,"rgba(60,30,10,1)"); bark.addColorStop(0.5,"rgba(101,67,33,1)"); bark.addColorStop(1,"rgba(70,40,15,1)");
-        ctx.strokeStyle=bark; ctx.lineWidth=seg.w; ctx.lineCap="round"; ctx.stroke();
-        // bark highlight
-        ctx.beginPath(); ctx.moveTo(seg.x1+seg.w*0.2,seg.y1); ctx.lineTo(x2+seg.w*0.2,y2);
-        ctx.strokeStyle="rgba(160,110,60,0.18)"; ctx.lineWidth=seg.w*0.25; ctx.stroke();
-      });
-    };
-
-    const drawBranches = (idx, segProg) => {
-      branches.forEach((b,i) => {
-        if(i>idx) return;
-        const t=i===idx?segProg:1;
-        if(t<=0) return;
-        const x2=lerp(b.x1,b.x2,t), y2=lerp(b.y1,b.y2,t);
-        ctx.beginPath(); ctx.moveTo(b.x1,b.y1); ctx.lineTo(x2,y2);
-        const cl=`hsl(${25+b.depth*3},${60-b.depth*5}%,${28+b.depth*3}%)`;
-        ctx.strokeStyle=cl; ctx.lineWidth=Math.max(0.7,b.w*(1-b.depth*0.05));
-        ctx.lineCap="round"; ctx.stroke();
-      });
-    };
-
-    const drawLeaf = (l) => {
-      if(l.alpha<=0.01) return;
-      ctx.save(); ctx.translate(l.x, l.y);
-      const sw = Math.sin(tick*l.swaySpeed)*l.sway + windAngle*0.4;
-      ctx.rotate(l.angle + sw);
-      ctx.scale(l.bloom, l.bloom);
-      const s=l.size;
+    function drawMiniHeart(cx, cy, r, color, alpha, angle) {
+      if (alpha < 0.01 || r < 0.5) return;
+      ctx.save(); ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy); ctx.rotate(angle);
+      const s = r / 10;
+      ctx.scale(s, s);
       ctx.beginPath();
-      ctx.moveTo(0,0); ctx.bezierCurveTo(s*0.5,-s*0.8,s,-s*0.3,0,-s*1.6);
-      ctx.bezierCurveTo(-s,-s*0.3,-s*0.5,-s*0.8,0,0);
-      const lg=ctx.createLinearGradient(0,0,0,-s*1.6);
-      lg.addColorStop(0,`hsla(${l.hue},${l.sat}%,${l.lit}%,${l.alpha})`);
-      lg.addColorStop(0.5,`hsla(${l.hue+8},${l.sat-5}%,${l.lit+10}%,${l.alpha})`);
-      lg.addColorStop(1,`hsla(${l.hue-5},${l.sat}%,${l.lit-5}%,${l.alpha*0.8})`);
-      ctx.fillStyle=lg; ctx.fill();
-      // vein
-      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-s*1.5);
-      ctx.strokeStyle=`rgba(34,139,34,${l.alpha*0.3})`; ctx.lineWidth=0.6; ctx.stroke();
+      ctx.moveTo(0, -2);
+      ctx.bezierCurveTo(5, -8, 12, -2, 0,  5);
+      ctx.bezierCurveTo(-12, -2, -5, -8, 0, -2);
+      ctx.fillStyle = color; ctx.fill();
+      /* glint */
+      ctx.beginPath(); ctx.arc(-2.5, -4.5, 1.8, 0, PI2);
+      ctx.fillStyle = "rgba(255,255,255,0.55)"; ctx.fill();
       ctx.restore();
-    };
+    }
 
-    const drawFlower = (f) => {
-      if(f.alpha<=0.01||f.bloom<=0.01) return;
-      ctx.save(); ctx.translate(f.x, f.y); ctx.scale(f.bloom, f.bloom);
-      const PETALS=5, R=f.r;
-      for(let i=0;i<PETALS;i++) {
-        const a=(PI2/PETALS)*i;
-        ctx.beginPath();
-        ctx.ellipse(Math.cos(a)*R*0.9, Math.sin(a)*R*0.9, R*0.55, R*0.35, a, 0, PI2);
-        ctx.fillStyle=`rgba(255,182,193,${f.alpha*0.85})`; ctx.fill();
-      }
-      // center
-      ctx.beginPath(); ctx.arc(0,0,R*0.45,0,PI2);
-      const cg=ctx.createRadialGradient(0,0,0,0,0,R*0.45);
-      cg.addColorStop(0,"rgba(255,230,50,1)"); cg.addColorStop(1,"rgba(212,175,55,0.8)");
-      ctx.fillStyle=cg; ctx.fill();
-      ctx.restore();
-    };
+    function drawCanopy(bp, t) {
+      /* soft glow first */
+      const cc = CX(), cy = H() * 0.34;
+      const glowR = Math.min(W(), H()) * 0.32;
+      const grd = ctx.createRadialGradient(cc, cy, 0, cc, cy, glowR);
+      grd.addColorStop(0, `rgba(255,200,200,${bp * 0.22})`);
+      grd.addColorStop(0.5, `rgba(255,230,150,${bp * 0.10})`);
+      grd.addColorStop(1, "transparent");
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W(), H());
 
-    const drawPollen = () => {
-      pollen.forEach((p,i) => {
-        p.x+=p.vx*0.4; p.y+=p.vy*0.4; p.vy+=0.04; p.life-=0.018; p.alpha=p.life;
-        if(p.life<=0){pollen.splice(i,1);return;}
-        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,PI2);
-        ctx.fillStyle=`rgba(255,245,150,${p.alpha*0.7})`; ctx.fill();
+      miniHearts.forEach((h, i) => {
+        const lp = clamp((bp - h.delay) / (1 - h.delay + 0.02), 0, 1);
+        const ease = 1 - Math.pow(1 - lp, 3); // cubic ease-out
+        h.scale = clamp(h.scale + ease * 0.07, 0, 1);
+        h.alpha = clamp(h.alpha + ease * 0.055, 0, 1);
+        const sway = Math.sin(t * h.swaySpd * 55 + i * 0.3) * h.sway;
+        drawMiniHeart(h.x, h.y, h.r * h.scale, h.color, h.alpha, h.angle + sway);
       });
-    };
+    }
 
-    const drawRays = () => {
-      if(rayAlpha<=0.005) return;
-      const topX=cx(), topY=ground()-200;
-      for(let i=0;i<6;i++) {
-        const a=-Math.PI/2 + (i-2.5)*0.22;
-        const len=H*0.55;
-        const grd=ctx.createLinearGradient(topX,topY,topX+Math.cos(a)*len,topY+Math.sin(a)*len);
-        grd.addColorStop(0,`rgba(212,175,55,${rayAlpha*0.18})`);
-        grd.addColorStop(1,"transparent");
-        ctx.beginPath();
-        ctx.moveTo(topX,topY);
-        ctx.lineTo(topX+Math.cos(a-0.04)*len,topY+Math.sin(a-0.04)*len);
-        ctx.lineTo(topX+Math.cos(a+0.04)*len,topY+Math.sin(a+0.04)*len);
-        ctx.closePath();
-        ctx.fillStyle=grd; ctx.fill();
-      }
-    };
+    function drawFloaters(t) {
+      floaters.forEach(p => {
+        p.phase += 0.015; p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+        if (p.y < -0.08) { p.y = 1.05; p.x = rand(0.05, 0.95); }
+        const a = p.alpha * (0.4 + Math.sin(p.phase) * 0.4);
+        drawMiniHeart(p.x * W(), p.y * H(), p.r, `hsl(${p.hue},85%,68%)`, a, p.angle);
+      });
+    }
 
-    const drawAura = () => {
-      const aura=ctx.createRadialGradient(cx(),ground(),0,cx(),ground(),H*0.38);
-      aura.addColorStop(0,`rgba(52,211,153,${0.06*rayAlpha})`);
-      aura.addColorStop(0.4,`rgba(212,175,55,${0.04*rayAlpha})`);
-      aura.addColorStop(1,"transparent");
-      ctx.fillStyle=aura; ctx.fillRect(0,0,W,H);
-    };
-
-    /* ─── MAIN LOOP ─── */
+    /* ── main loop ── */
     const loop = () => {
       animRef.current = requestAnimationFrame(loop);
-      tick++; phaseTick++;
-      W = canvas.width; H = canvas.height;
+      tick++;
+      const t = tick * 0.016;
 
       drawBg();
-      drawParticles();
-      drawFireflies();
+      drawFloaters(t);
 
-      /* ── phase machine ── */
-      if (phase === "particles") {
-        if (phaseTick >= 90) { phase="seed"; phaseTick=0; }
+      if (phase === "trunk") {
+        trunkProgress = Math.min(trunkProgress + 0.018, 1);
+        drawTrunk(trunkProgress);
+        if (trunkProgress >= 1) { phase = "bloom"; }
 
-      } else if (phase === "seed") {
-        const t = clamp(phaseTick/55, 0, 1);
-        seedGlow = clamp(phaseTick/55, 0, 1);
-        drawSeed(t);
-        if (phaseTick >= 70) { phase="roots"; phaseTick=0; seedLanded=true; }
-
-      } else if (phase === "roots") {
-        // draw seed glow on ground
-        const grd=ctx.createRadialGradient(cx(),ground(),0,cx(),ground(),seedGlow*70);
-        grd.addColorStop(0,`rgba(212,175,55,${0.45*seedGlow})`); grd.addColorStop(1,"transparent");
-        ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
-        rootProgress = clamp(phaseTick/80, 0, 1);
-        drawRoots(rootProgress);
-        if (phaseTick >= 95) { phase="trunk"; phaseTick=0; trunkIdx=0; trunkSeg=0; }
-
-      } else if (phase === "trunk") {
-        drawRoots(1);
-        trunkSeg = clamp(phaseTick/7, 0, 1);
-        if (trunkSeg >= 1) { trunkIdx++; phaseTick=0; trunkSeg=0; }
-        if (trunkIdx >= trunk.length) { trunkIdx=trunk.length-1; trunkSeg=1; phase="branches"; phaseTick=0; branchIdx=0; branchSeg=0; }
-        drawTrunk(trunkIdx, trunkSeg);
-
-      } else if (phase === "branches") {
-        drawRoots(1); drawTrunk(trunk.length-1,1);
-        branchSeg = clamp(phaseTick/5, 0, 1);
-        if (branchSeg >= 1) { branchIdx++; phaseTick=0; branchSeg=0; }
-        if (branchIdx >= branches.length) { branchIdx=branches.length-1; branchSeg=1; phase="leaves"; phaseTick=0; leafIdx=0; }
-        drawBranches(branchIdx, branchSeg);
-
-      } else if (phase === "leaves") {
-        drawRoots(1); drawTrunk(trunk.length-1,1); drawBranches(branches.length-1,1);
-        // bloom leaves progressively
-        const batchPerTick = 2;
-        if (phaseTick % 2 === 0 && leafIdx < leaves.length) {
-          for(let i=0;i<batchPerTick && leafIdx<leaves.length;i++) leafIdx++;
-        }
-        leaves.forEach((l,i) => {
-          if (i < leafIdx) { l.bloom = clamp(l.bloom+0.06, 0, 1); l.alpha = clamp(l.alpha+0.05, 0, 1); }
-          drawLeaf(l);
-        });
-        if (leafIdx >= leaves.length && leaves.every(l=>l.bloom>=0.98)) {
-          phase="flowers"; phaseTick=0; flowerIdx=0;
-        }
-
-      } else if (phase === "flowers") {
-        drawRoots(1); drawTrunk(trunk.length-1,1); drawBranches(branches.length-1,1);
-        leaves.forEach(l => drawLeaf(l));
-        if (phaseTick % 4 === 0 && flowerIdx < flowers.length) flowerIdx++;
-        flowers.forEach((f,i) => {
-          if (i < flowerIdx) { f.bloom = clamp(f.bloom+0.05,0,1); f.alpha=clamp(f.alpha+0.05,0,1); }
-          drawFlower(f);
-        });
-        rayAlpha = clamp(rayAlpha+0.012, 0, 1);
-        drawRays(); drawAura();
-        if (flowerIdx >= flowers.length && flowers.every(f=>f.bloom>=0.95)) {
-          phase="wind"; phaseTick=0;
+      } else if (phase === "bloom") {
+        drawTrunk(1);
+        bloomProgress = Math.min(bloomProgress + 0.007, 1);
+        drawCanopy(bloomProgress, t);
+        if (bloomProgress >= 0.88 && !doneFired) {
+          doneFired = true;
+          setDone(true);
+          setTimeout(() => { if (onDone) onDone(); }, 1400);
         }
 
       } else if (phase === "wind") {
-        // full tree with wind animation
-        windAngle = Math.sin(tick*0.018)*0.06 + (stateRef.current.mouse.x-0.5)*0.12;
-        drawRays(); drawAura();
-        drawRoots(1); drawTrunk(trunk.length-1,1); drawBranches(branches.length-1,1);
-
-        // sway trunk slightly
-        ctx.save();
-        const sway = windAngle * 0.5;
-        ctx.translate(cx(), ground());
-        ctx.rotate(sway * 0.03);
-        ctx.translate(-cx(), -ground());
-
-        leaves.forEach(l => {
-          l.angle += (Math.sin(tick*l.swaySpeed + l.x)*0.001);
-          drawLeaf(l);
-        });
-        flowers.forEach(f => {
-          f.r = 4 + Math.sin(tick*0.02+f.x)*0.4;
-          drawFlower(f);
-        });
-        ctx.restore();
-
-        // random pollen spawn
-        if (Math.random()<0.08 && leaves.length>0) {
-          const l=leaves[Math.floor(Math.random()*leaves.length)];
-          pollen.push({x:l.x,y:l.y,vx:rand(-0.8,0.8)+windAngle*3,vy:rand(-1.5,-0.3),r:rand(0.8,2),alpha:1,life:1});
-        }
-        drawPollen();
-
-        // if user has been on wind phase for 3s, call done
-        if (phaseTick >= 180 && !done) {
-          setDone(true);
-          setTimeout(() => { if (onDone) onDone(); }, 1200);
-        }
+        drawTrunk(1);
+        drawCanopy(1, t);
       }
     };
 
     animRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animRef.current);
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener("resize", resize);
+    };
   }, []); // eslint-disable-line
 
-  /* ── leaf click → pollen burst ── */
-  const handleClick = useCallback((e) => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    // dispatch custom event for pollen at click point
-    canvas.dispatchEvent(new CustomEvent("leafclick", { detail: { x:mx, y:my } }));
-  }, []);
+  const skip = useCallback(() => {
+    cancelAnimationFrame(animRef.current);
+    setDone(true);
+    setTimeout(() => { if (onDone) onDone(); }, 600);
+  }, [onDone]);
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 9980,
       opacity: done ? 0 : 1,
-      transition: "opacity 1.2s ease",
+      transition: "opacity 1.4s ease",
       pointerEvents: done ? "none" : "all",
-      cursor: "crosshair",
     }}>
-      <canvas
-        ref={canvasRef}
-        style={{ display:"block", width:"100%", height:"100%" }}
-        onClick={handleClick}
-      />
+      <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: "100%" }} />
+
       {/* Skip button */}
       <button
-        onClick={() => { setDone(true); setTimeout(()=>onDone&&onDone(), 800); }}
+        onClick={skip}
         style={{
-          position:"absolute", bottom:28, right:28,
-          background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.15)",
-          color:"rgba(255,255,255,0.45)", borderRadius:50, padding:"8px 20px",
-          fontFamily:"'Inter',sans-serif", fontSize:"0.78rem", cursor:"pointer",
-          backdropFilter:"blur(10px)", letterSpacing:"0.5px",
-          transition:"all 0.2s",
+          position: "absolute", bottom: 28, right: 28,
+          background: "rgba(255,255,255,0.12)",
+          border: "1px solid rgba(255,182,193,0.4)",
+          color: "rgba(100,30,60,0.7)",
+          borderRadius: 50, padding: "8px 22px",
+          fontFamily: "'Inter',sans-serif", fontSize: "0.78rem",
+          cursor: "pointer", backdropFilter: "blur(10px)",
+          letterSpacing: "0.5px", transition: "all 0.2s",
         }}
-        onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.12)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}
-        onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color="rgba(255,255,255,0.45)";}}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,182,193,0.25)"; e.currentTarget.style.color = "#c0106a"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "rgba(100,30,60,0.7)"; }}
       >
         Skip →
       </button>
 
-      {/* Phase label — cinematic bottom text */}
+      {/* Bottom label */}
       <div style={{
-        position:"absolute", bottom:32, left:"50%", transform:"translateX(-50%)",
-        fontFamily:"'Cormorant Garamond',serif", fontSize:"1.05rem", fontStyle:"italic",
-        color:"rgba(212,175,55,0.55)", letterSpacing:"2px", pointerEvents:"none",
-        opacity: done ? 0 : 1, transition:"opacity 0.6s",
-        textShadow:"0 0 20px rgba(212,175,55,0.3)",
+        position: "absolute", bottom: 34, left: "50%",
+        transform: "translateX(-50%)",
+        fontFamily: "'Dancing Script',cursive",
+        fontSize: "1.1rem", color: "rgba(160,60,90,0.55)",
+        letterSpacing: "2px", pointerEvents: "none",
+        opacity: done ? 0 : 1, transition: "opacity 0.6s",
       }}>
         Tree of Life — Dharya 💍
       </div>

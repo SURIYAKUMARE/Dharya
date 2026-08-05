@@ -48,7 +48,7 @@ canvas{display:block}
   pointer-events:none;opacity:0;z-index:1}
 
 /* ── Scene 3 ── */
-#s3{background:linear-gradient(180deg,#fff8f0 0%,#ffecd2 35%,#ffd9a0 65%,#ffbd70 100%)}
+#s3{background:linear-gradient(180deg,#fdf6ee 0%,#fce8d0 30%,#f9d5a8 60%,#f5c07a 100%)}
 #s3-canvas{position:absolute;inset:0;width:100%;height:100%}
 #s3-left{position:absolute;left:clamp(16px,4vw,60px);top:50%;transform:translateY(-50%);
   text-align:left;z-index:10;pointer-events:none}
@@ -581,7 +581,9 @@ function goToScene2() {
 }
 
 /* ════════════════════════════
-   SCENE 3 — Blooming Love Tree
+   SCENE 3 — Heart-Shaped Tree
+   Tall thin trunk + heart canopy
+   packed with mini hearts
 ════════════════════════════ */
 const c3 = $('s3-canvas');
 const x3 = c3.getContext('2d');
@@ -590,112 +592,222 @@ function resize3() { W3 = c3.width = window.innerWidth; H3 = c3.height = window.
 resize3();
 window.addEventListener('resize', resize3);
 
-/* — Tree data — */
-const treeBranches = [];
-const treeLeaves   = [];
-const treeParticles = [];
-let treeDrawn = false;
-
-/* Recursive branch builder — heart-shaped canopy target */
-function heartPoint(t) {
-  // parametric heart: scale to fit canopy
-  const scl = Math.min(W3, H3) * 0.24;
-  const px = scl * 16 * Math.pow(Math.sin(t), 3) / 16;
-  const py = -scl * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) / 13;
-  return { x: W3/2 + px, y: H3 * 0.48 + py };
-}
-
-function addBranch(x1b, y1b, angle, len, w, depth) {
-  if (depth > 7 || len < 5) return;
-  const x2b = x1b + Math.cos(angle) * len;
-  const y2b = y1b + Math.sin(angle) * len;
-  treeBranches.push({ x1: x1b, y1: y1b, x2: x2b, y2: y2b, w, depth, progress: 0 });
-  const spread = 0.38 + depth * 0.04;
-  const nextLen = len * (0.68 + Math.random() * 0.08);
-  const bias = (Math.random() - 0.5) * 0.25;
-  if (Math.random() < 0.82) addBranch(x2b, y2b, angle - spread + bias, nextLen, w * 0.65, depth + 1);
-  if (Math.random() < 0.82) addBranch(x2b, y2b, angle + spread + bias, nextLen, w * 0.65, depth + 1);
-  if (depth < 3 && Math.random() < 0.4) addBranch(x2b, y2b, angle + bias, nextLen * 0.8, w * 0.55, depth + 1);
-  // add leaf near tip
-  if (depth >= 4) {
-    const colors = ['#FF1493','#ff69b4','#FFB6C1','#ff82b0','#FFD700','#fff0f5','#c0106a'];
-    for (let i = 0; i < 3 + depth; i++) {
-      treeLeaves.push({
-        x: lerp(x1b, x2b, 0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 12,
-        y: lerp(y1b, y2b, 0.5 + Math.random() * 0.5) + (Math.random() - 0.5) * 12,
-        r: rand(3, 11), alpha: 0, scale: 0,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        angle: rand(0, PI2), sway: rand(-0.03, 0.03), swaySpd: rand(0.015, 0.035),
-      });
-    }
+/* ── Pre-generate heart canopy points ── */
+/* parametric heart equation sampled densely */
+function heartCanopyPoints(cx, cy, scaleX, scaleY, n) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * PI2;
+    // standard heart parametric
+    const hx = 16 * Math.pow(Math.sin(t), 3);
+    const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+    pts.push({ x: cx + hx * scaleX, y: cy + hy * scaleY });
   }
+  return pts;
 }
 
-function buildTree3() {
-  treeBranches.length = 0; treeLeaves.length = 0;
-  const baseX = W3 / 2, baseY = H3 * 0.9;
-  // trunk + primary branches
-  addBranch(baseX, baseY, -Math.PI / 2, Math.min(H3, W3) * 0.22, 14, 0);
+/* ── Fill heart canopy with random points inside heart ── */
+function isInsideHeart(px, py, cx, cy, scaleX, scaleY) {
+  const nx = (px - cx) / scaleX;
+  const ny = (py - cy) / scaleY;
+  // heart implicit: (x²+y²-1)³ - x²y³ ≤ 0
+  const v = Math.pow(nx*nx + ny*ny - 1, 3) - nx*nx * ny*ny*ny;
+  return v <= 0.18; // slight margin
 }
 
-/* — Animated draw — */
-let s3Running = false, branchAnim = 0;
-const floatingHearts = Array.from({ length: 40 }, () => ({
-  x: rand(0, 1), y: rand(1, 1.4), r: rand(4, 10),
-  vx: rand(-0.0008, 0.0008), vy: rand(-0.0012, -0.0004),
-  alpha: rand(0.3, 0.8), hue: rand(330, 360), phase: rand(0, PI2),
+let miniHearts = [];   // the canopy leaves
+let trunkSegs = [];    // trunk segments for animated growth
+let canopyBuilt = false;
+let s3Running = false;
+let trunkProgress = 0; // 0→1 trunk grows
+let bloomProgress = 0; // 0→1 hearts bloom
+let s3Tick = 0;
+let treeDrawnDone = false;
+
+/* floating background hearts */
+const floatingH = Array.from({ length: 38 }, () => ({
+  x: rand(0, 1), y: rand(0.8, 1.5), r: rand(4, 10),
+  vx: rand(-0.0005, 0.0005), vy: rand(-0.0009, -0.0003),
+  alpha: rand(0.25, 0.65), hue: rand(330, 360), phase: rand(0, PI2),
+  spin: rand(-0.02, 0.02), angle: rand(0, PI2),
 }));
 
+function buildS3Tree() {
+  miniHearts = [];
+  trunkSegs = [];
+  canopyBuilt = false;
+  trunkProgress = 0;
+  bloomProgress = 0;
+  s3Tick = 0;
+  treeDrawnDone = false;
+
+  const cx = W3 * 0.5;
+  /* canopy center sits at ~40% height */
+  const canopyCY = H3 * 0.36;
+  /* trunk base at bottom */
+  const trunkBase = H3 * 0.88;
+  /* trunk top connects to canopy bottom */
+  const trunkTop = canopyCY + H3 * 0.18; // bottom of heart shape
+
+  /* trunk: single straight stem */
+  const trunkX = cx;
+  const trunkW = Math.max(6, W3 * 0.012);
+  const TRUNK_SEGS = 20;
+  for (let i = 0; i < TRUNK_SEGS; i++) {
+    const t0 = i / TRUNK_SEGS, t1 = (i+1) / TRUNK_SEGS;
+    trunkSegs.push({
+      x1: trunkX, y1: lerp(trunkBase, trunkTop, t0),
+      x2: trunkX, y2: lerp(trunkBase, trunkTop, t1),
+      w: trunkW * (1 - t0 * 0.35),
+    });
+  }
+
+  /* canopy scale — heart fits in roughly 55% of screen width */
+  const scaleX = Math.min(W3, H3) * 0.185;
+  const scaleY = Math.min(W3, H3) * 0.175;
+
+  /* sample random points inside the heart shape */
+  const TOTAL = 520;
+  const xMin = cx - scaleX * 1.05, xMax = cx + scaleX * 1.05;
+  const yMin = canopyCY - scaleY * 1.05, yMax = canopyCY + scaleY * 1.05;
+
+  /* color palette matching the reference image */
+  const palette = [
+    '#FF1493', '#FF69B4', '#FFB6C1', '#ff82b0',  // hot pink, pink, blush, medium pink
+    '#FFD700', '#FFC200', '#FFDB58', '#ffe066',  // gold, amber, warm yellow
+    '#FFF0F5', '#ffffff', '#fff5e6', '#ffe4e1',  // cream, white, off-white
+    '#e8a0bf', '#f472b6', '#db2777', '#be185d',  // mauves & deep pinks
+  ];
+
+  let attempts = 0;
+  while (miniHearts.length < TOTAL && attempts < TOTAL * 12) {
+    attempts++;
+    const px = rand(xMin, xMax);
+    const py = rand(yMin, yMax);
+    if (!isInsideHeart(px, py, cx, canopyCY, scaleX, scaleY)) continue;
+
+    /* size: bigger near center, smaller at edges */
+    const dx = (px - cx) / scaleX;
+    const dy = (py - canopyCY) / scaleY;
+    const distRatio = Math.sqrt(dx*dx + dy*dy);
+    const baseSize = lerp(16, 7, distRatio);
+    const size = rand(baseSize * 0.7, baseSize * 1.35);
+
+    miniHearts.push({
+      x: px, y: py, r: size,
+      color: palette[Math.floor(Math.random() * palette.length)],
+      angle: rand(-0.4, 0.4),
+      alpha: 0, scale: 0,
+      bloomDelay: rand(0, 0.55), // staggered bloom
+      sway: rand(-0.008, 0.008),
+      swaySpd: rand(0.01, 0.025),
+    });
+  }
+
+  /* sort bloom from center outward for a nice spread effect */
+  miniHearts.sort((a, b) => {
+    const da = Math.sqrt((a.x-cx)**2 + (a.y-canopyCY)**2);
+    const db = Math.sqrt((b.x-cx)**2 + (b.y-canopyCY)**2);
+    return da - db;
+  });
+}
+
+/* ── small heart draw ── */
+function drawMiniHeart(ctx, cx, cy, r, color, alpha, angle) {
+  if (alpha < 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  const s = r / 10;
+  ctx.scale(s, s);
+  ctx.beginPath();
+  ctx.moveTo(0, -2);
+  ctx.bezierCurveTo(5, -8, 12, -2, 0, 5);
+  ctx.bezierCurveTo(-12, -2, -5, -8, 0, -2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  // tiny white glint
+  ctx.beginPath();
+  ctx.arc(-2, -4, 1.5, 0, PI2);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ── S3 render loop ── */
 function s3Loop() {
   if (!s3Running) return;
   requestAnimationFrame(s3Loop);
   x3.clearRect(0, 0, W3, H3);
+  s3Tick++;
   const t = Date.now() / 1000;
 
-  // grow branches progressively
-  branchAnim = Math.min(branchAnim + 0.9, treeBranches.length);
-  const doneGrowing = branchAnim >= treeBranches.length;
-
-  treeBranches.forEach((b, i) => {
-    const p = clamp((branchAnim - i) / 1.2, 0, 1);
-    if (p <= 0) return;
-    const x2d = lerp(b.x1, b.x2, p), y2d = lerp(b.y1, b.y2, p);
-    x3.beginPath(); x3.moveTo(b.x1, b.y1); x3.lineTo(x2d, y2d);
-    const bk = `hsl(${25 + b.depth * 3},${58 - b.depth * 4}%,${28 + b.depth * 3}%)`;
-    x3.strokeStyle = bk;
-    x3.lineWidth = Math.max(0.5, b.w * (1 - b.depth * 0.04));
-    x3.lineCap = 'round'; x3.stroke();
-  });
-
-  // bloom leaves once branches done
-  if (doneGrowing) {
-    treeLeaves.forEach((l, i) => {
-      const delay = i * 0.4;
-      l.scale = clamp(l.scale + 0.04, 0, 1);
-      l.alpha = clamp(l.alpha + 0.035, 0, 1);
-      l.angle += Math.sin(t * l.swaySpd + i) * l.sway * 0.1;
-      if (l.alpha < 0.01) return;
-      x3.save(); x3.translate(l.x, l.y); x3.rotate(l.angle); x3.scale(l.scale, l.scale);
-      heartPath(x3, 0, 0, l.r);
-      x3.fillStyle = l.color + Math.floor(l.alpha * 255).toString(16).padStart(2, '0');
-      x3.fill(); x3.restore();
-    });
-    if (!treeDrawn && treeLeaves.every(l => l.alpha > 0.85)) {
-      treeDrawn = true;
-      revealS3Text();
-      playChime();
-    }
+  /* 1. Grow trunk */
+  if (trunkProgress < 1) {
+    trunkProgress = Math.min(trunkProgress + 0.016, 1);
   }
 
-  // floating hearts + sparkles
-  floatingHearts.forEach(p => {
-    p.phase += 0.018; p.x += p.vx; p.y += p.vy;
-    if (p.y < -0.12) { p.y = 1.1; p.x = rand(0, 1); }
-    const a = p.alpha * (0.5 + Math.sin(p.phase) * 0.5);
-    x3.save(); x3.globalAlpha = a; x3.translate(p.x * W3, p.y * H3);
-    heartPath(x3, 0, 0, p.r);
-    x3.fillStyle = `hsl(${p.hue},85%,65%)`; x3.fill(); x3.restore();
+  /* draw trunk */
+  const visibleSegs = Math.floor(trunkProgress * trunkSegs.length);
+  const segFrac = (trunkProgress * trunkSegs.length) - visibleSegs;
+  trunkSegs.forEach((seg, i) => {
+    if (i > visibleSegs) return;
+    const frac = i === visibleSegs ? segFrac : 1;
+    const y2 = lerp(seg.y1, seg.y2, frac);
+    x3.beginPath();
+    x3.moveTo(seg.x1, seg.y1);
+    x3.lineTo(seg.x2, y2);
+    /* bark gradient — dark reddish-brown matching reference */
+    const bk = x3.createLinearGradient(seg.x1 - seg.w, 0, seg.x1 + seg.w, 0);
+    bk.addColorStop(0, '#3d0c00');
+    bk.addColorStop(0.4, '#6b1a0a');
+    bk.addColorStop(0.7, '#8B2500');
+    bk.addColorStop(1, '#3d0c00');
+    x3.strokeStyle = bk;
+    x3.lineWidth = seg.w;
+    x3.lineCap = 'round';
+    x3.stroke();
   });
+
+  /* 2. Once trunk done, bloom hearts */
+  if (trunkProgress >= 1) {
+    if (!canopyBuilt) { canopyBuilt = true; }
+    bloomProgress = Math.min(bloomProgress + 0.006, 1);
+
+    miniHearts.forEach((h, i) => {
+      const localProgress = clamp((bloomProgress - h.bloomDelay) / (1 - h.bloomDelay + 0.01), 0, 1);
+      h.scale = clamp(h.scale + localProgress * 0.08, 0, 1);
+      h.alpha = clamp(h.alpha + localProgress * 0.06, 0, 1);
+      // gentle continuous sway
+      const sway = Math.sin(t * h.swaySpd * 60 + i) * h.sway;
+      drawMiniHeart(x3, h.x, h.y, h.r * h.scale, h.color, h.alpha, h.angle + sway);
+    });
+
+    /* soft glow behind canopy */
+    const cx = W3 * 0.5, cy = H3 * 0.36;
+    const grd = x3.createRadialGradient(cx, cy, 0, cx, cy, Math.min(W3, H3) * 0.3);
+    grd.addColorStop(0, `rgba(255,182,193,${bloomProgress * 0.18})`);
+    grd.addColorStop(0.5, `rgba(255,230,150,${bloomProgress * 0.08})`);
+    grd.addColorStop(1, 'transparent');
+    x3.fillStyle = grd;
+    x3.fillRect(0, 0, W3, H3);
+  }
+
+  /* 3. Floating hearts background */
+  floatingH.forEach(p => {
+    p.phase += 0.016; p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+    if (p.y < -0.1) { p.y = 1.05; p.x = rand(0.05, 0.95); }
+    const a = p.alpha * (0.45 + Math.sin(p.phase) * 0.45);
+    drawMiniHeart(x3, p.x * W3, p.y * H3, p.r, `hsl(${p.hue},85%,68%)`, a, p.angle);
+  });
+
+  /* 4. Trigger text reveal when fully bloomed */
+  if (bloomProgress >= 0.85 && !treeDrawnDone) {
+    treeDrawnDone = true;
+    revealS3Text();
+    playChime();
+  }
 }
 
 function revealS3Text() {
@@ -710,7 +822,7 @@ function revealS3Text() {
 function goToScene3() {
   gsap.set('.s3-line', { x: -30 });
   gsap.set('#surprise-btn', { y: 20 });
-  buildTree3();
+  buildS3Tree();
   gsap.timeline()
     .to('#s2', { opacity: 0, duration: 0.6, ease: 'power2.in' })
     .set('#s2', { pointerEvents: 'none' })

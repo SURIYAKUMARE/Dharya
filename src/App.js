@@ -20,6 +20,7 @@ import LoveChat from "./components/LoveChat";
 import LoginPage from "./components/LoginPage";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import FlowerGarden from "./components/FlowerGarden";
+import SecretUniverse from "./components/SecretUniverse";
 import "./App.css";
 
 export function useTilt(strength = 12) {

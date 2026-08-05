@@ -7,63 +7,63 @@
    Premium 3D Style System
 ══════════════════════════════════════════════════ */
 :root {
-  /* — Core Palette (Old Theme) — */
-  --rose:           #e8305a;
-  --rose-light:     #ff6b8e;
-  --rose-pale:      rgba(232,48,90,0.08);
-  --rose-soft:      rgba(232,48,90,0.14);
-  --rose-border:    rgba(232,48,90,0.32);
-  --crimson:        #8b0040;
-  --violet:         #4a0a6b;
-  --violet-mid:     #6b2fa0;
-  --violet-light:   #9b59b6;
-  --gold:           #c9932a;
-  --gold-light:     #e8bb6e;
-  --gold-pale:      rgba(232,187,110,0.12);
-  --gold-border:    rgba(201,147,42,0.3);
+  /* ── Sadhana — Vivid Pink/Rose palette ── */
+  --rose:           #ff1a6e;
+  --rose-light:     #ff5fa0;
+  --rose-pale:      rgba(255,26,110,0.10);
+  --rose-soft:      rgba(255,26,110,0.16);
+  --rose-border:    rgba(255,26,110,0.35);
+  --crimson:        #c2005c;
+  --violet:         #5b0ea6;
+  --violet-mid:     #8b3fc8;
+  --violet-light:   #b06ae0;
+  --gold:           #e8a030;
+  --gold-light:     #f5cc6e;
+  --gold-pale:      rgba(245,204,110,0.12);
+  --gold-border:    rgba(232,160,48,0.3);
 
-  /* — Mapped Legacy Names (keeps all components working) — */
-  --primary:        #e8305a;
-  --primary-light:  #ff6b8e;
-  --primary-pale:   rgba(232,48,90,0.08);
-  --primary-soft:   rgba(232,48,90,0.14);
-  --primary-border: rgba(232,48,90,0.32);
-  --primary-text:   #ff6b8e;
-  --violet-legacy:  #6b2fa0;
-  --violet-light-l: #9b59b6;
-  --cyan:           #a855f7;
+  /* — Mapped Legacy Names — */
+  --primary:        #ff1a6e;
+  --primary-light:  #ff5fa0;
+  --primary-pale:   rgba(255,26,110,0.10);
+  --primary-soft:   rgba(255,26,110,0.16);
+  --primary-border: rgba(255,26,110,0.35);
+  --primary-text:   #ff5fa0;
+  --violet-legacy:  #8b3fc8;
+  --violet-light-l: #b06ae0;
+  --cyan:           #f472b6;
 
-  /* — Backgrounds (deep, moody) — */
-  --bg-gradient:    linear-gradient(160deg, #05020a 0%, #090415 50%, #0d0620 100%);
-  --bg-deep:        #05020a;
-  --bg-mid:         #090415;
-  --bg-surface:     #0d0620;
+  /* — Backgrounds — */
+  --bg-gradient:    linear-gradient(160deg, #0a0112 0%, #10011a 50%, #150225 100%);
+  --bg-deep:        #0a0112;
+  --bg-mid:         #10011a;
+  --bg-surface:     #150225;
 
   /* — Glass / Surfaces — */
-  --surface:        rgba(255,255,255,0.042);
-  --surface-hover:  rgba(255,255,255,0.072);
-  --glass:          rgba(255,255,255,0.048);
-  --glass-border:   rgba(255,255,255,0.08);
+  --surface:        rgba(255,255,255,0.045);
+  --surface-hover:  rgba(255,255,255,0.08);
+  --glass:          rgba(255,255,255,0.05);
+  --glass-border:   rgba(255,255,255,0.09);
 
   /* — Gradients — */
-  --grad-rose:      linear-gradient(135deg, #e8305a, #8b0040);
-  --grad-violet:    linear-gradient(135deg, #4a0a6b, #8b0040);
-  --grad-gold:      linear-gradient(135deg, #c9932a, #e8bb6e);
-  --grad-hero:      linear-gradient(135deg, #e8305a, #6b2fa0, #e8bb6e);
-  --btn-gradient:   linear-gradient(135deg, #e8305a, #8b0040);
-  --btn-gradient-v: linear-gradient(135deg, #e8305a, #4a0a6b);
-  --nav-gradient:   linear-gradient(135deg, #e8305a, #6b2fa0);
-  --btn-shadow:     rgba(232,48,90,0.45);
+  --grad-rose:      linear-gradient(135deg, #ff1a6e, #c2005c);
+  --grad-violet:    linear-gradient(135deg, #5b0ea6, #c2005c);
+  --grad-gold:      linear-gradient(135deg, #e8a030, #f5cc6e);
+  --grad-hero:      linear-gradient(135deg, #ff1a6e, #8b3fc8, #f5cc6e);
+  --btn-gradient:   linear-gradient(135deg, #ff1a6e, #c2005c);
+  --btn-gradient-v: linear-gradient(135deg, #ff1a6e, #5b0ea6);
+  --nav-gradient:   linear-gradient(135deg, #ff1a6e, #8b3fc8);
+  --btn-shadow:     rgba(255,26,110,0.50);
 
   /* — Text — */
-  --heading-color:  #ff9ab8;
-  --text-main:      rgba(255,255,255,0.92);
-  --text-muted:     rgba(255,255,255,0.45);
+  --heading-color:  #ff8ec0;
+  --text-main:      rgba(255,240,248,0.93);
+  --text-muted:     rgba(255,240,248,0.46);
 
   /* — Shadows — */
   --card-shadow:    0 32px 80px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.4);
-  --shadow-glow:    0 0 60px rgba(232,48,90,0.18);
-  --shadow-gold:    0 0 40px rgba(201,147,42,0.25);
+  --shadow-glow:    0 0 60px rgba(255,26,110,0.22);
+  --shadow-gold:    0 0 40px rgba(232,160,48,0.25);
 
   /* — Radius — */
   --radius-xl:      24px;
@@ -81,20 +81,30 @@
 
 /* — Surya emerald variant — */
 .theme-surya {
-  --primary:        #10B981;
-  --primary-light:  #34D399;
-  --primary-pale:   rgba(16,185,129,0.08);
-  --primary-soft:   rgba(16,185,129,0.12);
-  --primary-border: rgba(16,185,129,0.28);
-  --primary-text:   #34D399;
-  --bg-gradient:    linear-gradient(160deg, #030d08 0%, #041208 50%, #020a06 100%);
-  --nav-gradient:   linear-gradient(135deg, #34D399, #1a7a4a);
-  --btn-gradient:   linear-gradient(135deg, #10B981, #1a7a4a);
-  --btn-gradient-v: linear-gradient(135deg, #34D399, #065f46);
-  --btn-shadow:     rgba(16,185,129,0.45);
-  --heading-color:  #6ee7b7;
-  --text-main:      rgba(226,240,234,0.94);
-  --text-muted:     rgba(226,240,234,0.48);
+  --primary:        #00d97e;
+  --primary-light:  #34ffaa;
+  --primary-pale:   rgba(0,217,126,0.10);
+  --primary-soft:   rgba(0,217,126,0.16);
+  --primary-border: rgba(0,217,126,0.32);
+  --primary-text:   #34ffaa;
+  --rose:           #00d97e;
+  --rose-light:     #34ffaa;
+  --rose-pale:      rgba(0,217,126,0.10);
+  --rose-soft:      rgba(0,217,126,0.14);
+  --rose-border:    rgba(0,217,126,0.32);
+  --bg-gradient:    linear-gradient(160deg, #000f06 0%, #011508 50%, #021a0a 100%);
+  --bg-deep:        #000f06;
+  --bg-mid:         #011508;
+  --bg-surface:     #021a0a;
+  --nav-gradient:   linear-gradient(135deg, #00d97e, #00916e);
+  --btn-gradient:   linear-gradient(135deg, #00d97e, #00916e);
+  --btn-gradient-v: linear-gradient(135deg, #34ffaa, #00916e);
+  --grad-rose:      linear-gradient(135deg, #00d97e, #00916e);
+  --grad-hero:      linear-gradient(135deg, #00d97e, #06B6D4, #34ffaa);
+  --btn-shadow:     rgba(0,217,126,0.50);
+  --heading-color:  #7dffc6;
+  --text-main:      rgba(220,255,240,0.94);
+  --text-muted:     rgba(220,255,240,0.48);
 }
 
 /* ══ BASE ══ */
@@ -119,15 +129,15 @@ body::before, body::after {
 }
 body::before {
   width: 600px; height: 600px; top: -150px; left: -150px;
-  background: radial-gradient(circle, rgba(139,0,64,0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(194,0,92,0.28) 0%, transparent 70%);
 }
 body::after {
   width: 500px; height: 500px; bottom: 80px; right: -100px;
-  background: radial-gradient(circle, rgba(74,10,107,0.28) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(91,14,166,0.32) 0%, transparent 70%);
   animation-delay: -9s; animation-duration: 22s;
 }
-.theme-surya body::before { background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%); }
-.theme-surya body::after  { background: radial-gradient(circle, rgba(6,182,212,0.09) 0%, transparent 70%); }
+.theme-surya body::before { background: radial-gradient(circle, rgba(0,217,126,0.18) 0%, transparent 70%); }
+.theme-surya body::after  { background: radial-gradient(circle, rgba(6,182,212,0.14) 0%, transparent 70%); }
 
 @keyframes blobFloat {
   0%   { transform: translate(0,0) scale(1); }
@@ -180,21 +190,21 @@ h1 {
 }
 .orb-3d-1 {
   width: 550px; height: 550px; top: -120px; left: -140px;
-  background: radial-gradient(circle, rgba(139,0,64,0.2) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(194,0,92,0.25) 0%, transparent 70%);
   animation-duration: 20s;
 }
 .orb-3d-2 {
   width: 450px; height: 450px; bottom: 60px; right: -90px;
-  background: radial-gradient(circle, rgba(74,10,107,0.26) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(91,14,166,0.30) 0%, transparent 70%);
   animation-duration: 14s; animation-delay: -7s;
 }
 .orb-3d-3 {
   width: 350px; height: 350px; top: 40%; left: 25%;
-  background: radial-gradient(circle, rgba(201,147,42,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,26,110,0.10) 0%, transparent 70%);
   animation-duration: 20s; animation-delay: -12s;
 }
-.theme-surya .orb-3d-1 { background: radial-gradient(circle, rgba(16,185,129,0.14) 0%, transparent 70%); }
-.theme-surya .orb-3d-2 { background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%); }
+.theme-surya .orb-3d-1 { background: radial-gradient(circle, rgba(0,217,126,0.20) 0%, transparent 70%); }
+.theme-surya .orb-3d-2 { background: radial-gradient(circle, rgba(6,182,212,0.16) 0%, transparent 70%); }
 
 @keyframes orbFloat3D {
   0%   { transform: translate3d(0,0,0) scale(1); }

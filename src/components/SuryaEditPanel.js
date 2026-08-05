@@ -32,18 +32,12 @@ const SECTIONS = [
   { key:"s_timeline",    icon:"🗺️", label:"Our Journey Timeline",   desc:"Add moments, dates & photos" },
   { key:"s_letters",     icon:"💌", label:"Love Letters",           desc:"4 personal letters to Sadhana" },
   { key:"s_gallery",     icon:"📸", label:"Gallery Captions",       desc:"Photo captions for memory gallery" },
-  { key:"s_notes",       icon:"📝", label:"Notes Wall",             desc:"Sticky notes on the love wall" },
   { key:"s_vow",         icon:"💒", label:"Surya's Vow",            desc:"Your personal vow to her" },
   { key:"s_surprises",   icon:"🎁", label:"Surprise Box",           desc:"5 surprise messages for Sadhana" },
   { key:"s_compliments", icon:"💬", label:"Compliment Machine",     desc:"Compliments that pop up for her" },
   { key:"s_promises",    icon:"💍", label:"Nightly Promises",       desc:"Promises shown on the Tonight page" },
   { key:"s_playlist",    icon:"🎵", label:"Our Playlist",           desc:"Songs with personal notes" },
-  { key:"s_mood",        icon:"🌈", label:"Mood Board Quotes",      desc:"Quotes for each of her moods" },
-  { key:"s_secret",      icon:"🔐", label:"Secret Messages",        desc:"Hidden messages unlocked by answers" },
-  { key:"s_storybook",   icon:"📖", label:"Story Book",             desc:"Your love story, chapter by chapter" },
   { key:"s_dreams",      icon:"💫", label:"Dream Jar",              desc:"Dream page subtitle & footer" },
-  { key:"s_future",      icon:"🌟", label:"Future Plans",           desc:"Places, goals & milestones together" },
-  { key:"s_lovenotes",   icon:"💚", label:"Love Notes (wall pins)", desc:"Surya's pinned notes on the wall" },
   { key:"s_profile",     icon:"👤", label:"Site Profile",           desc:"Names, dates & greeting texts" },
 ];
 
@@ -216,60 +210,6 @@ function GalleryEditor() {
   return <ListField dbKey="gallery_captions" label="Gallery Photo Captions (in order)" defaults={defaults} placeholder="Caption for next photo..." />;
 }
 
-function SecretEditor() {
-  const defaults=[
-    {hint:"Our first meeting date (DD/MM/YYYY)",key:"19/06/2023",msg:"That day, my heart said: 'She's the one.' 💙"},
-    {hint:"The month we started (e.g. may)",    key:"may",       msg:"May 2026 — the month the rest of my life began. 🌸"},
-    {hint:"My nickname for you (one word 🥰)",  key:"fruad",     msg:"My fruad — you light up my darkest nights. 🌙💕"},
-    {hint:"How many dreams you wrote (number)", key:"5",         msg:"5 dreams — and I promise to make every one come true. 💍"},
-  ];
-  const [items,setItems]=useState([]); const [ld,setLd]=useState(true);
-  useEffect(()=>{dbGet("secret_msgs",defaults).then(v=>{setItems(Array.isArray(v)&&v.length?v:defaults);setLd(false);})},[]);// eslint-disable-line
-  if(ld)return<p style={{color:G.muted,padding:"8px 0"}}>Loading...</p>;
-  return (<>
-    {items.map((s,i)=>(
-      <Block key={i} title={`🔐 Secret #${i+1}`}>
-        <Field dbKey={`_sec_h_${i}`} label="Hint shown to Sadhana"     rows={1} placeholder="Hint..." defaultValue={s.hint} />
-        <Field dbKey={`_sec_k_${i}`} label="Answer (case-insensitive)" rows={1} placeholder="Answer..." defaultValue={s.key} />
-        <Field dbKey={`_sec_m_${i}`} label="Message revealed on unlock" rows={3} placeholder="Secret message..." defaultValue={s.msg} />
-      </Block>
-    ))}
-  </>);
-}
-
-function StoryEditor() {
-  const defaults=[
-    {art:"🌅",title:"Chapter 1 — The Beginning",text:"It was 19 June 2023. Just an ordinary Tuesday at tuition. And then — there she was."},
-    {art:"💭",title:"Chapter 2 — The Waiting",  text:"For months, he watched from a distance. Too nervous to speak."},
-    {art:"🌙",title:"Chapter 3 — The Midnight", text:"17 May 2026. Midnight. The whole world was asleep. But Surya was wide awake."},
-    {art:"💗",title:"Chapter 4 — She Wrote Back",text:"18 May 2026. Evening. Her message came. And in it — love."},
-    {art:"🥂",title:"Chapter 5 — Together",     text:"19 May 2026. They both said yes — to each other, to forever."},
-    {art:"🌸",title:"Chapter 6 — Journey Begins",text:"From 20 May 2026 onwards, every ordinary day became extraordinary."},
-    {art:"💍",title:"Chapter 7 — What Comes Next",text:"The story isn't finished. Not even close. The best chapters are still being written."},
-  ];
-  const [chapters,setChapters]=useState([]);const [ok,setOk]=useState(false);const [ld,setLd]=useState(true);
-  useEffect(()=>{dbGet("story_chapters",defaults).then(v=>{setChapters(Array.isArray(v)&&v.length?v:defaults);setLd(false);})},[]);// eslint-disable-line
-  const upd=(i,f,v)=>setChapters(p=>p.map((c,j)=>j===i?{...c,[f]:v}:c));
-  const add=()=>setChapters(p=>[...p,{art:"✨",title:"New Chapter",text:""}]);
-  const remove=i=>setChapters(p=>p.filter((_,j)=>j!==i));
-  const save=async()=>{await dbSet("story_chapters",chapters);setOk(true);setTimeout(()=>setOk(false),2200);};
-  if(ld)return<p style={{color:G.muted,padding:"8px 0"}}>Loading...</p>;
-  return (<>
-    {chapters.map((c,i)=>(
-      <Block key={i} title={`📖 Chapter ${i+1}`}>
-        <div style={{display:"flex",gap:8,marginBottom:10}}>
-          <FocusInput value={c.art}   onChange={e=>upd(i,"art",e.target.value)}   placeholder="🌟" style={{width:60,textAlign:"center"}} />
-          <FocusInput value={c.title} onChange={e=>upd(i,"title",e.target.value)} placeholder="Chapter title" style={{flex:1}} />
-          <button onClick={()=>remove(i)} style={{padding:"8px 12px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:10,color:"#fca5a5",cursor:"pointer",fontWeight:700}}>✕</button>
-        </div>
-        <FocusInput as="textarea" rows={4} value={c.text} onChange={e=>upd(i,"text",e.target.value)} placeholder="Chapter text..." />
-      </Block>
-    ))}
-    <button onClick={add} style={{marginBottom:12,padding:"10px 20px",background:G.surface,border:`1.5px dashed ${G.border}`,borderRadius:12,color:G.primary,cursor:"pointer",fontWeight:700,width:"100%",fontSize:"0.88rem"}}>＋ Add Chapter</button>
-    <button onClick={save} style={{padding:"11px 28px",background:ok?"rgba(16,185,129,0.15)":G.grad,border:ok?`1px solid ${G.primary}`:"none",borderRadius:12,color:"#fff",fontWeight:700,cursor:"pointer",boxShadow:ok?"none":`0 4px 18px ${G.glow}`}}>{ok?"✅ Saved!":"Save Story 💚"}</button>
-  </>);
-}
-
 function ProfileEditor() {
   return (<>
     <Field dbKey="site_sadhana_name"  label="Sadhana's display name"       rows={1} placeholder="Sadhana"        defaultValue="Sadhana" />
@@ -294,18 +234,12 @@ export default function SuryaEditPanel() {
       case "s_letters":     return <LettersEditor />;
       case "s_timeline":    return <TimelineEditor />;
       case "s_gallery":     return <GalleryEditor />;
-      case "s_notes":       return <ListField dbKey="edit_notes_list" label="Love Notes on the Wall" defaults={["You are the first thing I think about every morning 🌙","I would choose you in every universe 💍","Your dreams are safe with me 🌟","I love the way your mind works 💚","Watching you grow is the greatest privilege of my life 🌺","Being loved by you is the best thing that has ever happened to me 💙"]} placeholder="Write a love note..." />;
       case "s_vow":         return <Field dbKey="surya_vow_text" label="Surya's Vow" rows={12} placeholder="Write your vow..." defaultValue="" />;
-      case "s_surprises":   return <>{[1,2,3,4,5].map(n=><Block key={n} title={`🎁 Surprise #${n}`}><Field dbKey={`edit_surprise_${n}_title`} label="Title" rows={1} placeholder="Surprise title..." defaultValue="" /><Field dbKey={`edit_surprise_${n}_hint`} label="Hint" rows={1} placeholder="Open when..." defaultValue="" /><Field dbKey={`edit_surprise_${n}_content`} label="Message" rows={6} placeholder="Write the message..." defaultValue="" /></Block>)}</>;
+      case "s_surprises":   return <>{[1,2,3,4,5].map(n=><Block key={n} title={`🎁 Surprise #${n}`}><Field dbKey={`edit_surprise_${n}_title`} label="Title" rows={1} placeholder="Surprise title..." defaultValue="" /><Field dbKey={`edit_surprise_${n}_hint`} label="Hint (shown on sealed box)" rows={1} placeholder="Open when..." defaultValue="" /><Field dbKey={`edit_surprise_${n}_content`} label="Message" rows={6} placeholder="Write the message..." defaultValue="" /></Block>)}</>;
       case "s_compliments": return <ListField dbKey="edit_compliments_list" label="Compliments (Compliment Machine)" defaults={["You have the most beautiful soul I have ever encountered 🌸","Your smile is literally the highlight of my entire day 🌟","You are so much stronger than you know 💪","The way your mind works is one of my favourite things about you 💭","You make every room feel warmer just by walking into it 🌻"]} placeholder="Add a compliment..." />;
       case "s_promises":    return <ListField dbKey="edit_promises_list" label="Nightly Promises" defaults={["I promise to always be your safe place 💙","I promise to make you smile every single day 🌸","I promise to never let you feel alone 🫂","I promise to love you on your hardest days 💍","I promise to always choose you 🌟"]} placeholder="Add a promise..." />;
       case "s_playlist":    return <>{[1,2,3,4,5].map(n=><Block key={n} title={`🎵 Song ${n}`}><Field dbKey={`playlist_title_${n}`} label="Song Title" rows={1} placeholder="Song name..." defaultValue="" /><Field dbKey={`playlist_artist_${n}`} label="Artist" rows={1} placeholder="Artist name..." defaultValue="" /><Field dbKey={`playlist_note_${n}`} label="Personal Note" rows={3} placeholder="Why this song means something..." defaultValue="" /></Block>)}</>;
-      case "s_mood":        return <>{["happy","loved","calm","dreamy","missing","tired","excited"].map(m=><Block key={m} title={`🌈 ${m.charAt(0).toUpperCase()+m.slice(1)} mood`}><Field dbKey={`mood_quote_${m}`} label="Surya's quote for this mood" rows={2} placeholder={`Quote for ${m} mood...`} defaultValue="" /><Field dbKey={`mood_activity_${m}`} label="Activity suggestion" rows={2} placeholder="What Surya suggests doing..." defaultValue="" /></Block>)}</>;
-      case "s_secret":      return <SecretEditor />;
-      case "s_storybook":   return <StoryEditor />;
       case "s_dreams":      return <><Field dbKey="dream_hero_subtitle" label="Dreams page subtitle" rows={1} placeholder="Every dream you write here will come true 💫" defaultValue="Every dream you write here will come true 💫" /><Field dbKey="dream_footer_quote" label="Dreams page footer quote" rows={2} placeholder="With you, every dream feels possible ❤️" defaultValue="With you, every dream feels possible ❤️" /></>;
-      case "s_future":      return <>{["Places to Visit Together","Things to Do Together","Our Life Goals","Our Milestones"].map((cat,ci)=><Block key={ci} title={`🌟 ${cat}`}><ListField dbKey={`future_cat_${ci}`} label={`Plans for: ${cat}`} defaults={[]} placeholder="Add a plan..." /></Block>)}</>;
-      case "s_lovenotes":   return <ListField dbKey="wall_surya_notes" label="Surya's sticky notes on the wall" defaults={["You are the first thing I think about every morning 🌙","I would choose you in every universe 💍","Your dreams are safe with me 🌟","I love the way your mind works 💚"]} placeholder="Write a sticky note..." />;
       case "s_profile":     return <ProfileEditor />;
       default: return null;
     }

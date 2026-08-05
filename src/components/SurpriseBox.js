@@ -257,6 +257,7 @@ function BoxEditor({ idx, box, onSave, onClose }) {
 
 /* ─── Main export ─── */
 export default function SurpriseBox({ user }) {
+  const isDemo = user === "demo";
   const [boxes,   setBoxes]   = useState(Array(6).fill(null));
   const [photos,  setPhotos]  = useState({});
   const [opened,  setOpened]  = useState({});
@@ -267,33 +268,54 @@ export default function SurpriseBox({ user }) {
   const [tab,     setTab]     = useState("surya");
   const [mounted, setMounted] = useState(false);
   const [hovering,setHovering]= useState(null);
+  const [demoPopIdx, setDemoPopIdx] = useState(null); // "locked" toast for demo
 
   useEffect(() => {
     (async () => {
-      const loaded = await Promise.all(Array.from({length:6},(_,i)=>dbGet(`surprise_box_${i}`,null)));
-      const photoMap = {};
-      for (let i=0;i<6;i++) {
-        if (loaded[i]?.photo) photoMap[i] = loaded[i].photo;
-        else { const p = await getPhoto(`surprise_img_${i}`); if(p) photoMap[i]=p; }
+      if (!isDemo) {
+        const loaded = await Promise.all(Array.from({length:6},(_,i)=>dbGet(`surprise_box_${i}`,null)));
+        const photoMap = {};
+        for (let i=0;i<6;i++) {
+          if (loaded[i]?.photo) photoMap[i] = loaded[i].photo;
+          else { const p = await getPhoto(`surprise_img_${i}`); if(p) photoMap[i]=p; }
+        }
+        setBoxes(loaded); setPhotos(photoMap);
       }
-      setBoxes(loaded); setPhotos(photoMap); setLoading(false);
+      setLoading(false);
       setTimeout(() => setMounted(true), 60);
     })();
-  }, []);
+  }, [isDemo]);
 
   const tryOpen = i => {
+    if (isDemo) {
+      // Shake the box but show a "private" popup instead of revealing
+      setShaking(i);
+      setTimeout(() => { setShaking(null); setDemoPopIdx(i); }, 700);
+      setTimeout(() => setDemoPopIdx(null), 2800);
+      return;
+    }
     if (opened[i]) { setActive(i); return; }
     setShaking(i);
     setTimeout(() => { setShaking(null); setOpened(o=>({...o,[i]:true})); setActive(i); }, 700);
   };
+
   const handleSave = (i, upd) => {
     setBoxes(p=>p.map((b,j)=>j===i?upd:b));
     if (upd.photo) setPhotos(p=>({...p,[i]:upd.photo}));
   };
 
   const indices = tab==="surya" ? [0,1,2] : [3,4,5];
-  const isSurya = user === "surya"; // eslint-disable-line no-unused-vars
   const tabColor = tab==="surya" ? SURYA_COLOR : SADHANA_COLOR;
+
+  /* Demo placeholder hints */
+  const DEMO_HINTS = [
+    "Open when you miss me 💚",
+    "Open on our anniversary 🌿",
+    "Open when you need a hug 💎",
+    "Open when you're happy 💗",
+    "Open on a rainy day 🌸",
+    "Open when you feel loved ✨",
+  ];
 
   return (
     <div className="sb3-page" style={{
@@ -350,11 +372,12 @@ export default function SurpriseBox({ user }) {
         <div className="sb3-grid">
           {indices.map((i, gi) => {
             const cfg = BOXES[i];
-            const box = boxes[i];
-            const isOpen = !!opened[i];
-            const hasContent = box?.title || box?.body;
-            const canEdit = user === cfg.owner;
+            const box = isDemo ? null : boxes[i];
+            const isOpen = !isDemo && !!opened[i];
+            const hasContent = isDemo ? true : (box?.title || box?.body);
+            const canEdit = !isDemo && user === cfg.owner;
             const isHov = hovering === i;
+            const hint = isDemo ? DEMO_HINTS[i] : (box?.hint || "A special surprise inside...");
 
             return (
               <div key={i}
@@ -376,10 +399,15 @@ export default function SurpriseBox({ user }) {
                 {/* Top ribbon */}
                 <div style={{ position:"absolute", top:0, left:0, right:0, height:"2px", background:`linear-gradient(90deg,transparent,${cfg.color},transparent)`, backgroundSize:isHov?"150% 100%":"200% 100%", animation:"shimmerRibbon 2s linear infinite", borderRadius:"20px 20px 0 0" }} />
 
-                {/* Edit button */}
+                {/* Edit button — real users only */}
                 {canEdit && (
                   <button className="sb3-edit-btn" style={{ color:cfg.color, borderColor:`${cfg.color}44` }}
                     onClick={e=>{e.stopPropagation();setEditing(i)}}>✏️</button>
+                )}
+
+                {/* Demo lock badge */}
+                {isDemo && (
+                  <div style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.12)", borderRadius:"50%", width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.9rem" }}>🔒</div>
                 )}
 
                 {/* Owner tag */}
@@ -401,10 +429,29 @@ export default function SurpriseBox({ user }) {
                   Gift #{(i%3)+1}
                 </div>
 
-                {/* Photo thumbnail */}
-                {photos[i] && (
+                {/* Photo thumbnail — only for real users */}
+                {!isDemo && photos[i] && (
                   <div className="sb3-thumb-wrap">
                     <img src={photos[i]} alt="" className="sb3-thumb" style={{ borderColor:`${cfg.color}44` }}/>
+                  </div>
+                )}
+
+                {/* Demo locked pop toast */}
+                {demoPopIdx === i && (
+                  <div style={{
+                    position:"absolute", inset:0, borderRadius:20,
+                    background:"rgba(9,4,21,0.95)", backdropFilter:"blur(8px)",
+                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10,
+                    animation:"fadeInBg 0.2s ease",
+                    zIndex:20,
+                  }}>
+                    <span style={{ fontSize:"2rem" }}>🔐</span>
+                    <p style={{ color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.88rem", fontWeight:700, textAlign:"center", margin:0 }}>
+                      Private surprise
+                    </p>
+                    <p style={{ color:"rgba(255,255,255,0.45)", fontSize:"0.75rem", textAlign:"center", margin:0, lineHeight:1.5 }}>
+                      Only Surya & Sadhana<br/>can open this 💕
+                    </p>
                   </div>
                 )}
 
@@ -412,11 +459,11 @@ export default function SurpriseBox({ user }) {
                 <div className="sb3-hint-area">
                   {hasContent ? (
                     <>
-                      <p className="sb3-hint-text">"{box.hint || "A special surprise inside..."}"</p>
+                      <p className="sb3-hint-text">"{hint}"</p>
                       <button className={`sb3-open-btn ${isOpen?"sb3-open-btn-again":""}`}
-                        style={{ background:`linear-gradient(135deg,${cfg.color},${cfg.ribbon||cfg.color})`, boxShadow:`0 6px 22px ${cfg.color}44` }}
+                        style={{ background:`linear-gradient(135deg,${cfg.color},${cfg.ribbon||cfg.color})`, boxShadow:`0 6px 22px ${cfg.color}44`, opacity: isDemo ? 0.75 : 1 }}
                         onClick={()=>tryOpen(i)}>
-                        {isOpen ? "Open Again 💕" : "🔒 Open Surprise"}
+                        {isDemo ? "🔒 Private" : isOpen ? "Open Again 💕" : "🔒 Open Surprise"}
                       </button>
                     </>
                   ) : (
@@ -434,8 +481,8 @@ export default function SurpriseBox({ user }) {
         </div>
       )}
 
-      {/* ── Reveal Modal ── */}
-      {active !== null && boxes[active] && (
+      {/* ── Reveal Modal — only for real users ── */}
+      {!isDemo && active !== null && boxes[active] && (
         <RevealModal idx={active} box={boxes[active]} photo={photos[active]}
           onClose={()=>setActive(null)}
           onEdit={()=>{setEditing(active);setActive(null);}}
@@ -443,8 +490,8 @@ export default function SurpriseBox({ user }) {
         />
       )}
 
-      {/* ── Editor Modal ── */}
-      {editing !== null && (
+      {/* ── Editor Modal — only for real users ── */}
+      {!isDemo && editing !== null && (
         <div className="sb3-overlay" onClick={()=>setEditing(null)}>
           <div className="sb3-modal sb3-editor-modal" style={{ "--mc":BOXES[editing].color }} onClick={e=>e.stopPropagation()}>
             <div style={{ position:"absolute", top:0, left:0, right:0, height:"3px", background:`linear-gradient(90deg,transparent,${BOXES[editing].color},transparent)`, borderRadius:"24px 24px 0 0" }} />

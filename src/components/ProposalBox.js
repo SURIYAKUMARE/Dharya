@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbGet } from "../api";
 import { useTilt } from "../App";
+import TreeOfLife from "./TreeOfLife";
 
 const WISHES = [
   "May every day with you be more beautiful than the last 🌟",
@@ -12,6 +13,7 @@ const WISHES = [
 ];
 
 export default function ProposalBox({ opened, setOpened, setPage }) {
+  const [treeShown,    setTreeShown]    = useState(!opened); // show tree on first load only
   const [letterOpen,   setLetterOpen]   = useState(false);
   const [noPos,        setNoPos]        = useState({ x: null, y: null });
   const [noClicks,     setNoClicks]     = useState(0);
@@ -75,6 +77,9 @@ export default function ProposalBox({ opened, setOpened, setPage }) {
       onMouseMove={!opened ? handleMouseMove : undefined}
       onMouseLeave={!opened ? handleMouseLeave : undefined}
     >
+      {/* Cinematic Tree of Life intro */}
+      {treeShown && <TreeOfLife onDone={() => setTreeShown(false)} />}
+
       {/* Shooting stars */}
       {stars.map(s => (
         <div key={s.id} className="shooting-star" style={{ top: s.top, animationDelay: s.delay }} />

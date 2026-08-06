@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 /* ══════════════════════════════════════════════════
    TREE OF LIFE — Heart-shaped canopy
@@ -278,7 +279,7 @@ export default function TreeOfLife({ onDone }) {
     setTimeout(() => { if (onDone) onDone(); }, 600);
   }, [onDone]);
 
-  return (
+  return createPortal(
     <div style={{
       position: "fixed", inset: 0, zIndex: 9980,
       opacity: done ? 0 : 1,
@@ -317,6 +318,7 @@ export default function TreeOfLife({ onDone }) {
       }}>
         Tree of Life — Dharya 💍
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -61,7 +61,7 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none;background:#000}
 </head>
 <body>
 <div id="cur"></div><div id="cur-r"></div>
-<div id="s1" class="scene on"><canvas id="s1c"></canvas><div id="s1-title">a little something, for you 💌</div><div id="s1-hint">drag the arrow · release to shoot ↙</div></div>
+<div id="s1" class="scene on"><canvas id="s1c"></canvas><div id="s1-title">a little something, for you 💌</div><div id="s1-hint">tap the heart to begin ✨</div></div>
 <div id="s2" class="scene"><div id="s2-burst"></div><div id="s2-in"><div id="s2-wish">make a wish...</div><div id="s2-name"></div><div id="s2-sub">to someone worth celebrating</div></div></div>
 <div id="s3" class="scene"><canvas id="s3c"></canvas><div id="s3-left"><span class="s3l a">and... make it count</span><span class="s3l n">Dharya</span><span class="s3l y">Here's to a year that blooms 🌸</span></div><div id="s3-glnk" onclick="openModal()">our love gallery →</div><button id="s3-btn" onclick="openModal()">✨ Surprise</button></div>
 <div id="s4"><div id="s4-box"><div id="s4-top"></div><button id="s4-x" onclick="closeModal()">✕</button><div id="s4-h">A Few Moments, Kept Safe</div><div class="pol-row"><div class="pol" style="--r:-5deg"><div class="pol-ph">💗</div><div class="pol-cap">the first smile</div></div><div class="pol" style="--r:3deg"><div class="pol-ph">🌸</div><div class="pol-cap">always blooming</div></div><div class="pol" style="--r:-2deg"><div class="pol-ph">✨</div><div class="pol-cap">our favourite light</div></div></div><div id="s4-cap">the one that made me smile first</div><div class="stars">★★★★★</div><button id="s4-gbtn" onclick="closeModal()">A Glimpse Inside 💛</button></div></div>
@@ -120,15 +120,10 @@ const parts=[];
 function setPos(){heart.x=W*.5;heart.y=H*.42;bow.x=W*.1+8;bow.y=H*.8;if(!drag&&!arr.fly){arr.x=bow.x;arr.y=bow.y;arr.tx=bow.x;arr.ty=bow.y;}}
 setPos();addEventListener('resize',setPos);
 
-/* touch / mouse */
-const gp=e=>{const t=e.touches?e.touches[0]:e;return{x:t.clientX,y:t.clientY};};
-const hitBow=p=>Math.hypot(p.x-bow.x,p.y-bow.y)<72;
-c1.addEventListener('mousedown',e=>{if(hitBow(gp(e))&&!arr.fly)drag=true;});
-c1.addEventListener('touchstart',e=>{e.preventDefault();if(hitBow(gp(e))&&!arr.fly)drag=true;},{passive:false});
-addEventListener('mousemove',e=>{if(drag){const p=gp(e);const d=Math.hypot(p.x-bow.x,p.y-bow.y);const a=Math.atan2(p.y-bow.y,p.x-bow.x);arr.tx=bow.x+Math.cos(a)*Math.min(d,MAX_PULL);arr.ty=bow.y+Math.sin(a)*Math.min(d,MAX_PULL);}});
-addEventListener('touchmove',e=>{if(drag){e.preventDefault();const p=gp(e);const d=Math.hypot(p.x-bow.x,p.y-bow.y);const a=Math.atan2(p.y-bow.y,p.x-bow.x);arr.tx=bow.x+Math.cos(a)*Math.min(d,MAX_PULL);arr.ty=bow.y+Math.sin(a)*Math.min(d,MAX_PULL);}},{passive:false});
-const release=()=>{if(!drag)return;drag=false;const dx=bow.x-arr.tx,dy=bow.y-arr.ty,d=Math.hypot(dx,dy);if(d>22&&!arr.fly){arr.fly=true;const spd=(d/MAX_PULL)*25,a=Math.atan2(dy,dx);arr.vx=Math.cos(a)*spd;arr.vy=Math.sin(a)*spd;}};
-addEventListener('mouseup',release);addEventListener('touchend',release);
+/* ── no bow needed — just click the heart ── */
+const hitHeart=p=>heart.alive&&Math.hypot(p.x-heart.x,p.y-heart.y)<heart.r+20;
+c1.addEventListener('mousedown',e=>{if(hitHeart(gp(e))&&!fired){fired=true;explode();}});
+c1.addEventListener('touchstart',e=>{e.preventDefault();if(hitHeart(gp(e))&&!fired){fired=true;explode();}},{passive:false});
 
 function explode(){
   heart.alive=false;
@@ -165,32 +160,6 @@ function explode(){
     x1.fillStyle=hg;x1.fill();
     hp(x1,heart.x-r*.08,heart.y-r*.28,r*.4);
     x1.fillStyle=`rgba(255,255,255,${.38+Math.sin(t*1.8)*.3})`;x1.fill();
-  }
-  /* bow */
-  const bAngle=drag?Math.atan2(bow.y-arr.ty,bow.x-arr.tx):-Math.PI/4;
-  x1.save();x1.translate(bow.x,bow.y);x1.rotate(bAngle-Math.PI/2);
-  x1.beginPath();x1.arc(0,0,40,-Math.PI*.62,Math.PI*.62);x1.strokeStyle='#5c2000';x1.lineWidth=4.5;x1.lineCap='round';x1.stroke();
-  const str=drag?Math.hypot(arr.tx-bow.x,arr.ty-bow.y)/2.8:0;
-  x1.beginPath();x1.moveTo(0,-37);x1.quadraticCurveTo(Math.min(str*.85,35),0,0,37);x1.strokeStyle='rgba(80,36,4,.5)';x1.lineWidth=1.6;x1.stroke();
-  x1.restore();
-  /* arrow */
-  arr.x=L(arr.x,arr.tx,drag?.3:.15);arr.y=L(arr.y,arr.ty,drag?.3:.15);
-  if(!arr.fly){
-    const ang=Math.atan2(bow.y-arr.ty,bow.x-arr.tx)+Math.PI;
-    x1.save();x1.translate(arr.x,arr.y);x1.rotate(ang);
-    x1.beginPath();x1.moveTo(-24,0);x1.lineTo(20,0);x1.strokeStyle='#5c2000';x1.lineWidth=2.8;x1.lineCap='round';x1.stroke();
-    x1.beginPath();x1.moveTo(20,0);x1.lineTo(27,-5);x1.lineTo(27,5);x1.closePath();x1.fillStyle='#bbb';x1.fill();
-    x1.beginPath();x1.moveTo(-24,0);x1.lineTo(-32,-7);x1.lineTo(-21,0);x1.lineTo(-32,7);x1.closePath();x1.fillStyle='rgba(255,160,200,.9)';x1.fill();
-    x1.restore();
-  }
-  if(arr.fly){
-    arr.x+=arr.vx;arr.y+=arr.vy;arr.vy+=.22;
-    x1.save();x1.translate(arr.x,arr.y);x1.rotate(Math.atan2(arr.vy,arr.vx));
-    x1.beginPath();x1.moveTo(-24,0);x1.lineTo(20,0);x1.strokeStyle='#5c2000';x1.lineWidth=2.8;x1.lineCap='round';x1.stroke();
-    x1.beginPath();x1.moveTo(20,0);x1.lineTo(27,-5);x1.lineTo(27,5);x1.closePath();x1.fillStyle='#bbb';x1.fill();
-    x1.restore();
-    if(Math.hypot(arr.x-heart.x,arr.y-heart.y)<heart.r+16&&!fired){fired=true;explode();}
-    if((arr.x<-80||arr.x>W+80||arr.y>H+80)&&!fired){arr.fly=false;arr.tx=bow.x;arr.ty=bow.y;}
   }
   /* particles */
   for(let i=parts.length-1;i>=0;i--){

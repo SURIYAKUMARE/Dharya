@@ -386,8 +386,27 @@ function useSignal(room, onSig) {
   return { send };
 }
 
-/* ══ VOICE CALL SCREEN ══ */
-function VoiceCall({ user, otherName, otherEmoji, onEnd }) {
+/* ── Call Avatar — initials + gradient (no emoji) ── */
+function CallAvatar({ name, color1, color2, size = 110 }) {
+  const initials = name ? name.replace(/[^a-zA-Z\s]/g, '').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() : '♥';
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: `linear-gradient(135deg, ${color1}, ${color2})`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0,
+      boxShadow: `0 0 0 3px rgba(255,255,255,0.12), 0 20px 60px rgba(0,0,0,0.5)`,
+    }}>
+      <span style={{
+        fontFamily: "'Cormorant Garamond', serif",
+        fontSize: size * 0.32, fontWeight: 600, fontStyle: 'italic',
+        color: '#fff', letterSpacing: '1px', lineHeight: 1,
+        textShadow: '0 2px 8px rgba(0,0,0,0.3)',
+      }}>{initials}</span>
+    </div>
+  );
+}
+function VoiceCall({ user, otherName, onEnd }) {
   const [state,   setState]   = useState("ringing");
   const [muted,   setMuted]   = useState(false);
   const [spk,     setSpk]     = useState(true);
@@ -454,8 +473,8 @@ function VoiceCall({ user, otherName, otherEmoji, onEnd }) {
         <div className="wac-ripple"/><div className="wac-ripple"/><div className="wac-ripple"/>
       </div>
       <div className="wac-top">
-        <div className={`wac-av ${conn?"connected":""}`} style={{background:"linear-gradient(135deg,#ff1a6e,#8b3fc8)"}}>
-          {otherEmoji}
+        <div className={`wac-av ${conn?"connected":""}`}>
+          <CallAvatar name={otherName} color1="#ff1a6e" color2="#8b3fc8" size={110}/>
         </div>
         <div className="wac-name">{otherName}</div>
         {conn
@@ -487,7 +506,7 @@ function VoiceCall({ user, otherName, otherEmoji, onEnd }) {
 }
 
 /* ══ VIDEO CALL SCREEN ══ */
-function VideoCall({ user, otherName, otherEmoji, onEnd }) {
+function VideoCall({ user, otherName, onEnd }) {
   const [state,    setState]    = useState("ringing");
   const [muted,    setMuted]    = useState(false);
   const [camOff,   setCamOff]   = useState(false);
@@ -559,7 +578,7 @@ function VideoCall({ user, otherName, otherEmoji, onEnd }) {
       <video ref={remVid} className="wavc-remote" autoPlay playsInline style={{display:remReady?"block":"none"}}/>
       {!remReady && (
         <div className="wavc-no-vid">
-          <div className="wavc-no-vid-av">{otherEmoji}</div>
+          <CallAvatar name={otherName} color1="#ff1a6e" color2="#8b3fc8" size={120}/>
         </div>
       )}
       {/* Local PiP */}
@@ -593,7 +612,7 @@ function VideoCall({ user, otherName, otherEmoji, onEnd }) {
             <span className="wavc-btn-lbl">End</span>
           </button>
           <button className="wavc-btn" onClick={()=>setSwapped(v=>!v)}>
-            <div className="wavc-btn-ic wavc-ic-base">🔄</div>
+            <div className="wavc-btn-ic wavc-ic-base">{I("flip",24)}</div>
             <span className="wavc-btn-lbl">Flip</span>
           </button>
         </div>
@@ -603,13 +622,15 @@ function VideoCall({ user, otherName, otherEmoji, onEnd }) {
 }
 
 /* ══ INCOMING CALL SCREEN ══ */
-function IncomingCall({ otherName, otherEmoji, mode, onAccept, onDecline }) {
+function IncomingCall({ otherName, mode, onAccept, onDecline }) {
   return (
     <div className="wa-incoming">
       <div className="wa-incoming-full">
         <div className="wa-inc-top">
           <div className="wa-inc-badge">{mode==="video"?"Video Call":"Voice Call"}</div>
-          <div className="wa-inc-av">{otherEmoji}</div>
+          <div className="wa-inc-av">
+            <CallAvatar name={otherName} color1="#ff1a6e" color2="#8b3fc8" size={100}/>
+          </div>
           <div className="wa-inc-name">{otherName}</div>
           <div className="wa-inc-sub">Dharya</div>
         </div>
@@ -670,7 +691,6 @@ export default function LoveChat({ user }) {
   const myName   = isSurya ? "Surya 💚" : isDemo ? "Demo 👀" : "Sadhana 💗";
   const other    = isSurya ? "Sadhana" : "Surya";
   const otherFull= isSurya ? "Sadhana 💗" : "Surya 💚";
-  const otherEmj = isSurya ? "💗" : "💚";
 
   /* ── merge helper ── */
   const merge = useCallback((prev, inc) => {
@@ -854,15 +874,17 @@ export default function LoveChat({ user }) {
     <div className="wa2" onClick={closeAll}>
 
       {/* ── Active calls ── */}
-      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} otherEmoji={otherEmj} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
-      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} otherEmoji={otherEmj} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
+      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
+      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
 
       {/* ── Incoming ── */}
-      {incoming && !callActive && <IncomingCall otherName={otherFull} otherEmoji={otherEmj} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}
+      {incoming && !callActive && <IncomingCall otherName={otherFull} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}
 
       {/* ── Header ── */}
       <div className="wa2-hdr">
-        <div className={`wa2-av ${isSurya?"pink":"green"}`}>{otherEmj}</div>
+        <div className={`wa2-av ${isSurya?"pink":"green"}`}>
+          <CallAvatar name={other} color1={isSurya?"#ff1a6e":"#00d97e"} color2={isSurya?"#8b3fc8":"#059669"} size={40}/>
+        </div>
         <div className="wa2-hdr-info">
           <div className="wa2-hdr-name">{otherFull}</div>
           <div className="wa2-hdr-status">{online ? "online" : "connecting..."}</div>

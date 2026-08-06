@@ -1,7 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const POLL_MS = 2000;
-const ICE = [{ urls:"stun:stun.l.google.com:19302" },{ urls:"stun:stun1.l.google.com:19302" }];
+/* ── ICE servers: Google STUN + free TURN for fast hole-punching ── */
+const ICE = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:openrelay.metered.ca:80" },
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+];
 
 /* ─── AI ─── */
 const AI_REPLIES = [
@@ -308,19 +331,33 @@ function injectCSS() {
 }
 
 /* ══ WebRTC signaling ══ */
+const SIGNAL_POLL_MS = 400; // fast polling during calls
+
 function useSignal(room, onSig) {
   const since = useRef(new Date().toISOString());
   const send = useCallback(async (from, type, data) => {
-    try { await fetch("/api/signal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room,from,type,data})}); } catch {}
+    try {
+      await fetch("/api/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room, from, type, data }),
+      });
+    } catch {}
   }, [room]);
   useEffect(() => {
     const id = setInterval(async () => {
       try {
-        const r = await fetch(`/api/signal?room=${encodeURIComponent(room)}&since=${encodeURIComponent(since.current)}`);
+        const r = await fetch(
+          `/api/signal?room=${encodeURIComponent(room)}&since=${encodeURIComponent(since.current)}`,
+          { cache: "no-store" }
+        );
         const items = await r.json();
-        if (Array.isArray(items) && items.length) { since.current = items[items.length-1].createdAt; items.forEach(onSig); }
+        if (Array.isArray(items) && items.length) {
+          since.current = items[items.length - 1].createdAt;
+          items.forEach(onSig);
+        }
       } catch {}
-    }, 1500);
+    }, SIGNAL_POLL_MS);
     return () => clearInterval(id);
   }, [room, onSig]);
   return { send };
@@ -364,7 +401,13 @@ function VoiceCall({ user, otherName, otherEmoji, onEnd }) {
         const stream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
         if (gone) { stream.getTracks().forEach(t=>t.stop()); return; }
         lStream.current = stream;
-        const p = new RTCPeerConnection({iceServers:ICE}); pc.current = p;
+        const p = new RTCPeerConnection({
+          iceServers: ICE,
+          iceTransportPolicy: "all",
+          bundlePolicy: "max-bundle",
+          rtcpMuxPolicy: "require",
+          iceCandidatePoolSize: 10,
+        }); pc.current = p;
         stream.getTracks().forEach(t => p.addTrack(t,stream));
         p.onicecandidate = e => { if (e.candidate) send(user,"ice",e.candidate); };
         p.onconnectionstatechange = () => {
@@ -462,7 +505,13 @@ function VideoCall({ user, otherName, otherEmoji, onEnd }) {
         if (gone) { stream.getTracks().forEach(t=>t.stop()); return; }
         lStream.current = stream;
         if (locVid.current) locVid.current.srcObject = stream;
-        const p = new RTCPeerConnection({iceServers:ICE}); pc.current = p;
+        const p = new RTCPeerConnection({
+          iceServers: ICE,
+          iceTransportPolicy: "all",
+          bundlePolicy: "max-bundle",
+          rtcpMuxPolicy: "require",
+          iceCandidatePoolSize: 10,
+        }); pc.current = p;
         stream.getTracks().forEach(t => p.addTrack(t,stream));
         p.ontrack = e => { if (remVid.current) { remVid.current.srcObject=e.streams[0]; setRemReady(true); } };
         p.onicecandidate = e => { if (e.candidate) send(user,"ice",e.candidate); };
@@ -653,12 +702,15 @@ export default function LoveChat({ user }) {
 
   useEffect(() => { const id=setInterval(poll,POLL_MS); return ()=>clearInterval(id); }, [poll]);
 
-  /* ── poll incoming calls ── */
+  /* ── poll incoming calls — 500ms for fast ring ── */
   useEffect(() => {
     if (isDemo || callActive) return;
     const id = setInterval(async () => {
       try {
-        const res = await fetch(`/api/signal?room=${encodeURIComponent(callRoom)}&since=${encodeURIComponent(incSince.current)}`);
+        const res = await fetch(
+          `/api/signal?room=${encodeURIComponent(callRoom)}&since=${encodeURIComponent(incSince.current)}`,
+          { cache: "no-store" }
+        );
         const items = await res.json();
         for (const s of (Array.isArray(items)?items:[])) {
           incSince.current = s.createdAt;
@@ -669,7 +721,7 @@ export default function LoveChat({ user }) {
           if (s.from !== me && s.type === "call_end") { setCallActive(false); setCallMode(null); }
         }
       } catch {}
-    }, 2000);
+    }, 500);  // fast poll for incoming calls
     return () => clearInterval(id);
   }, [me, callActive, callRoom, isDemo]);
 

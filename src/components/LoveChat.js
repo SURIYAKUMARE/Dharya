@@ -60,6 +60,29 @@ function fmtDate(d) {
 }
 function fmtTimer(s) { return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
 
+/* ── SVG icon helpers ── */
+const Ico = {
+  phone: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>`,
+  phoneOff: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.9 4.1L4.7 1.3c.4-.4 1-.4 1.4 0L9.3 4.5c.4.4.4 1 0 1.4l-2 2c1.2 2.3 3 4.1 5.3 5.3l2-2c.4-.4 1-.4 1.4 0l3.2 3.2c.4.4.4 1 0 1.4l-2.8 2.8c-.4.4-1 .5-1.4.1C8.1 15.9 4 9.5 1.8 5.5c-.4-.4-.3-1 .1-1.4zM20.71 3.29l-1.42 1.42L21 6.41V10h2V6a2 2 0 00-.59-1.41l-1.7-1.3z"/></svg>`,
+  video: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 8v8H5V8h10m1-2H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4V7c0-.55-.45-1-1-1z"/></svg>`,
+  videoOff: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z"/></svg>`,
+  mic: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>`,
+  micOff: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.34 3 3 3 .23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z"/></svg>`,
+  speaker: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`,
+  speakerOff: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`,
+  flip: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3.2-5H13v2.2l-3.2-3.2 3.2-3.2V11h2.2l3.2 3.2-3.2 3.2z"/></svg>`,
+  send: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`,
+  smile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`,
+  attach: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/></svg>`,
+};
+
+/* ── SVG render helper ── */
+const I = (key, size = 22, style = {}) => (
+  <span style={{ width: size, height: size, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, ...style }}
+    dangerouslySetInnerHTML={{ __html: Ico[key].replace('<svg', `<svg width="${size}" height="${size}"`) }}
+  />
+);
+
 /* ══════════════════════════════════════════
    WHATSAPP-STYLE CSS
 ══════════════════════════════════════════ */
@@ -446,15 +469,15 @@ function VoiceCall({ user, otherName, otherEmoji, onEnd }) {
       <div className="wac-actions">
         <div className="wac-btns">
           <button className={`wac-btn ${muted?"":"active"}`} onClick={toggleMute}>
-            <div className={`wac-btn-ic ${muted?"wac-ic-on":"wac-ic-mute"}`}>{muted?"🔇":"🎤"}</div>
+            <div className={`wac-btn-ic ${muted?"wac-ic-on":"wac-ic-mute"}`}>{I(muted?"micOff":"mic",24)}</div>
             <span className="wac-btn-lbl">{muted?"Unmute":"Mute"}</span>
           </button>
           <button className="wac-btn" onClick={endCall}>
-            <div className="wac-btn-ic wac-ic-end">📵</div>
+            <div className="wac-btn-ic wac-ic-end">{I("phoneOff",26)}</div>
             <span className="wac-btn-lbl">End</span>
           </button>
           <button className="wac-btn" onClick={()=>setSpk(v=>!v)}>
-            <div className={`wac-btn-ic ${spk?"wac-ic-on":"wac-ic-spk"}`}>{spk?"🔊":"🔈"}</div>
+            <div className={`wac-btn-ic ${spk?"wac-ic-on":"wac-ic-spk"}`}>{I(spk?"speaker":"speakerOff",24)}</div>
             <span className="wac-btn-lbl">Speaker</span>
           </button>
         </div>
@@ -554,19 +577,19 @@ function VideoCall({ user, otherName, otherEmoji, onEnd }) {
             ? <div className="wavc-timer">{fmtTimer(elapsed)}</div>
             : <div className="wavc-status">{state==="ringing"?"Ringing...":"Connecting..."}</div>
           }
-          <div className="wavc-badge">📹 Video Call</div>
+          <div className="wavc-badge">{mode==="video"?"Video Call":"Voice Call"}</div>
         </div>
         <div className="wavc-bottom">
           <button className="wavc-btn" onClick={toggleMute}>
-            <div className={`wavc-btn-ic ${muted?"wavc-ic-on":"wavc-ic-base"}`}>{muted?"🔇":"🎤"}</div>
+            <div className={`wavc-btn-ic ${muted?"wavc-ic-on":"wavc-ic-base"}`}>{I(muted?"micOff":"mic",24)}</div>
             <span className="wavc-btn-lbl">{muted?"Unmute":"Mute"}</span>
           </button>
           <button className="wavc-btn" onClick={toggleCam}>
-            <div className={`wavc-btn-ic ${camOff?"wavc-ic-on":"wavc-ic-base"}`}>{camOff?"📵":"📹"}</div>
+            <div className={`wavc-btn-ic ${camOff?"wavc-ic-on":"wavc-ic-base"}`}>{I(camOff?"videoOff":"video",24)}</div>
             <span className="wavc-btn-lbl">{camOff?"Cam On":"Cam Off"}</span>
           </button>
           <button className="wavc-btn" onClick={endCall}>
-            <div className="wavc-btn-ic wavc-ic-end">📵</div>
+            <div className="wavc-btn-ic wavc-ic-end">{I("phoneOff",26)}</div>
             <span className="wavc-btn-lbl">End</span>
           </button>
           <button className="wavc-btn" onClick={()=>setSwapped(v=>!v)}>
@@ -585,18 +608,18 @@ function IncomingCall({ otherName, otherEmoji, mode, onAccept, onDecline }) {
     <div className="wa-incoming">
       <div className="wa-incoming-full">
         <div className="wa-inc-top">
-          <div className="wa-inc-badge">{mode==="video"?"📹 Incoming Video Call":"📞 Incoming Voice Call"}</div>
+          <div className="wa-inc-badge">{mode==="video"?"Video Call":"Voice Call"}</div>
           <div className="wa-inc-av">{otherEmoji}</div>
           <div className="wa-inc-name">{otherName}</div>
           <div className="wa-inc-sub">Dharya</div>
         </div>
         <div className="wa-inc-btns">
           <button className="wa-inc-btn" onClick={onDecline}>
-            <div className="wa-inc-ic wa-inc-decline">📵</div>
+            <div className="wa-inc-ic wa-inc-decline">{I("phoneOff",28)}</div>
             <span className="wa-inc-lbl">Decline</span>
           </button>
           <button className="wa-inc-btn" onClick={onAccept}>
-            <div className="wa-inc-ic wa-inc-accept">📞</div>
+            <div className="wa-inc-ic wa-inc-accept">{I("phone",28)}</div>
             <span className="wa-inc-lbl">Accept</span>
           </button>
         </div>
@@ -844,8 +867,8 @@ export default function LoveChat({ user }) {
           <div className="wa2-hdr-name">{otherFull}</div>
           <div className="wa2-hdr-status">{online ? "online" : "connecting..."}</div>
         </div>
-        <button className="wa2-hdr-btn call" title="Voice call" onClick={e=>{e.stopPropagation();startCall("voice");}}>📞</button>
-        <button className="wa2-hdr-btn video" title="Video call" onClick={e=>{e.stopPropagation();startCall("video");}}>📹</button>
+        <button className="wa2-hdr-btn call" title="Voice call" onClick={e=>{e.stopPropagation();startCall("voice");}}>{I("phone",20)}</button>
+        <button className="wa2-hdr-btn video" title="Video call" onClick={e=>{e.stopPropagation();startCall("video");}}>{I("video",20)}</button>
       </div>
 
       {/* ── Messages ── */}
@@ -1024,8 +1047,8 @@ export default function LoveChat({ user }) {
 
       {/* Input bar */}
       <div className="wa2-bar">
-        <button className={`wa2-bar-btn ${showEmoji?"active":""}`} onClick={e=>{e.stopPropagation();setShowEmoji(v=>!v);setShowAttach(false);}}>😊</button>
-        <button className={`wa2-bar-btn ${showAttach?"active":""}`} onClick={e=>{e.stopPropagation();setShowAttach(v=>!v);setShowEmoji(false);}}>📎</button>
+        <button className={`wa2-bar-btn ${showEmoji?"active":""}`} onClick={e=>{e.stopPropagation();setShowEmoji(v=>!v);setShowAttach(false);}}>{I("smile",22)}</button>
+        <button className={`wa2-bar-btn ${showAttach?"active":""}`} onClick={e=>{e.stopPropagation();setShowAttach(v=>!v);setShowEmoji(false);}}>{I("attach",22)}</button>
         <textarea
           ref={inputRef}
           className="wa2-inp"
@@ -1037,7 +1060,7 @@ export default function LoveChat({ user }) {
           style={{height:"auto"}}
         />
         <button className="wa2-send" onClick={()=>sendMsg()} disabled={(!input.trim()&&!imgPrev)||sending}>
-          {sending?"⌛":"➤"}
+          {sending ? I("send",18) : I("send",20)}
         </button>
       </div>
     </div>

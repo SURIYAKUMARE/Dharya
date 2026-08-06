@@ -596,7 +596,7 @@ function VideoCall({ user, otherName, onEnd }) {
             ? <div className="wavc-timer">{fmtTimer(elapsed)}</div>
             : <div className="wavc-status">{state==="ringing"?"Ringing...":"Connecting..."}</div>
           }
-          <div className="wavc-badge">{mode==="video"?"Video Call":"Voice Call"}</div>
+          <div className="wavc-badge">Video Call</div>
         </div>
         <div className="wavc-bottom">
           <button className="wavc-btn" onClick={toggleMute}>

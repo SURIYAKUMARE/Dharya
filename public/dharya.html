@@ -109,7 +109,7 @@ html,body{width:100%;height:100%;overflow:hidden;cursor:none;background:#000;-we
 <div id="cur"></div><div id="cur-r"></div>
 <div id="s1" class="scene on"><canvas id="s1c"></canvas>
   <div id="s1-title">a little something, for you 💌</div>
-  <div id="s1-hint">click the bow · aim at the heart 💘</div>
+  <div id="s1-hint">tap the heart ✨</div>
 </div>
 <div id="s2" class="scene"><div id="s2-glow"></div>
   <div id="s2-in"><div id="s2-wish">make a wish...</div><div id="s2-name"></div><div id="s2-sub">to someone worth celebrating</div></div>
@@ -198,20 +198,14 @@ c1.addEventListener('touchstart',e=>{e.preventDefault();onDown(e);},{passive:fal
 function onDown(e){
   if(fired)return;
   const p=getPos(e);
-  if(!bow.loaded&&nearBow(p)){
-    // ARM the bow
-    bow.loaded=true; showAim=true;
+  if(heart.alive&&Math.hypot(p.x-heart.x,p.y-heart.y)<heart.r+28){
+    fired=true;
+    // auto-fire arrow from bow toward heart
+    const dx=heart.x-bow.x,dy=heart.y-bow.y,dist=Math.hypot(dx,dy);
+    fly.active=true;fly.x=bow.x;fly.y=bow.y;
+    fly.vx=(dx/dist)*18;fly.vy=(dy/dist)*18;fly.angle=Math.atan2(dy,dx);
+    sfxWhoosh();
     gsap.to('#s1-hint',{opacity:0,duration:.3});
-    // Show "now click the heart" hint
-    gsap.to('#s1-hint',{opacity:1,duration:.5,delay:.4,onStart:()=>{$('s1-hint').textContent='now tap the heart 💗';}});
-  } else if(bow.loaded&&nearHeart(p)){
-    // FIRE toward heart
-    shootArrow();
-  } else if(bow.loaded&&!nearHeart(p)){
-    // Clicked elsewhere — disarm
-    bow.loaded=false; showAim=false;
-    $('s1-hint').textContent='click the bow · aim at the heart 💘';
-    gsap.to('#s1-hint',{opacity:1,duration:.4});
   }
 }
 

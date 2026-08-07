@@ -187,22 +187,25 @@ function setPos(){
 }
 setPos();addEventListener('resize',setPos);
 
-/* Click bow to arm, then click again to fire toward heart */
+/* Click the heart to fire arrow */
 function getPos(e){const t=e.touches?e.touches[0]:e;return{x:t.clientX,y:t.clientY};}
-function nearBow(p){return Math.hypot(p.x-bow.x,p.y-bow.y)<70;}
-function nearHeart(p){return heart.alive&&Math.hypot(p.x-heart.x,p.y-heart.y)<heart.r+20;}
 
 c1.addEventListener('mousedown',onDown);
 c1.addEventListener('touchstart',e=>{e.preventDefault();onDown(e);},{passive:false});
 
 function onDown(e){
-  if(fired)return;
+  if(fired||!heart.alive)return;
   const p=getPos(e);
-  if(heart.alive&&Math.hypot(p.x-heart.x,p.y-heart.y)<heart.r+28){
+  const hx=heart.x||innerWidth*.5;
+  const hy=heart.y||innerHeight*.42;
+  const hr=heart.r||88;
+  /* large hit area — click anywhere near the heart */
+  if(Math.hypot(p.x-hx,p.y-hy)<hr+70){
     fired=true;
-    // auto-fire arrow from bow toward heart
-    const dx=heart.x-bow.x,dy=heart.y-bow.y,dist=Math.hypot(dx,dy);
-    fly.active=true;fly.x=bow.x;fly.y=bow.y;
+    const bx=bow.x||Math.max(60,innerWidth*.1);
+    const by=bow.y||Math.min(innerHeight*.82,innerHeight-80);
+    const dx=hx-bx,dy=hy-by,dist=Math.hypot(dx,dy)||1;
+    fly.active=true;fly.x=bx;fly.y=by;
     fly.vx=(dx/dist)*18;fly.vy=(dy/dist)*18;fly.angle=Math.atan2(dy,dx);
     sfxWhoosh();
     gsap.to('#s1-hint',{opacity:0,duration:.3});

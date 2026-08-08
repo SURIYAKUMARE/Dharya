@@ -356,8 +356,9 @@ function injectCSS() {
 /* ══ WebRTC signaling ══ */
 const SIGNAL_POLL_MS = 400; // fast polling during calls
 
-function useSignal(room, onSig) {
-  const since = useRef(new Date().toISOString());
+function useSignal(room, onSig, startSince) {
+  // startSince lets caller pass a timestamp so we don't miss signals sent before mount
+  const since = useRef(startSince || new Date().toISOString());
   const send = useCallback(async (from, type, data) => {
     try {
       await fetch("/api/signal", {
@@ -406,42 +407,48 @@ function CallAvatar({ name, color1, color2, size = 110 }) {
     </div>
   );
 }
-function VoiceCall({ user, otherName, onEnd }) {
-  const [state,   setState]   = useState("ringing");
+function VoiceCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
+  const [state,   setState]   = useState(isCaller ? "ringing" : "connecting");
   const [muted,   setMuted]   = useState(false);
   const [spk,     setSpk]     = useState(true);
   const [elapsed, setElapsed] = useState(0);
   const pc = useRef(null); const lStream = useRef(null); const timer = useRef(null);
-  const room = "dharya_call_v1";
+  const room = "dharya_call_v2_voice";
 
   const handleSig = useCallback(async sig => {
     if (sig.from === user) return;
     const p = pc.current; if (!p) return;
     if (sig.type === "offer") {
+      if (p.signalingState !== "stable") return;
       await p.setRemoteDescription(new RTCSessionDescription(sig.data));
-      const ans = await p.createAnswer(); await p.setLocalDescription(ans); send(user,"answer",ans);
-    } else if (sig.type === "answer" && p.signalingState !== "stable") {
-      await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      const ans = await p.createAnswer();
+      await p.setLocalDescription(ans);
+      send(user, "answer", ans);
+    } else if (sig.type === "answer") {
+      if (p.signalingState === "have-local-offer") {
+        await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      }
     } else if (sig.type === "ice") {
-      try { await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
+      try { if (p.remoteDescription) await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
     } else if (sig.type === "call_end") { cleanup(); onEnd(); }
   }, [user]); // eslint-disable-line
 
-  const { send } = useSignal(room, handleSig);
+  // callee starts from callStartedAt so it catches the offer
+  const { send } = useSignal(room, handleSig, isCaller ? undefined : callStartedAt);
 
   const cleanup = useCallback(() => {
     clearInterval(timer.current);
     lStream.current?.getTracks().forEach(t => t.stop());
     try { pc.current?.close(); } catch {} pc.current = null;
-    fetch(`/api/signal?room=${encodeURIComponent(room)}`,{method:"DELETE"}).catch(()=>{});
+    fetch(`/api/signal?room=${encodeURIComponent(room)}`, { method: "DELETE" }).catch(() => {});
   }, [room]);
 
   useEffect(() => {
     let gone = false;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-        if (gone) { stream.getTracks().forEach(t=>t.stop()); return; }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        if (gone) { stream.getTracks().forEach(t => t.stop()); return; }
         lStream.current = stream;
         const p = new RTCPeerConnection({
           iceServers: ICE,
@@ -449,21 +456,28 @@ function VoiceCall({ user, otherName, onEnd }) {
           bundlePolicy: "max-bundle",
           rtcpMuxPolicy: "require",
           iceCandidatePoolSize: 10,
-        }); pc.current = p;
-        stream.getTracks().forEach(t => p.addTrack(t,stream));
-        p.onicecandidate = e => { if (e.candidate) send(user,"ice",e.candidate); };
+        });
+        pc.current = p;
+        stream.getTracks().forEach(t => p.addTrack(t, stream));
+        p.onicecandidate = e => { if (e.candidate) send(user, "ice", e.candidate); };
         p.onconnectionstatechange = () => {
-          if (p.connectionState==="connected") { setState("connected"); timer.current=setInterval(()=>setElapsed(s=>s+1),1000); }
-          if (["disconnected","failed","closed"].includes(p.connectionState)) { cleanup(); setTimeout(onEnd,600); }
+          const s = p.connectionState;
+          if (s === "connected") { setState("connected"); timer.current = setInterval(() => setElapsed(s => s + 1), 1000); }
+          if (["disconnected", "failed", "closed"].includes(s)) { cleanup(); setTimeout(onEnd, 600); }
         };
-        if (user==="surya") { const off=await p.createOffer(); await p.setLocalDescription(off); send(user,"offer",off); }
-      } catch(e) { console.warn("Voice media:",e.message); }
+        // Only the caller creates the offer — callee waits for the offer signal
+        if (isCaller) {
+          const off = await p.createOffer();
+          await p.setLocalDescription(off);
+          send(user, "offer", off);
+        }
+      } catch (e) { console.warn("Voice media:", e.message); }
     })();
-    return () => { gone=true; cleanup(); };
+    return () => { gone = true; cleanup(); };
   }, []); // eslint-disable-line
 
-  const toggleMute = () => { lStream.current?.getAudioTracks().forEach(t=>{t.enabled=!t.enabled;}); setMuted(m=>!m); };
-  const endCall = () => { send(user,"call_end",{}); cleanup(); onEnd(); };
+  const toggleMute = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
+  const endCall = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
   const conn = state === "connected";
 
   return (
@@ -506,8 +520,8 @@ function VoiceCall({ user, otherName, onEnd }) {
 }
 
 /* ══ VIDEO CALL SCREEN ══ */
-function VideoCall({ user, otherName, onEnd }) {
-  const [state,    setState]    = useState("ringing");
+function VideoCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
+  const [state,    setState]    = useState(isCaller ? "ringing" : "connecting");
   const [muted,    setMuted]    = useState(false);
   const [camOff,   setCamOff]   = useState(false);
   const [elapsed,  setElapsed]  = useState(0);
@@ -515,36 +529,41 @@ function VideoCall({ user, otherName, onEnd }) {
   const [swapped,  setSwapped]  = useState(false);
   const pc = useRef(null); const lStream = useRef(null); const timer = useRef(null);
   const remVid = useRef(null); const locVid = useRef(null);
-  const room = "dharya_call_v1";
+  const room = "dharya_call_v2_video";
 
   const handleSig = useCallback(async sig => {
     if (sig.from === user) return;
     const p = pc.current; if (!p) return;
     if (sig.type === "offer") {
+      if (p.signalingState !== "stable") return;
       await p.setRemoteDescription(new RTCSessionDescription(sig.data));
-      const ans = await p.createAnswer(); await p.setLocalDescription(ans); send(user,"answer",ans);
-    } else if (sig.type === "answer" && p.signalingState !== "stable") {
-      await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      const ans = await p.createAnswer();
+      await p.setLocalDescription(ans);
+      send(user, "answer", ans);
+    } else if (sig.type === "answer") {
+      if (p.signalingState === "have-local-offer") {
+        await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      }
     } else if (sig.type === "ice") {
-      try { await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
+      try { if (p.remoteDescription) await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
     } else if (sig.type === "call_end") { cleanup(); onEnd(); }
   }, [user]); // eslint-disable-line
 
-  const { send } = useSignal(room, handleSig);
+  const { send } = useSignal(room, handleSig, isCaller ? undefined : callStartedAt);
 
   const cleanup = useCallback(() => {
     clearInterval(timer.current);
     lStream.current?.getTracks().forEach(t => t.stop());
     try { pc.current?.close(); } catch {} pc.current = null;
-    fetch(`/api/signal?room=${encodeURIComponent(room)}`,{method:"DELETE"}).catch(()=>{});
+    fetch(`/api/signal?room=${encodeURIComponent(room)}`, { method: "DELETE" }).catch(() => {});
   }, [room]);
 
   useEffect(() => {
     let gone = false;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({audio:true,video:{facingMode:"user"}});
-        if (gone) { stream.getTracks().forEach(t=>t.stop()); return; }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "user" } });
+        if (gone) { stream.getTracks().forEach(t => t.stop()); return; }
         lStream.current = stream;
         if (locVid.current) locVid.current.srcObject = stream;
         const p = new RTCPeerConnection({
@@ -553,23 +572,30 @@ function VideoCall({ user, otherName, onEnd }) {
           bundlePolicy: "max-bundle",
           rtcpMuxPolicy: "require",
           iceCandidatePoolSize: 10,
-        }); pc.current = p;
-        stream.getTracks().forEach(t => p.addTrack(t,stream));
-        p.ontrack = e => { if (remVid.current) { remVid.current.srcObject=e.streams[0]; setRemReady(true); } };
-        p.onicecandidate = e => { if (e.candidate) send(user,"ice",e.candidate); };
+        });
+        pc.current = p;
+        stream.getTracks().forEach(t => p.addTrack(t, stream));
+        p.ontrack = e => { if (remVid.current) { remVid.current.srcObject = e.streams[0]; setRemReady(true); } };
+        p.onicecandidate = e => { if (e.candidate) send(user, "ice", e.candidate); };
         p.onconnectionstatechange = () => {
-          if (p.connectionState==="connected") { setState("connected"); timer.current=setInterval(()=>setElapsed(s=>s+1),1000); }
-          if (["disconnected","failed","closed"].includes(p.connectionState)) { cleanup(); setTimeout(onEnd,600); }
+          const s = p.connectionState;
+          if (s === "connected") { setState("connected"); timer.current = setInterval(() => setElapsed(s => s + 1), 1000); }
+          if (["disconnected", "failed", "closed"].includes(s)) { cleanup(); setTimeout(onEnd, 600); }
         };
-        if (user==="surya") { const off=await p.createOffer(); await p.setLocalDescription(off); send(user,"offer",off); }
-      } catch(e) { console.warn("Video media:",e.message); }
+        // Only the caller creates the offer
+        if (isCaller) {
+          const off = await p.createOffer();
+          await p.setLocalDescription(off);
+          send(user, "offer", off);
+        }
+      } catch (e) { console.warn("Video media:", e.message); }
     })();
-    return () => { gone=true; cleanup(); };
+    return () => { gone = true; cleanup(); };
   }, []); // eslint-disable-line
 
-  const toggleMute  = () => { lStream.current?.getAudioTracks().forEach(t=>{t.enabled=!t.enabled;}); setMuted(m=>!m); };
-  const toggleCam   = () => { lStream.current?.getVideoTracks().forEach(t=>{t.enabled=!t.enabled;}); setCamOff(c=>!c); };
-  const endCall     = () => { send(user,"call_end",{}); cleanup(); onEnd(); };
+  const toggleMute  = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
+  const toggleCam   = () => { lStream.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; }); setCamOff(c => !c); };
+  const endCall     = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
   const conn = state === "connected";
 
   return (
@@ -672,6 +698,8 @@ export default function LoveChat({ user }) {
   const [starred,    setStarred]    = useState(new Set());
   const [callMode,   setCallMode]   = useState(null);
   const [callActive, setCallActive] = useState(false);
+  const [isCaller,   setIsCaller]   = useState(false);
+  const [callStartedAt, setCallStartedAt] = useState(null);
   const [incoming,   setIncoming]   = useState(null);
 
   const bottomRef   = useRef(null);
@@ -758,10 +786,10 @@ export default function LoveChat({ user }) {
         for (const s of (Array.isArray(items)?items:[])) {
           incSince.current = s.createdAt;
           if (s.from !== me && s.type === "incoming_call" && !callActive) {
-            setIncoming({ mode: s.data?.mode||"voice" });
+            setIncoming({ mode: s.data?.mode || "voice", since: s.createdAt });
             setTimeout(()=>setIncoming(null), 30000);
           }
-          if (s.from !== me && s.type === "call_end") { setCallActive(false); setCallMode(null); }
+          if (s.from !== me && s.type === "call_end") { setCallActive(false); setCallMode(null); setIsCaller(false); }
         }
       } catch {}
     }, 500);  // fast poll for incoming calls
@@ -842,11 +870,29 @@ export default function LoveChat({ user }) {
 
   const startCall = async (mode) => {
     if (isDemo) { alert("Calls not available in demo."); return; }
-    setCallMode(mode); setCallActive(true);
-    try { await fetch("/api/signal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room:callRoom,from:me,type:"incoming_call",data:{mode}})}); } catch {}
+    const ts = new Date().toISOString();
+    setCallStartedAt(ts);
+    setIsCaller(true);
+    setCallMode(mode);
+    setCallActive(true);
+    try {
+      await fetch("/api/signal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ room: callRoom, from: me, type: "incoming_call", data: { mode } }),
+      });
+    } catch {}
   };
 
-  const acceptCall = () => { if(!incoming) return; setIncoming(null); setCallMode(incoming.mode); setCallActive(true); };
+  const acceptCall = () => {
+    if (!incoming) return;
+    const ts = incoming.since || new Date(Date.now() - 10000).toISOString(); // go back 10s to catch offer
+    setCallStartedAt(ts);
+    setIsCaller(false);
+    setIncoming(null);
+    setCallMode(incoming.mode);
+    setCallActive(true);
+  };
   const declineCall = () => {
     fetch("/api/signal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room:callRoom,from:me,type:"call_end",data:{}})}).catch(()=>{});
     setIncoming(null);
@@ -874,8 +920,8 @@ export default function LoveChat({ user }) {
     <div className="wa2" onClick={closeAll}>
 
       {/* ── Active calls ── */}
-      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
-      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} onEnd={()=>{setCallActive(false);setCallMode(null);}}/>}
+      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} isCaller={isCaller} callStartedAt={callStartedAt} onEnd={()=>{setCallActive(false);setCallMode(null);setIsCaller(false);}}/>}
+      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} isCaller={isCaller} callStartedAt={callStartedAt} onEnd={()=>{setCallActive(false);setCallMode(null);setIsCaller(false);}}/>}
 
       {/* ── Incoming ── */}
       {incoming && !callActive && <IncomingCall otherName={otherFull} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}

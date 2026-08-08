@@ -1,30 +1,38 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const POLL_MS = 2000;
-/* ── ICE servers: Google STUN + free TURN for fast hole-punching ── */
-const ICE = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
-  { urls: "stun:openrelay.metered.ca:80" },
-  {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:openrelay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:openrelay.metered.ca:443?transport=tcp",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-];
+
+/* ── Fetch ICE servers from backend (fresh TURN credentials) ── */
+async function getIceServers() {
+  try {
+    const r = await fetch("/api/ice", { cache: "no-store" });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.iceServers) return d.iceServers;
+    }
+  } catch {}
+  // Fallback hardcoded
+  return [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+    {
+      urls: "turn:a.relay.metered.ca:80",
+      username: "e8dd65f0519f5f5d89a714d7",
+      credential: "uBOTxVrFuPqO+3DP",
+    },
+    {
+      urls: "turn:a.relay.metered.ca:443",
+      username: "e8dd65f0519f5f5d89a714d7",
+      credential: "uBOTxVrFuPqO+3DP",
+    },
+    {
+      urls: "turns:a.relay.metered.ca:443?transport=tcp",
+      username: "e8dd65f0519f5f5d89a714d7",
+      credential: "uBOTxVrFuPqO+3DP",
+    },
+  ];
+}
 
 /* ─── AI ─── */
 const AI_REPLIES = [
@@ -412,34 +420,65 @@ function VoiceCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
   const [muted,   setMuted]   = useState(false);
   const [spk,     setSpk]     = useState(true);
   const [elapsed, setElapsed] = useState(0);
-  const pc = useRef(null); const lStream = useRef(null); const timer = useRef(null);
+
+  const pc          = useRef(null);
+  const lStream     = useRef(null);
+  const timer       = useRef(null);
+  const iceBuf      = useRef([]);   // buffer ICE candidates until remote desc is set
+  const hasRemote   = useRef(false);
   const room = "dharya_call_v2_voice";
+
+  /* ── drain buffered ICE candidates ── */
+  const drainIce = useCallback(async () => {
+    const p = pc.current;
+    if (!p || !hasRemote.current) return;
+    while (iceBuf.current.length > 0) {
+      const c = iceBuf.current.shift();
+      try { await p.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+    }
+  }, []);
 
   const handleSig = useCallback(async sig => {
     if (sig.from === user) return;
     const p = pc.current; if (!p) return;
+
     if (sig.type === "offer") {
       if (p.signalingState !== "stable") return;
       await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      hasRemote.current = true;
+      await drainIce();
       const ans = await p.createAnswer();
       await p.setLocalDescription(ans);
       send(user, "answer", ans);
+
     } else if (sig.type === "answer") {
       if (p.signalingState === "have-local-offer") {
         await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+        hasRemote.current = true;
+        await drainIce();
       }
-    } else if (sig.type === "ice") {
-      try { if (p.remoteDescription) await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
-    } else if (sig.type === "call_end") { cleanup(); onEnd(); }
-  }, [user]); // eslint-disable-line
 
-  // callee starts from callStartedAt so it catches the offer
+    } else if (sig.type === "ice") {
+      if (hasRemote.current && pc.current) {
+        try { await pc.current.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
+      } else {
+        iceBuf.current.push(sig.data); // buffer until remote desc ready
+      }
+
+    } else if (sig.type === "call_end") {
+      cleanup(); onEnd();
+    }
+  }, [user, drainIce]); // eslint-disable-line
+
   const { send } = useSignal(room, handleSig, isCaller ? undefined : callStartedAt);
 
   const cleanup = useCallback(() => {
     clearInterval(timer.current);
     lStream.current?.getTracks().forEach(t => t.stop());
-    try { pc.current?.close(); } catch {} pc.current = null;
+    try { pc.current?.close(); } catch {}
+    pc.current = null;
+    iceBuf.current = [];
+    hasRemote.current = false;
     fetch(`/api/signal?room=${encodeURIComponent(room)}`, { method: "DELETE" }).catch(() => {});
   }, [room]);
 
@@ -447,36 +486,52 @@ function VoiceCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
     let gone = false;
     (async () => {
       try {
+        const iceServers = await getIceServers();
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         if (gone) { stream.getTracks().forEach(t => t.stop()); return; }
         lStream.current = stream;
-        const p = new RTCPeerConnection({
-          iceServers: ICE,
-          iceTransportPolicy: "all",
-          bundlePolicy: "max-bundle",
-          rtcpMuxPolicy: "require",
-          iceCandidatePoolSize: 10,
-        });
+
+        const p = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10 });
         pc.current = p;
+
         stream.getTracks().forEach(t => p.addTrack(t, stream));
-        p.onicecandidate = e => { if (e.candidate) send(user, "ice", e.candidate); };
+
+        p.onicecandidate = e => {
+          if (e.candidate) send(user, "ice", e.candidate);
+        };
+        p.oniceconnectionstatechange = () => {
+          const s = p.iceConnectionState;
+          if (s === "connected" || s === "completed") {
+            setState("connected");
+            if (!timer.current) timer.current = setInterval(() => setElapsed(n => n + 1), 1000);
+          }
+          if (s === "failed") {
+            p.restartIce(); // try ICE restart before giving up
+          }
+        };
         p.onconnectionstatechange = () => {
           const s = p.connectionState;
-          if (s === "connected") { setState("connected"); timer.current = setInterval(() => setElapsed(s => s + 1), 1000); }
-          if (["disconnected", "failed", "closed"].includes(s)) { cleanup(); setTimeout(onEnd, 600); }
+          if (["disconnected", "failed", "closed"].includes(s)) {
+            cleanup(); setTimeout(onEnd, 600);
+          }
         };
-        // Only the caller creates the offer — callee waits for the offer signal
+
         if (isCaller) {
-          const off = await p.createOffer();
-          await p.setLocalDescription(off);
-          send(user, "offer", off);
+          const offer = await p.createOffer();
+          await p.setLocalDescription(offer);
+          send(user, "offer", offer);
         }
-      } catch (e) { console.warn("Voice media:", e.message); }
+      } catch (e) {
+        console.warn("VoiceCall setup:", e.message);
+      }
     })();
     return () => { gone = true; cleanup(); };
   }, []); // eslint-disable-line
 
-  const toggleMute = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
+  const toggleMute = () => {
+    lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; });
+    setMuted(m => !m);
+  };
   const endCall = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
   const conn = state === "connected";
 
@@ -527,34 +582,66 @@ function VideoCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
   const [elapsed,  setElapsed]  = useState(0);
   const [remReady, setRemReady] = useState(false);
   const [swapped,  setSwapped]  = useState(false);
-  const pc = useRef(null); const lStream = useRef(null); const timer = useRef(null);
-  const remVid = useRef(null); const locVid = useRef(null);
+
+  const pc        = useRef(null);
+  const lStream   = useRef(null);
+  const timer     = useRef(null);
+  const remVid    = useRef(null);
+  const locVid    = useRef(null);
+  const iceBuf    = useRef([]);
+  const hasRemote = useRef(false);
   const room = "dharya_call_v2_video";
+
+  const drainIce = useCallback(async () => {
+    const p = pc.current;
+    if (!p || !hasRemote.current) return;
+    while (iceBuf.current.length > 0) {
+      const c = iceBuf.current.shift();
+      try { await p.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+    }
+  }, []);
 
   const handleSig = useCallback(async sig => {
     if (sig.from === user) return;
     const p = pc.current; if (!p) return;
+
     if (sig.type === "offer") {
       if (p.signalingState !== "stable") return;
       await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+      hasRemote.current = true;
+      await drainIce();
       const ans = await p.createAnswer();
       await p.setLocalDescription(ans);
       send(user, "answer", ans);
+
     } else if (sig.type === "answer") {
       if (p.signalingState === "have-local-offer") {
         await p.setRemoteDescription(new RTCSessionDescription(sig.data));
+        hasRemote.current = true;
+        await drainIce();
       }
+
     } else if (sig.type === "ice") {
-      try { if (p.remoteDescription) await p.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
-    } else if (sig.type === "call_end") { cleanup(); onEnd(); }
-  }, [user]); // eslint-disable-line
+      if (hasRemote.current && pc.current) {
+        try { await pc.current.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
+      } else {
+        iceBuf.current.push(sig.data);
+      }
+
+    } else if (sig.type === "call_end") {
+      cleanup(); onEnd();
+    }
+  }, [user, drainIce]); // eslint-disable-line
 
   const { send } = useSignal(room, handleSig, isCaller ? undefined : callStartedAt);
 
   const cleanup = useCallback(() => {
     clearInterval(timer.current);
     lStream.current?.getTracks().forEach(t => t.stop());
-    try { pc.current?.close(); } catch {} pc.current = null;
+    try { pc.current?.close(); } catch {}
+    pc.current = null;
+    iceBuf.current = [];
+    hasRemote.current = false;
     fetch(`/api/signal?room=${encodeURIComponent(room)}`, { method: "DELETE" }).catch(() => {});
   }, [room]);
 
@@ -562,40 +649,61 @@ function VideoCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
     let gone = false;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { facingMode: "user" } });
+        const iceServers = await getIceServers();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        });
         if (gone) { stream.getTracks().forEach(t => t.stop()); return; }
         lStream.current = stream;
         if (locVid.current) locVid.current.srcObject = stream;
-        const p = new RTCPeerConnection({
-          iceServers: ICE,
-          iceTransportPolicy: "all",
-          bundlePolicy: "max-bundle",
-          rtcpMuxPolicy: "require",
-          iceCandidatePoolSize: 10,
-        });
+
+        const p = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10 });
         pc.current = p;
+
         stream.getTracks().forEach(t => p.addTrack(t, stream));
-        p.ontrack = e => { if (remVid.current) { remVid.current.srcObject = e.streams[0]; setRemReady(true); } };
-        p.onicecandidate = e => { if (e.candidate) send(user, "ice", e.candidate); };
+
+        p.ontrack = e => {
+          if (remVid.current && e.streams[0]) {
+            remVid.current.srcObject = e.streams[0];
+            setRemReady(true);
+          }
+        };
+        p.onicecandidate = e => {
+          if (e.candidate) send(user, "ice", e.candidate);
+        };
+        p.oniceconnectionstatechange = () => {
+          const s = p.iceConnectionState;
+          if (s === "connected" || s === "completed") {
+            setState("connected");
+            if (!timer.current) timer.current = setInterval(() => setElapsed(n => n + 1), 1000);
+          }
+          if (s === "failed") {
+            p.restartIce();
+          }
+        };
         p.onconnectionstatechange = () => {
           const s = p.connectionState;
-          if (s === "connected") { setState("connected"); timer.current = setInterval(() => setElapsed(s => s + 1), 1000); }
-          if (["disconnected", "failed", "closed"].includes(s)) { cleanup(); setTimeout(onEnd, 600); }
+          if (["disconnected", "failed", "closed"].includes(s)) {
+            cleanup(); setTimeout(onEnd, 600);
+          }
         };
-        // Only the caller creates the offer
+
         if (isCaller) {
-          const off = await p.createOffer();
-          await p.setLocalDescription(off);
-          send(user, "offer", off);
+          const offer = await p.createOffer();
+          await p.setLocalDescription(offer);
+          send(user, "offer", offer);
         }
-      } catch (e) { console.warn("Video media:", e.message); }
+      } catch (e) {
+        console.warn("VideoCall setup:", e.message);
+      }
     })();
     return () => { gone = true; cleanup(); };
   }, []); // eslint-disable-line
 
-  const toggleMute  = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
-  const toggleCam   = () => { lStream.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; }); setCamOff(c => !c); };
-  const endCall     = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
+  const toggleMute = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
+  const toggleCam  = () => { lStream.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; }); setCamOff(c => !c); };
+  const endCall    = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
   const conn = state === "connected";
 
   return (

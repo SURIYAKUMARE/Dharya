@@ -152,7 +152,7 @@ const LAYERS = [
     phase: "reveal",
     emoji: "🎂",
     title: "Happy Birthday, Sadhana! 🎉",
-    sub: "28th Feb — A day as rare and beautiful as you 💕",
+    sub: "A day as rare and beautiful as you 💕",
     btnText: "Continue →",
     color: "#f59e0b",
   },
@@ -160,7 +160,7 @@ const LAYERS = [
 
 /* ── Birthday messages carousel ── */
 const BDAY_MESSAGES = [
-  { icon:"🌸", text:"You came into the world on the rarest day — Feb 29. One of a kind, just like you." },
+  { icon:"🌸", text:"You came into the world on the rarest day. One of a kind, just like you." },
   { icon:"💫", text:"Every moment with you feels like a gift I never deserved but always treasure." },
   { icon:"🎂", text:"Happy Birthday, Sadhana! May this year bring you all the joy your heart can hold." },
   { icon:"💕", text:"You're the reason I smile without reason. Thank you for existing in my universe." },

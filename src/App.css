@@ -146,6 +146,17 @@ body::after {
   100% { transform: translate(30px,-30px) scale(1.04); }
 }
 
+/* ── Animated gradient body background ── */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+body {
+  background-size: 300% 300%;
+  animation: gradientShift 18s ease infinite;
+}
+
 h1 {
   font-family: "Cormorant Garamond", "Manrope", serif;
   font-size: 2.6rem; font-weight: 600; font-style: italic;
@@ -157,7 +168,8 @@ h1 {
 
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-deep); }
-::-webkit-scrollbar-thumb { background: var(--rose); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--rose-light), var(--rose), var(--crimson)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--gold-light), var(--rose), var(--violet-mid)); }
 ::selection { background: rgba(232,48,90,0.25); color: var(--rose-light); }
 
 /* ══════════════════════════════════════════════════

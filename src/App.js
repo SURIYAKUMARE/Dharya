@@ -21,6 +21,7 @@ import LoginPage from "./components/LoginPage";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import FlowerGarden from "./components/FlowerGarden";
 import SecretUniverse from "./components/SecretUniverse";
+import InteractiveBirthdayGift from "./components/InteractiveBirthdayGift";
 import "./App.css";
 
 export function useTilt(strength = 12) {
@@ -265,6 +266,7 @@ function AnniversaryBadge() {
 export default function App() {
   const [user,        setUser]        = useState(null);
   const [loggedIn,    setLoggedIn]    = useState(false);
+  const [birthdayDone,setBirthdayDone]= useState(false);
   const [page,        setPage]        = useState("box");
   const [boxOpened,   setBoxOpened]   = useState(false);
   const [navOpen,     setNavOpen]     = useState(false);
@@ -307,6 +309,7 @@ export default function App() {
   }, [loggedIn]);
 
   if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
+  if (loggedIn && !birthdayDone) return <InteractiveBirthdayGift user={user} onDone={() => setBirthdayDone(true)} />;
   if (locked)    return <LockScreen user={user} onUnlock={() => { setLocked(false); resetIdle(); }} />;
 
   document.body.className = user === "surya" ? "theme-surya" : "";

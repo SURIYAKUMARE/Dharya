@@ -309,7 +309,6 @@ export default function App() {
   }, [loggedIn]);
 
   if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
-  if (loggedIn && !birthdayDone) return <InteractiveBirthdayGift user={user} onDone={() => setBirthdayDone(true)} />;
   if (locked)    return <LockScreen user={user} onUnlock={() => { setLocked(false); resetIdle(); }} />;
 
   document.body.className = user === "surya" ? "theme-surya" : "";

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Eye, EyeOff, ArrowRight, Heart, Sparkles } from "lucide-react";
 import { useTilt } from "../App";
 
@@ -115,6 +115,179 @@ function PulseRings({ theme }) {
         }} />
       ))}
     </div>
+  );
+}
+
+/* ══ HEART TREE CANVAS — login page background ══ */
+function HeartTree() {
+  const cvRef  = useRef(null);
+  const rafRef = useRef(null);
+  const tRef   = useRef(0);
+  const petalsRef = useRef([]);
+
+  useEffect(() => {
+    const cv = cvRef.current; if (!cv) return;
+    const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const ctx = cv.getContext("2d");
+
+    /* heart colours — gold trunk + green & pink blossoms */
+    const HEART_COLORS = [
+      "#f5c842","#f5c842","#f5c842",   // gold (more weight)
+      "#00d97e","#22c55e","#4ade80",   // greens
+      "#ff1a6e","#ec4899","#f472b6",   // pinks
+    ];
+
+    /* pre-build blossom positions */
+    const blossoms = [];
+    function branch(x, y, len, ang, depth) {
+      if (depth === 0 || len < 6) return;
+      const ex = x + Math.cos(ang) * len;
+      const ey = y + Math.sin(ang) * len;
+      if (depth <= 3) {
+        const count = depth + 1;
+        for (let k = 0; k < count; k++) {
+          blossoms.push({
+            x:      ex + (Math.random() - 0.5) * 28,
+            y:      ey + (Math.random() - 0.5) * 28,
+            r:      4 + Math.random() * 9,
+            spawnT: 0.15 + Math.random() * 0.75,
+            color:  HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
+            sway:   Math.random() * Math.PI * 2,
+          });
+        }
+      }
+      branch(ex, ey, len * 0.70, ang - 0.42, depth - 1);
+      branch(ex, ey, len * 0.70, ang + 0.42, depth - 1);
+      if (depth > 2) branch(ex, ey, len * 0.52, ang + (Math.random()-0.5)*0.3, depth - 2);
+    }
+
+    const buildTree = () => {
+      blossoms.length = 0;
+      const cx = cv.width / 2;
+      const cy = cv.height * 0.92;
+      branch(cx, cy, cv.height * 0.25, -Math.PI / 2, 7);
+    };
+    buildTree();
+    window.addEventListener("resize", buildTree);
+
+    function drawHeart(ctx, x, y, size, color, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha ?? 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + size * 0.3);
+      ctx.bezierCurveTo(x, y - size*0.2, x-size, y-size*0.2, x-size, y+size*0.3);
+      ctx.bezierCurveTo(x-size, y+size*0.85, x, y+size*1.4, x, y+size*1.7);
+      ctx.bezierCurveTo(x, y+size*1.4, x+size, y+size*0.85, x+size, y+size*0.3);
+      ctx.bezierCurveTo(x+size, y-size*0.2, x, y-size*0.2, x, y+size*0.3);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur  = 10;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTree(x, y, len, ang, depth, alpha) {
+      if (depth === 0 || len < 5) return;
+      const ex = x + Math.cos(ang) * len;
+      const ey = y + Math.sin(ang) * len;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey);
+      ctx.strokeStyle = depth > 3 ? `rgba(180,120,40,${alpha})` : `rgba(220,170,60,${alpha})`;
+      ctx.lineWidth   = Math.max(1, depth * 1.5);
+      ctx.shadowColor = "rgba(245,200,66,0.3)";
+      ctx.shadowBlur  = 6;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+      drawTree(ex, ey, len*0.70, ang-0.42, depth-1, alpha);
+      drawTree(ex, ey, len*0.70, ang+0.42, depth-1, alpha);
+      if (depth > 2) drawTree(ex, ey, len*0.52, ang+(Math.random()-0.5)*0.3, depth-2, alpha);
+    }
+
+    /* petal spawner */
+    const petalTimer = setInterval(() => {
+      if (tRef.current > 0.6) {
+        const cx = cv.width / 2;
+        petalsRef.current.push({
+          x:    cx + (Math.random()-0.5) * cv.width * 0.5,
+          y:    cv.height * 0.1 + Math.random() * cv.height * 0.55,
+          vx:   (Math.random()-0.5) * 1.4,
+          vy:   -(0.8 + Math.random() * 1.8),
+          r:    7 + Math.random() * 9,
+          rot:  Math.random() * Math.PI * 2,
+          vr:   (Math.random()-0.5) * 0.07,
+          life: 1,
+          color: HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
+        });
+      }
+    }, 300);
+
+    const tick = () => {
+      tRef.current += 0.004;
+      const t  = tRef.current;
+      const cw = cv.width, ch = cv.height;
+      const cx = cw / 2, cy = ch * 0.92;
+
+      ctx.clearRect(0, 0, cw, ch);
+
+      /* subtle gold glow at base */
+      const gAlpha = Math.min(t * 1.2, 1) * 0.18;
+      const grd = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy * 0.7, cw * 0.45);
+      grd.addColorStop(0,   `rgba(245,200,66,${gAlpha})`);
+      grd.addColorStop(0.5, `rgba(0,217,126,${gAlpha * 0.4})`);
+      grd.addColorStop(1,   "transparent");
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, cw, ch);
+
+      /* trunk */
+      ctx.save();
+      const tAlpha = Math.min(t * 2, 0.55);
+      drawTree(cx, cy, ch * 0.25, -Math.PI / 2, 7, tAlpha);
+      ctx.restore();
+
+      /* blossoms */
+      blossoms.forEach(b => {
+        if (t < b.spawnT) return;
+        const lt = Math.min((t - b.spawnT) / 0.35, 1);
+        const sc = lt < 0.6 ? lt / 0.6 : 1 + Math.sin((lt-0.6)/0.4*Math.PI) * 0.15;
+        const sway = Math.sin(Date.now() / 2200 + b.sway) * 2;
+        const alpha = lt * 0.75;
+        ctx.save();
+        ctx.translate(b.x + sway, b.y);
+        ctx.scale(sc, sc);
+        drawHeart(ctx, 0, 0, b.r, b.color, alpha);
+        ctx.restore();
+      });
+
+      /* drifting petal hearts */
+      petalsRef.current.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= 0.004;
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        const a = Math.max(0, p.life) * 0.5;
+        drawHeart(ctx, 0, 0, p.r * 0.5, p.color, a);
+        ctx.restore();
+      });
+      petalsRef.current = petalsRef.current.filter(p => p.life > 0);
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      clearInterval(petalTimer);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", buildTree);
+    };
+  }, []);
+
+  return (
+    <canvas ref={cvRef} style={{
+      position: "fixed", inset: 0, width: "100%", height: "100%",
+      pointerEvents: "none", zIndex: 0,
+    }} />
   );
 }
 
@@ -283,6 +456,9 @@ export default function LoginPage({ onLogin }) {
         `,
         transition:"background 1s ease",
       }} />
+
+      {/* Heart Tree background */}
+      <HeartTree />
 
       <PulseRings theme={theme} />
       <FloatingParticles theme={theme} />

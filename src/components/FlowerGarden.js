@@ -1,724 +1,435 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { dbGet, dbSet } from "../api";
 
-/* ══════════════════════════════════════════
-   CINEMATIC GARDEN  — 4-Act Canvas Experience
-   Act 1 : Cupid's bow — drag to aim & release
-   Act 2 : Arrow flies → heart jolts → rose flood
-   Act 3 : Kinetic wish, glyph by glyph, cinema bars
-   Act 4 : Gold bloom → hand-lettered tree of hearts
-══════════════════════════════════════════ */
+/* ─── DATA ─── */
+const FLOWER_TYPES = ["🌸","🌺","🌻","🌹","🌷","🌼","🪷","💐"];
+const GROWTH = [
+  { emoji:"🌱", label:"Seedling",  days:0 },
+  { emoji:"🌿", label:"Sprouting", days:1 },
+  { emoji:"🪴", label:"Growing",   days:2 },
+  { emoji:"🌸", label:"Blooming",  days:3 },
+];
 
-const W = () => window.innerWidth;
-const H = () => window.innerHeight;
+const MESSAGES = [
+  "Every day you visit, our love grows 💙",
+  "Like a garden, love needs daily care 🌱",
+  "You are the sunshine that makes everything bloom ☀️",
+  "Our love story — one flower at a time 🌸",
+  "Each bloom is a day we chose each other 💍",
+];
 
-/* ── palette ── */
-const ROSE   = "#e8194b";
-const GOLD   = "#f5c842";
-const CREAM  = "#fff8f0";
-const DARK   = "#0a0005";
+/* ─── CSS-in-JS animations injected once ─── */
+const GARDEN_STYLE = `
+@keyframes bloomIn {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.3) rotate(5deg); opacity: 1; }
+  80%  { transform: scale(0.9) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes sway {
+  0%,100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(4deg) translateY(-4px); }
+}
+@keyframes floatUp2 {
+  0%   { transform: translateY(0) scale(1); opacity: 0.85; }
+  100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
+}
+@keyframes pulse2 {
+  0%,100% { box-shadow: 0 0 0 0 rgba(236,72,153,0.4); }
+  50%     { box-shadow: 0 0 0 12px rgba(236,72,153,0); }
+}
+@keyframes waterDrop {
+  0%  { transform: translateY(-30px) scale(1); opacity: 1; }
+  100%{ transform: translateY(60px) scale(0.2); opacity: 0; }
+}
+`;
 
-/* ── wish text ── */
-const WISH = "Every heartbeat is yours, Sadhana 💗";
-
-/* ── inject keyframes once ── */
-function injectCSS() {
-  if (document.getElementById("cg-css")) return;
+function injectStyles() {
+  if (document.getElementById("garden-keyframes")) return;
   const s = document.createElement("style");
-  s.id = "cg-css";
-  s.textContent = `
-    @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Cormorant+Garamond:ital,wght@1,600&display=swap');
-    @keyframes heartbeat { 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.12)} 56%{transform:scale(1)} }
-    @keyframes roseFlood { 0%{transform:scaleY(0);transform-origin:bottom} 100%{transform:scaleY(1);transform-origin:bottom} }
-    @keyframes glyphIn   { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
-    @keyframes barSlide  { 0%{transform:scaleY(0)} 100%{transform:scaleY(1)} }
-    @keyframes goldPulse { 0%,100%{opacity:.7} 50%{opacity:1} }
-    @keyframes petalDrift{
-      0%  {transform:translateY(0) rotate(0deg);   opacity:1}
-      100%{transform:translateY(-160px) rotate(45deg); opacity:0}
-    }
-    @keyframes treeBranch{ 0%{stroke-dashoffset:400} 100%{stroke-dashoffset:0} }
-    @keyframes heartPop  { 0%{transform:scale(0) rotate(-20deg);opacity:0} 60%{transform:scale(1.25) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0);opacity:1} }
-    @keyframes nameWrite { 0%{clip-path:inset(0 100% 0 0)} 100%{clip-path:inset(0 0% 0 0)} }
-    @keyframes camPush   { 0%{transform:scale(1)} 100%{transform:scale(1.06)} }
-    @keyframes shimmer   { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-  `;
+  s.id = "garden-keyframes";
+  s.textContent = GARDEN_STYLE;
   document.head.appendChild(s);
 }
 
-/* ══ ACT 1 — BOW CANVAS ══ */
-function BowScene({ onFire }) {
-  const canvasRef  = useRef(null);
-  const stateRef   = useRef({ dragging: false, pull: 0, angle: -Math.PI / 2 });
-  const rafRef     = useRef(null);
-  const startRef   = useRef(null);
-
-  const draw = useCallback(() => {
-    const cv = canvasRef.current; if (!cv) return;
-    const ctx = cv.getContext("2d");
-    const w = cv.width, h = cv.height;
-    const { pull, angle } = stateRef.current;
-
-    ctx.clearRect(0, 0, w, h);
-
-    /* — starfield bg — */
-    ctx.fillStyle = DARK;
-    ctx.fillRect(0, 0, w, h);
-    ctx.save();
-    for (let i = 0; i < 80; i++) {
-      const sx = ((i * 137.5 + 11) % w);
-      const sy = ((i * 79.3  + 37) % h);
-      const r  = 0.6 + (i % 3) * 0.4;
-      ctx.globalAlpha = 0.3 + (i % 4) * 0.12;
-      ctx.beginPath();
-      ctx.arc(sx, sy, r, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-    }
-    ctx.restore();
-
-    /* — heart target — */
-    const hx = w / 2, hy = h * 0.22;
-    const hs = 34;
-    ctx.save();
-    ctx.globalAlpha = 0.9;
-    const beatScale = 1 + Math.sin(Date.now() / 350) * 0.06;
-    ctx.translate(hx, hy);
-    ctx.scale(beatScale, beatScale);
-    drawHeart(ctx, 0, 0, hs, ROSE, ROSE);
-    ctx.restore();
-
-    /* — instruction label — */
-    ctx.save();
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = CREAM;
-    ctx.font = "13px 'Inter', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("↑ aim here", hx, hy + hs + 22);
-    ctx.restore();
-
-    /* — bow body — */
-    const bx = w / 2, by = h * 0.72;
-    const bowR = 90;
-    const maxPull = 70;
-    const pd = pull * maxPull;          // pull distance px
-
-    /* bow arc */
-    ctx.save();
-    ctx.strokeStyle = "#c8a05a";
-    ctx.lineWidth   = 5;
-    ctx.lineCap     = "round";
-    ctx.shadowColor = GOLD;
-    ctx.shadowBlur  = 8;
-    ctx.beginPath();
-    ctx.arc(bx, by, bowR, Math.PI * 0.55, Math.PI * 1.45);
-    ctx.stroke();
-    ctx.restore();
-
-    /* bow tips */
-    const tip1 = { x: bx + bowR * Math.cos(Math.PI * 0.55), y: by + bowR * Math.sin(Math.PI * 0.55) };
-    const tip2 = { x: bx + bowR * Math.cos(Math.PI * 1.45), y: by + bowR * Math.sin(Math.PI * 1.45) };
-
-    /* string anchor (pull point) */
-    const midStr = { x: bx - pd, y: by };
-
-    /* string */
-    ctx.save();
-    ctx.strokeStyle = CREAM;
-    ctx.lineWidth   = 2;
-    ctx.globalAlpha = 0.8;
-    ctx.beginPath();
-    ctx.moveTo(tip1.x, tip1.y);
-    ctx.lineTo(midStr.x, midStr.y);
-    ctx.lineTo(tip2.x, tip2.y);
-    ctx.stroke();
-    ctx.restore();
-
-    /* arrow */
-    if (pull > 0.02) {
-      const arrowTip = { x: bx + pd * 0.4, y: by };
-      const arrowTail= { x: midStr.x - 30,  y: by };
-      ctx.save();
-      ctx.strokeStyle = "#e0c06a";
-      ctx.lineWidth   = 3;
-      ctx.lineCap     = "round";
-      ctx.shadowColor = GOLD;
-      ctx.shadowBlur  = 6;
-      ctx.beginPath();
-      ctx.moveTo(arrowTail.x, arrowTail.y);
-      ctx.lineTo(arrowTip.x,  arrowTip.y);
-      ctx.stroke();
-      /* arrowhead */
-      ctx.fillStyle = "#e0c06a";
-      ctx.beginPath();
-      ctx.moveTo(arrowTip.x + 10, arrowTip.y);
-      ctx.lineTo(arrowTip.x - 6,  arrowTip.y - 6);
-      ctx.lineTo(arrowTip.x - 6,  arrowTip.y + 6);
-      ctx.closePath();
-      ctx.fill();
-      /* fletching */
-      ctx.strokeStyle = ROSE;
-      ctx.lineWidth = 2;
-      for (let f = 0; f < 3; f++) {
-        ctx.beginPath();
-        ctx.moveTo(arrowTail.x + f * 8, arrowTail.y);
-        ctx.lineTo(arrowTail.x + f * 8 - 6, arrowTail.y - 8 + f * 4);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    /* — pull indicator — */
-    if (pull > 0.05) {
-      ctx.save();
-      ctx.globalAlpha = 0.7;
-      ctx.fillStyle = GOLD;
-      ctx.font = "bold 14px 'Inter',sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`${Math.round(pull * 100)}%`, bx, by + bowR + 28);
-      ctx.restore();
-    }
-
-    /* — hint — */
-    if (pull < 0.05) {
-      ctx.save();
-      ctx.globalAlpha = 0.45 + Math.sin(Date.now() / 600) * 0.15;
-      ctx.fillStyle = CREAM;
-      ctx.font = "14px 'Inter',sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("drag down to pull · release to fire", w / 2, by + bowR + 30);
-      ctx.restore();
-    }
-
-    rafRef.current = requestAnimationFrame(draw);
-  }, []);
-
-  useEffect(() => {
-    injectCSS();
-    const cv = canvasRef.current; if (!cv) return;
-    cv.width  = W();
-    cv.height = H();
-    const onResize = () => { cv.width = W(); cv.height = H(); };
-    window.addEventListener("resize", onResize);
-    rafRef.current = requestAnimationFrame(draw);
-
-    /* pointer events */
-    const getY = e => (e.touches ? e.touches[0].clientY : e.clientY);
-    const onDown = e => { stateRef.current.dragging = true; startRef.current = getY(e); };
-    const onMove = e => {
-      if (!stateRef.current.dragging) return;
-      const dy = Math.max(0, getY(e) - startRef.current);
-      stateRef.current.pull = Math.min(dy / 160, 1);
-    };
-    const onUp = () => {
-      if (!stateRef.current.dragging) return;
-      stateRef.current.dragging = false;
-      if (stateRef.current.pull > 0.15) { onFire(stateRef.current.pull); }
-      stateRef.current.pull = 0;
-    };
-    /* keyboard */
-    const onKey = e => {
-      if (e.code === "Space" || e.code === "ArrowDown") {
-        stateRef.current.pull = Math.min(stateRef.current.pull + 0.12, 1);
-      }
-      if ((e.code === "Space" || e.code === "ArrowUp") && stateRef.current.pull > 0.15) {
-        onFire(stateRef.current.pull); stateRef.current.pull = 0;
-      }
-    };
-    cv.addEventListener("mousedown",  onDown);
-    cv.addEventListener("mousemove",  onMove);
-    cv.addEventListener("mouseup",    onUp);
-    cv.addEventListener("touchstart", onDown, { passive: true });
-    cv.addEventListener("touchmove",  onMove, { passive: true });
-    cv.addEventListener("touchend",   onUp);
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      window.removeEventListener("resize",  onResize);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [draw, onFire]);
+/* ─── FLOWER COMPONENT ─── */
+function Flower({ flower, isNew, index }) {
+  const stage     = GROWTH[Math.min(flower.stage, GROWTH.length - 1)];
+  const isBloomed = flower.stage >= GROWTH.length - 1;
+  const emoji     = isBloomed ? flower.type : stage.emoji;
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: "fixed", inset: 0, width: "100%", height: "100%", cursor: "crosshair", touchAction: "none" }}
-    />
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 18, delay: index * 0.04 }}
+      style={{
+        display:        "flex",
+        flexDirection:  "column",
+        alignItems:     "center",
+        gap:            "6px",
+        padding:        "14px 10px 12px",
+        background:     isBloomed
+          ? "linear-gradient(135deg,rgba(236,72,153,0.12),rgba(139,92,246,0.08))"
+          : "rgba(255,255,255,0.06)",
+        border:         `1.5px solid ${isBloomed ? "rgba(236,72,153,0.4)" : "rgba(255,255,255,0.1)"}`,
+        borderRadius:   "18px",
+        backdropFilter: "blur(10px)",
+        position:       "relative",
+        overflow:       "hidden",
+        boxShadow:      isBloomed
+          ? "0 6px 24px rgba(236,72,153,0.2), 0 0 0 1px rgba(255,255,255,0.06) inset"
+          : "0 4px 12px rgba(0,0,0,0.15)",
+      }}
+    >
+      {isNew && (
+        <span style={{
+          position:      "absolute", top: 5, right: 5,
+          fontSize:      "0.52rem", fontWeight: 800,
+          background:    "#ec4899", color: "#fff",
+          padding:       "2px 6px", borderRadius: "50px",
+          textTransform: "uppercase", letterSpacing: "0.5px",
+          animation:     "pulse2 1.5s ease-in-out infinite",
+        }}>NEW</span>
+      )}
+
+      {/* Animated emoji */}
+      <span style={{
+        fontSize:  isBloomed ? "2.4rem" : "2rem",
+        lineHeight: 1,
+        display:   "inline-block",
+        animation: isBloomed
+          ? `sway ${2.5 + (index % 3) * 0.5}s ease-in-out infinite`
+          : "none",
+        transformOrigin: "bottom center",
+        filter:    isBloomed ? "drop-shadow(0 2px 6px rgba(236,72,153,0.5))" : "none",
+      }}>
+        {emoji}
+      </span>
+
+      {/* Stage badge */}
+      <span style={{
+        fontSize:      "0.58rem",
+        fontWeight:    700,
+        fontFamily:    "'Inter',sans-serif",
+        color:         isBloomed ? "#ec4899" : "#10B981",
+        background:    isBloomed ? "rgba(236,72,153,0.15)" : "rgba(16,185,129,0.15)",
+        padding:       "2px 8px",
+        borderRadius:  "50px",
+        border:        `1px solid ${isBloomed ? "rgba(236,72,153,0.3)" : "rgba(16,185,129,0.3)"}`,
+        letterSpacing: "0.3px",
+      }}>
+        {stage.label}
+      </span>
+
+      {/* Date */}
+      <span style={{
+        fontSize:   "0.6rem",
+        color:      "rgba(255,255,255,0.35)",
+        fontFamily: "'Inter',sans-serif",
+      }}>
+        {flower.date}
+      </span>
+    </motion.div>
   );
 }
 
-/* ══ ACT 2 — ARROW FLIGHT + HEART BURST ══ */
-function ArrowFlight({ power, onDone }) {
-  const canvasRef = useRef(null);
-  const rafRef    = useRef(null);
-  const stateRef  = useRef({ t: 0, phase: "fly" }); // fly → jolt → flood
-
-  useEffect(() => {
-    const cv = canvasRef.current; if (!cv) return;
-    cv.width  = W();
-    cv.height = H();
-
-    const bx = cv.width  / 2;
-    const by = cv.height * 0.72;
-    const tx = cv.width  / 2;
-    const ty = cv.height * 0.22;
-
-    const roses = [];
-    let floodH = 0;
-    let joltScale = 1;
-    let joltDir   = 1;
-    let joltCount = 0;
-
-    const spawnRoses = () => {
-      for (let i = 0; i < 80; i++) {
-        roses.push({
-          x:   Math.random() * cv.width,
-          y:   cv.height + Math.random() * 40,
-          vx:  (Math.random() - 0.5) * 3,
-          vy:  -(4 + Math.random() * 6),
-          r:   8 + Math.random() * 14,
-          rot: Math.random() * Math.PI * 2,
-          vr:  (Math.random() - 0.5) * 0.12,
-          alpha: 1,
-        });
-      }
-    };
-
-    const tick = () => {
-      const { t, phase } = stateRef.current;
-      ctx.clearRect(0, 0, cv.width, cv.height);
-
-      /* bg */
-      ctx.fillStyle = DARK;
-      ctx.fillRect(0, 0, cv.width, cv.height);
-
-      if (phase === "fly") {
-        /* arrow travelling upward */
-        const prog  = Math.min(t / 0.6, 1);
-        const eased = 1 - Math.pow(1 - prog, 3);
-        const ax = bx + (tx - bx) * eased;
-        const ay = by + (ty - by) * eased - Math.sin(prog * Math.PI) * 40;
-
-        /* draw arrow */
-        ctx.save();
-        ctx.strokeStyle = "#e0c06a";
-        ctx.lineWidth   = 4;
-        ctx.shadowColor = GOLD;
-        ctx.shadowBlur  = 10;
-        ctx.beginPath();
-        ctx.moveTo(ax - 20, ay + 20);
-        ctx.lineTo(ax + 10, ay - 10);
-        ctx.stroke();
-        ctx.fillStyle = "#e0c06a";
-        ctx.beginPath();
-        ctx.moveTo(ax + 10, ay - 10);
-        ctx.lineTo(ax - 2,  ay + 2);
-        ctx.lineTo(ax + 2,  ay - 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-
-        /* heart — normal */
-        ctx.save();
-        ctx.translate(tx, ty);
-        drawHeart(ctx, 0, 0, 34, ROSE, ROSE);
-        ctx.restore();
-
-        if (prog >= 1) { stateRef.current.phase = "jolt"; stateRef.current.t = 0; spawnRoses(); }
-
-      } else if (phase === "jolt") {
-        /* heart jolts then breaks */
-        joltCount++;
-        joltScale += joltDir * 0.06;
-        if (joltScale > 1.4 || joltScale < 0.7) joltDir *= -1;
-        ctx.save();
-        ctx.translate(tx, ty);
-        ctx.scale(joltScale, joltScale);
-        const alpha = Math.max(0, 1 - (t / 0.5));
-        drawHeart(ctx, 0, 0, 34, ROSE, ROSE, alpha);
-        ctx.restore();
-
-        /* rose flood rises */
-        floodH = Math.min((t / 0.5) * cv.height * 1.3, cv.height * 1.3);
-        ctx.save();
-        const grad = ctx.createLinearGradient(0, cv.height - floodH, 0, cv.height);
-        grad.addColorStop(0, "#ff4d78");
-        grad.addColorStop(0.5, "#e8194b");
-        grad.addColorStop(1,   "#8b0028");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, cv.height - floodH, cv.width, floodH);
-        ctx.restore();
-
-        /* floating rose petals */
-        roses.forEach(r => {
-          r.x   += r.vx; r.y += r.vy; r.rot += r.vr;
-          ctx.save();
-          ctx.translate(r.x, r.y);
-          ctx.rotate(r.rot);
-          ctx.globalAlpha = Math.max(0, r.alpha - t * 0.5);
-          ctx.font = `${r.r * 2}px serif`;
-          ctx.textAlign = "center";
-          ctx.fillText("🌹", 0, 0);
-          ctx.restore();
-        });
-
-        if (t > 0.55) { stateRef.current.phase = "done"; }
-
-      } else {
-        /* final rose-flooded frame — hold 300ms then done */
-        const grad = ctx.createLinearGradient(0, 0, 0, cv.height);
-        grad.addColorStop(0, "#ff4d78");
-        grad.addColorStop(0.5, "#e8194b");
-        grad.addColorStop(1,   "#5c0018");
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, cv.width, cv.height);
-        if (t > 0.35) { cancelAnimationFrame(rafRef.current); onDone(); return; }
-      }
-
-      stateRef.current.t += 0.016;
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    const ctx = cv.getContext("2d");
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [onDone, power]);
-
+/* ─── WATER DROPS ANIMATION ─── */
+function WaterDrops({ active }) {
+  if (!active) return null;
   return (
-    <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
-  );
-}
-
-/* ══ ACT 3 — KINETIC WISH ══ */
-function WishScene({ onDone }) {
-  const [chars, setChars] = useState([]);
-  const [done,  setDone]  = useState(false);
-
-  useEffect(() => {
-    let i = 0;
-    const id = setInterval(() => {
-      if (i < WISH.length) {
-        setChars(c => [...c, WISH[i]]);
-        i++;
-      } else {
-        clearInterval(id);
-        setTimeout(() => setDone(true),  800);
-        setTimeout(() => onDone(),       2200);
-      }
-    }, 55);
-    return () => clearInterval(id);
-  }, [onDone]);
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "#0a0005",
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      zIndex: 10,
-    }}>
-      {/* cinema bars */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "13%", background: "#000",
-        transform: "scaleY(1)", transformOrigin: "top", animation: "barSlide .4s ease forwards" }} />
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "13%", background: "#000",
-        transform: "scaleY(1)", transformOrigin: "bottom", animation: "barSlide .4s ease forwards" }} />
-
-      {/* slow camera push on content */}
-      <div style={{ animation: "camPush 4s ease forwards", textAlign: "center", padding: "0 32px" }}>
-        <p style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize:   "clamp(1.5rem, 5vw, 2.6rem)",
-          fontStyle:  "italic",
-          fontWeight: 600,
-          color:      CREAM,
-          lineHeight: 1.5,
-          letterSpacing: "-0.3px",
-          textShadow: `0 0 60px ${ROSE}88, 0 2px 20px rgba(0,0,0,0.8)`,
-          margin:     0,
-        }}>
-          {chars.map((ch, i) => (
-            <span key={i} style={{
-              display:   "inline-block",
-              animation: `glyphIn 0.3s ease ${i * 0.01}s both`,
-              color:     ch === "💗" ? ROSE : CREAM,
-            }}>{ch}</span>
-          ))}
-          <span style={{ opacity: done ? 0 : 1, transition: "opacity .3s", marginLeft: 2 }}>|</span>
-        </p>
-
-        {done && (
-          <div style={{ marginTop: 32, animation: "glyphIn 0.6s ease both" }}>
-            <div style={{ width: 56, height: 2, background: `linear-gradient(90deg,transparent,${ROSE},transparent)`, margin: "0 auto" }} />
-          </div>
-        )}
-      </div>
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:60, overflow:"hidden" }}>
+      {[...Array(10)].map((_,i) => (
+        <span key={i} style={{
+          position:    "absolute",
+          top:         "30%",
+          left:        `${10 + i * 9}%`,
+          fontSize:    `${12 + (i % 3) * 6}px`,
+          animation:   `waterDrop ${0.8 + i * 0.1}s ease-in ${i * 0.07}s both`,
+        }}>💧</span>
+      ))}
     </div>
   );
 }
 
-/* ══ ACT 4 — GOLD BLOOM + HEART TREE ══ */
-function TreeScene({ user, onSkip }) {
-  const canvasRef = useRef(null);
-  const rafRef    = useRef(null);
-  const tRef      = useRef(0);
-  const hearts    = useRef([]);
-  const petals    = useRef([]);
-
-  const name = user === "sadhana" ? "Sadhana" : user === "surya" ? "Surya" : "Dharya";
-
-  useEffect(() => {
-    const cv = canvasRef.current; if (!cv) return;
-    cv.width  = W();
-    cv.height = H();
-    const ctx = cv.getContext("2d");
-    const cx  = cv.width  / 2;
-    const cy  = cv.height * 0.88;
-
-    /* pre-generate heart positions on tree */
-    const treeHearts = [];
-    function branch(x, y, len, ang, depth) {
-      if (depth === 0 || len < 8) return;
-      const ex = x + Math.cos(ang) * len;
-      const ey = y + Math.sin(ang) * len;
-      if (depth <= 2) {
-        for (let k = 0; k < 2 + depth; k++) {
-          treeHearts.push({
-            x:    ex + (Math.random() - 0.5) * 28,
-            y:    ey + (Math.random() - 0.5) * 28,
-            r:    6 + Math.random() * 9,
-            t:    0.3 + Math.random() * 0.6,   // spawn time
-            color: [ROSE, "#ff6fa0", "#ffd0e0", GOLD, "#ffe08a"][Math.floor(Math.random() * 5)],
-            sway: Math.random() * Math.PI * 2,
-          });
-        }
-      }
-      branch(ex, ey, len * 0.72, ang - 0.4 + Math.random() * 0.1, depth - 1);
-      branch(ex, ey, len * 0.72, ang + 0.4 - Math.random() * 0.1, depth - 1);
-      if (depth > 2) branch(ex, ey, len * 0.55, ang + (Math.random() - 0.5) * 0.3, depth - 2);
-    }
-    branch(cx, cy, cv.height * 0.28, -Math.PI / 2, 7);
-
-    /* ── draw tree branches via recursive path (fixed, not animated path) ── */
-    function drawBranches(x, y, len, ang, depth, alpha) {
-      if (depth === 0 || len < 8) return;
-      const ex = x + Math.cos(ang) * len;
-      const ey = y + Math.sin(ang) * len;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(ex, ey);
-      ctx.strokeStyle = depth > 3
-        ? `rgba(120,60,20,${alpha})`
-        : `rgba(160,100,40,${alpha})`;
-      ctx.lineWidth   = Math.max(1, depth * 1.6);
-      ctx.stroke();
-      drawBranches(ex, ey, len * 0.72, ang - 0.4, depth - 1, alpha);
-      drawBranches(ex, ey, len * 0.72, ang + 0.4, depth - 1, alpha);
-      if (depth > 2) drawBranches(ex, ey, len * 0.55, ang, depth - 2, alpha);
-    }
-
-    /* spawn petals periodically */
-    const petalTimer = setInterval(() => {
-      if (tRef.current > 0.6) {
-        petals.current.push({
-          x:   cx + (Math.random() - 0.5) * cv.width * 0.5,
-          y:   cv.height * 0.15 + Math.random() * cv.height * 0.4,
-          vx:  (Math.random() - 0.5) * 1.5,
-          vy:  -(1 + Math.random() * 2),
-          r:   10 + Math.random() * 10,
-          rot: Math.random() * Math.PI * 2,
-          vr:  (Math.random() - 0.5) * 0.08,
-          life: 1,
-        });
-      }
-    }, 200);
-
-    const tick = () => {
-      tRef.current += 0.008;
-      const t = tRef.current;
-      ctx.clearRect(0, 0, cv.width, cv.height);
-
-      /* — warm background — */
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, cv.height);
-      bgGrad.addColorStop(0, "#1a0008");
-      bgGrad.addColorStop(0.5, "#2d0010");
-      bgGrad.addColorStop(1, "#0d0005");
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, cv.width, cv.height);
-
-      /* — gold bloom glow — */
-      const bloomAlpha = Math.min(t * 1.5, 1) * 0.6;
-      const glow = ctx.createRadialGradient(cx, cy * 0.6, 0, cx, cy * 0.6, cv.width * 0.5);
-      glow.addColorStop(0,   `rgba(245,200,66,${bloomAlpha})`);
-      glow.addColorStop(0.4, `rgba(232,25,75,${bloomAlpha * 0.5})`);
-      glow.addColorStop(1,   "transparent");
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, cv.width, cv.height);
-
-      /* — trunk grows — */
-      const trunkAlpha = Math.min(t * 3, 1);
-      drawBranches(cx, cy, cv.height * 0.28 * Math.min(t * 2.5, 1), -Math.PI / 2, 7, trunkAlpha);
-
-      /* — hearts bloom onto branches — */
-      treeHearts.forEach(h => {
-        if (t < h.t) return;
-        const localT = Math.min((t - h.t) / 0.3, 1);
-        const sc = localT < 0.6
-          ? localT / 0.6
-          : 1 + Math.sin((localT - 0.6) / 0.4 * Math.PI) * 0.15;
-        const sway = Math.sin(Date.now() / 1800 + h.sway) * 3;
-        ctx.save();
-        ctx.translate(h.x + sway, h.y);
-        ctx.scale(sc, sc);
-        ctx.globalAlpha = localT;
-        drawHeart(ctx, 0, 0, h.r, h.color, h.color);
-        ctx.restore();
-      });
-
-      /* — drifting petals — */
-      petals.current.forEach(p => {
-        p.x   += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= 0.006;
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = Math.max(0, p.life) * 0.7;
-        ctx.font = `${p.r}px serif`;
-        ctx.textAlign = "center";
-        ctx.fillText("🌸", 0, 0);
-        ctx.restore();
-      });
-      petals.current = petals.current.filter(p => p.life > 0);
-
-      /* — hand-lettered name — */
-      if (t > 0.7) {
-        const nameAlpha = Math.min((t - 0.7) / 0.4, 1);
-        ctx.save();
-        ctx.globalAlpha = nameAlpha;
-        ctx.font        = `bold ${Math.min(cv.width * 0.1, 52)}px 'Dancing Script', cursive`;
-        ctx.fillStyle   = GOLD;
-        ctx.textAlign   = "center";
-        ctx.shadowColor = GOLD;
-        ctx.shadowBlur  = 24;
-        ctx.fillText(name, cx, cv.height * 0.92);
-        ctx.restore();
-      }
-
-      /* — "with love" subtitle — */
-      if (t > 1.0) {
-        const subAlpha = Math.min((t - 1.0) / 0.4, 1);
-        ctx.save();
-        ctx.globalAlpha = subAlpha * 0.6;
-        ctx.font        = `italic ${Math.min(cv.width * 0.038, 20)}px 'Cormorant Garamond', serif`;
-        ctx.fillStyle   = CREAM;
-        ctx.textAlign   = "center";
-        ctx.fillText("— with all my love, always 💗 —", cx, cv.height * 0.96);
-        ctx.restore();
-      }
-
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      clearInterval(petalTimer);
-    };
-  }, [name]);
-
+/* ─── PETAL BURST ─── */
+function PetalBurst({ active }) {
+  const petals = ["🌸","🌺","🌷","🌼","🪷","💮","🌸"];
+  if (!active) return null;
   return (
-    <>
-      <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, width: "100%", height: "100%" }} />
-      <button
-        onClick={onSkip}
-        style={{
-          position: "fixed", bottom: 28, right: 24, zIndex: 20,
-          padding: "10px 22px", borderRadius: 50,
-          background: "rgba(255,255,255,0.1)",
-          border: "1.5px solid rgba(255,255,255,0.2)",
-          color: CREAM, fontFamily: "'Inter',sans-serif",
-          fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
-          backdropFilter: "blur(8px)",
-          transition: "all 0.2s",
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.18)"}
-        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.1)"}
-      >
-        Skip →
-      </button>
-    </>
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:55, overflow:"hidden" }}>
+      {petals.map((p, i) => (
+        <span key={i} style={{
+          position:  "absolute",
+          bottom:    "-20px",
+          left:      `${5 + i * 14}%`,
+          fontSize:  `${16 + (i % 3) * 8}px`,
+          animation: `floatUp2 ${2.5 + i * 0.3}s ease-out ${i * 0.12}s forwards`,
+          opacity:   0.9,
+        }}>{p}</span>
+      ))}
+    </div>
   );
 }
 
-/* ── helper: draw heart shape ── */
-function drawHeart(ctx, x, y, size, fill, stroke, alpha = 1) {
-  ctx.save();
-  ctx.globalAlpha *= alpha;
-  ctx.beginPath();
-  ctx.moveTo(x, y + size * 0.25);
-  ctx.bezierCurveTo(x, y - size * 0.25,  x - size, y - size * 0.25,  x - size, y + size * 0.25);
-  ctx.bezierCurveTo(x - size, y + size * 0.75, x, y + size * 1.1,    x, y + size * 1.5);
-  ctx.bezierCurveTo(x, y + size * 1.1,   x + size, y + size * 0.75, x + size, y + size * 0.25);
-  ctx.bezierCurveTo(x + size, y - size * 0.25, x, y - size * 0.25,  x, y + size * 0.25);
-  ctx.closePath();
-  ctx.fillStyle   = fill;
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth   = 1.5;
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
-}
-
-/* ══ MAIN EXPORT ══ */
+/* ─── MAIN COMPONENT ─── */
 export default function FlowerGarden({ user }) {
-  const [act, setAct]   = useState(1); // 1 2 3 4 done
-  const [power, setPower] = useState(0.8);
-  const [done, setDone]   = useState(false);
+  const [garden,      setGarden]      = useState([]);
+  const [watered,     setWatered]     = useState(false);
+  const [newId,       setNewId]       = useState(null);
+  const [lastVisit,   setLastVisit]   = useState("");
+  const [streak,      setStreak]      = useState(0);
+  const [loading,     setLoading]     = useState(true);
+  const [showDrops,   setShowDrops]   = useState(false);
+  const [showPetals,  setShowPetals]  = useState(false);
+  const [msgIdx,      setMsgIdx]      = useState(0);
+  const confRef = useRef(null);
 
-  const handleFire = useCallback((p) => {
-    setPower(p);
-    setAct(2);
-  }, []);
+  injectStyles();
 
-  if (done) {
-    /* garden complete — simple thank you card */
-    return (
-      <div style={{
-        maxWidth: 480, margin: "0 auto", padding: "60px 24px",
-        textAlign: "center",
-      }}>
-        <div style={{ fontSize: "3rem", marginBottom: 16 }}>💗</div>
-        <h2 style={{
-          fontFamily: "'Cormorant Garamond',serif",
-          fontSize: "2rem", fontStyle: "italic", fontWeight: 600,
-          color: "#fff", margin: "0 0 12px",
-        }}>
-          Our Garden of Hearts
-        </h2>
-        <p style={{
-          fontFamily: "'Inter',sans-serif", fontSize: "0.9rem",
-          color: "rgba(255,255,255,0.5)", lineHeight: 1.7,
-        }}>
-          Every arrow I shoot is aimed straight at you. 🏹
-        </p>
-        <button
-          onClick={() => { setAct(1); setDone(false); }}
-          style={{
-            marginTop: 28, padding: "12px 32px", borderRadius: 50,
-            background: `linear-gradient(135deg,${ROSE},#c2005c)`,
-            border: "none", color: "#fff", fontFamily: "'Inter',sans-serif",
-            fontSize: "0.9rem", fontWeight: 700, cursor: "pointer",
-            boxShadow: `0 8px 28px rgba(232,25,75,0.4)`,
-          }}
-        >
-          🏹 Play again
-        </button>
-      </div>
-    );
-  }
+  const todayKey       = new Date().toDateString();
+  const alreadyWatered = lastVisit === todayKey;
+
+  useEffect(() => {
+    Promise.all([
+      dbGet("fg_garden",    []),
+      dbGet("fg_lastvisit", ""),
+      dbGet("fg_streak",    0),
+    ]).then(([g, v, s]) => {
+      if (Array.isArray(g)) setGarden(g);
+      if (v) setLastVisit(v);
+      if (typeof s === "number") setStreak(s);
+      setLoading(false);
+    });
+    // rotate message every 4s
+    const id = setInterval(() => setMsgIdx(i => (i + 1) % MESSAGES.length), 4000);
+    return () => clearInterval(id);
+  }, []); // eslint-disable-line
+
+  const water = async () => {
+    if (alreadyWatered || watered) return;
+
+    // trigger water drops
+    setShowDrops(true);
+    setTimeout(() => setShowDrops(false), 1200);
+
+    await new Promise(r => setTimeout(r, 600));
+
+    const flower = {
+      id:    Date.now(),
+      type:  FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)],
+      stage: 0,
+      date:  new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short" }),
+    };
+    const grown   = garden.map(f => ({ ...f, stage: Math.min(f.stage + 1, GROWTH.length - 1) }));
+    const updated = [...grown, flower];
+    const newStreak = streak + 1;
+
+    setGarden(updated);
+    setNewId(flower.id);
+    setWatered(true);
+    setLastVisit(todayKey);
+    setStreak(newStreak);
+
+    // petal burst for new blooms
+    const newlyBloomed = grown.filter(f => f.stage === GROWTH.length - 1 && garden.find(g => g.id === f.id && g.stage === GROWTH.length - 2));
+    if (newlyBloomed.length > 0 || updated.some(f => f.stage >= 2)) {
+      setShowPetals(true);
+      setTimeout(() => setShowPetals(false), 3000);
+    }
+
+    spawnConfetti();
+
+    await Promise.all([
+      dbSet("fg_garden",    updated),
+      dbSet("fg_lastvisit", todayKey),
+      dbSet("fg_streak",    newStreak),
+    ]);
+
+    setTimeout(() => setNewId(null), 3000);
+  };
+
+  const spawnConfetti = () => {
+    if (!confRef.current) return;
+    const cs = ["🌸","🌺","🌷","🌼","💕","✨","🌻"];
+    for (let i = 0; i < 18; i++) {
+      const el = document.createElement("div");
+      el.style.cssText = `
+        position:fixed;top:-20px;left:${Math.random()*100}%;
+        font-size:${14+Math.random()*16}px;pointer-events:none;z-index:99;
+        animation:floatUp2 ${2+Math.random()*2}s ${Math.random()*0.5}s ease-out forwards;
+      `;
+      el.textContent = cs[Math.floor(Math.random()*cs.length)];
+      confRef.current.appendChild(el);
+      setTimeout(() => el.remove(), 4500);
+    }
+  };
+
+  const bloomed  = garden.filter(f => f.stage >= GROWTH.length - 1).length;
+  const growing  = garden.length - bloomed;
+  const pct      = garden.length ? Math.round((bloomed / garden.length) * 100) : 0;
 
   return (
-    <>
-      {act === 1 && <BowScene onFire={handleFire} />}
-      {act === 2 && <ArrowFlight power={power} onDone={() => setAct(3)} />}
-      {act === 3 && <WishScene onDone={() => setAct(4)} />}
-      {act === 4 && <TreeScene user={user} onSkip={() => setDone(true)} />}
-    </>
+    <div style={{ maxWidth:"680px", margin:"0 auto", padding:"8px 4px 80px", position:"relative" }}>
+      <div ref={confRef} style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:98, overflow:"hidden" }}/>
+      <WaterDrops  active={showDrops}  />
+      <PetalBurst  active={showPetals} />
+
+      {/* ── Header ── */}
+      <motion.div initial={{opacity:0,y:28}} animate={{opacity:1,y:0}} transition={{duration:0.5}}
+        style={{ textAlign:"center", marginBottom:"28px" }}>
+        <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"5px 16px", background:"rgba(236,72,153,0.08)", border:"1px solid rgba(236,72,153,0.2)", borderRadius:"50px", marginBottom:"12px", fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"#ec4899", letterSpacing:"1.5px", textTransform:"uppercase" }}>
+          🌸 Our Garden
+        </div>
+        <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 8px", textShadow:"0 0 40px rgba(236,72,153,0.25)" }}>
+          Flower Garden 🌺
+        </h1>
+        {/* Rotating love message */}
+        <AnimatePresence mode="wait">
+          <motion.p key={msgIdx}
+            initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
+            transition={{duration:0.35}}
+            style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.88rem", color:"rgba(255,255,255,0.45)", margin:0, fontStyle:"italic" }}>
+            "{MESSAGES[msgIdx]}"
+          </motion.p>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ── Stats row ── */}
+      <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.1}}
+        style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"10px", marginBottom:"20px" }}>
+        {[
+          { label:"Planted",  value:garden.length, color:"#ec4899", icon:"🌱" },
+          { label:"Bloomed",  value:bloomed,        color:"#8B5CF6", icon:"🌸" },
+          { label:"Growing",  value:growing,        color:"#10B981", icon:"🌿" },
+          { label:"🔥 Streak",value:`${streak}d`,   color:"#f59e0b", icon:"🔥" },
+        ].map((s,i) => (
+          <motion.div key={i} initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} transition={{delay:0.15+i*0.06,type:"spring"}}
+            style={{ padding:"14px 6px", textAlign:"center", background:"rgba(255,255,255,0.05)", border:`1.5px solid ${s.color}25`, borderRadius:"16px", backdropFilter:"blur(8px)" }}>
+            <div style={{ fontSize:"1.3rem", marginBottom:"4px" }}>{s.icon}</div>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.4rem", fontWeight:800, color:s.color }}>{s.value}</div>
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.58rem", color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.label}</div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* ── Progress bar ── */}
+      {garden.length > 0 && (
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.2}}
+          style={{ marginBottom:"20px", padding:"16px 20px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"16px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"8px" }}>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"1px" }}>Bloom Progress</span>
+            <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.8rem", fontWeight:800, color:"#ec4899" }}>{pct}%</span>
+          </div>
+          <div style={{ height:"8px", background:"rgba(255,255,255,0.08)", borderRadius:"4px", overflow:"hidden" }}>
+            <motion.div initial={{width:0}} animate={{width:`${pct}%`}} transition={{duration:1.2,ease:"easeOut",delay:0.3}}
+              style={{ height:"100%", background:"linear-gradient(90deg,#ec4899,#8B5CF6,#f59e0b)", borderRadius:"4px", boxShadow:"0 0 10px rgba(236,72,153,0.6)" }}/>
+          </div>
+          {/* Heart row */}
+          <div style={{ display:"flex", gap:"3px", marginTop:"10px", justifyContent:"center" }}>
+            {[...Array(10)].map((_,i) => (
+              <motion.span key={i}
+                initial={{scale:0}} animate={{scale:1}} transition={{delay:0.4+i*0.05}}
+                style={{ fontSize:"0.95rem", opacity:pct>=(i+1)*10?1:0.18, transition:"opacity 0.4s" }}>
+                {pct>=(i+1)*10?"❤️":"🤍"}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Water button ── */}
+      <div style={{ textAlign:"center", marginBottom:"28px" }}>
+        <AnimatePresence mode="wait">
+          {alreadyWatered || watered ? (
+            <motion.div key="done" initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}}
+              style={{ display:"inline-flex", alignItems:"center", gap:"10px", padding:"16px 28px", background:"rgba(16,185,129,0.1)", border:"1.5px solid rgba(16,185,129,0.3)", borderRadius:"50px", color:"#10B981", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", fontWeight:600 }}>
+              ✅ {watered ? "Garden watered! New flower planted 🌸" : "Come back tomorrow! 💕"}
+            </motion.div>
+          ) : (
+            <motion.button key="btn"
+              whileHover={{ scale:1.04, y:-4 }}
+              whileTap={{ scale:0.96 }}
+              onClick={water}
+              style={{ display:"inline-flex", alignItems:"center", gap:"12px", padding:"18px 44px", background:"linear-gradient(135deg,#3b82f6,#10B981)", border:"none", borderRadius:"50px", color:"#fff", fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:800, cursor:"pointer", boxShadow:"0 12px 36px rgba(59,130,246,0.45), 0 0 0 1px rgba(255,255,255,0.1) inset", letterSpacing:"-0.2px" }}>
+              💧 Water the Garden Today
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Garden bed ── */}
+      {loading ? (
+        <div style={{ textAlign:"center", padding:"60px 20px", color:"rgba(255,255,255,0.4)" }}>
+          <div style={{ fontSize:"2.5rem", marginBottom:"14px" }}>🌱</div>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem" }}>Loading your garden…</p>
+        </div>
+      ) : garden.length === 0 ? (
+        <motion.div initial={{opacity:0}} animate={{opacity:1}}
+          style={{ textAlign:"center", padding:"48px 24px", background:"rgba(255,255,255,0.03)", border:"1.5px dashed rgba(236,72,153,0.2)", borderRadius:"24px" }}>
+          <div style={{ fontSize:"3.5rem", marginBottom:"14px" }}>🌱</div>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.3rem", fontStyle:"italic", color:"rgba(255,255,255,0.5)", margin:0 }}>
+            Press the button to plant your first flower!
+          </p>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"rgba(255,255,255,0.3)", marginTop:"8px" }}>
+            Visit every day to grow a beautiful garden 🌸
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.25}}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", marginBottom:"14px" }}>
+            {garden.length} flower{garden.length!==1?"s":""} in your garden
+          </p>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(96px,1fr))", gap:"10px" }}>
+            <AnimatePresence>
+              {[...garden].reverse().map((f, i) => (
+                <Flower key={f.id} flower={f} index={i} isNew={newId === f.id} />
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Milestones ── */}
+      {garden.length > 0 && (
+        <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.4}}
+          style={{ marginTop:"28px" }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", marginBottom:"14px" }}>
+            Milestones
+          </p>
+          <div style={{ display:"flex", gap:"8px", overflowX:"auto", paddingBottom:"6px" }}>
+            {[
+              {n:1, e:"🌱",label:"First Flower"},
+              {n:7, e:"🌿",label:"One Week"},
+              {n:14,e:"🪴",label:"Fortnight"},
+              {n:30,e:"🌸",label:"Month"},
+              {n:50,e:"🌺",label:"50 Flowers"},
+              {n:100,e:"💐",label:"100 Days"},
+            ].map((m, i) => {
+              const done = garden.length >= m.n;
+              return (
+                <div key={i} style={{ flexShrink:0, minWidth:"78px", padding:"12px 8px", textAlign:"center", background:done?"rgba(236,72,153,0.1)":"rgba(255,255,255,0.03)", border:`1.5px solid ${done?"rgba(236,72,153,0.35)":"rgba(255,255,255,0.07)"}`, borderRadius:"14px", opacity:done?1:0.4, transition:"all 0.4s" }}>
+                  <div style={{ fontSize:"1.6rem", filter:done?"none":"grayscale(1)", marginBottom:"5px" }}>{m.e}</div>
+                  <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.58rem", fontWeight:700, color:done?"#ec4899":"rgba(255,255,255,0.3)", textAlign:"center", lineHeight:1.3 }}>{m.label}</div>
+                  <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.55rem", color:"rgba(255,255,255,0.25)", marginTop:"3px" }}>{m.n} flowers</div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── Footer note ── */}
+      <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.5}}
+        style={{ marginTop:"28px", textAlign:"center", padding:"24px", background:"linear-gradient(135deg,rgba(236,72,153,0.07),rgba(139,92,246,0.05))", border:"1px solid rgba(236,72,153,0.12)", borderRadius:"20px" }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.05rem", fontStyle:"italic", color:"rgba(255,255,255,0.55)", margin:"0 0 8px" }}>
+          "Every day you water this garden, you're telling me you choose us 💙"
+        </p>
+        <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.88rem", fontWeight:700, color:"rgba(255,255,255,0.7)", margin:0 }}>
+          — Surya &amp; Sadhana 💍
+        </p>
+      </motion.div>
+    </div>
   );
 }

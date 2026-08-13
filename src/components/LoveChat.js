@@ -574,183 +574,71 @@ function VoiceCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
   );
 }
 
-/* ══ VIDEO CALL SCREEN ══ */
-function VideoCall({ user, otherName, onEnd, isCaller, callStartedAt }) {
-  const [state,    setState]    = useState(isCaller ? "ringing" : "connecting");
-  const [muted,    setMuted]    = useState(false);
-  const [camOff,   setCamOff]   = useState(false);
-  const [elapsed,  setElapsed]  = useState(0);
-  const [remReady, setRemReady] = useState(false);
-  const [swapped,  setSwapped]  = useState(false);
+/* ══ VIDEO CALL SCREEN — powered by Daily.co ══ */
+const DAILY_DOMAIN = "suriya-hd.daily.co";
+const DAILY_ROOM   = "dharya";
+const DAILY_URL    = `https://${DAILY_DOMAIN}/${DAILY_ROOM}`;
 
-  const pc        = useRef(null);
-  const lStream   = useRef(null);
-  const timer     = useRef(null);
-  const remVid    = useRef(null);
-  const locVid    = useRef(null);
-  const iceBuf    = useRef([]);
-  const hasRemote = useRef(false);
-  const room = "dharya_call_v2_video";
+function VideoCall({ user, otherName, onEnd }) {
+  const [leaving, setLeaving] = useState(false);
+  const iframeRef = useRef(null);
 
-  const drainIce = useCallback(async () => {
-    const p = pc.current;
-    if (!p || !hasRemote.current) return;
-    while (iceBuf.current.length > 0) {
-      const c = iceBuf.current.shift();
-      try { await p.addIceCandidate(new RTCIceCandidate(c)); } catch {}
-    }
-  }, []);
+  const endCall = () => {
+    if (leaving) return;
+    setLeaving(true);
+    try { iframeRef.current?.contentWindow?.postMessage("leave-meeting", "*"); } catch {}
+    setTimeout(onEnd, 600);
+  };
 
-  const handleSig = useCallback(async sig => {
-    if (sig.from === user) return;
-    const p = pc.current; if (!p) return;
-
-    if (sig.type === "offer") {
-      if (p.signalingState !== "stable") return;
-      await p.setRemoteDescription(new RTCSessionDescription(sig.data));
-      hasRemote.current = true;
-      await drainIce();
-      const ans = await p.createAnswer();
-      await p.setLocalDescription(ans);
-      send(user, "answer", ans);
-
-    } else if (sig.type === "answer") {
-      if (p.signalingState === "have-local-offer") {
-        await p.setRemoteDescription(new RTCSessionDescription(sig.data));
-        hasRemote.current = true;
-        await drainIce();
-      }
-
-    } else if (sig.type === "ice") {
-      if (hasRemote.current && pc.current) {
-        try { await pc.current.addIceCandidate(new RTCIceCandidate(sig.data)); } catch {}
-      } else {
-        iceBuf.current.push(sig.data);
-      }
-
-    } else if (sig.type === "call_end") {
-      cleanup(); onEnd();
-    }
-  }, [user, drainIce]); // eslint-disable-line
-
-  const { send } = useSignal(room, handleSig, isCaller ? undefined : callStartedAt);
-
-  const cleanup = useCallback(() => {
-    clearInterval(timer.current);
-    lStream.current?.getTracks().forEach(t => t.stop());
-    try { pc.current?.close(); } catch {}
-    pc.current = null;
-    iceBuf.current = [];
-    hasRemote.current = false;
-    fetch(`/api/signal?room=${encodeURIComponent(room)}`, { method: "DELETE" }).catch(() => {});
-  }, [room]);
-
+  // Listen for Daily "left-meeting" event from iframe
   useEffect(() => {
-    let gone = false;
-    (async () => {
-      try {
-        const iceServers = await getIceServers();
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
-        });
-        if (gone) { stream.getTracks().forEach(t => t.stop()); return; }
-        lStream.current = stream;
-        if (locVid.current) locVid.current.srcObject = stream;
-
-        const p = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 10 });
-        pc.current = p;
-
-        stream.getTracks().forEach(t => p.addTrack(t, stream));
-
-        p.ontrack = e => {
-          if (remVid.current && e.streams[0]) {
-            remVid.current.srcObject = e.streams[0];
-            setRemReady(true);
-          }
-        };
-        p.onicecandidate = e => {
-          if (e.candidate) send(user, "ice", e.candidate);
-        };
-        p.oniceconnectionstatechange = () => {
-          const s = p.iceConnectionState;
-          if (s === "connected" || s === "completed") {
-            setState("connected");
-            if (!timer.current) timer.current = setInterval(() => setElapsed(n => n + 1), 1000);
-          }
-          if (s === "failed") {
-            p.restartIce();
-          }
-        };
-        p.onconnectionstatechange = () => {
-          const s = p.connectionState;
-          if (["disconnected", "failed", "closed"].includes(s)) {
-            cleanup(); setTimeout(onEnd, 600);
-          }
-        };
-
-        if (isCaller) {
-          const offer = await p.createOffer();
-          await p.setLocalDescription(offer);
-          send(user, "offer", offer);
-        }
-      } catch (e) {
-        console.warn("VideoCall setup:", e.message);
+    const handler = (e) => {
+      if (e.data && (e.data.action === "left-meeting" || e.data === "left-meeting")) {
+        onEnd();
       }
-    })();
-    return () => { gone = true; cleanup(); };
-  }, []); // eslint-disable-line
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [onEnd]);
 
-  const toggleMute = () => { lStream.current?.getAudioTracks().forEach(t => { t.enabled = !t.enabled; }); setMuted(m => !m); };
-  const toggleCam  = () => { lStream.current?.getVideoTracks().forEach(t => { t.enabled = !t.enabled; }); setCamOff(c => !c); };
-  const endCall    = () => { send(user, "call_end", {}); cleanup(); onEnd(); };
-  const conn = state === "connected";
+  const userName = user === "surya" ? "Surya" : user === "sadhana" ? "Sadhana" : "Guest";
 
   return (
-    <div className="wavc">
-      {/* Remote video */}
-      <video ref={remVid} className="wavc-remote" autoPlay playsInline style={{display:remReady?"block":"none"}}/>
-      {!remReady && (
-        <div className="wavc-no-vid">
-          <CallAvatar name={otherName} color1="#ff1a6e" color2="#8b3fc8" size={120}/>
-        </div>
-      )}
-      {/* Local PiP */}
-      <div className="wavc-local" onClick={()=>setSwapped(v=>!v)} title="Tap to swap">
-        {camOff
-          ? <div className="wavc-local-off">🙈</div>
-          : <video ref={locVid} autoPlay muted playsInline style={{width:"100%",height:"100%",objectFit:"cover",transform:swapped?"scaleX(-1)":"none"}}/>
-        }
-      </div>
-      {/* Overlay */}
-      <div className="wavc-overlay">
-        <div className="wavc-top">
-          <div className="wavc-name">{otherName}</div>
-          {conn
-            ? <div className="wavc-timer">{fmtTimer(elapsed)}</div>
-            : <div className="wavc-status">{state==="ringing"?"Ringing...":"Connecting..."}</div>
-          }
-          <div className="wavc-badge">Video Call</div>
-        </div>
-        <div className="wavc-bottom">
-          <button className="wavc-btn" onClick={toggleMute}>
-            <div className={`wavc-btn-ic ${muted?"wavc-ic-on":"wavc-ic-base"}`}>{I(muted?"micOff":"mic",24)}</div>
-            <span className="wavc-btn-lbl">{muted?"Unmute":"Mute"}</span>
-          </button>
-          <button className="wavc-btn" onClick={toggleCam}>
-            <div className={`wavc-btn-ic ${camOff?"wavc-ic-on":"wavc-ic-base"}`}>{I(camOff?"videoOff":"video",24)}</div>
-            <span className="wavc-btn-lbl">{camOff?"Cam On":"Cam Off"}</span>
-          </button>
-          <button className="wavc-btn" onClick={endCall}>
-            <div className="wavc-btn-ic wavc-ic-end">{I("phoneOff",26)}</div>
-            <span className="wavc-btn-lbl">End</span>
-          </button>
-          <button className="wavc-btn" onClick={()=>setSwapped(v=>!v)}>
-            <div className="wavc-btn-ic wavc-ic-base">{I("flip",24)}</div>
-            <span className="wavc-btn-lbl">Flip</span>
-          </button>
-        </div>
-      </div>
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9990,
+      background: "#000",
+      display: "flex", flexDirection: "column",
+      opacity: leaving ? 0 : 1,
+      transition: "opacity 0.5s ease",
+    }}>
+      {/* Floating end call button */}
+      <button
+        onClick={endCall}
+        style={{
+          position: "absolute", top: 16, right: 16, zIndex: 10,
+          width: 48, height: 48, borderRadius: "50%",
+          background: "#ef4444", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 4px 20px rgba(239,68,68,0.6)",
+          fontSize: "1.3rem", color: "#fff",
+          transition: "transform 0.2s, box-shadow 0.2s",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.12)"; e.currentTarget.style.boxShadow = "0 6px 28px rgba(239,68,68,0.8)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(239,68,68,0.6)"; }}
+        title="End call"
+      >
+        📵
+      </button>
+
+      {/* Daily.co iframe — full screen */}
+      <iframe
+        ref={iframeRef}
+        title="Video Call"
+        src={`${DAILY_URL}?userName=${encodeURIComponent(userName)}&showLeaveButton=1&showFullscreenButton=1&iframeStyle=dark`}
+        allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
+        allowFullScreen
+        style={{ width: "100%", height: "100%", border: "none", background: "#000" }}
+      />
     </div>
   );
 }
@@ -978,6 +866,22 @@ export default function LoveChat({ user }) {
 
   const startCall = async (mode) => {
     if (isDemo) { alert("Calls not available in demo."); return; }
+    if (mode === "video") {
+      // Video call — use Daily.co, no WebRTC setup needed
+      setCallMode("video");
+      setCallActive(true);
+      setIsCaller(true);
+      // Still notify the other side via signal so they get the incoming ring
+      try {
+        await fetch("/api/signal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room: callRoom, from: me, type: "incoming_call", data: { mode: "video" } }),
+        });
+      } catch {}
+      return;
+    }
+    // Voice call — WebRTC
     const ts = new Date().toISOString();
     setCallStartedAt(ts);
     setIsCaller(true);
@@ -994,7 +898,15 @@ export default function LoveChat({ user }) {
 
   const acceptCall = () => {
     if (!incoming) return;
-    const ts = incoming.since || new Date(Date.now() - 10000).toISOString(); // go back 10s to catch offer
+    if (incoming.mode === "video") {
+      // Video — just open Daily.co, no WebRTC
+      setIsCaller(false);
+      setIncoming(null);
+      setCallMode("video");
+      setCallActive(true);
+      return;
+    }
+    const ts = incoming.since || new Date(Date.now() - 10000).toISOString();
     setCallStartedAt(ts);
     setIsCaller(false);
     setIncoming(null);
@@ -1029,7 +941,7 @@ export default function LoveChat({ user }) {
 
       {/* ── Active calls ── */}
       {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} isCaller={isCaller} callStartedAt={callStartedAt} onEnd={()=>{setCallActive(false);setCallMode(null);setIsCaller(false);}}/>}
-      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} isCaller={isCaller} callStartedAt={callStartedAt} onEnd={()=>{setCallActive(false);setCallMode(null);setIsCaller(false);}}/>}
+      {callActive && callMode==="video" && <VideoCall user={user} otherName={otherFull} onEnd={()=>{setCallActive(false);setCallMode(null);setIsCaller(false);}}/>}
 
       {/* ── Incoming ── */}
       {incoming && !callActive && <IncomingCall otherName={otherFull} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}

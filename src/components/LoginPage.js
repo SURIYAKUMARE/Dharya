@@ -75,49 +75,6 @@ const THEMES = {
   },
 };
 
-/* ── Floating particles ── */
-function FloatingParticles({ theme }) {
-  const items = [...Array(18)].map((_, i) => ({
-    sym:   theme.particles[i % theme.particles.length],
-    left:  `${(i * 5.5 + 2) % 96}%`,
-    size:  `${11 + (i % 4) * 5}px`,
-    dur:   `${8 + (i % 5) * 2.2}s`,
-    delay: `${i * 0.55}s`,
-    opacity: 0.18 + (i % 3) * 0.08,
-  }));
-  return (
-    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:1, overflow:"hidden" }}>
-      {items.map((p, i) => (
-        <span key={i} style={{
-          position:"absolute", bottom:"-40px", left:p.left,
-          fontSize:p.size, opacity:p.opacity,
-          color: theme.primary,
-          animation:`floatUp ${p.dur} linear ${p.delay} infinite`,
-          display:"inline-block",
-          filter:`drop-shadow(0 0 6px ${theme.primary}88)`,
-        }}>{p.sym}</span>
-      ))}
-    </div>
-  );
-}
-
-/* ── Pulse rings behind the card ── */
-function PulseRings({ theme }) {
-  return (
-    <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", pointerEvents:"none", zIndex:0 }}>
-      {[0,1,2].map(i => (
-        <div key={i} style={{
-          position:"absolute",
-          width:`${340 + i*130}px`, height:`${340 + i*130}px`,
-          borderRadius:"50%",
-          border:`1px solid ${theme.primary}${["22","18","10"][i]}`,
-          animation:`pulseRing ${[3.5,5,7][i]}s ease-out ${i*0.8}s infinite`,
-        }} />
-      ))}
-    </div>
-  );
-}
-
 /* ── Typewriter hook ── */
 function useTypewriter(text, speed = 60, start = true) {
   const [displayed, setDisplayed] = useState("");
@@ -286,7 +243,6 @@ export default function LoginPage({ onLogin }) {
 
       <PulseRings theme={theme} />
       <FloatingParticles theme={theme} />
-      <SparkleTrail color={theme.primary} />
 
       {/* Burst emojis on success */}
       {bursts.map(h => (

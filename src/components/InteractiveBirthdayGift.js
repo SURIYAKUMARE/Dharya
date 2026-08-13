@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+5import { useState, useEffect, useRef } from "react";
 import TreeOfLife from "./TreeOfLife";
 
 /* ── Confetti canvas ── */

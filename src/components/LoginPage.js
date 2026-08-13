@@ -241,9 +241,6 @@ export default function LoginPage({ onLogin }) {
         transition:"background 1s ease",
       }} />
 
-      <PulseRings theme={theme} />
-      <FloatingParticles theme={theme} />
-
       {/* Burst emojis on success */}
       {bursts.map(h => (
         <span key={h.id} style={{

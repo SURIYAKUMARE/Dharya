@@ -120,165 +120,304 @@ function PulseRings({ theme }) {
 
 /* ══ HEART TREE CANVAS — login page background ══ */
 function HeartTree() {
-  const cvRef  = useRef(null);
-  const rafRef = useRef(null);
-  const tRef   = useRef(0);
-  const petalsRef = useRef([]);
+  const cvRef     = useRef(null);
+  const rafRef    = useRef(null);
+  const tRef      = useRef(0);
+  const stateRef  = useRef({
+    petals:   [],
+    stars:    [],
+    fireflies:[],
+    sparks:   [],
+    rings:    [],
+    rain:     [],
+  });
 
   useEffect(() => {
     const cv = cvRef.current; if (!cv) return;
     const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
-
     const ctx = cv.getContext("2d");
 
-    /* heart colours — gold dominant, green & pink accents */
-    const HEART_COLORS = [
-      "#f5c842","#f5c842","#f5c842","#f5c842","#f5c842",  // gold (dominant)
-      "#ffd700","#ffb800","#ffe066","#ffc200",             // gold shades
-      "#00d97e","#22c55e",                                  // green accents
-      "#ff1a6e","#ec4899",                                  // pink accents
-    ];
+    /* ── colours ── */
+    const GOLDS = ["#ffd700","#f5c842","#ffb800","#ffe066","#ffc200","#ffe599"];
+    const GREENS = ["#00d97e","#22c55e","#4ade80"];
+    const PINKS  = ["#ff1a6e","#ec4899","#f472b6"];
+    const ALL    = [...GOLDS,...GOLDS,...GOLDS, ...GREENS, ...PINKS];
 
-    /* pre-build blossom positions */
+    /* ── pre-build blossom positions ── */
     const blossoms = [];
     function branch(x, y, len, ang, depth) {
-      if (depth === 0 || len < 6) return;
+      if (depth === 0 || len < 5) return;
       const ex = x + Math.cos(ang) * len;
       const ey = y + Math.sin(ang) * len;
       if (depth <= 3) {
-        const count = depth + 1;
-        for (let k = 0; k < count; k++) {
+        for (let k = 0; k < depth + 2; k++) {
           blossoms.push({
-            x:      ex + (Math.random() - 0.5) * 28,
-            y:      ey + (Math.random() - 0.5) * 28,
-            r:      4 + Math.random() * 9,
-            spawnT: 0.15 + Math.random() * 0.75,
-            color:  HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
-            sway:   Math.random() * Math.PI * 2,
+            x: ex + (Math.random()-.5)*30, y: ey + (Math.random()-.5)*30,
+            r: 4 + Math.random()*9,
+            spawnT: 0.12 + Math.random()*0.7,
+            color: ALL[Math.floor(Math.random()*ALL.length)],
+            sway: Math.random()*Math.PI*2,
+            twinkleOffset: Math.random()*Math.PI*2,
           });
         }
       }
-      branch(ex, ey, len * 0.70, ang - 0.42, depth - 1);
-      branch(ex, ey, len * 0.70, ang + 0.42, depth - 1);
-      if (depth > 2) branch(ex, ey, len * 0.52, ang + (Math.random()-0.5)*0.3, depth - 2);
+      branch(ex, ey, len*.70, ang-.42, depth-1);
+      branch(ex, ey, len*.70, ang+.42, depth-1);
+      if (depth>2) branch(ex, ey, len*.52, ang+(Math.random()-.5)*.3, depth-2);
     }
-
     const buildTree = () => {
       blossoms.length = 0;
-      const cx = cv.width / 2;
-      const cy = cv.height * 0.92;
-      branch(cx, cy, cv.height * 0.25, -Math.PI / 2, 7);
+      branch(cv.width/2, cv.height*.92, cv.height*.25, -Math.PI/2, 7);
     };
     buildTree();
     window.addEventListener("resize", buildTree);
 
-    function drawHeart(ctx, x, y, size, color, alpha) {
-      ctx.save();
-      ctx.globalAlpha = alpha ?? 1;
+    /* ── draw helpers ── */
+    function drawHeart(x, y, size, color, alpha) {
+      ctx.save(); ctx.globalAlpha = alpha ?? 1;
       ctx.beginPath();
-      ctx.moveTo(x, y + size * 0.3);
-      ctx.bezierCurveTo(x, y - size*0.2, x-size, y-size*0.2, x-size, y+size*0.3);
-      ctx.bezierCurveTo(x-size, y+size*0.85, x, y+size*1.4, x, y+size*1.7);
-      ctx.bezierCurveTo(x, y+size*1.4, x+size, y+size*0.85, x+size, y+size*0.3);
-      ctx.bezierCurveTo(x+size, y-size*0.2, x, y-size*0.2, x, y+size*0.3);
+      ctx.moveTo(x, y+size*.3);
+      ctx.bezierCurveTo(x, y-size*.2, x-size, y-size*.2, x-size, y+size*.3);
+      ctx.bezierCurveTo(x-size, y+size*.85, x, y+size*1.4, x, y+size*1.7);
+      ctx.bezierCurveTo(x, y+size*1.4, x+size, y+size*.85, x+size, y+size*.3);
+      ctx.bezierCurveTo(x+size, y-size*.2, x, y-size*.2, x, y+size*.3);
       ctx.closePath();
       ctx.fillStyle = color;
-      ctx.shadowColor = color === "#00d97e" || color === "#22c55e" ? "#00d97e"
-                       : color === "#ff1a6e" || color === "#ec4899" ? "#ff1a6e"
-                       : "#ffd700";
-      ctx.shadowBlur  = 12;
-      ctx.fill();
-      ctx.restore();
+      ctx.shadowColor = color; ctx.shadowBlur = 14;
+      ctx.fill(); ctx.restore();
     }
-
     function drawTree(x, y, len, ang, depth, alpha) {
-      if (depth === 0 || len < 5) return;
-      const ex = x + Math.cos(ang) * len;
-      const ey = y + Math.sin(ang) * len;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey);
-      /* full gold trunk and branches */
-      ctx.strokeStyle = depth > 4
-        ? `rgba(200,150,20,${alpha})`    // deeper trunk — darker gold
-        : depth > 2
-        ? `rgba(245,180,30,${alpha})`    // mid branches — bright gold
-        : `rgba(255,215,0,${alpha})`;    // tips — pure gold
-      ctx.lineWidth   = Math.max(1, depth * 1.6);
-      ctx.shadowColor = "rgba(255,215,0,0.5)";
-      ctx.shadowBlur  = depth > 3 ? 8 : 4;
-      ctx.stroke();
-      ctx.shadowBlur  = 0;
-      drawTree(ex, ey, len*0.70, ang-0.42, depth-1, alpha);
-      drawTree(ex, ey, len*0.70, ang+0.42, depth-1, alpha);
-      if (depth > 2) drawTree(ex, ey, len*0.52, ang+(Math.random()-0.5)*0.3, depth-2, alpha);
+      if (depth===0||len<5) return;
+      const ex = x+Math.cos(ang)*len, ey = y+Math.sin(ang)*len;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(ex,ey);
+      ctx.strokeStyle = depth>4 ? `rgba(200,150,20,${alpha})`
+                      : depth>2 ? `rgba(245,180,30,${alpha})`
+                      :            `rgba(255,215,0,${alpha})`;
+      ctx.lineWidth = Math.max(1, depth*1.6);
+      ctx.shadowColor = "rgba(255,215,0,0.55)"; ctx.shadowBlur = depth>3?10:5;
+      ctx.stroke(); ctx.shadowBlur = 0;
+      drawTree(ex,ey,len*.70,ang-.42,depth-1,alpha);
+      drawTree(ex,ey,len*.70,ang+.42,depth-1,alpha);
+      if (depth>2) drawTree(ex,ey,len*.52,ang+(Math.random()-.5)*.3,depth-2,alpha);
     }
 
-    /* petal spawner */
-    const petalTimer = setInterval(() => {
-      if (tRef.current > 0.6) {
-        const cx = cv.width / 2;
-        petalsRef.current.push({
-          x:    cx + (Math.random()-0.5) * cv.width * 0.5,
-          y:    cv.height * 0.1 + Math.random() * cv.height * 0.55,
-          vx:   (Math.random()-0.5) * 1.4,
-          vy:   -(0.8 + Math.random() * 1.8),
-          r:    7 + Math.random() * 9,
-          rot:  Math.random() * Math.PI * 2,
-          vr:   (Math.random()-0.5) * 0.07,
+    /* ── spawners ── */
+    const S = stateRef.current;
+
+    // shooting stars
+    const starTimer = setInterval(() => {
+      S.stars.push({
+        x: Math.random()*cv.width, y: Math.random()*cv.height*.4,
+        vx: 4+Math.random()*6, vy: 2+Math.random()*3,
+        len: 80+Math.random()*120, life: 1,
+        color: GOLDS[Math.floor(Math.random()*GOLDS.length)],
+      });
+    }, 1800);
+
+    // fireflies
+    for (let i=0;i<22;i++) {
+      S.fireflies.push({
+        x: Math.random()*cv.width, y: cv.height*.1+Math.random()*cv.height*.75,
+        vx:(Math.random()-.5)*.6, vy:(Math.random()-.5)*.6,
+        r: 2+Math.random()*2,
+        phase: Math.random()*Math.PI*2,
+        speed: .01+Math.random()*.02,
+        color: ALL[Math.floor(Math.random()*ALL.length)],
+      });
+    }
+
+    // heart rain
+    const rainTimer = setInterval(() => {
+      if (tRef.current > 0.4) {
+        S.rain.push({
+          x: Math.random()*cv.width,
+          y: -20,
+          vx: (Math.random()-.5)*.8,
+          vy: .6+Math.random()*1.2,
+          r: 4+Math.random()*7,
+          rot: Math.random()*Math.PI*2,
+          vr: (Math.random()-.5)*.03,
           life: 1,
-          color: HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)],
+          color: ALL[Math.floor(Math.random()*ALL.length)],
         });
       }
-    }, 300);
+    }, 400);
 
+    // petals (drifting up from tree)
+    const petalTimer = setInterval(() => {
+      if (tRef.current > 0.5) {
+        const cx = cv.width/2;
+        S.petals.push({
+          x: cx+(Math.random()-.5)*cv.width*.45,
+          y: cv.height*.15+Math.random()*cv.height*.55,
+          vx:(Math.random()-.5)*1.8, vy:-(0.7+Math.random()*2),
+          r: 6+Math.random()*10,
+          rot: Math.random()*Math.PI*2, vr:(Math.random()-.5)*.08,
+          life: 1,
+          color: ALL[Math.floor(Math.random()*ALL.length)],
+        });
+      }
+    }, 220);
+
+    // pulse rings at tree base
+    const ringTimer = setInterval(() => {
+      if (tRef.current > 0.3) {
+        S.rings.push({ r:0, life:1, color: GOLDS[Math.floor(Math.random()*GOLDS.length)] });
+      }
+    }, 1200);
+
+    // spark bursts from blossoms
+    const sparkTimer = setInterval(() => {
+      if (tRef.current > 0.6 && blossoms.length > 0) {
+        const b = blossoms[Math.floor(Math.random()*blossoms.length)];
+        for (let i=0;i<5;i++) {
+          const ang = Math.random()*Math.PI*2;
+          const spd = .5+Math.random()*2;
+          S.sparks.push({
+            x:b.x, y:b.y,
+            vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+            life:1, r:1.5+Math.random()*2, color:b.color,
+          });
+        }
+      }
+    }, 600);
+
+    /* ── main tick ── */
     const tick = () => {
-      tRef.current += 0.004;
-      const t  = tRef.current;
+      tRef.current += 0.0035;
+      const t = tRef.current;
       const cw = cv.width, ch = cv.height;
-      const cx = cw / 2, cy = ch * 0.92;
+      const cx = cw/2, cy = ch*.92;
+      const now = Date.now();
 
       ctx.clearRect(0, 0, cw, ch);
 
-      /* strong gold glow at base */
-      const gAlpha = Math.min(t * 1.2, 1) * 0.28;
-      const grd = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy * 0.7, cw * 0.48);
-      grd.addColorStop(0,   `rgba(255,215,0,${gAlpha})`);
-      grd.addColorStop(0.4, `rgba(245,180,30,${gAlpha * 0.5})`);
-      grd.addColorStop(0.7, `rgba(0,217,126,${gAlpha * 0.15})`);
-      grd.addColorStop(1,   "transparent");
+      /* aurora background waves */
+      for (let i=0;i<3;i++) {
+        const aAlpha = 0.04+Math.sin(now/3000+i*1.2)*0.02;
+        const aGrd = ctx.createLinearGradient(0, ch*(0.1+i*.25), cw, ch*(0.4+i*.2));
+        aGrd.addColorStop(0,   `rgba(255,215,0,${aAlpha})`);
+        aGrd.addColorStop(0.4, `rgba(0,217,126,${aAlpha*.6})`);
+        aGrd.addColorStop(0.7, `rgba(255,26,110,${aAlpha*.4})`);
+        aGrd.addColorStop(1,   "transparent");
+        ctx.fillStyle = aGrd; ctx.fillRect(0, 0, cw, ch);
+      }
+
+      /* gold bloom glow */
+      const gAlpha = Math.min(t*1.2,1)*0.3;
+      const grd = ctx.createRadialGradient(cx, cy*.68, 0, cx, cy*.68, cw*.5);
+      grd.addColorStop(0, `rgba(255,215,0,${gAlpha})`);
+      grd.addColorStop(.4,`rgba(245,180,30,${gAlpha*.5})`);
+      grd.addColorStop(1, "transparent");
       ctx.fillStyle = grd; ctx.fillRect(0, 0, cw, ch);
 
-      /* trunk */
+      /* pulse rings at base */
+      S.rings.forEach(ring => {
+        ring.r  += 2.2;
+        ring.life -= 0.012;
+        const a = Math.max(0, ring.life)*0.35;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, ring.r, 0, Math.PI*2);
+        ctx.strokeStyle = ring.color;
+        ctx.lineWidth   = 1.5;
+        ctx.globalAlpha = a;
+        ctx.shadowColor = ring.color; ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.restore();
+      });
+      S.rings = S.rings.filter(r => r.life > 0);
+
+      /* tree trunk */
       ctx.save();
-      const tAlpha = Math.min(t * 2, 0.55);
-      drawTree(cx, cy, ch * 0.25, -Math.PI / 2, 7, tAlpha);
+      drawTree(cx, cy, ch*.25, -Math.PI/2, 7, Math.min(t*2, 0.6));
       ctx.restore();
 
-      /* blossoms */
+      /* blossoms with twinkle */
       blossoms.forEach(b => {
         if (t < b.spawnT) return;
-        const lt = Math.min((t - b.spawnT) / 0.35, 1);
-        const sc = lt < 0.6 ? lt / 0.6 : 1 + Math.sin((lt-0.6)/0.4*Math.PI) * 0.15;
-        const sway = Math.sin(Date.now() / 2200 + b.sway) * 2;
-        const alpha = lt * 0.75;
+        const lt  = Math.min((t-b.spawnT)/.35, 1);
+        const sc  = lt < .6 ? lt/.6 : 1+Math.sin((lt-.6)/.4*Math.PI)*.15;
+        const sway= Math.sin(now/2200+b.sway)*2.5;
+        const twinkle = .65 + Math.sin(now/800+b.twinkleOffset)*.15;
         ctx.save();
-        ctx.translate(b.x + sway, b.y);
-        ctx.scale(sc, sc);
-        drawHeart(ctx, 0, 0, b.r, b.color, alpha);
+        ctx.translate(b.x+sway, b.y); ctx.scale(sc, sc);
+        drawHeart(0, 0, b.r, b.color, lt*twinkle);
         ctx.restore();
       });
 
-      /* drifting petal hearts */
-      petalsRef.current.forEach(p => {
-        p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= 0.004;
+      /* shooting stars */
+      S.stars.forEach(s => {
+        s.x+=s.vx; s.y+=s.vy; s.life-=0.022;
+        const a = Math.max(0,s.life);
         ctx.save();
-        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-        const a = Math.max(0, p.life) * 0.5;
-        drawHeart(ctx, 0, 0, p.r * 0.5, p.color, a);
+        ctx.globalAlpha = a*.7;
+        const grd2 = ctx.createLinearGradient(s.x-s.vx*10, s.y-s.vy*10, s.x, s.y);
+        grd2.addColorStop(0, "transparent");
+        grd2.addColorStop(1, s.color);
+        ctx.strokeStyle = grd2; ctx.lineWidth = 2;
+        ctx.shadowColor = s.color; ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(s.x-s.vx*(s.len/s.vx), s.y-s.vy*(s.len/s.vx));
+        ctx.lineTo(s.x, s.y);
+        ctx.stroke();
+        ctx.restore();
+        /* mini heart at tip */
+        drawHeart(s.x, s.y, 3, s.color, a*.6);
+      });
+      S.stars = S.stars.filter(s => s.life>0 && s.x<cw+100 && s.y<ch+100);
+
+      /* fireflies */
+      S.fireflies.forEach(f => {
+        f.x += f.vx+Math.sin(now*.001+f.phase)*.5;
+        f.y += f.vy+Math.cos(now*.0013+f.phase)*.4;
+        if (f.x<0) f.x=cw; if (f.x>cw) f.x=0;
+        if (f.y<0) f.y=ch; if (f.y>ch) f.y=0;
+        const glow = .3+Math.sin(now*.002+f.phase)*.25;
+        ctx.save();
+        ctx.globalAlpha = glow;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+        ctx.fillStyle = f.color;
+        ctx.shadowColor = f.color; ctx.shadowBlur = 12;
+        ctx.fill();
         ctx.restore();
       });
-      petalsRef.current = petalsRef.current.filter(p => p.life > 0);
+
+      /* spark bursts */
+      S.sparks.forEach(sp => {
+        sp.x+=sp.vx; sp.y+=sp.vy; sp.life-=0.04;
+        sp.vy+=0.05;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0,sp.life)*0.8;
+        ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI*2);
+        ctx.fillStyle = sp.color;
+        ctx.shadowColor = sp.color; ctx.shadowBlur = 8;
+        ctx.fill(); ctx.restore();
+      });
+      S.sparks = S.sparks.filter(sp => sp.life>0);
+
+      /* drifting petals up */
+      S.petals.forEach(p => {
+        p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=0.0035;
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        drawHeart(0, 0, p.r*.5, p.color, Math.max(0,p.life)*.45);
+        ctx.restore();
+      });
+      S.petals = S.petals.filter(p => p.life>0);
+
+      /* falling heart rain */
+      S.rain.forEach(r => {
+        r.x+=r.vx; r.y+=r.vy; r.rot+=r.vr; r.life-=0.003;
+        ctx.save();
+        ctx.translate(r.x, r.y); ctx.rotate(r.rot);
+        drawHeart(0, 0, r.r*.5, r.color, Math.max(0,r.life)*.35);
+        ctx.restore();
+      });
+      S.rain = S.rain.filter(r => r.life>0 && r.y<ch+30);
 
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -286,7 +425,9 @@ function HeartTree() {
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(rafRef.current);
-      clearInterval(petalTimer);
+      clearInterval(starTimer); clearInterval(rainTimer);
+      clearInterval(petalTimer); clearInterval(ringTimer);
+      clearInterval(sparkTimer);
       window.removeEventListener("resize", resize);
       window.removeEventListener("resize", buildTree);
     };
@@ -294,8 +435,8 @@ function HeartTree() {
 
   return (
     <canvas ref={cvRef} style={{
-      position: "fixed", inset: 0, width: "100%", height: "100%",
-      pointerEvents: "none", zIndex: 0,
+      position:"fixed", inset:0, width:"100%", height:"100%",
+      pointerEvents:"none", zIndex:0,
     }} />
   );
 }

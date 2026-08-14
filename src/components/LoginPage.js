@@ -133,11 +133,12 @@ function HeartTree() {
 
     const ctx = cv.getContext("2d");
 
-    /* heart colours — gold trunk + green & pink blossoms */
+    /* heart colours — gold dominant, green & pink accents */
     const HEART_COLORS = [
-      "#f5c842","#f5c842","#f5c842",   // gold (more weight)
-      "#00d97e","#22c55e","#4ade80",   // greens
-      "#ff1a6e","#ec4899","#f472b6",   // pinks
+      "#f5c842","#f5c842","#f5c842","#f5c842","#f5c842",  // gold (dominant)
+      "#ffd700","#ffb800","#ffe066","#ffc200",             // gold shades
+      "#00d97e","#22c55e",                                  // green accents
+      "#ff1a6e","#ec4899",                                  // pink accents
     ];
 
     /* pre-build blossom positions */
@@ -184,8 +185,10 @@ function HeartTree() {
       ctx.bezierCurveTo(x+size, y-size*0.2, x, y-size*0.2, x, y+size*0.3);
       ctx.closePath();
       ctx.fillStyle = color;
-      ctx.shadowColor = color;
-      ctx.shadowBlur  = 10;
+      ctx.shadowColor = color === "#00d97e" || color === "#22c55e" ? "#00d97e"
+                       : color === "#ff1a6e" || color === "#ec4899" ? "#ff1a6e"
+                       : "#ffd700";
+      ctx.shadowBlur  = 12;
       ctx.fill();
       ctx.restore();
     }
@@ -195,10 +198,15 @@ function HeartTree() {
       const ex = x + Math.cos(ang) * len;
       const ey = y + Math.sin(ang) * len;
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey);
-      ctx.strokeStyle = depth > 3 ? `rgba(180,120,40,${alpha})` : `rgba(220,170,60,${alpha})`;
-      ctx.lineWidth   = Math.max(1, depth * 1.5);
-      ctx.shadowColor = "rgba(245,200,66,0.3)";
-      ctx.shadowBlur  = 6;
+      /* full gold trunk and branches */
+      ctx.strokeStyle = depth > 4
+        ? `rgba(200,150,20,${alpha})`    // deeper trunk — darker gold
+        : depth > 2
+        ? `rgba(245,180,30,${alpha})`    // mid branches — bright gold
+        : `rgba(255,215,0,${alpha})`;    // tips — pure gold
+      ctx.lineWidth   = Math.max(1, depth * 1.6);
+      ctx.shadowColor = "rgba(255,215,0,0.5)";
+      ctx.shadowBlur  = depth > 3 ? 8 : 4;
       ctx.stroke();
       ctx.shadowBlur  = 0;
       drawTree(ex, ey, len*0.70, ang-0.42, depth-1, alpha);
@@ -232,11 +240,12 @@ function HeartTree() {
 
       ctx.clearRect(0, 0, cw, ch);
 
-      /* subtle gold glow at base */
-      const gAlpha = Math.min(t * 1.2, 1) * 0.18;
-      const grd = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy * 0.7, cw * 0.45);
-      grd.addColorStop(0,   `rgba(245,200,66,${gAlpha})`);
-      grd.addColorStop(0.5, `rgba(0,217,126,${gAlpha * 0.4})`);
+      /* strong gold glow at base */
+      const gAlpha = Math.min(t * 1.2, 1) * 0.28;
+      const grd = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy * 0.7, cw * 0.48);
+      grd.addColorStop(0,   `rgba(255,215,0,${gAlpha})`);
+      grd.addColorStop(0.4, `rgba(245,180,30,${gAlpha * 0.5})`);
+      grd.addColorStop(0.7, `rgba(0,217,126,${gAlpha * 0.15})`);
       grd.addColorStop(1,   "transparent");
       ctx.fillStyle = grd; ctx.fillRect(0, 0, cw, ch);
 

@@ -136,7 +136,7 @@ const PHASES = [
 ];
 
 export default function InteractiveBirthdayGift({ user, onDone }) {
-  const [showTree,   setShowTree]   = useState(true);  // Step 0: tree
+  const [showTree,   setShowTree]   = useState(false);  // Tree intro disabled
   const [step,       setStep]       = useState(0);     // 0,1,2 = gift phases; 3 = messages; 4 = final
   const [confetti,   setConfetti]   = useState(false);
   const [shake,      setShake]      = useState(false);

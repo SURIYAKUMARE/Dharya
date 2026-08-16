@@ -13,7 +13,7 @@ const WISHES = [
 ];
 
 export default function ProposalBox({ opened, setOpened, setPage }) {
-  const [treeShown,    setTreeShown]    = useState(!opened); // show tree on first load only
+  const [treeShown,    setTreeShown]    = useState(false); // tree intro disabled
   const [letterOpen,   setLetterOpen]   = useState(false);
   const [noPos,        setNoPos]        = useState({ x: null, y: null });
   const [noClicks,     setNoClicks]     = useState(0);
@@ -77,8 +77,7 @@ export default function ProposalBox({ opened, setOpened, setPage }) {
       onMouseMove={!opened ? handleMouseMove : undefined}
       onMouseLeave={!opened ? handleMouseLeave : undefined}
     >
-      {/* Cinematic Tree of Life intro */}
-      {treeShown && <TreeOfLife onDone={() => setTreeShown(false)} />}
+      {/* Tree of Life intro removed */}
 
       {/* Shooting stars */}
       {stars.map(s => (

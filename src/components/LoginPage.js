@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, ArrowRight, Heart, Sparkles } from "lucide-react";
 import { useTilt } from "../App";
 

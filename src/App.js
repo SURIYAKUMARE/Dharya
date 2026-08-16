@@ -307,7 +307,7 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [loggedIn]);
 
-  if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); }} />;
+  if (!loggedIn) return <LoginPage onLogin={(u) => { setUser(u); setLoggedIn(true); setPage("letters"); }} />;
   if (locked)    return <LockScreen user={user} onUnlock={() => { setLocked(false); resetIdle(); }} />;
 
   document.body.className = user === "surya" ? "theme-surya" : "";

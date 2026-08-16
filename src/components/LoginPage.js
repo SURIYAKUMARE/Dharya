@@ -617,9 +617,15 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
-      background:theme.bg, position:"relative", overflow:"hidden", padding:"24px",
+      background:"transparent", position:"relative", overflow:"hidden", padding:"24px",
       transition:"background 1s ease",
     }}>
+      {/* Deep dark base — tree renders on top of this */}
+      <div style={{
+        position:"fixed", inset:0, zIndex:-1,
+        background: theme.bg,
+        transition:"background 1s ease",
+      }} />
       {/* Ambient gradient */}
       <div style={{
         position:"fixed", inset:0, pointerEvents:"none", zIndex:0,
@@ -631,8 +637,17 @@ export default function LoginPage({ onLogin }) {
         transition:"background 1s ease",
       }} />
 
-      {/* Golden Tree background */}
+      {/* Golden Tree background — full viewport, z:0 */}
       <GoldenTree />
+
+      {/* Tree-side glow strips so the tree edges stay bright outside the card */}
+      <div style={{
+        position:"fixed", inset:0, pointerEvents:"none", zIndex:1,
+        background:`
+          radial-gradient(ellipse at 12% 55%, rgba(255,200,0,0.18) 0%, transparent 42%),
+          radial-gradient(ellipse at 88% 55%, rgba(255,200,0,0.18) 0%, transparent 42%)
+        `,
+      }} />
 
       <PulseRings theme={theme} />
       <FloatingParticles theme={theme} />
@@ -651,7 +666,7 @@ export default function LoginPage({ onLogin }) {
       {/* Success overlay */}
       {success && <SuccessOverlay theme={theme} name={success.name} />}
 
-      {/* Card */}
+      {/* Card — semi-transparent glass so tree glows through */}
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
@@ -661,14 +676,14 @@ export default function LoginPage({ onLogin }) {
         onMouseEnter={() => { tilt.onMouseEnter(); setCardHover(true); }}
         className={`tilt-card ${shake ? "login-shake" : ""}`}
         style={{
-          position:"relative", zIndex:10, width:"100%", maxWidth:"440px",
-          background:"rgba(9,4,21,0.90)",
-          border:`1.5px solid ${theme.primary}30`,
+          position:"relative", zIndex:10, width:"100%", maxWidth:"420px",
+          background:"rgba(6,2,16,0.55)",
+          border:`1.5px solid ${theme.primary}40`,
           borderRadius:"32px",
-          padding:"56px 44px 48px",
-          boxShadow:`0 56px 120px rgba(0,0,0,0.7), 0 0 100px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
-          backdropFilter:"blur(32px)",
-          WebkitBackdropFilter:"blur(32px)",
+          padding:"52px 40px 44px",
+          boxShadow:`0 40px 100px rgba(0,0,0,0.65), 0 0 80px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.07)`,
+          backdropFilter:"blur(18px)",
+          WebkitBackdropFilter:"blur(18px)",
           opacity: mounted ? 1 : 0,
           transform: mounted ? "translateY(0) scale(1)" : "translateY(40px) scale(0.97)",
           transition:"opacity 0.7s ease, transform 0.7s cubic-bezier(0.34,1.56,0.64,1), border-color 0.6s ease, box-shadow 0.6s ease",

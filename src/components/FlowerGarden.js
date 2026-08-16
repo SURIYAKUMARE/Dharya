@@ -2,226 +2,109 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { dbGet, dbSet } from "../api";
 
-/* --- constants --- */
-const FLOWER_TYPES = ["\uD83C\uDF38","\uD83C\uDF3A","\uD83C\uDF3B","\uD83C\uDF39","\uD83C\uDF37","\uD83C\uDF3C","\uD83E\uDEB7","\uD83D\uDC90","\uD83C\uDF38","\uD83C\uDF3A"];
+const FLOWER_TYPES = ["🌸","🌺","🌻","🌹","🌷","🌼","🪷","💐","🌸","🌺"];
 const GROWTH_STAGES = [
-  { emoji:"\uD83C\uDF31", label:"Seedling",  days:0 },
-  { emoji:"\uD83C\uDF3F", label:"Sprouting", days:1 },
-  { emoji:"\uD83E\uDEB4", label:"Growing",   days:2 },
-  { emoji:"\uD83C\uDF38", label:"Blooming",  days:3 },
+  { emoji:"🌱", label:"Seedling",  days:0 },
+  { emoji:"🌿", label:"Sprouting", days:1 },
+  { emoji:"🪴", label:"Growing",   days:2 },
+  { emoji:"🌸", label:"Blooming",  days:3 },
 ];
 const LOVE_MSGS = [
-  "Every day you visit, our love grows \uD83D\uDC99",
-  "Like a garden, love needs daily care \uD83C\uDF31",
-  "You are the sunshine that makes everything bloom \u2600\uFE0F",
-  "Our love story \u2014 one flower at a time \uD83C\uDF38",
-  "Each bloom is a day we chose each other \uD83D\uDC8D",
-  "This garden grows as long as you keep coming back \uD83C\uDF3F",
+  "Every day you visit, our love grows 💙",
+  "Like a garden, love needs daily care 🌱",
+  "You are the sunshine that makes everything bloom ☀️",
+  "Our love story — one flower at a time 🌸",
+  "Each bloom is a day we chose each other 💍",
+  "This garden grows as long as you keep coming back 🌿",
 ];
 const MILESTONES = [
-  { n:1,   e:"\uD83C\uDF31", label:"First Flower" },
-  { n:7,   e:"\uD83C\uDF3F", label:"One Week"     },
-  { n:14,  e:"\uD83E\uDEB4", label:"Fortnight"    },
-  { n:30,  e:"\uD83C\uDF38", label:"One Month"    },
-  { n:50,  e:"\uD83C\uDF3A", label:"50 Flowers"   },
-  { n:100, e:"\uD83D\uDC90", label:"100 Days"     },
+  { n:1,   e:"🌱", label:"First Flower" },
+  { n:7,   e:"🌿", label:"One Week"     },
+  { n:14,  e:"🪴", label:"Fortnight"    },
+  { n:30,  e:"🌸", label:"One Month"    },
+  { n:50,  e:"🌺", label:"50 Flowers"   },
+  { n:100, e:"💐", label:"100 Days"     },
 ];
 
-/* --- inject CSS once --- */
 function injectStyles() {
   if (document.getElementById("fg-styles")) return;
   const s = document.createElement("style");
   s.id = "fg-styles";
   s.textContent = `
     @keyframes fg-sway    { 0%,100%{transform:rotate(-4deg) translateY(0)} 50%{transform:rotate(4deg) translateY(-5px)} }
-    @keyframes fg-pop     { 0%{transform:scale(0) rotate(-20deg);opacity:0} 60%{transform:scale(1.3) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0);opacity:1} }
     @keyframes fg-float   { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-130px) scale(0.2);opacity:0} }
-    @keyframes fg-drop    { 0%{transform:translateY(-30px) scale(1);opacity:1} 100%{transform:translateY(70px) scale(0.1);opacity:0} }
-    @keyframes fg-pulse   { 0%,100%{box-shadow:0 0 0 0 rgba(236,72,153,0.4)} 50%{box-shadow:0 0 0 14px rgba(236,72,153,0)} }
+    @keyframes fg-drop    { 0%{transform:translateY(-30px);opacity:1} 100%{transform:translateY(70px);opacity:0} }
     @keyframes fg-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     @keyframes fg-spin    { to{transform:rotate(360deg)} }
     @keyframes fg-newBadge{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
     @keyframes fg-soilWave{ 0%,100%{transform:scaleX(1) translateY(0)} 50%{transform:scaleX(1.02) translateY(-2px)} }
     @keyframes fg-twinkle { 0%,100%{opacity:0.2} 50%{opacity:0.9} }
-    @keyframes fg-cloud   { 0%{transform:translateX(0)} 100%{transform:translateX(18px)} }
-    @keyframes fg-fly     { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-8px) rotate(5deg)} }
+    @keyframes fg-cloud   { 0%{transform:translateX(0)} 100%{transform:translateX(20px)} }
+    @keyframes fg-fly     { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-9px) rotate(5deg)} }
   `;
   document.head.appendChild(s);
 }
 
-/* --- Water drops overlay --- */
 function WaterDrops({ active }) {
   if (!active) return null;
   return (
     <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:60, overflow:"hidden" }}>
       {[...Array(14)].map((_,i) => (
         <span key={i} style={{
-          position:"absolute", top:"20%",
-          left:`${5 + i * 7}%`,
-          fontSize:`${14 + (i%3)*5}px`,
-          animation:`fg-drop ${0.7 + i*0.08}s ease-in ${i*0.06}s both`,
-        }}>\uD83D\uDCA7</span>
+          position:"absolute", top:"18%", left:`${5 + i*7}%`,
+          fontSize:`${14+(i%3)*5}px`,
+          animation:`fg-drop ${0.7+i*0.08}s ease-in ${i*0.06}s both`,
+        }}>💧</span>
       ))}
     </div>
   );
 }
 
-/* --- Petal burst --- */
 function PetalBurst({ active }) {
   if (!active) return null;
-  const items = ["\uD83C\uDF38","\uD83C\uDF3A","\uD83C\uDF37","\uD83C\uDF3C","\uD83E\uDEB7","\uD83D\uDCA6","\uD83C\uDF38","\uD83C\uDF3A","\u2728","\uD83D\uDC95"];
+  const items = ["🌸","🌺","🌷","🌼","🪷","💮","🌸","🌺","✨","💕"];
   return (
     <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:55, overflow:"hidden" }}>
       {items.map((p,i) => (
         <span key={i} style={{
-          position:"absolute", bottom:"-20px",
-          left:`${4 + i*10}%`,
-          fontSize:`${16 + (i%3)*8}px`,
-          animation:`fg-float ${2.2 + i*0.3}s ease-out ${i*0.1}s forwards`,
+          position:"absolute", bottom:"-20px", left:`${4+i*10}%`,
+          fontSize:`${16+(i%3)*8}px`,
+          animation:`fg-float ${2.2+i*0.3}s ease-out ${i*0.1}s forwards`,
         }}>{p}</span>
       ))}
     </div>
   );
 }
 
-/* --- Single Flower Card --- */
 function FlowerCard({ flower, index, isNew }) {
   const stage   = GROWTH_STAGES[Math.min(flower.stage, GROWTH_STAGES.length - 1)];
   const bloomed = flower.stage >= GROWTH_STAGES.length - 1;
   const emoji   = bloomed ? flower.type : stage.emoji;
-
   return (
-    <motion.div
-      layout
-      initial={{ scale:0, opacity:0, y:20 }}
-      animate={{ scale:1, opacity:1, y:0 }}
-      exit={{ scale:0, opacity:0 }}
-      transition={{ type:"spring", stiffness:280, damping:20, delay: index * 0.03 }}
+    <motion.div layout
+      initial={{ scale:0, opacity:0, y:20 }} animate={{ scale:1, opacity:1, y:0 }} exit={{ scale:0, opacity:0 }}
+      transition={{ type:"spring", stiffness:280, damping:20, delay:index*0.03 }}
       style={{
-        display:"flex", flexDirection:"column", alignItems:"center",
-        gap:6, padding:"14px 10px 12px",
-        background: bloomed
-          ? "linear-gradient(135deg,rgba(236,72,153,0.14),rgba(139,92,246,0.08))"
-          : "rgba(255,255,255,0.05)",
+        display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+        padding:"14px 10px 12px",
+        background: bloomed ? "linear-gradient(135deg,rgba(236,72,153,0.14),rgba(139,92,246,0.08))" : "rgba(255,255,255,0.05)",
         border:`1.5px solid ${bloomed?"rgba(236,72,153,0.4)":"rgba(255,255,255,0.09)"}`,
-        borderRadius:18,
-        backdropFilter:"blur(10px)",
-        position:"relative", overflow:"hidden",
-        boxShadow: bloomed
-          ? "0 6px 24px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,255,255,0.06)"
-          : "0 4px 12px rgba(0,0,0,0.15)",
-      }}
-    >
+        borderRadius:18, backdropFilter:"blur(10px)", position:"relative", overflow:"hidden",
+        boxShadow: bloomed ? "0 6px 24px rgba(236,72,153,0.18)" : "0 4px 12px rgba(0,0,0,0.15)",
+      }}>
       {bloomed && (
-        <div style={{
-          position:"absolute", inset:0,
-          background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.06) 50%,transparent 60%)",
-          backgroundSize:"200% 100%",
-          animation:"fg-shimmer 3s linear infinite",
-          borderRadius:18,
-          pointerEvents:"none",
-        }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.06) 50%,transparent 60%)", backgroundSize:"200% 100%", animation:"fg-shimmer 3s linear infinite", borderRadius:18, pointerEvents:"none" }}/>
       )}
       {isNew && (
-        <span style={{
-          position:"absolute", top:5, right:5,
-          fontSize:"0.5rem", fontWeight:800,
-          background:"#ec4899", color:"#fff",
-          padding:"2px 6px", borderRadius:50,
-          textTransform:"uppercase", letterSpacing:"0.5px",
-          animation:"fg-newBadge 1.2s ease-in-out infinite",
-        }}>NEW</span>
+        <span style={{ position:"absolute", top:5, right:5, fontSize:"0.5rem", fontWeight:800, background:"#ec4899", color:"#fff", padding:"2px 6px", borderRadius:50, textTransform:"uppercase", animation:"fg-newBadge 1.2s ease-in-out infinite" }}>NEW</span>
       )}
-      <span style={{
-        fontSize: bloomed ? "2.3rem" : "1.9rem",
-        lineHeight:1, display:"inline-block",
-        animation: bloomed ? `fg-sway ${2.2 + (index%3)*0.6}s ease-in-out infinite` : "none",
-        transformOrigin:"bottom center",
-        filter: bloomed ? "drop-shadow(0 2px 8px rgba(236,72,153,0.5))" : "none",
-      }}>{emoji}</span>
-      <span style={{
-        fontSize:"0.58rem", fontWeight:700,
-        fontFamily:"'Inter',sans-serif",
-        color: bloomed ? "#ec4899" : "#10B981",
-        background: bloomed ? "rgba(236,72,153,0.15)" : "rgba(16,185,129,0.15)",
-        padding:"2px 8px", borderRadius:50,
-        border:`1px solid ${bloomed?"rgba(236,72,153,0.3)":"rgba(16,185,129,0.3)"}`,
-        letterSpacing:"0.3px",
-      }}>{stage.label}</span>
-      <span style={{
-        fontSize:"0.58rem", color:"rgba(255,255,255,0.3)",
-        fontFamily:"'Inter',sans-serif",
-      }}>{flower.date}</span>
+      <span style={{ fontSize:bloomed?"2.3rem":"1.9rem", lineHeight:1, display:"inline-block", animation:bloomed?`fg-sway ${2.2+(index%3)*0.6}s ease-in-out infinite`:"none", transformOrigin:"bottom center", filter:bloomed?"drop-shadow(0 2px 8px rgba(236,72,153,0.5))":"none" }}>{emoji}</span>
+      <span style={{ fontSize:"0.58rem", fontWeight:700, fontFamily:"'Inter',sans-serif", color:bloomed?"#ec4899":"#10B981", background:bloomed?"rgba(236,72,153,0.15)":"rgba(16,185,129,0.15)", padding:"2px 8px", borderRadius:50, border:`1px solid ${bloomed?"rgba(236,72,153,0.3)":"rgba(16,185,129,0.3)"}` }}>{stage.label}</span>
+      <span style={{ fontSize:"0.58rem", color:"rgba(255,255,255,0.3)", fontFamily:"'Inter',sans-serif" }}>{flower.date}</span>
     </motion.div>
   );
 }
 
-/* --- Garden Bed Visual --- */
-function GardenBed({ flowers }) {
-  const bloomed = flowers.filter(f => f.stage >= GROWTH_STAGES.length - 1);
-  const total   = flowers.length;
-  if (total === 0) return null;
-  return (
-    <div style={{
-      margin:"0 0 20px",
-      padding:"20px 16px 14px",
-      background:"linear-gradient(180deg,rgba(34,197,94,0.06) 0%,rgba(21,128,61,0.1) 100%)",
-      border:"1px solid rgba(34,197,94,0.15)",
-      borderRadius:20,
-      position:"relative", overflow:"hidden",
-    }}>
-      <div style={{
-        position:"absolute", bottom:0, left:0, right:0, height:22,
-        background:"linear-gradient(180deg,#3d1c02,#2a1000)",
-        animation:"fg-soilWave 4s ease-in-out infinite",
-        borderRadius:"0 0 20px 20px",
-      }}/>
-      <div style={{
-        position:"absolute", bottom:20, left:0, right:0, height:8,
-        background:"linear-gradient(180deg,#16a34a,#15803d)",
-        opacity:0.7,
-      }}/>
-      <p style={{
-        fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700,
-        color:"rgba(255,255,255,0.35)", textTransform:"uppercase",
-        letterSpacing:"1.5px", textAlign:"center", margin:"0 0 12px",
-      }}>\uD83C\uDF3F Garden Bed</p>
-      <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:6, paddingBottom:28 }}>
-        {flowers.slice().reverse().slice(0,20).map((f,i) => {
-          const s = GROWTH_STAGES[Math.min(f.stage, GROWTH_STAGES.length-1)];
-          const e = f.stage >= GROWTH_STAGES.length-1 ? f.type : s.emoji;
-          return (
-            <motion.span key={f.id}
-              initial={{ scale:0, y:20 }}
-              animate={{ scale:1, y:0 }}
-              transition={{ delay: i*0.04, type:"spring" }}
-              style={{
-                fontSize:`${18 + (i%3)*6}px`,
-                display:"inline-block",
-                animation: f.stage >= GROWTH_STAGES.length-1
-                  ? `fg-sway ${2+i*0.2}s ease-in-out ${i*0.15}s infinite` : "none",
-                transformOrigin:"bottom center",
-                filter: f.stage >= GROWTH_STAGES.length-1
-                  ? "drop-shadow(0 2px 6px rgba(236,72,153,0.4))" : "none",
-                cursor:"default",
-              }}
-            >{e}</motion.span>
-          );
-        })}
-      </div>
-      <div style={{ display:"flex", justifyContent:"center", gap:16, marginTop:4 }}>
-        <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"#4ade80" }}>
-          \uD83C\uDF38 {bloomed.length} bloomed
-        </span>
-        <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"rgba(255,255,255,0.35)" }}>
-          \uD83C\uDF31 {total - bloomed.length} growing
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ======= MAIN COMPONENT ======= */
 export default function FlowerGarden({ user }) {
   const [garden,     setGarden]     = useState([]);
   const [watered,    setWatered]    = useState(false);
@@ -243,16 +126,13 @@ export default function FlowerGarden({ user }) {
   const pct            = garden.length ? Math.round((bloomed / garden.length) * 100) : 0;
 
   useEffect(() => {
-    Promise.all([
-      dbGet("fg_garden",    []),
-      dbGet("fg_lastvisit", ""),
-      dbGet("fg_streak",    0),
-    ]).then(([g, v, s]) => {
-      if (Array.isArray(g)) setGarden(g);
-      if (v) setLastVisit(v);
-      if (typeof s === "number") setStreak(s);
-      setLoading(false);
-    });
+    Promise.all([dbGet("fg_garden",[]), dbGet("fg_lastvisit",""), dbGet("fg_streak",0)])
+      .then(([g,v,s]) => {
+        if (Array.isArray(g)) setGarden(g);
+        if (v) setLastVisit(v);
+        if (typeof s === "number") setStreak(s);
+        setLoading(false);
+      });
     const id = setInterval(() => setMsgIdx(i => (i+1) % LOVE_MSGS.length), 4200);
     return () => clearInterval(id);
   }, []); // eslint-disable-line
@@ -262,43 +142,21 @@ export default function FlowerGarden({ user }) {
     setShowDrops(true);
     setTimeout(() => setShowDrops(false), 1300);
     await new Promise(r => setTimeout(r, 650));
-
-    const flower = {
-      id:    Date.now(),
-      type:  FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)],
-      stage: 0,
-      date:  new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short" }),
-    };
-    const grown     = garden.map(f => ({ ...f, stage: Math.min(f.stage+1, GROWTH_STAGES.length-1) }));
+    const flower = { id:Date.now(), type:FLOWER_TYPES[Math.floor(Math.random()*FLOWER_TYPES.length)], stage:0, date:new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) };
+    const grown     = garden.map(f => ({ ...f, stage:Math.min(f.stage+1, GROWTH_STAGES.length-1) }));
     const updated   = [...grown, flower];
     const newStreak = streak + 1;
-
-    setGarden(updated);
-    setNewId(flower.id);
-    setWatered(true);
-    setLastVisit(todayKey);
-    setStreak(newStreak);
-
-    const newBlooms = grown.filter(f =>
-      f.stage === GROWTH_STAGES.length - 1 &&
-      garden.find(g => g.id === f.id && g.stage === GROWTH_STAGES.length - 2)
-    );
-    if (newBlooms.length > 0) {
-      setShowPetals(true);
-      setTimeout(() => setShowPetals(false), 3200);
-    }
+    setGarden(updated); setNewId(flower.id); setWatered(true); setLastVisit(todayKey); setStreak(newStreak);
+    const newBlooms = grown.filter(f => f.stage===GROWTH_STAGES.length-1 && garden.find(g=>g.id===f.id&&g.stage===GROWTH_STAGES.length-2));
+    if (newBlooms.length > 0) { setShowPetals(true); setTimeout(()=>setShowPetals(false),3200); }
     spawnConfetti();
-    await Promise.all([
-      dbSet("fg_garden",    updated),
-      dbSet("fg_lastvisit", todayKey),
-      dbSet("fg_streak",    newStreak),
-    ]);
+    await Promise.all([dbSet("fg_garden",updated), dbSet("fg_lastvisit",todayKey), dbSet("fg_streak",newStreak)]);
     setTimeout(() => setNewId(null), 3500);
   };
 
   const spawnConfetti = () => {
     if (!confRef.current) return;
-    const cs = ["\uD83C\uDF38","\uD83C\uDF3A","\uD83C\uDF37","\uD83C\uDF3C","\uD83D\uDC95","\u2728","\uD83C\uDF3B","\uD83D\uDC97"];
+    const cs = ["🌸","🌺","🌷","🌼","💕","✨","🌻","💗"];
     for (let i = 0; i < 22; i++) {
       const el = document.createElement("div");
       el.style.cssText = `position:fixed;top:-20px;left:${Math.random()*100}%;font-size:${14+Math.random()*16}px;pointer-events:none;z-index:99;animation:fg-float ${2+Math.random()*2}s ${Math.random()*0.5}s ease-out forwards;`;
@@ -308,452 +166,225 @@ export default function FlowerGarden({ user }) {
     }
   };
 
-  /* sky star positions — stable refs so they don't re-randomize */
-  const skyStars = useRef(
-    [...Array(55)].map(() => ({
-      top:   `${2 + Math.random() * 72}%`,
-      left:  `${Math.random() * 98}%`,
-      size:  1 + Math.random() * 2.2,
-      op:    0.25 + Math.random() * 0.6,
-      dur:   1.4 + Math.random() * 3.2,
-      delay: Math.random() * 5,
-    }))
-  ).current;
-
-  const fireflies = useRef(
-    [...Array(12)].map(() => ({
-      top:  `${28 + Math.random() * 55}%`,
-      left: `${5 + Math.random() * 88}%`,
-      dur:  2.5 + Math.random() * 4,
-      delay:Math.random() * 3,
-    }))
-  ).current;
+  // stable random positions for sky elements
+  const skyStars = useRef([...Array(55)].map(() => ({ top:`${2+Math.random()*72}%`, left:`${Math.random()*98}%`, size:1+Math.random()*2.2, op:0.25+Math.random()*0.6, dur:1.4+Math.random()*3.2, delay:Math.random()*5 }))).current;
+  const fireflies = useRef([...Array(12)].map(() => ({ top:`${28+Math.random()*55}%`, left:`${5+Math.random()*88}%`, dur:2.5+Math.random()*4, delay:Math.random()*3 }))).current;
 
   return (
     <div style={{ maxWidth:720, margin:"0 auto", padding:"0 4px 100px", position:"relative" }}>
       <div ref={confRef} style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:98, overflow:"hidden" }}/>
-      <WaterDrops  active={showDrops}  />
-      <PetalBurst  active={showPetals} />
+      <WaterDrops active={showDrops} />
+      <PetalBurst active={showPetals} />
 
       {/* ====== GARDEN SCENE ====== */}
-      <motion.div
-        initial={{ opacity:0, y:-16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7 }}
-        style={{
-          borderRadius:28, overflow:"hidden",
-          marginBottom:24, position:"relative",
-          boxShadow:"0 16px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)",
-        }}
-      >
-        {/* --- Night Sky --- */}
-        <div style={{
-          background:"linear-gradient(180deg,#020614 0%,#060d2e 30%,#0e1545 60%,#1a1260 100%)",
-          padding:"28px 24px 0",
-          position:"relative",
-          minHeight:220,
-          overflow:"hidden",
-        }}>
-          {/* Stars */}
-          {skyStars.map((st, i) => (
-            <div key={i} style={{
-              position:"absolute",
-              top: st.top, left: st.left,
-              width: st.size, height: st.size,
-              background:"#fff", borderRadius:"50%",
-              opacity: st.op,
-              animation:`fg-twinkle ${st.dur}s ease-in-out ${st.delay}s infinite`,
-            }} />
+      <motion.div initial={{ opacity:0, y:-16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7 }}
+        style={{ borderRadius:28, overflow:"hidden", marginBottom:24, boxShadow:"0 16px 56px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06)" }}>
+
+        {/* Night Sky */}
+        <div style={{ background:"linear-gradient(180deg,#020614 0%,#060d2e 30%,#0e1545 60%,#1a1260 100%)", padding:"28px 24px 0", position:"relative", minHeight:220, overflow:"hidden" }}>
+          {skyStars.map((st,i) => (
+            <div key={i} style={{ position:"absolute", top:st.top, left:st.left, width:st.size, height:st.size, background:"#fff", borderRadius:"50%", opacity:st.op, animation:`fg-twinkle ${st.dur}s ease-in-out ${st.delay}s infinite` }}/>
           ))}
 
           {/* Moon */}
-          <div style={{
-            position:"absolute", top:16, right:36,
-            width:56, height:56, borderRadius:"50%",
-            background:"linear-gradient(135deg,#fffde0,#ffe87a,#f5c518)",
-            boxShadow:"0 0 28px 10px rgba(255,215,0,0.25), 0 0 60px 28px rgba(255,200,0,0.1)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:"1.6rem",
-          }}>\uD83C\uDF19</div>
+          <div style={{ position:"absolute", top:16, right:36, width:56, height:56, borderRadius:"50%", background:"linear-gradient(135deg,#fffde0,#ffe87a,#f5c518)", boxShadow:"0 0 28px 10px rgba(255,215,0,0.25), 0 0 60px 28px rgba(255,200,0,0.1)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.6rem" }}>🌙</div>
 
-          {/* Shooting star — pure CSS */}
-          <div style={{
-            position:"absolute", top:"18%", left:"10%",
-            width:120, height:2, borderRadius:2,
-            background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent)",
-            transform:"rotate(-22deg)",
-            animation:"shootingStar 4s linear 1.5s infinite",
-            opacity:0,
-          }}/>
-          <div style={{
-            position:"absolute", top:"32%", left:"55%",
-            width:90, height:1.5, borderRadius:2,
-            background:"linear-gradient(90deg,transparent,rgba(200,180,255,0.8),transparent)",
-            transform:"rotate(-18deg)",
-            animation:"shootingStar 5.5s linear 4s infinite",
-            opacity:0,
-          }}/>
+          {/* Shooting stars */}
+          <div style={{ position:"absolute", top:"16%", left:"8%", width:110, height:2, borderRadius:2, background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent)", transform:"rotate(-22deg)", animation:"shootingStar 4.5s linear 2s infinite", opacity:0 }}/>
+          <div style={{ position:"absolute", top:"30%", left:"58%", width:85, height:1.5, borderRadius:2, background:"linear-gradient(90deg,transparent,rgba(200,180,255,0.8),transparent)", transform:"rotate(-18deg)", animation:"shootingStar 6s linear 5s infinite", opacity:0 }}/>
 
           {/* Clouds */}
-          {[{l:"6%",t:"16%",s:1},{l:"52%",t:"9%",s:0.7},{l:"78%",t:"22%",s:0.55}].map((c,i) => (
-            <div key={i} style={{
-              position:"absolute", top:c.t, left:c.l,
-              fontSize:`${26*c.s}px`, opacity:0.12,
-              animation:`fg-cloud ${7+i*2.5}s ease-in-out ${i*2}s infinite alternate`,
-            }}>\u2601\uFE0F</div>
+          {[{l:"6%",t:"15%",s:1},{l:"50%",t:"8%",s:0.7},{l:"76%",t:"22%",s:0.55}].map((c,i) => (
+            <div key={i} style={{ position:"absolute", top:c.t, left:c.l, fontSize:`${26*c.s}px`, opacity:0.13, animation:`fg-cloud ${7+i*2.5}s ease-in-out ${i*2}s infinite alternate` }}>☁️</div>
           ))}
 
           {/* Fireflies */}
           {fireflies.map((f,i) => (
-            <div key={i} style={{
-              position:"absolute", top:f.top, left:f.left,
-              width:5, height:5, borderRadius:"50%",
-              background:"#ffe066",
-              boxShadow:"0 0 8px 4px rgba(255,215,0,0.55)",
-              animation:`fg-fly ${f.dur}s ease-in-out ${f.delay}s infinite`,
-            }}/>
+            <div key={i} style={{ position:"absolute", top:f.top, left:f.left, width:5, height:5, borderRadius:"50%", background:"#ffe066", boxShadow:"0 0 8px 4px rgba(255,215,0,0.55)", animation:`fg-fly ${f.dur}s ease-in-out ${f.delay}s infinite` }}/>
           ))}
 
           {/* Butterflies */}
-          {[{l:"20%",t:"60%"},{l:"72%",t:"50%"}].map((b,i) => (
-            <div key={i} style={{
-              position:"absolute", top:b.t, left:b.l,
-              fontSize:"18px", opacity:0.7,
-              animation:`fg-fly ${3+i}s ease-in-out ${i*1.5}s infinite`,
-            }}>\uD83E\uDD8B</div>
+          {[{l:"20%",t:"62%"},{l:"70%",t:"52%"}].map((b,i) => (
+            <div key={i} style={{ position:"absolute", top:b.t, left:b.l, fontSize:"18px", opacity:0.7, animation:`fg-fly ${3+i}s ease-in-out ${i*1.5}s infinite` }}>🦋</div>
           ))}
 
-          {/* Title area */}
+          {/* Title */}
           <div style={{ textAlign:"center", paddingBottom:20, position:"relative", zIndex:2 }}>
-            <div style={{
-              display:"inline-flex", alignItems:"center", gap:8,
-              padding:"4px 16px",
-              background:"rgba(236,72,153,0.12)",
-              border:"1px solid rgba(236,72,153,0.25)",
-              borderRadius:50, marginBottom:10,
-              fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700,
-              color:"#ec4899", letterSpacing:"1.5px", textTransform:"uppercase",
-            }}>\uD83C\uDF38 Our Love Garden</div>
-
-            <h1 style={{
-              fontFamily:"'Cormorant Garamond',serif",
-              fontSize:"2.4rem", fontWeight:600, fontStyle:"italic",
-              color:"#fff", margin:"0 0 8px",
-              textShadow:"0 0 40px rgba(236,72,153,0.35), 0 2px 20px rgba(0,0,0,0.6)",
-            }}>Flower Garden \uD83C\uDF3A</h1>
-
+            <div style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"4px 16px", background:"rgba(236,72,153,0.12)", border:"1px solid rgba(236,72,153,0.25)", borderRadius:50, marginBottom:10, fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"#ec4899", letterSpacing:"1.5px", textTransform:"uppercase" }}>🌸 Our Love Garden</div>
+            <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.4rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 8px", textShadow:"0 0 40px rgba(236,72,153,0.35)" }}>Flower Garden 🌺</h1>
             <AnimatePresence mode="wait">
-              <motion.p key={msgIdx}
-                initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-4 }}
-                transition={{ duration:0.3 }}
-                style={{
-                  fontFamily:"'Inter',sans-serif", fontSize:"0.83rem",
-                  color:"rgba(255,255,255,0.45)", margin:0, fontStyle:"italic",
-                }}>
+              <motion.p key={msgIdx} initial={{ opacity:0, y:4 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-4 }} transition={{ duration:0.3 }}
+                style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.83rem", color:"rgba(255,255,255,0.45)", margin:0, fontStyle:"italic" }}>
                 "{LOVE_MSGS[msgIdx]}"
               </motion.p>
             </AnimatePresence>
           </div>
         </div>
 
-        {/* --- Ground / Garden Floor --- */}
-        <div style={{
-          position:"relative",
-          background:"linear-gradient(180deg,#112208 0%,#0c1a06 55%,#091404 100%)",
-          minHeight:170, overflow:"hidden",
-        }}>
-          {/* Grass line */}
+        {/* Garden Floor */}
+        <div style={{ position:"relative", background:"linear-gradient(180deg,#112208 0%,#0c1a06 55%,#091404 100%)", minHeight:170, overflow:"hidden" }}>
           <div style={{ position:"absolute", top:0, left:0, right:0, height:20, background:"linear-gradient(180deg,#22c55e,#15803d)", opacity:0.65 }}/>
-
-          {/* Path stones */}
           {[12,28,44,60,76].map((l,i) => (
-            <div key={i} style={{
-              position:"absolute", bottom:26,
-              left:`${l}%`, width:30+i%2*12, height:11, borderRadius:50,
-              background:"rgba(210,190,160,0.22)",
-              border:"1px solid rgba(255,255,255,0.07)",
-            }}/>
+            <div key={i} style={{ position:"absolute", bottom:26, left:`${l}%`, width:30+i%2*12, height:11, borderRadius:50, background:"rgba(210,190,160,0.22)", border:"1px solid rgba(255,255,255,0.07)" }}/>
           ))}
-
-          {/* Soil strip */}
-          <div style={{
-            position:"absolute", bottom:0, left:0, right:0, height:30,
-            background:"linear-gradient(180deg,#3d1c02,#261000)",
-            animation:"fg-soilWave 5s ease-in-out infinite",
-          }}/>
-
-          {/* Fence posts */}
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:30, background:"linear-gradient(180deg,#3d1c02,#261000)", animation:"fg-soilWave 5s ease-in-out infinite" }}/>
           {[5,15,25,75,85,95].map((l,i) => (
-            <div key={i} style={{
-              position:"absolute", bottom:22, left:`${l}%`,
-              width:6, height:40, background:"rgba(180,130,80,0.45)",
-              borderRadius:3,
-              boxShadow:"inset 1px 0 0 rgba(255,255,255,0.1)",
-            }}/>
+            <div key={i} style={{ position:"absolute", bottom:22, left:`${l}%`, width:6, height:40, background:"rgba(180,130,80,0.45)", borderRadius:3 }}/>
           ))}
-          {/* Fence rail */}
-          <div style={{
-            position:"absolute", bottom:52, left:"3%", right:"3%",
-            height:5, background:"rgba(180,130,80,0.35)", borderRadius:3,
-          }}/>
-          <div style={{
-            position:"absolute", bottom:38, left:"3%", right:"3%",
-            height:4, background:"rgba(180,130,80,0.25)", borderRadius:3,
-          }}/>
+          <div style={{ position:"absolute", bottom:52, left:"3%", right:"3%", height:5, background:"rgba(180,130,80,0.35)", borderRadius:3 }}/>
+          <div style={{ position:"absolute", bottom:38, left:"3%", right:"3%", height:4, background:"rgba(180,130,80,0.25)", borderRadius:3 }}/>
 
-          {/* Flowers growing in scene */}
-          <div style={{
-            display:"flex", justifyContent:"center", alignItems:"flex-end",
-            gap:6, padding:"20px 20px 42px",
-            flexWrap:"wrap",
-          }}>
-            {(garden.length === 0
-              ? [{ id:0, type:"\uD83C\uDF31", stage:0 }]
-              : garden
-            ).slice().reverse().slice(0,18).map((f, i) => {
-              const s    = GROWTH_STAGES[Math.min(f.stage, GROWTH_STAGES.length-1)];
-              const e    = f.stage >= GROWTH_STAGES.length-1 ? f.type : s.emoji;
-              const size = 18 + (i % 3) * 7 + f.stage * 4;
+          {/* Flowers */}
+          <div style={{ display:"flex", justifyContent:"center", alignItems:"flex-end", gap:6, padding:"20px 20px 44px", flexWrap:"wrap" }}>
+            {(garden.length === 0 ? [{ id:0, type:"🌱", stage:0 }] : garden).slice().reverse().slice(0,18).map((f,i) => {
+              const s = GROWTH_STAGES[Math.min(f.stage, GROWTH_STAGES.length-1)];
+              const e = f.stage >= GROWTH_STAGES.length-1 ? f.type : s.emoji;
+              const size = 18+(i%3)*7+f.stage*4;
               return (
-                <motion.div key={f.id || i}
-                  initial={{ scale:0, y:20 }}
-                  animate={{ scale:1, y:0 }}
-                  transition={{ delay:i*0.045, type:"spring", stiffness:200 }}
-                  style={{ textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center" }}
-                >
-                  <span style={{
-                    fontSize:size, display:"inline-block",
-                    animation: f.stage >= GROWTH_STAGES.length-1
-                      ? `fg-sway ${2.2+i*0.25}s ease-in-out ${i*0.18}s infinite` : "none",
-                    transformOrigin:"bottom center",
-                    filter: f.stage >= GROWTH_STAGES.length-1
-                      ? "drop-shadow(0 0 8px rgba(236,72,153,0.65))" : "none",
-                  }}>{e}</span>
-                  {/* stem */}
-                  <div style={{
-                    width:2, height:6+f.stage*5,
-                    background:"linear-gradient(180deg,#4ade80,#16a34a)",
-                    borderRadius:2, opacity:0.75,
-                  }}/>
+                <motion.div key={f.id||i} initial={{ scale:0, y:20 }} animate={{ scale:1, y:0 }} transition={{ delay:i*0.045, type:"spring", stiffness:200 }}
+                  style={{ textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center" }}>
+                  <span style={{ fontSize:size, display:"inline-block", animation:f.stage>=GROWTH_STAGES.length-1?`fg-sway ${2.2+i*0.25}s ease-in-out ${i*0.18}s infinite`:"none", transformOrigin:"bottom center", filter:f.stage>=GROWTH_STAGES.length-1?"drop-shadow(0 0 8px rgba(236,72,153,0.65))":"none" }}>{e}</span>
+                  <div style={{ width:2, height:6+f.stage*5, background:"linear-gradient(180deg,#4ade80,#16a34a)", borderRadius:2, opacity:0.75 }}/>
                 </motion.div>
               );
             })}
           </div>
 
-          {/* Live stats bar */}
-          <div style={{
-            position:"absolute", top:8, left:0, right:0,
-            display:"flex", justifyContent:"center", gap:12,
-          }}>
-            <span style={{
-              fontFamily:"'Inter',sans-serif", fontSize:"0.67rem", fontWeight:700,
-              color:"#4ade80", background:"rgba(0,0,0,0.45)",
-              padding:"3px 12px", borderRadius:50,
-              backdropFilter:"blur(6px)",
-            }}>\uD83C\uDF38 {bloomed} bloomed</span>
-            <span style={{
-              fontFamily:"'Inter',sans-serif", fontSize:"0.67rem", fontWeight:700,
-              color:"rgba(255,255,255,0.5)", background:"rgba(0,0,0,0.45)",
-              padding:"3px 12px", borderRadius:50,
-              backdropFilter:"blur(6px)",
-            }}>\uD83C\uDF31 {garden.length - bloomed} growing</span>
+          {/* Stats bar */}
+          <div style={{ position:"absolute", top:8, left:0, right:0, display:"flex", justifyContent:"center", gap:12 }}>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.67rem", fontWeight:700, color:"#4ade80", background:"rgba(0,0,0,0.45)", padding:"3px 12px", borderRadius:50 }}>🌸 {bloomed} bloomed</span>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.67rem", fontWeight:700, color:"rgba(255,255,255,0.5)", background:"rgba(0,0,0,0.45)", padding:"3px 12px", borderRadius:50 }}>🌱 {garden.length - bloomed} growing</span>
           </div>
         </div>
       </motion.div>
 
-      {/* --- Stats cards --- */}
+      {/* Stats */}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
         style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:20 }}>
         {[
-          { label:"Planted",  value:garden.length,         color:"#ec4899", icon:"\uD83C\uDF31" },
-          { label:"Bloomed",  value:bloomed,               color:"#8B5CF6", icon:"\uD83C\uDF38" },
-          { label:"Growing",  value:garden.length-bloomed, color:"#10B981", icon:"\uD83C\uDF3F" },
-          { label:"Streak",   value:`${streak}d`,          color:"#f59e0b", icon:"\uD83D\uDD25" },
+          { label:"Planted",  value:garden.length,         color:"#ec4899", icon:"🌱" },
+          { label:"Bloomed",  value:bloomed,               color:"#8B5CF6", icon:"🌸" },
+          { label:"Growing",  value:garden.length-bloomed, color:"#10B981", icon:"🌿" },
+          { label:"Streak",   value:`${streak}d`,          color:"#f59e0b", icon:"🔥" },
         ].map((s,i) => (
-          <motion.div key={i}
-            initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }}
-            transition={{ delay:0.15+i*0.06, type:"spring" }}
-            style={{
-              padding:"14px 6px", textAlign:"center",
-              background:"rgba(255,255,255,0.05)",
-              border:`1.5px solid ${s.color}22`,
-              borderRadius:16, backdropFilter:"blur(8px)",
-            }}>
+          <motion.div key={i} initial={{ opacity:0, scale:0.8 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.15+i*0.06, type:"spring" }}
+            style={{ padding:"14px 6px", textAlign:"center", background:"rgba(255,255,255,0.05)", border:`1.5px solid ${s.color}22`, borderRadius:16, backdropFilter:"blur(8px)" }}>
             <div style={{ fontSize:"1.2rem", marginBottom:4 }}>{s.icon}</div>
-            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.35rem", fontWeight:800, color:s.color }}>
-              {s.value}
-            </div>
-            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.56rem", color:"rgba(255,255,255,0.32)", textTransform:"uppercase", letterSpacing:"0.5px" }}>
-              {s.label}
-            </div>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.35rem", fontWeight:800, color:s.color }}>{s.value}</div>
+            <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.56rem", color:"rgba(255,255,255,0.32)", textTransform:"uppercase", letterSpacing:"0.5px" }}>{s.label}</div>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* --- Progress bar --- */}
+      {/* Progress */}
       {garden.length > 0 && (
         <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.2 }}
-          style={{
-            marginBottom:20, padding:"16px 20px",
-            background:"rgba(255,255,255,0.04)",
-            border:"1px solid rgba(255,255,255,0.07)",
-            borderRadius:16,
-          }}>
+          style={{ marginBottom:20, padding:"16px 20px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"1px" }}>
-              Bloom Progress
-            </span>
-            <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.78rem", fontWeight:800, color:"#ec4899" }}>
-              {pct}%
-            </span>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.4)", textTransform:"uppercase", letterSpacing:"1px" }}>Bloom Progress</span>
+            <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.78rem", fontWeight:800, color:"#ec4899" }}>{pct}%</span>
           </div>
           <div style={{ height:8, background:"rgba(255,255,255,0.07)", borderRadius:4, overflow:"hidden" }}>
-            <motion.div
-              initial={{ width:0 }}
-              animate={{ width:`${pct}%` }}
-              transition={{ duration:1.2, ease:"easeOut", delay:0.3 }}
-              style={{
-                height:"100%",
-                background:"linear-gradient(90deg,#ec4899,#8B5CF6,#f59e0b)",
-                borderRadius:4,
-                boxShadow:"0 0 10px rgba(236,72,153,0.5)",
-              }}
-            />
+            <motion.div initial={{ width:0 }} animate={{ width:`${pct}%` }} transition={{ duration:1.2, ease:"easeOut", delay:0.3 }}
+              style={{ height:"100%", background:"linear-gradient(90deg,#ec4899,#8B5CF6,#f59e0b)", borderRadius:4, boxShadow:"0 0 10px rgba(236,72,153,0.5)" }}/>
           </div>
           <div style={{ display:"flex", gap:3, marginTop:10, justifyContent:"center" }}>
             {[...Array(10)].map((_,i) => (
-              <motion.span key={i}
-                initial={{ scale:0 }} animate={{ scale:1 }}
-                transition={{ delay:0.4+i*0.05 }}
-                style={{ fontSize:"0.9rem", opacity:pct>=(i+1)*10?1:0.15, transition:"opacity 0.4s" }}>
-                {pct>=(i+1)*10 ? "\u2764\uFE0F" : "\uD83E\uDD0D"}
+              <motion.span key={i} initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.4+i*0.05 }} style={{ fontSize:"0.9rem", opacity:pct>=(i+1)*10?1:0.15 }}>
+                {pct>=(i+1)*10?"❤️":"🤍"}
               </motion.span>
             ))}
           </div>
         </motion.div>
       )}
 
-      {/* --- Water Button --- */}
+      {/* Water Button */}
       <div style={{ textAlign:"center", marginBottom:28 }}>
         <AnimatePresence mode="wait">
           {alreadyWatered || watered ? (
-            <motion.div key="done"
-              initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
-              style={{
-                display:"inline-flex", alignItems:"center", gap:10,
-                padding:"16px 28px",
-                background:"rgba(16,185,129,0.1)",
-                border:"1.5px solid rgba(16,185,129,0.3)",
-                borderRadius:50, color:"#10B981",
-                fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", fontWeight:600,
-              }}>
-              \u2705 {watered ? "Garden watered! New flower planted \uD83C\uDF38" : "Come back tomorrow \uD83D\uDC95"}
+            <motion.div key="done" initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} exit={{ opacity:0 }}
+              style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"16px 28px", background:"rgba(16,185,129,0.1)", border:"1.5px solid rgba(16,185,129,0.3)", borderRadius:50, color:"#10B981", fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", fontWeight:600 }}>
+              ✅ {watered ? "Garden watered! New flower planted 🌸" : "Come back tomorrow 💕"}
             </motion.div>
           ) : (
-            <motion.button key="btn"
-              whileHover={{ scale:1.05, y:-4 }}
-              whileTap={{ scale:0.96 }}
-              onClick={water}
-              style={{
-                display:"inline-flex", alignItems:"center", gap:12,
-                padding:"18px 44px",
-                background:"linear-gradient(135deg,#3b82f6,#10B981)",
-                border:"none", borderRadius:50, color:"#fff",
-                fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:800,
-                cursor:"pointer",
-                boxShadow:"0 12px 36px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.12)",
-                letterSpacing:"-0.2px",
-              }}>
-              \uD83D\uDCA7 Water the Garden Today
+            <motion.button key="btn" whileHover={{ scale:1.05, y:-4 }} whileTap={{ scale:0.96 }} onClick={water}
+              style={{ display:"inline-flex", alignItems:"center", gap:12, padding:"18px 44px", background:"linear-gradient(135deg,#3b82f6,#10B981)", border:"none", borderRadius:50, color:"#fff", fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:800, cursor:"pointer", boxShadow:"0 12px 36px rgba(59,130,246,0.4)" }}>
+              💧 Water the Garden Today
             </motion.button>
           )}
         </AnimatePresence>
       </div>
 
-      {/* --- View toggle --- */}
+      {/* View toggle */}
       {garden.length > 0 && (
         <div style={{ display:"flex", justifyContent:"center", gap:8, marginBottom:20 }}>
           {["garden","collection"].map(v => (
             <button key={v} onClick={() => setView(v)}
-              style={{
-                padding:"8px 20px", borderRadius:50,
-                background: view===v ? "rgba(236,72,153,0.2)" : "rgba(255,255,255,0.05)",
-                border: `1.5px solid ${view===v?"rgba(236,72,153,0.4)":"rgba(255,255,255,0.1)"}`,
-                color: view===v ? "#ec4899" : "rgba(255,255,255,0.5)",
-                fontFamily:"'Inter',sans-serif", fontSize:"0.78rem", fontWeight:600,
-                cursor:"pointer", transition:"all 0.2s",
-              }}>
-              {v === "garden" ? "\uD83C\uDF3F Garden Scene" : "\uD83C\uDF38 Collection"}
+              style={{ padding:"8px 20px", borderRadius:50, background:view===v?"rgba(236,72,153,0.2)":"rgba(255,255,255,0.05)", border:`1.5px solid ${view===v?"rgba(236,72,153,0.4)":"rgba(255,255,255,0.1)"}`, color:view===v?"#ec4899":"rgba(255,255,255,0.5)", fontFamily:"'Inter',sans-serif", fontSize:"0.78rem", fontWeight:600, cursor:"pointer" }}>
+              {v==="garden" ? "🌿 Garden Scene" : "🌸 Collection"}
             </button>
           ))}
         </div>
       )}
 
-      {/* --- Content --- */}
+      {/* Content */}
       {loading ? (
         <div style={{ textAlign:"center", padding:"60px 20px", color:"rgba(255,255,255,0.4)" }}>
-          <div style={{ fontSize:"2.5rem", marginBottom:14, animation:"fg-spin 1.5s linear infinite", display:"inline-block" }}>\uD83C\uDF38</div>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem" }}>Loading your garden\u2026</p>
+          <div style={{ fontSize:"2.5rem", marginBottom:14, animation:"fg-spin 1.5s linear infinite", display:"inline-block" }}>🌸</div>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem" }}>Loading your garden…</p>
         </div>
       ) : garden.length === 0 ? (
         <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
-          style={{
-            textAlign:"center", padding:"52px 24px",
-            background:"rgba(255,255,255,0.03)",
-            border:"1.5px dashed rgba(236,72,153,0.2)",
-            borderRadius:24,
-          }}>
-          <div style={{ fontSize:"3.5rem", marginBottom:16 }}>\uD83C\uDF31</div>
-          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.3rem", fontStyle:"italic", color:"rgba(255,255,255,0.5)", margin:"0 0 10px" }}>
-            Press the button to plant your first flower!
-          </p>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"rgba(255,255,255,0.3)", margin:0 }}>
-            Visit every day to grow a beautiful garden \uD83C\uDF38
-          </p>
+          style={{ textAlign:"center", padding:"52px 24px", background:"rgba(255,255,255,0.03)", border:"1.5px dashed rgba(236,72,153,0.2)", borderRadius:24 }}>
+          <div style={{ fontSize:"3.5rem", marginBottom:16 }}>🌱</div>
+          <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.3rem", fontStyle:"italic", color:"rgba(255,255,255,0.5)", margin:"0 0 10px" }}>Press the button to plant your first flower!</p>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"rgba(255,255,255,0.3)", margin:0 }}>Visit every day to grow a beautiful garden 🌸</p>
         </motion.div>
       ) : view === "garden" ? (
-        <GardenBed flowers={garden} />
+        <div style={{ margin:"0 0 20px", padding:"20px 16px 14px", background:"linear-gradient(180deg,rgba(34,197,94,0.06),rgba(21,128,61,0.1))", border:"1px solid rgba(34,197,94,0.15)", borderRadius:20, position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:22, background:"linear-gradient(180deg,#3d1c02,#2a1000)", animation:"fg-soilWave 4s ease-in-out infinite", borderRadius:"0 0 20px 20px" }}/>
+          <div style={{ position:"absolute", bottom:20, left:0, right:0, height:8, background:"linear-gradient(180deg,#16a34a,#15803d)", opacity:0.7 }}/>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", margin:"0 0 12px" }}>🌿 Garden Bed</p>
+          <div style={{ display:"flex", flexWrap:"wrap", justifyContent:"center", gap:6, paddingBottom:28 }}>
+            {garden.slice().reverse().slice(0,20).map((f,i) => {
+              const s = GROWTH_STAGES[Math.min(f.stage, GROWTH_STAGES.length-1)];
+              const e = f.stage >= GROWTH_STAGES.length-1 ? f.type : s.emoji;
+              return (
+                <motion.span key={f.id} initial={{ scale:0, y:20 }} animate={{ scale:1, y:0 }} transition={{ delay:i*0.04, type:"spring" }}
+                  style={{ fontSize:`${18+(i%3)*6}px`, display:"inline-block", animation:f.stage>=GROWTH_STAGES.length-1?`fg-sway ${2+i*0.2}s ease-in-out ${i*0.15}s infinite`:"none", transformOrigin:"bottom center", filter:f.stage>=GROWTH_STAGES.length-1?"drop-shadow(0 2px 6px rgba(236,72,153,0.4))":"none" }}>
+                  {e}
+                </motion.span>
+              );
+            })}
+          </div>
+          <div style={{ display:"flex", justifyContent:"center", gap:16 }}>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"#4ade80" }}>🌸 {bloomed} bloomed</span>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"rgba(255,255,255,0.35)" }}>🌱 {garden.length-bloomed} growing</span>
+          </div>
+        </div>
       ) : (
         <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.1 }}>
-          <p style={{
-            fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700,
-            color:"rgba(255,255,255,0.32)", textTransform:"uppercase",
-            letterSpacing:"1.5px", textAlign:"center", marginBottom:14,
-          }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.32)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", marginBottom:14 }}>
             {garden.length} flower{garden.length!==1?"s":""} planted
           </p>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(92px,1fr))", gap:10 }}>
             <AnimatePresence>
-              {[...garden].reverse().map((f,i) => (
-                <FlowerCard key={f.id} flower={f} index={i} isNew={newId===f.id} />
-              ))}
+              {[...garden].reverse().map((f,i) => <FlowerCard key={f.id} flower={f} index={i} isNew={newId===f.id} />)}
             </AnimatePresence>
           </div>
         </motion.div>
       )}
 
-      {/* --- Milestones --- */}
+      {/* Milestones */}
       {garden.length > 0 && (
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}
-          style={{ marginTop:28 }}>
-          <p style={{
-            fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700,
-            color:"rgba(255,255,255,0.32)", textTransform:"uppercase",
-            letterSpacing:"1.5px", textAlign:"center", marginBottom:14,
-          }}>Milestones</p>
+        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }} style={{ marginTop:28 }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.32)", textTransform:"uppercase", letterSpacing:"1.5px", textAlign:"center", marginBottom:14 }}>Milestones</p>
           <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:6 }}>
             {MILESTONES.map((m,i) => {
               const done = garden.length >= m.n;
               return (
-                <motion.div key={i}
-                  initial={{ opacity:0, scale:0.8 }}
-                  animate={{ opacity: done?1:0.38, scale:1 }}
-                  transition={{ delay:0.4+i*0.06 }}
-                  style={{
-                    flexShrink:0, minWidth:80, padding:"12px 8px",
-                    textAlign:"center",
-                    background: done?"rgba(236,72,153,0.1)":"rgba(255,255,255,0.03)",
-                    border:`1.5px solid ${done?"rgba(236,72,153,0.35)":"rgba(255,255,255,0.07)"}`,
-                    borderRadius:14, transition:"all 0.4s",
-                  }}>
+                <motion.div key={i} initial={{ opacity:0, scale:0.8 }} animate={{ opacity:done?1:0.38, scale:1 }} transition={{ delay:0.4+i*0.06 }}
+                  style={{ flexShrink:0, minWidth:80, padding:"12px 8px", textAlign:"center", background:done?"rgba(236,72,153,0.1)":"rgba(255,255,255,0.03)", border:`1.5px solid ${done?"rgba(236,72,153,0.35)":"rgba(255,255,255,0.07)"}`, borderRadius:14 }}>
                   <div style={{ fontSize:"1.5rem", marginBottom:5, filter:done?"none":"grayscale(1)" }}>{m.e}</div>
                   <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.57rem", fontWeight:700, color:done?"#ec4899":"rgba(255,255,255,0.3)", lineHeight:1.3 }}>{m.label}</div>
                   <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.53rem", color:"rgba(255,255,255,0.2)", marginTop:3 }}>{m.n} flowers</div>
@@ -764,26 +395,14 @@ export default function FlowerGarden({ user }) {
         </motion.div>
       )}
 
-      {/* --- Footer quote --- */}
+      {/* Footer */}
       <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.5 }}
-        style={{
-          marginTop:28, textAlign:"center", padding:"24px",
-          background:"linear-gradient(135deg,rgba(236,72,153,0.07),rgba(139,92,246,0.05))",
-          border:"1px solid rgba(236,72,153,0.12)",
-          borderRadius:20,
-        }}>
-        <p style={{
-          fontFamily:"'Cormorant Garamond',serif", fontSize:"1.05rem",
-          fontStyle:"italic", color:"rgba(255,255,255,0.52)",
-          margin:"0 0 8px", lineHeight:1.6,
-        }}>
-          "Every day you water this garden, you're telling me you choose us \uD83D\uDC99"
+        style={{ marginTop:28, textAlign:"center", padding:"24px", background:"linear-gradient(135deg,rgba(236,72,153,0.07),rgba(139,92,246,0.05))", border:"1px solid rgba(236,72,153,0.12)", borderRadius:20 }}>
+        <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1.05rem", fontStyle:"italic", color:"rgba(255,255,255,0.52)", margin:"0 0 8px", lineHeight:1.6 }}>
+          "Every day you water this garden, you're telling me you choose us 💙"
         </p>
-        <p style={{
-          fontFamily:"'Manrope',sans-serif", fontSize:"0.88rem",
-          fontWeight:700, color:"rgba(255,255,255,0.68)", margin:0,
-        }}>
-          &mdash; Surya &amp; Sadhana \uD83D\uDC8D
+        <p style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.88rem", fontWeight:700, color:"rgba(255,255,255,0.68)", margin:0 }}>
+          — Surya &amp; Sadhana 💍
         </p>
       </motion.div>
     </div>

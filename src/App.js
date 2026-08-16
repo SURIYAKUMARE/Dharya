@@ -266,7 +266,6 @@ function AnniversaryBadge() {
 export default function App() {
   const [user,        setUser]        = useState(null);
   const [loggedIn,    setLoggedIn]    = useState(false);
-  const [birthdayDone,setBirthdayDone]= useState(false);
   const [page,        setPage]        = useState("box");
   const [boxOpened,   setBoxOpened]   = useState(false);
   const [navOpen,     setNavOpen]     = useState(false);

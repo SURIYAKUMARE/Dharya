@@ -1,177 +1,176 @@
 import { useState, useEffect, useRef } from "react";
-import { Eye, EyeOff, ArrowRight, Heart, Lock } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Heart } from "lucide-react";
 import { useTilt } from "../App";
 
+/* ─────────────────────────────────────────────────
+   CREDENTIALS
+───────────────────────────────────────────────── */
 const CORRECT_USER = "DHARYA";
 const USERS = {
   "29/02/2008": "sadhana",
   "09/10/2007": "surya",
 };
 
+/* ─────────────────────────────────────────────────
+   THEMES
+───────────────────────────────────────────────── */
 const THEMES = {
   sadhana: {
-    primary:    "#ff1a6e",
-    secondary:  "#b340e8",
-    glow:       "rgba(255,26,110,0.38)",
-    glowSoft:   "rgba(255,26,110,0.15)",
-    avatar:     "\uD83D\uDC97",
-    burst:      ["\uD83D\uDC96","\uD83C\uDF38","\u2728","\uD83D\uDC95","\uD83C\uDF37","\uD83D\uDC97","\u2B50","\uD83C\uDF3A"],
-    name:       "Sadhana",
-    greeting:   "Welcome back",
-    sub:        "Your world is waiting \u2728",
-    btnText:    "Enter my world",
-    bg:         "linear-gradient(135deg,#060010 0%,#0d0118 55%,#130020 100%)",
-    orb1:       "rgba(180,0,80,0.30)",
-    orb2:       "rgba(100,10,180,0.22)",
-    particles:  ["\uD83D\uDC97","\uD83C\uDF38","\u2728","\uD83D\uDC95","\u2B50","\uD83C\uDF37","\uD83D\uDC96","\uD83C\uDF3A"],
-    inputBg:    "rgba(255,26,110,0.05)",
+    id:        "sadhana",
+    primary:   "#ff2d78",
+    secondary: "#c040f0",
+    accent:    "#ff8cc8",
+    glow:      "rgba(255,45,120,0.45)",
+    glowSoft:  "rgba(255,45,120,0.18)",
+    avatar:    "\uD83D\uDC97",
+    name:      "Sadhana",
+    greeting:  "Welcome back",
+    sub:       "Your special world is waiting \u2728",
+    btnText:   "Enter my world",
+    burst:     ["\uD83D\uDC96","\uD83C\uDF38","\u2728","\uD83D\uDC95","\uD83C\uDF37","\uD83D\uDC97","\u2B50","\uD83C\uDF3A"],
+    particles: ["\uD83D\uDC97","\uD83C\uDF38","\u2728","\uD83D\uDC95","\u2B50","\uD83C\uDF37","\uD83D\uDC96","\uD83C\uDF3A"],
+    bg:        "linear-gradient(140deg, #07000f 0%, #0f0120 50%, #150028 100%)",
+    cardBg:    "linear-gradient(150deg, rgba(10,2,24,0.92) 0%, rgba(18,4,38,0.95) 100%)",
+    orb1:      "rgba(200,10,90,0.32)",
+    orb2:      "rgba(120,10,200,0.24)",
   },
   surya: {
-    primary:    "#00d97e",
-    secondary:  "#06B6D4",
-    glow:       "rgba(0,217,126,0.35)",
-    glowSoft:   "rgba(0,217,126,0.12)",
-    avatar:     "\uD83C\uDF3F",
-    burst:      ["\uD83D\uDC9A","\uD83C\uDF3F","\u2728","\uD83C\uDF43","\u2B50","\uD83C\uDF0A","\uD83D\uDC8E","\uD83C\uDF31"],
-    name:       "Surya",
-    greeting:   "Welcome back",
-    sub:        "Your private space is ready \uD83C\uDF3F",
-    btnText:    "Enter my world",
-    bg:         "linear-gradient(135deg,#000e05 0%,#011508 55%,#001a0a 100%)",
-    orb1:       "rgba(0,200,100,0.22)",
-    orb2:       "rgba(6,182,212,0.16)",
-    particles:  ["\uD83C\uDF3F","\u2728","\u22C6","\u25E6","\uD83C\uDF43","\u2022","\uD83C\uDF31","\u2B50","\uD83D\uDC9A"],
-    inputBg:    "rgba(0,217,126,0.05)",
+    id:        "surya",
+    primary:   "#00e080",
+    secondary: "#00c8e0",
+    accent:    "#80ffcc",
+    glow:      "rgba(0,224,128,0.40)",
+    glowSoft:  "rgba(0,224,128,0.15)",
+    avatar:    "\uD83C\uDF3F",
+    name:      "Surya",
+    greeting:  "Welcome back",
+    sub:       "Your private space is ready \uD83C\uDF3F",
+    btnText:   "Enter my world",
+    burst:     ["\uD83D\uDC9A","\uD83C\uDF3F","\u2728","\uD83C\uDF43","\u2B50","\uD83C\uDF0A","\uD83D\uDC8E","\uD83C\uDF31"],
+    particles: ["\uD83C\uDF3F","\u2728","\u22C6","\u25E6","\uD83C\uDF43","\u2022","\uD83C\uDF31","\u2B50","\uD83D\uDC9A"],
+    bg:        "linear-gradient(140deg, #00100a 0%, #011a0e 50%, #001f10 100%)",
+    cardBg:    "linear-gradient(150deg, rgba(0,14,8,0.92) 0%, rgba(1,22,12,0.95) 100%)",
+    orb1:      "rgba(0,200,110,0.24)",
+    orb2:      "rgba(0,180,220,0.18)",
   },
   default: {
-    primary:    "#ff1a6e",
-    secondary:  "#e8a030",
-    glow:       "rgba(255,26,110,0.28)",
-    glowSoft:   "rgba(255,26,110,0.10)",
-    avatar:     "\u2728",
-    burst:      ["\uD83D\uDCAB","\u2B50","\u2728","\uD83C\uDF1F","\uD83D\uDC9B","\uD83D\uDD25","\uD83D\uDCA5","\uD83C\uDF20"],
-    name:       "Dharya",
-    greeting:   "Welcome to",
-    sub:        "Only someone special knows the way in \uD83D\uDD10",
-    btnText:    "Enter \u2192",
-    bg:         "linear-gradient(135deg,#060010 0%,#0d0118 55%,#130020 100%)",
-    orb1:       "rgba(180,0,80,0.20)",
-    orb2:       "rgba(100,10,160,0.16)",
-    particles:  ["\u2726","\u00B7","\u2727","\u25E6","\u22C6","\u2B50","\uD83D\uDCAB","\u2728","\uD83C\uDF1F"],
-    inputBg:    "rgba(255,26,110,0.04)",
+    id:        "default",
+    primary:   "#ff2d78",
+    secondary: "#f0a020",
+    accent:    "#ffb060",
+    glow:      "rgba(255,45,120,0.30)",
+    glowSoft:  "rgba(255,45,120,0.12)",
+    avatar:    "\u2728",
+    name:      "Dharya",
+    greeting:  "Welcome to",
+    sub:       "Only someone special knows the way in \uD83D\uDD10",
+    btnText:   "Enter \u2192",
+    burst:     ["\uD83D\uDCAB","\u2B50","\u2728","\uD83C\uDF1F","\uD83D\uDC9B","\uD83D\uDD25","\uD83D\uDCA5","\uD83C\uDF20"],
+    particles: ["\u2726","\u00B7","\u2727","\u25E6","\u22C6","\u2B50","\uD83D\uDCAB","\u2728","\uD83C\uDF1F"],
+    bg:        "linear-gradient(140deg, #07000f 0%, #0f0120 50%, #150028 100%)",
+    cardBg:    "linear-gradient(150deg, rgba(10,2,24,0.92) 0%, rgba(18,4,38,0.95) 100%)",
+    orb1:      "rgba(180,10,80,0.22)",
+    orb2:      "rgba(100,10,180,0.18)",
   },
 };
 
 /* ─────────────────────────────────────────────────
-   INJECT KEYFRAMES (once per session)
+   INJECT KEYFRAMES (once)
 ───────────────────────────────────────────────── */
 function injectStyles() {
-  if (document.getElementById("lp-v3-styles")) return;
-  const el = document.createElement("style");
-  el.id = "lp-v3-styles";
-  el.textContent = `
-    /* particles rise */
-    @keyframes lpFloat {
-      0%   { transform: translateY(0)    rotate(0deg)   scale(1);   opacity: 0; }
-      8%   { opacity: var(--p-op, 0.18); }
-      85%  { opacity: var(--p-op, 0.18); }
-      100% { transform: translateY(-105vh) rotate(360deg) scale(0.7); opacity: 0; }
+  if (document.getElementById("lp-v4")) return;
+  const s = document.createElement("style");
+  s.id = "lp-v4";
+  s.textContent = `
+    @keyframes lp4-cardIn {
+      0%   { opacity:0; transform: perspective(900px) translateY(50px) rotateX(6deg) scale(0.94); }
+      100% { opacity:1; transform: perspective(900px) translateY(0)    rotateX(0deg) scale(1); }
     }
-    /* card entrance */
-    @keyframes lpCardIn {
-      0%   { opacity: 0; transform: translateY(36px) scale(0.95) rotateX(4deg); }
-      100% { opacity: 1; transform: translateY(0)    scale(1)    rotateX(0deg); }
+    @keyframes lp4-avatarPop {
+      0%   { transform: scale(0.3) rotate(-20deg); opacity:0; }
+      55%  { transform: scale(1.14) rotate(5deg);  opacity:1; }
+      100% { transform: scale(1)   rotate(0deg);   opacity:1; }
     }
-    /* avatar pop */
-    @keyframes lpAvatarPop {
-      0%   { transform: scale(0.4) rotate(-18deg); opacity: 0; }
-      60%  { transform: scale(1.12) rotate(4deg);  opacity: 1; }
-      100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+    @keyframes lp4-avatarFloat {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%     { transform: translateY(-9px) scale(1.03); }
     }
-    /* avatar gentle float */
-    @keyframes lpAvatarFloat {
-      0%,100% { transform: translateY(0px) scale(1); }
-      50%     { transform: translateY(-7px) scale(1.02); }
-    }
-    /* orbit rings */
-    @keyframes lpOrbitCW  { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
-    @keyframes lpOrbitCCW { from { transform: rotate(0deg); }   to { transform: rotate(-360deg); } }
-    /* title shine */
-    @keyframes lpTitleShine {
+    @keyframes lp4-orbitCW  { to { transform: rotate(360deg);  } }
+    @keyframes lp4-orbitCCW { to { transform: rotate(-360deg); } }
+    @keyframes lp4-spin     { to { transform: rotate(360deg);  } }
+    @keyframes lp4-titleShine {
       0%   { background-position: 200% center; }
       100% { background-position: -200% center; }
     }
-    /* ribbon shimmer */
-    @keyframes lpRibbon {
+    @keyframes lp4-ribbon {
       0%   { background-position: -200% center; }
-      100% { background-position: 200% center; }
+      100% { background-position:  200% center; }
     }
-    /* pulse rings */
-    @keyframes lpPulse {
-      0%   { transform: scale(0.88); opacity: 0.22; }
-      70%  { transform: scale(1.15); opacity: 0; }
-      100% { transform: scale(1.15); opacity: 0; }
+    @keyframes lp4-pulse {
+      0%   { transform: scale(0.85); opacity: 0.25; }
+      70%  { transform: scale(1.18); opacity: 0; }
+      100% { transform: scale(1.18); opacity: 0; }
     }
-    /* spin border */
-    @keyframes lpSpin { to { transform: rotate(360deg); } }
-    /* fade up */
-    @keyframes lpFadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @keyframes lp4-float {
+      0%   { transform: translateY(0) rotate(0deg);    opacity: 0; }
+      6%   { opacity: var(--fp, 0.16); }
+      88%  { opacity: var(--fp, 0.16); }
+      100% { transform: translateY(-108vh) rotate(400deg); opacity: 0; }
     }
-    /* dot pulse */
-    @keyframes lpDot {
-      from { transform: scale(0.7); opacity: 0.35; }
-      to   { transform: scale(1.4); opacity: 1; }
+    @keyframes lp4-shoot {
+      0%   { transform: translateX(0) translateY(0); opacity:1; }
+      100% { transform: translateX(420px) translateY(200px); opacity:0; }
     }
-    /* cursor blink */
-    @keyframes lpBlink {
-      0%,100% { opacity: 0.45; }
-      50%     { opacity: 0; }
+    @keyframes lp4-fadeUp {
+      from { opacity:0; transform: translateY(14px); }
+      to   { opacity:1; transform: translateY(0); }
     }
-    /* heartbeat on button */
-    @keyframes lpHeartbeat {
+    @keyframes lp4-dot {
+      from { transform: scale(0.65); opacity:0.3; }
+      to   { transform: scale(1.45); opacity:1; }
+    }
+    @keyframes lp4-blink {
+      0%,100% { opacity:0.45; }
+      50%     { opacity:0; }
+    }
+    @keyframes lp4-heartbeat {
       0%,100% { transform: scale(1); }
-      14%     { transform: scale(1.055); }
+      14%     { transform: scale(1.06); }
       28%     { transform: scale(1); }
-      42%     { transform: scale(1.035); }
+      42%     { transform: scale(1.04); }
     }
-    /* shake on error */
-    @keyframes lpShake {
+    @keyframes lp4-shake {
       0%,100% { transform: translateX(0); }
-      16%     { transform: translateX(-8px); }
-      33%     { transform: translateX(8px); }
+      15%     { transform: translateX(-9px); }
+      30%     { transform: translateX(9px); }
       50%     { transform: translateX(-5px); }
-      66%     { transform: translateX(5px); }
-      83%     { transform: translateX(-2px); }
+      70%     { transform: translateX(5px); }
+      85%     { transform: translateX(-2px); }
     }
-    /* cursor trail dot */
-    @keyframes lpSpark {
-      0%   { transform: scale(1); opacity: 0.75; }
-      100% { transform: scale(2.8); opacity: 0; }
+    @keyframes lp4-spark {
+      0%   { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(3); opacity: 0; }
     }
-    /* success screen */
-    @keyframes lpSuccessIn {
-      from { opacity: 0; transform: scale(0.92); }
-      to   { opacity: 1; transform: scale(1); }
+    @keyframes lp4-successIn {
+      from { opacity:0; transform: scale(0.9); }
+      to   { opacity:1; transform: scale(1); }
     }
-    @keyframes lpSuccessBounce {
-      0%   { transform: scale(0.4) rotate(-14deg); opacity: 0; }
-      65%  { transform: scale(1.18) rotate(4deg);  opacity: 1; }
-      100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
+    @keyframes lp4-successBounce {
+      0%   { transform: scale(0.35) rotate(-16deg); opacity:0; }
+      60%  { transform: scale(1.18) rotate(5deg);   opacity:1; }
+      100% { transform: scale(1)    rotate(0deg);   opacity:1; }
     }
-    /* input focus glow pulse */
-    @keyframes lpInputGlow {
-      0%,100% { box-shadow: var(--lp-focus-shadow-a); }
-      50%     { box-shadow: var(--lp-focus-shadow-b); }
+    @keyframes lp4-glassShimmer {
+      0%   { left: -80%; }
+      100% { left: 130%; }
     }
-    .lp-shake { animation: lpShake 0.5s ease !important; }
+    .lp4-shake { animation: lp4-shake 0.5s ease !important; }
   `;
-  document.head.appendChild(el);
+  document.head.appendChild(s);
 }
 
 /* ─────────────────────────────────────────────────
-   STARFIELD CANVAS
+   STARFIELD
 ───────────────────────────────────────────────── */
 function Starfield({ color }) {
   const cvRef  = useRef(null);
@@ -180,90 +179,70 @@ function Starfield({ color }) {
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
-
     const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
-
     const ctx = cv.getContext("2d");
-    const stars = Array.from({ length: 140 }, () => ({
+
+    const stars = Array.from({ length: 150 }, () => ({
       x: Math.random(), y: Math.random(),
-      r: 0.4 + Math.random() * 1.6,
-      base: 0.08 + Math.random() * 0.45,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.25 + Math.random() * 0.9,
+      r: 0.35 + Math.random() * 1.65,
+      b: 0.06  + Math.random() * 0.44,
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.22 + Math.random() * 0.88,
     }));
 
     const shots = [];
-    const spawnShot = () => shots.push({
-      x: Math.random() * cv.width * 0.6,
-      y: Math.random() * cv.height * 0.38,
-      vx: 5.5 + Math.random() * 8,
-      vy: 2   + Math.random() * 4,
-      len: 80 + Math.random() * 140,
+    const spawn = () => shots.push({
+      x: Math.random() * cv.width  * 0.55,
+      y: Math.random() * cv.height * 0.35,
+      vx: 5 + Math.random() * 9,
+      vy: 2 + Math.random() * 4,
+      len: 80 + Math.random() * 150,
       life: 1,
     });
-    const timer = setInterval(spawnShot, 2400);
+    const timer = setInterval(spawn, 2600);
 
-    const draw = () => {
+    const tick = () => {
       const cw = cv.width, ch = cv.height, t = Date.now() / 1000;
       ctx.clearRect(0, 0, cw, ch);
 
-      /* twinkling stars */
       stars.forEach(s => {
-        const a = s.base * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+        const a = s.b * (0.45 + 0.55 * Math.sin(t * s.sp + s.ph));
         ctx.beginPath();
         ctx.arc(s.x * cw, s.y * ch, s.r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
         ctx.fill();
       });
 
-      /* shooting stars */
       for (let i = shots.length - 1; i >= 0; i--) {
         const s = shots[i];
-        s.x += s.vx; s.y += s.vy; s.life -= 0.019;
-        if (s.life <= 0 || s.x > cw + 160) { shots.splice(i, 1); continue; }
+        s.x += s.vx; s.y += s.vy; s.life -= 0.018;
+        if (s.life <= 0 || s.x > cw + 200) { shots.splice(i, 1); continue; }
         const tx = s.x - s.vx * (s.len / Math.max(s.vx, 1));
         const ty = s.y - s.vy * (s.len / Math.max(s.vx, 1));
-        const g  = ctx.createLinearGradient(tx, ty, s.x, s.y);
-        g.addColorStop(0,   "transparent");
-        g.addColorStop(0.55, color + "88");
-        g.addColorStop(1,   "#ffffff");
-        ctx.beginPath();
-        ctx.moveTo(tx, ty); ctx.lineTo(s.x, s.y);
-        ctx.strokeStyle  = g;
-        ctx.lineWidth    = 1.6;
-        ctx.globalAlpha  = Math.max(0, s.life);
-        ctx.shadowColor  = color;
-        ctx.shadowBlur   = 7;
+        const g = ctx.createLinearGradient(tx, ty, s.x, s.y);
+        g.addColorStop(0,    "transparent");
+        g.addColorStop(0.55, color + "99");
+        g.addColorStop(1,    "#ffffff");
+        ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(s.x, s.y);
+        ctx.strokeStyle = g; ctx.lineWidth = 1.8;
+        ctx.globalAlpha = Math.max(0, s.life);
+        ctx.shadowColor = color; ctx.shadowBlur = 8;
         ctx.stroke();
-        ctx.globalAlpha  = 1;
-        ctx.shadowBlur   = 0;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, 2.2, 0, Math.PI * 2);
-        ctx.fillStyle   = "#fff";
-        ctx.globalAlpha = Math.max(0, s.life) * 0.9;
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 2.4, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.globalAlpha = Math.max(0, s.life) * 0.88;
+        ctx.fill(); ctx.globalAlpha = 1;
       }
-
-      rafRef.current = requestAnimationFrame(draw);
+      rafRef.current = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      clearInterval(timer);
-      window.removeEventListener("resize", resize);
-    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(rafRef.current); clearInterval(timer); window.removeEventListener("resize", resize); };
   }, [color]);
 
-  return (
-    <canvas ref={cvRef} style={{
-      position: "fixed", inset: 0, width: "100%", height: "100%",
-      pointerEvents: "none", zIndex: 0,
-    }} />
-  );
+  return <canvas ref={cvRef} style={{ position:"fixed", inset:0, width:"100%", height:"100%", pointerEvents:"none", zIndex:0 }} />;
 }
 
 /* ─────────────────────────────────────────────────
@@ -271,31 +250,26 @@ function Starfield({ color }) {
 ───────────────────────────────────────────────── */
 function FloatingParticles({ theme }) {
   const items = useRef(
-    Array.from({ length: 16 }, (_, i) => ({
+    Array.from({ length: 18 }, (_, i) => ({
       sym:   theme.particles[i % theme.particles.length],
-      left:  `${(i * 6.2 + 1.5) % 95}%`,
+      left:  `${(i * 5.4 + 1.8) % 96}%`,
       size:  `${11 + (i % 4) * 4}px`,
-      dur:   `${11 + (i % 5) * 2.8}s`,
-      delay: `${i * 0.65}s`,
-      op:    (0.13 + (i % 4) * 0.055).toFixed(2),
+      dur:   `${12 + (i % 5) * 3}s`,
+      delay: `${i * 0.6}s`,
+      op:    (0.12 + (i % 4) * 0.05).toFixed(2),
     }))
   ).current;
 
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 1, overflow: "hidden" }}>
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:1, overflow:"hidden" }}>
       {items.map((p, i) => (
         <span key={i} style={{
-          position:  "absolute",
-          bottom:    "-50px",
-          left:       p.left,
-          fontSize:   p.size,
-          color:      theme.primary,
-          filter:    `drop-shadow(0 0 5px ${theme.primary}60)`,
-          "--p-op":   p.op,
-          animation: `lpFloat ${p.dur} linear ${p.delay} infinite`,
-        }}>
-          {p.sym}
-        </span>
+          position: "absolute", bottom: "-55px", left: p.left,
+          fontSize: p.size, color: theme.primary,
+          filter: `drop-shadow(0 0 5px ${theme.primary}66)`,
+          "--fp": p.op,
+          animation: `lp4-float ${p.dur} linear ${p.delay} infinite`,
+        }}>{p.sym}</span>
       ))}
     </div>
   );
@@ -306,18 +280,15 @@ function FloatingParticles({ theme }) {
 ───────────────────────────────────────────────── */
 function PulseRings({ color }) {
   return (
-    <div style={{
-      position: "fixed", inset: 0, pointerEvents: "none", zIndex: 1,
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      {[0, 1, 2].map(i => (
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
+      {[0,1,2].map(i => (
         <div key={i} style={{
           position:     "absolute",
-          width:        `${340 + i * 160}px`,
-          height:       `${340 + i * 160}px`,
+          width:        `${350 + i * 170}px`,
+          height:       `${350 + i * 170}px`,
           borderRadius: "50%",
-          border:       `1px solid ${color}${["25", "18", "0e"][i]}`,
-          animation:    `lpPulse ${[3.6, 5.2, 7.2][i]}s ease-out ${i * 1.3}s infinite`,
+          border:       `1px solid ${color}${["28","1a","0e"][i]}`,
+          animation:    `lp4-pulse ${[3.8, 5.5, 7.8][i]}s ease-out ${i * 1.4}s infinite`,
         }} />
       ))}
     </div>
@@ -325,32 +296,27 @@ function PulseRings({ color }) {
 }
 
 /* ─────────────────────────────────────────────────
-   CURSOR SPARKLE TRAIL
+   CURSOR TRAIL
 ───────────────────────────────────────────────── */
 function CursorTrail({ color }) {
   const [sparks, setSparks] = useState([]);
   useEffect(() => {
-    const handle = (e) => {
+    const h = (e) => {
       const id = Date.now() + Math.random();
-      setSparks(s => [...s.slice(-22), { id, x: e.clientX, y: e.clientY }]);
-      setTimeout(() => setSparks(s => s.filter(sp => sp.id !== id)), 620);
+      setSparks(s => [...s.slice(-24), { id, x: e.clientX, y: e.clientY }]);
+      setTimeout(() => setSparks(s => s.filter(p => p.id !== id)), 640);
     };
-    window.addEventListener("mousemove", handle);
-    return () => window.removeEventListener("mousemove", handle);
+    window.addEventListener("mousemove", h);
+    return () => window.removeEventListener("mousemove", h);
   }, []);
-
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 2 }}>
+    <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:2 }}>
       {sparks.map(s => (
         <div key={s.id} style={{
-          position:     "absolute",
-          left:          s.x - 3,
-          top:           s.y - 3,
-          width:         6, height: 6,
-          borderRadius: "50%",
-          background:    color,
-          boxShadow:    `0 0 6px ${color}`,
-          animation:    "lpSpark 0.62s ease forwards",
+          position:"absolute", left:s.x-3, top:s.y-3,
+          width:6, height:6, borderRadius:"50%",
+          background:color, boxShadow:`0 0 6px ${color}`,
+          animation:"lp4-spark 0.64s ease forwards",
         }} />
       ))}
     </div>
@@ -358,7 +324,7 @@ function CursorTrail({ color }) {
 }
 
 /* ─────────────────────────────────────────────────
-   TYPEWRITER HOOK
+   TYPEWRITER
 ───────────────────────────────────────────────── */
 function useTypewriter(text, speed = 50, active = true) {
   const [out, setOut] = useState("");
@@ -366,11 +332,7 @@ function useTypewriter(text, speed = 50, active = true) {
     if (!active) return;
     setOut("");
     let i = 0;
-    const t = setInterval(() => {
-      i++;
-      setOut(text.slice(0, i));
-      if (i >= text.length) clearInterval(t);
-    }, speed);
+    const t = setInterval(() => { i++; setOut(text.slice(0, i)); if (i >= text.length) clearInterval(t); }, speed);
     return () => clearInterval(t);
   }, [text, speed, active]);
   return out;
@@ -382,45 +344,35 @@ function useTypewriter(text, speed = 50, active = true) {
 function SuccessOverlay({ theme, name }) {
   return (
     <div style={{
-      position:       "fixed", inset: 0, zIndex: 9999,
-      display:        "flex", flexDirection: "column",
-      alignItems:     "center", justifyContent: "center",
-      background:     `radial-gradient(ellipse at center, ${theme.primary}25 0%, rgba(3,0,10,0.97) 68%)`,
-      backdropFilter: "blur(22px)",
-      animation:      "lpSuccessIn 0.38s ease forwards",
+      position:"fixed", inset:0, zIndex:9999,
+      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+      background:`radial-gradient(ellipse at center, ${theme.primary}28 0%, rgba(3,0,10,0.97) 68%)`,
+      backdropFilter:"blur(24px)", animation:"lp4-successIn 0.38s ease forwards",
     }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          fontSize:  "5rem", display: "inline-block",
-          animation: "lpSuccessBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",
-        }}>
+      <div style={{ textAlign:"center" }}>
+        <div style={{ fontSize:"5.5rem", display:"inline-block", animation:"lp4-successBounce 0.72s cubic-bezier(0.34,1.56,0.64,1) 0.1s both" }}>
           {theme.avatar}
         </div>
         <div style={{
-          fontFamily: "'Cormorant Garamond',serif",
-          fontSize:   "3.2rem", fontWeight: 600, fontStyle: "italic",
-          color:      "#fff", marginTop: 22,
-          animation:  "lpFadeUp 0.5s ease 0.35s both",
-          textShadow: `0 0 70px ${theme.glow}`,
+          fontFamily:"'Cormorant Garamond',serif", fontSize:"3.4rem",
+          fontWeight:600, fontStyle:"italic", color:"#fff",
+          marginTop:22, animation:"lp4-fadeUp 0.5s ease 0.35s both",
+          textShadow:`0 0 80px ${theme.glow}`,
         }}>
           Hello, {name} {"\uD83D\uDCAB"}
         </div>
-        <div style={{
-          fontFamily: "'Inter',sans-serif",
-          fontSize:   "0.92rem", color: "rgba(255,255,255,0.42)",
-          marginTop:  10, animation: "lpFadeUp 0.5s ease 0.55s both",
+        <p style={{
+          fontFamily:"'Inter',sans-serif", fontSize:"0.94rem",
+          color:"rgba(255,255,255,0.40)", marginTop:10,
+          animation:"lp4-fadeUp 0.5s ease 0.55s both",
         }}>
           Opening your world{"…"}
-        </div>
-        <div style={{
-          display: "flex", gap: 10, justifyContent: "center",
-          marginTop: 30, animation: "lpFadeUp 0.5s ease 0.75s both",
-        }}>
-          {[0,1,2,3,4].map((_, i) => (
+        </p>
+        <div style={{ display:"flex", gap:11, justifyContent:"center", marginTop:32, animation:"lp4-fadeUp 0.5s ease 0.72s both" }}>
+          {[0,1,2,3,4].map((_,i) => (
             <div key={i} style={{
-              width: 9, height: 9, borderRadius: "50%",
-              background: theme.primary,
-              animation: `lpDot 1.2s ease-in-out ${i * 0.17}s infinite alternate`,
+              width:10, height:10, borderRadius:"50%", background:theme.primary,
+              animation:`lp4-dot 1.2s ease-in-out ${i*0.17}s infinite alternate`,
             }} />
           ))}
         </div>
@@ -452,10 +404,7 @@ export default function LoginPage({ onLogin }) {
 
   const detectedUser = USERS[password] || "default";
   const theme        = THEMES[detectedUser];
-  const greeting     = useTypewriter(
-    `${theme.greeting}, ${theme.name}`,
-    50, mounted
-  );
+  const greeting     = useTypewriter(`${theme.greeting}, ${theme.name}`, 50, mounted);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -464,80 +413,67 @@ export default function LoginPage({ onLogin }) {
     const validName = uname === CORRECT_USER || uname === "ADMIN";
 
     if (validName && validUser) {
-      setBurst(Array.from({ length: 20 }, (_, i) => ({
+      setBurst(Array.from({ length: 22 }, (_, i) => ({
         id:    i,
-        left:  `${2 + i * 4.8}%`,
+        left:  `${2 + i * 4.5}%`,
         delay: `${i * 0.04}s`,
-        dur:   `${1.1 + Math.random() * 0.75}s`,
+        dur:   `${1.1 + Math.random() * 0.8}s`,
         sym:   theme.burst[i % theme.burst.length],
-        size:  `${18 + (i % 3) * 9}px`,
+        size:  `${18 + (i % 3) * 10}px`,
       })));
-      setTimeout(() => setSuccess({ name: THEMES[validUser]?.name || "Guest" }), 350);
-      setTimeout(() => onLogin(validUser), 1900);
+      setTimeout(() => setSuccess({ name: THEMES[validUser]?.name || "Guest" }), 360);
+      setTimeout(() => onLogin(validUser), 1950);
     } else {
-      const msg = !validName
+      setError(!validName
         ? "That name doesn\u2019t match \uD83D\uDC94"
-        : "Wrong password, try again \uD83D\uDD10";
-      setError(msg);
+        : "Wrong password, try again \uD83D\uDD10");
       setShake(true);
       setTimeout(() => { setShake(false); setError(""); }, 750);
     }
   };
 
-  /* ── input style helper ── */
-  const inputStyle = (isFocused, hasMatch) => ({
-    width:        "100%",
-    boxSizing:    "border-box",
-    padding:      "15px 20px",
-    background:   isFocused
-      ? `${theme.inputBg.replace("0.05", "0.09")}`
-      : theme.inputBg,
-    border: `1.5px solid ${
-      isFocused  ? theme.primary + "cc"
-      : hasMatch ? theme.primary + "60"
-      :            "rgba(255,255,255,0.10)"
-    }`,
-    borderRadius:  "14px",
-    color:         "#ffffff",
-    fontFamily:    "'Inter',sans-serif",
-    fontSize:      "0.95rem",
-    outline:       "none",
-    transition:    "all 0.28s ease",
-    boxShadow:     isFocused
-      ? `0 0 0 3px ${theme.glowSoft}, 0 6px 24px rgba(0,0,0,0.3)`
-      : "none",
-    letterSpacing: hasMatch ? "1.5px" : "normal",
-    caretColor:    theme.primary,
+  /* fade-in helper */
+  const fi = (delay) => ({
+    opacity:    mounted ? 1 : 0,
+    transform:  mounted ? "translateY(0)" : "translateY(20px)",
+    transition: `opacity 0.55s ease ${delay}s, transform 0.55s ease ${delay}s`,
   });
 
-  const trans = (delay) => ({
-    opacity:   mounted ? 1 : 0,
-    transform: mounted ? "translateY(0)" : "translateY(18px)",
-    transition: `opacity 0.5s ease ${delay}s, transform 0.5s ease ${delay}s`,
+  /* input style */
+  const inp = (isFoc, hasVal) => ({
+    width:"100%", boxSizing:"border-box",
+    padding:"15px 20px",
+    background: isFoc
+      ? "rgba(255,255,255,0.09)"
+      : "rgba(255,255,255,0.04)",
+    border:`1.5px solid ${
+      isFoc  ? theme.primary + "cc"
+      :hasVal ? theme.primary + "66"
+      :         "rgba(255,255,255,0.10)"
+    }`,
+    borderRadius:"14px",
+    color:"#fff",
+    fontFamily:"'Inter',sans-serif",
+    fontSize:"0.95rem",
+    outline:"none",
+    transition:"all 0.28s ease",
+    boxShadow: isFoc ? `0 0 0 3px ${theme.glowSoft}, 0 6px 26px rgba(0,0,0,0.35)` : "none",
+    caretColor: theme.primary,
+    letterSpacing: hasVal ? "1.5px" : "normal",
   });
 
   return (
     <div style={{
-      minHeight: "100vh", display: "flex",
-      alignItems: "center", justifyContent: "center",
-      background: "transparent", position: "relative",
-      overflow: "hidden", padding: "20px",
+      minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center",
+      background:"transparent", position:"relative", overflow:"hidden", padding:"20px",
     }}>
 
-      {/* background */}
+      {/* ── background ── */}
+      <div style={{ position:"fixed", inset:0, zIndex:-1, background:theme.bg, transition:"background 1s ease" }} />
       <div style={{
-        position: "fixed", inset: 0, zIndex: -1,
-        background: theme.bg, transition: "background 1s ease",
-      }} />
-
-      {/* ambient orbs */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
-        background: `
-          radial-gradient(ellipse at 18% 26%, ${theme.orb1} 0%, transparent 52%),
-          radial-gradient(ellipse at 84% 80%, ${theme.orb2} 0%, transparent 48%)
-        `,
-        transition: "background 1s ease",
+        position:"fixed", inset:0, pointerEvents:"none", zIndex:0, transition:"background 1s ease",
+        background:`radial-gradient(ellipse at 18% 25%, ${theme.orb1} 0%, transparent 52%),
+                    radial-gradient(ellipse at 85% 80%, ${theme.orb2} 0%, transparent 48%)`,
       }} />
 
       <Starfield color={theme.primary} />
@@ -545,21 +481,21 @@ export default function LoginPage({ onLogin }) {
       <FloatingParticles theme={theme} />
       <CursorTrail color={theme.primary} />
 
-      {/* burst on success */}
+      {/* burst */}
       {burst.map(h => (
         <span key={h.id} style={{
-          position: "fixed", bottom: "-60px", left: h.left,
-          fontSize: h.size, pointerEvents: "none", zIndex: 200,
-          animation: `lpFloat ${h.dur} ${h.delay} linear forwards`,
-          filter: `drop-shadow(0 0 8px ${theme.primary})`,
-        }}>
-          {h.sym}
-        </span>
+          position:"fixed", bottom:"-60px", left:h.left,
+          fontSize:h.size, pointerEvents:"none", zIndex:200,
+          animation:`lp4-float ${h.dur} ${h.delay} linear forwards`,
+          filter:`drop-shadow(0 0 9px ${theme.primary})`,
+        }}>{h.sym}</span>
       ))}
 
       {success && <SuccessOverlay theme={theme} name={success.name} />}
 
-      {/* ══════════════ CARD ══════════════ */}
+      {/* ══════════════════════════════════════
+          CARD
+      ══════════════════════════════════════ */}
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
@@ -567,344 +503,366 @@ export default function LoginPage({ onLogin }) {
         onMouseMove={tilt.onMouseMove}
         onMouseLeave={tilt.onMouseLeave}
         onMouseEnter={tilt.onMouseEnter}
-        className={`tilt-card${shake ? " lp-shake" : ""}`}
+        className={`tilt-card${shake ? " lp4-shake" : ""}`}
         style={{
-          position:     "relative",
-          zIndex:       10,
-          width:        "100%",
-          maxWidth:     "430px",
-          background:   "linear-gradient(145deg, rgba(7,2,18,0.86) 0%, rgba(12,3,28,0.90) 100%)",
-          border:       `1px solid ${theme.primary}22`,
-          borderRadius: "34px",
-          padding:      "54px 44px 48px",
-          boxShadow:    `
-            0 48px 110px rgba(0,0,0,0.78),
-            0 0 90px ${theme.glowSoft},
-            inset 0 1px 0 rgba(255,255,255,0.07),
-            inset 0 0 0 1px rgba(255,255,255,0.03)
+          position:"relative", zIndex:10,
+          width:"100%", maxWidth:"440px",
+
+          /* layered glassmorphism */
+          background: theme.cardBg,
+          border:`1px solid ${theme.primary}22`,
+          borderRadius:"36px",
+          padding:"0",
+          overflow:"hidden",
+
+          boxShadow:`
+            0 55px 120px rgba(0,0,0,0.82),
+            0  0  100px ${theme.glowSoft},
+            inset 0 1px 0 rgba(255,255,255,0.08),
+            inset 0 0  0 1px rgba(255,255,255,0.03)
           `,
-          backdropFilter:    "blur(32px)",
-          WebkitBackdropFilter: "blur(32px)",
+          backdropFilter:"blur(36px)",
+          WebkitBackdropFilter:"blur(36px)",
           opacity:   mounted ? 1 : 0,
-          animation: mounted ? "lpCardIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both" : "none",
-          overflow:  "hidden",
+          animation: mounted ? "lp4-cardIn 0.72s cubic-bezier(0.34,1.56,0.64,1) both" : "none",
         }}
       >
-        {/* spinning conic border */}
+
+        {/* ── spinning conic border ── */}
         <div style={{
-          position:   "absolute", inset: -2, borderRadius: 36, zIndex: 0,
-          background: `conic-gradient(from 0deg, transparent 0deg, ${theme.primary} 55deg, ${theme.secondary} 115deg, transparent 175deg, transparent 360deg)`,
-          animation:  "lpSpin 4.5s linear infinite",
-          WebkitMaskImage: "radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
-          maskImage:       "radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
-          opacity:    0.55,
+          position:"absolute", inset:-2, borderRadius:38, zIndex:0,
+          background:`conic-gradient(from 0deg, transparent 0deg, ${theme.primary} 50deg, ${theme.secondary} 110deg, transparent 170deg, transparent 360deg)`,
+          animation:"lp4-spin 5s linear infinite",
+          WebkitMaskImage:"radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
+          maskImage:"radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
+          opacity:0.55,
         }} />
 
-        {/* top shimmer ribbon */}
+        {/* ── top accent bar (thick gradient) ── */}
         <div style={{
-          position:       "absolute", top: 0, left: 0, right: 0,
-          height:         "2px", zIndex: 3,
-          background:     `linear-gradient(90deg, transparent, ${theme.primary}, ${theme.secondary}, ${theme.primary}, transparent)`,
-          backgroundSize: "200% 100%",
-          borderRadius:   "34px 34px 0 0",
-          animation:      "lpRibbon 3s linear infinite",
+          position:"absolute", top:0, left:0, right:0, height:"3px", zIndex:4,
+          background:`linear-gradient(90deg, transparent 0%, ${theme.primary} 30%, ${theme.accent} 55%, ${theme.secondary} 80%, transparent 100%)`,
+          backgroundSize:"200% 100%",
+          animation:"lp4-ribbon 2.8s linear infinite",
+          borderRadius:"36px 36px 0 0",
+          boxShadow:`0 0 20px ${theme.glow}`,
         }} />
 
-        {/* tilt shine layer */}
-        <div className="tilt-shine" style={{ borderRadius: "34px", zIndex: 2 }} />
+        {/* ── glass shimmer sweep ── */}
+        <div style={{
+          position:"absolute", top:0, bottom:0, width:"55%", zIndex:1,
+          background:"linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%)",
+          animation:"lp4-glassShimmer 5s ease-in-out infinite",
+          pointerEvents:"none",
+        }} />
 
-        {/* corner status dots */}
-        <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: 5, zIndex: 3 }}>
-          {[0, 1, 2].map(i => (
+        <div className="tilt-shine" style={{ borderRadius:"36px", zIndex:2 }} />
+
+        {/* ── status dots ── */}
+        <div style={{ position:"absolute", top:20, right:22, display:"flex", gap:5, zIndex:5 }}>
+          {[0,1,2].map(i => (
             <div key={i} style={{
-              width: 5, height: 5, borderRadius: "50%",
-              background: theme.primary, opacity: 0.3,
-              animation: `lpDot 1.9s ease-in-out ${i * 0.38}s infinite alternate`,
+              width:5, height:5, borderRadius:"50%",
+              background:theme.primary, opacity:0.28,
+              animation:`lp4-dot 2s ease-in-out ${i*0.4}s infinite alternate`,
             }} />
           ))}
         </div>
 
-        {/* ── AVATAR ── */}
-        <div style={{ textAlign: "center", marginBottom: 30, position: "relative", zIndex: 2, ...trans(0.05) }}>
-          <div style={{ position: "relative", display: "inline-block" }}>
-            {/* halo glow */}
-            <div style={{
-              position: "absolute", inset: -30, borderRadius: "50%",
-              background: `radial-gradient(circle, ${theme.primary}20 0%, transparent 65%)`,
-              animation:  "lpAvatarFloat 3.8s ease-in-out infinite",
-            }} />
-            {/* inner orbit */}
-            <div style={{
-              position: "absolute", inset: -15, borderRadius: "50%",
-              border:   `1.5px dashed ${theme.primary}45`,
-              animation: "lpOrbitCW 7s linear infinite",
-            }} />
-            {/* outer orbit */}
-            <div style={{
-              position: "absolute", inset: -24, borderRadius: "50%",
-              border:   `1px dashed ${theme.secondary}28`,
-              animation: "lpOrbitCCW 13s linear infinite",
-            }} />
-            {/* avatar box */}
-            <div style={{
-              width: 90, height: 90,
-              background:    `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
-              borderRadius:  "28px",
-              display:       "flex", alignItems: "center", justifyContent: "center",
-              fontSize:      "2.8rem", lineHeight: 1,
-              boxShadow:     `0 18px 52px ${theme.glow}, 0 0 0 1.5px rgba(255,255,255,0.12), 0 0 70px ${theme.primary}30`,
-              animation:     "lpAvatarPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.15s both",
-              position:      "relative", zIndex: 1,
-            }}>
-              {theme.avatar}
+        {/* ── CARD INNER PADDING ── */}
+        <div style={{ padding:"52px 44px 48px", position:"relative", zIndex:3 }}>
+
+          {/* ── AVATAR SECTION ── */}
+          <div style={{ textAlign:"center", marginBottom:32, ...fi(0.05) }}>
+            <div style={{ position:"relative", display:"inline-block" }}>
+
+              {/* glow halo */}
+              <div style={{
+                position:"absolute", inset:-35, borderRadius:"50%",
+                background:`radial-gradient(circle, ${theme.primary}22 0%, transparent 62%)`,
+                animation:"lp4-avatarFloat 4s ease-in-out infinite",
+              }} />
+
+              {/* inner dashed orbit */}
+              <div style={{
+                position:"absolute", inset:-16, borderRadius:"50%",
+                border:`1.5px dashed ${theme.primary}45`,
+                animation:"lp4-orbitCW 8s linear infinite",
+              }} />
+
+              {/* outer dashed orbit */}
+              <div style={{
+                position:"absolute", inset:-26, borderRadius:"50%",
+                border:`1px dashed ${theme.secondary}30`,
+                animation:"lp4-orbitCCW 14s linear infinite",
+              }} />
+
+              {/* sparkle dots on orbit */}
+              {[0,1,2,3].map(i => (
+                <div key={i} style={{
+                  position:"absolute",
+                  top:"50%", left:"50%",
+                  width:5, height:5, borderRadius:"50%",
+                  background:theme.accent,
+                  boxShadow:`0 0 6px ${theme.primary}`,
+                  transform:`translate(-50%,-50%) rotate(${i*90}deg) translateY(-42px)`,
+                  animation:`lp4-orbitCW 8s linear infinite`,
+                  animationDelay:`${i*0.5}s`,
+                }} />
+              ))}
+
+              {/* avatar box */}
+              <div style={{
+                width:92, height:92,
+                background:`linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
+                borderRadius:"28px",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:"2.9rem", lineHeight:1,
+                boxShadow:`
+                  0 20px 55px ${theme.glow},
+                  0  0   0 2px rgba(255,255,255,0.12),
+                  0  0  80px ${theme.primary}28,
+                  inset 0 1px 0 rgba(255,255,255,0.25)
+                `,
+                animation:"lp4-avatarPop 0.72s cubic-bezier(0.34,1.56,0.64,1) 0.15s both",
+                position:"relative", zIndex:1,
+              }}>
+                {theme.avatar}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* ── HEADING ── */}
-        <div style={{ textAlign: "center", marginBottom: 30, position: "relative", zIndex: 2 }}>
+          {/* ── HEADING SECTION ── */}
+          <div style={{ textAlign:"center", marginBottom:32 }}>
 
-          {/* badge */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 7,
-            background: `${theme.primary}12`, border: `1px solid ${theme.primary}28`,
-            borderRadius: 50, padding: "5px 14px",
-            fontFamily: "'Inter',sans-serif",
-            fontSize: "0.6rem", fontWeight: 700,
-            color: theme.primary, letterSpacing: "2.5px", textTransform: "uppercase",
-            marginBottom: 14,
-            ...trans(0.15),
-          }}>
-            <span>{"\u2756"}</span>
-            <span>{detectedUser === "default" ? "Welcome" : "Back Again"}</span>
-            <span>{"\u2756"}</span>
+            {/* pill badge */}
+            <div style={{
+              display:"inline-flex", alignItems:"center", gap:8,
+              background:`${theme.primary}14`,
+              border:`1px solid ${theme.primary}30`,
+              borderRadius:50, padding:"5px 16px",
+              fontFamily:"'Inter',sans-serif",
+              fontSize:"0.6rem", fontWeight:700,
+              color:theme.accent, letterSpacing:"2.5px", textTransform:"uppercase",
+              marginBottom:16,
+              boxShadow:`0 0 20px ${theme.glowSoft}`,
+              ...fi(0.12),
+            }}>
+              <span>{"\u2756"}</span>
+              <span>{detectedUser === "default" ? "Welcome" : "Back Again"}</span>
+              <span>{"\u2756"}</span>
+            </div>
+
+            {/* title with typewriter */}
+            <h1 style={{
+              fontFamily:"'Cormorant Garamond',serif",
+              fontSize:"2.75rem", fontWeight:600, fontStyle:"italic",
+              margin:"0 0 14px", lineHeight:1.1, minHeight:"3.4rem",
+              background:`linear-gradient(90deg, #fff 0%, ${theme.primary} 28%, ${theme.accent} 52%, ${theme.secondary} 72%, #fff 88%, ${theme.primary} 100%)`,
+              backgroundSize:"300% auto",
+              WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+              animation:"lp4-titleShine 5s linear infinite",
+              filter:`drop-shadow(0 2px 22px ${theme.glowSoft})`,
+            }}>
+              {greeting}
+              <span style={{ animation:"lp4-blink 1s step-end infinite", opacity:0.4, WebkitTextFillColor:"rgba(255,255,255,0.38)" }}>|</span>
+            </h1>
+
+            {/* subtitle */}
+            <p style={{
+              fontFamily:"'Inter',sans-serif",
+              fontSize:"0.85rem", color:"rgba(255,255,255,0.30)",
+              margin:0, lineHeight:1.8, ...fi(0.22),
+            }}>
+              {theme.sub}
+            </p>
           </div>
 
-          {/* typewriter title */}
-          <h1 style={{
-            fontFamily:   "'Cormorant Garamond',serif",
-            fontSize:     "2.7rem", fontWeight: 600, fontStyle: "italic",
-            margin:       "0 0 12px", lineHeight: 1.1, minHeight: "3.4rem",
-            background:   `linear-gradient(90deg, #fff 0%, ${theme.primary} 30%, ${theme.secondary} 60%, #fff 80%, ${theme.primary} 100%)`,
-            backgroundSize: "300% auto",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor:  "transparent",
-            backgroundClip: "text",
-            animation:    "lpTitleShine 4.5s linear infinite",
-            filter:       `drop-shadow(0 2px 20px ${theme.glowSoft})`,
+          {/* ── DIVIDER ── */}
+          <div style={{
+            position:"relative", height:"1px", marginBottom:30, overflow:"hidden",
           }}>
-            {greeting}
-            <span style={{
-              animation:           "lpBlink 1s step-end infinite",
-              opacity:             0.4,
-              WebkitTextFillColor: "rgba(255,255,255,0.4)",
-            }}>|</span>
-          </h1>
+            <div style={{
+              position:"absolute", inset:0,
+              background:`linear-gradient(90deg, transparent, ${theme.primary}55, ${theme.accent}44, ${theme.secondary}38, transparent)`,
+            }} />
+            {/* moving glow dot */}
+            <div style={{
+              position:"absolute", top:"-3px", height:"7px", width:"30px",
+              background:`radial-gradient(circle, ${theme.primary} 0%, transparent 70%)`,
+              animation:"lp4-ribbon 3s linear infinite",
+              backgroundSize:"200% 100%",
+            }} />
+          </div>
 
-          {/* subtitle */}
-          <p style={{
-            fontFamily: "'Inter',sans-serif",
-            fontSize:   "0.85rem", color: "rgba(255,255,255,0.32)",
-            margin: 0, lineHeight: 1.75,
-            ...trans(0.25),
-          }}>
-            {theme.sub}
-          </p>
-        </div>
-
-        {/* divider */}
-        <div style={{
-          height: "1px", marginBottom: 28,
-          background: `linear-gradient(90deg, transparent, ${theme.primary}48, ${theme.secondary}32, transparent)`,
-          position: "relative", zIndex: 2,
-        }} />
-
-        {/* ── USERNAME ── */}
-        <div style={{ marginBottom: 16, position: "relative", zIndex: 2, ...trans(0.30) }}>
-          <label style={{
-            display: "block", fontFamily: "'Inter',sans-serif",
-            fontSize: "0.62rem", fontWeight: 700,
-            color: "rgba(255,255,255,0.32)", textTransform: "uppercase",
-            letterSpacing: "2px", marginBottom: 9,
-          }}>
-            Username
-          </label>
-          <input
-            type="text"
-            placeholder={"Enter your name\u2026"}
-            value={username}
-            onChange={e => { setUsername(e.target.value); setError(""); }}
-            onFocus={() => setFocused("user")}
-            onBlur={() => setFocused(null)}
-            autoComplete="off"
-            style={inputStyle(focused === "user", false)}
-          />
-        </div>
-
-        {/* ── PASSWORD ── */}
-        <div style={{ marginBottom: 24, position: "relative", zIndex: 2, ...trans(0.42) }}>
-          <label style={{
-            display: "block", fontFamily: "'Inter',sans-serif",
-            fontSize: "0.62rem", fontWeight: 700,
-            color: "rgba(255,255,255,0.32)", textTransform: "uppercase",
-            letterSpacing: "2px", marginBottom: 9,
-          }}>
-            Password
-          </label>
-          <div style={{ position: "relative" }}>
+          {/* ── USERNAME ── */}
+          <div style={{ marginBottom:16, ...fi(0.28) }}>
+            <label style={{
+              display:"block", fontFamily:"'Inter',sans-serif",
+              fontSize:"0.62rem", fontWeight:700,
+              color:"rgba(255,255,255,0.30)", textTransform:"uppercase",
+              letterSpacing:"2px", marginBottom:9,
+            }}>
+              Username
+            </label>
             <input
-              type={showPass ? "text" : "password"}
-              placeholder={"Enter password\u2026"}
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(""); }}
-              onFocus={() => setFocused("pass")}
+              type="text"
+              placeholder={"Enter your name\u2026"}
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError(""); }}
+              onFocus={() => setFocused("user")}
               onBlur={() => setFocused(null)}
               autoComplete="off"
-              style={{ ...inputStyle(focused === "pass", !!USERS[password]), paddingRight: 52 }}
+              style={inp(focused === "user", false)}
             />
+          </div>
+
+          {/* ── PASSWORD ── */}
+          <div style={{ marginBottom:24, ...fi(0.38) }}>
+            <label style={{
+              display:"block", fontFamily:"'Inter',sans-serif",
+              fontSize:"0.62rem", fontWeight:700,
+              color:"rgba(255,255,255,0.30)", textTransform:"uppercase",
+              letterSpacing:"2px", marginBottom:9,
+            }}>
+              Password
+            </label>
+            <div style={{ position:"relative" }}>
+              <input
+                type={showPass ? "text" : "password"}
+                placeholder={"Enter password\u2026"}
+                value={password}
+                onChange={e => { setPassword(e.target.value); setError(""); }}
+                onFocus={() => setFocused("pass")}
+                onBlur={() => setFocused(null)}
+                autoComplete="off"
+                style={{ ...inp(focused === "pass", !!USERS[password]), paddingRight:52 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(v => !v)}
+                aria-label="Toggle password visibility"
+                style={{
+                  position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
+                  background:"none", border:"none", cursor:"pointer",
+                  color: showPass ? theme.primary : "rgba(255,255,255,0.28)",
+                  padding:"4px", display:"flex", alignItems:"center", transition:"color 0.2s",
+                }}
+              >
+                {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
+              </button>
+            </div>
+
+            {/* detected hint */}
+            {USERS[password] && (
+              <div style={{ marginTop:10, display:"flex", alignItems:"center", gap:8, animation:"lp4-fadeUp 0.3s ease" }}>
+                <div style={{
+                  width:6, height:6, borderRadius:"50%", background:theme.primary,
+                  boxShadow:`0 0 8px ${theme.primary}`,
+                  animation:"lp4-dot 1s ease-in-out infinite alternate",
+                }} />
+                <span style={{
+                  fontFamily:"'Inter',sans-serif", fontSize:"0.70rem",
+                  color:theme.accent, fontWeight:600,
+                  textShadow:`0 0 10px ${theme.primary}88`,
+                }}>
+                  {THEMES[USERS[password]].name} detected {"\u2713"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* ── ERROR ── */}
+          {error && (
+            <div style={{
+              marginBottom:18, padding:"13px 18px",
+              background:"rgba(239,68,68,0.09)",
+              border:"1px solid rgba(239,68,68,0.25)",
+              borderRadius:"14px",
+              fontFamily:"'Inter',sans-serif",
+              fontSize:"0.83rem", color:"#fca5a5",
+              textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:9,
+              animation:"lp4-fadeUp 0.3s ease",
+            }}>
+              <span>{"⚠️"}</span>{error}
+            </div>
+          )}
+
+          {/* ── SUBMIT BUTTON ── */}
+          <div style={{ ...fi(0.50) }}>
             <button
-              type="button"
-              onClick={() => setShowPass(v => !v)}
-              aria-label="Toggle password visibility"
+              type="submit"
               style={{
-                position: "absolute", right: 14, top: "50%",
-                transform: "translateY(-50%)",
-                background: "none", border: "none", cursor: "pointer",
-                color: showPass ? theme.primary : "rgba(255,255,255,0.28)",
-                padding: "4px", display: "flex", alignItems: "center",
-                transition: "color 0.2s",
+                width:"100%", padding:"17px",
+                background:`linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
+                border:"none", borderRadius:"18px", color:"#fff",
+                fontFamily:"'Inter',sans-serif",
+                fontSize:"0.97rem", fontWeight:700,
+                cursor:"pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:11,
+                boxShadow:`
+                  0 16px 48px ${theme.glow},
+                  0  6px 20px rgba(0,0,0,0.35),
+                  inset 0 1px 0 rgba(255,255,255,0.18)
+                `,
+                transition:"transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s",
+                letterSpacing:"0.35px",
+                animation:"lp4-heartbeat 2.5s ease-in-out 2.5s infinite",
+                position:"relative", overflow:"hidden",
               }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = "translateY(-4px) scale(1.03)";
+                e.currentTarget.style.boxShadow = `0 26px 65px ${theme.glow}, 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.18)`;
+                e.currentTarget.style.animationPlayState = "paused";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = "translateY(0) scale(1)";
+                e.currentTarget.style.boxShadow = `0 16px 48px ${theme.glow}, 0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)`;
+                e.currentTarget.style.animationPlayState = "running";
+              }}
+              onMouseDown={e => { e.currentTarget.style.transform = "translateY(1px) scale(0.98)"; }}
+              onMouseUp={e   => { e.currentTarget.style.transform = "translateY(-4px) scale(1.03)"; }}
             >
-              {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+              {/* shimmer sweep */}
+              <div style={{
+                position:"absolute", inset:0, borderRadius:"18px",
+                background:"linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.24) 50%, transparent 70%)",
+                backgroundSize:"200% 100%",
+                animation:"lp4-ribbon 2.4s linear infinite",
+              }} />
+              <span style={{ position:"relative" }}>{theme.btnText}</span>
+              <ArrowRight size={17} strokeWidth={2.5} style={{ position:"relative" }} />
             </button>
           </div>
 
-          {/* detected user hint */}
-          {USERS[password] && (
-            <div style={{
-              marginTop: 9, display: "flex", alignItems: "center", gap: 7,
-              animation: "lpFadeUp 0.3s ease",
-            }}>
-              <div style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: theme.primary,
-                animation: "lpDot 1s ease-in-out infinite alternate",
-              }} />
-              <span style={{
-                fontFamily: "'Inter',sans-serif", fontSize: "0.69rem",
-                color: theme.primary, fontWeight: 600,
-              }}>
-                {THEMES[USERS[password]].name} detected {"\u2713"}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* ── ERROR ── */}
-        {error && (
+          {/* ── FOOTER ── */}
           <div style={{
-            marginBottom: 18,
-            padding: "12px 18px",
-            background: "rgba(239,68,68,0.08)",
-            border: "1px solid rgba(239,68,68,0.22)",
-            borderRadius: "13px",
-            fontFamily: "'Inter',sans-serif",
-            fontSize: "0.82rem", color: "#fca5a5",
-            textAlign: "center",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            animation: "lpFadeUp 0.3s ease",
-            position: "relative", zIndex: 2,
+            marginTop:28, textAlign:"center",
+            display:"flex", flexDirection:"column", alignItems:"center", gap:10,
+            ...fi(0.65),
           }}>
-            <Lock size={13} />
-            {error}
+            <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+              <Heart size={9} fill={`${theme.primary}44`} stroke="none" />
+              <span style={{
+                fontFamily:"'Inter',sans-serif", fontSize:"0.68rem",
+                color:"rgba(255,255,255,0.16)", fontStyle:"italic",
+              }}>
+                Only someone special knows the way in
+              </span>
+              <Heart size={9} fill={`${theme.primary}44`} stroke="none" />
+            </div>
+            <div style={{ display:"flex", gap:6 }}>
+              {[0,1,2,3,4].map(i => (
+                <div key={i} style={{
+                  width:3.5, height:3.5, borderRadius:"50%",
+                  background:`${theme.primary}38`,
+                  animation:`lp4-dot 1.8s ease-in-out ${i*0.25}s infinite alternate`,
+                }} />
+              ))}
+            </div>
           </div>
-        )}
 
-        {/* ── SUBMIT BUTTON ── */}
-        <div style={{ position: "relative", zIndex: 2, ...trans(0.55) }}>
-          <button
-            type="submit"
-            style={{
-              width:          "100%",
-              padding:        "17px",
-              background:     `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
-              border:         "none",
-              borderRadius:   "18px",
-              color:          "#fff",
-              fontFamily:     "'Inter',sans-serif",
-              fontSize:       "0.97rem",
-              fontWeight:     700,
-              cursor:         "pointer",
-              display:        "flex",
-              alignItems:     "center",
-              justifyContent: "center",
-              gap:            11,
-              boxShadow:      `0 14px 44px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.14)`,
-              transition:     "transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
-              letterSpacing:  "0.35px",
-              animation:      "lpHeartbeat 2.5s ease-in-out 2.2s infinite",
-              position:       "relative",
-              overflow:       "hidden",
-            }}
-            onMouseEnter={e => {
-              Object.assign(e.currentTarget.style, {
-                transform: "translateY(-3px) scale(1.03)",
-                boxShadow: `0 24px 60px ${theme.glow}`,
-                animationPlayState: "paused",
-              });
-            }}
-            onMouseLeave={e => {
-              Object.assign(e.currentTarget.style, {
-                transform: "translateY(0) scale(1)",
-                boxShadow: `0 14px 44px ${theme.glow}`,
-                animationPlayState: "running",
-              });
-            }}
-            onMouseDown={e => { e.currentTarget.style.transform = "translateY(1px) scale(0.98)"; }}
-            onMouseUp={e =>   { e.currentTarget.style.transform = "translateY(-3px) scale(1.03)"; }}
-          >
-            {/* shimmer sweep */}
-            <div style={{
-              position: "absolute", inset: 0, borderRadius: "18px",
-              background: "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.22) 50%, transparent 68%)",
-              backgroundSize: "200% 100%",
-              animation: "lpRibbon 2.2s linear infinite",
-            }} />
-            <span style={{ position: "relative" }}>{theme.btnText}</span>
-            <ArrowRight size={17} strokeWidth={2.5} style={{ position: "relative" }} />
-          </button>
-        </div>
-
-        {/* ── FOOTER ── */}
-        <div style={{
-          marginTop: 28, textAlign: "center",
-          display: "flex", flexDirection: "column",
-          alignItems: "center", gap: 10,
-          position: "relative", zIndex: 2,
-          ...trans(0.7),
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <Heart size={9} fill={`${theme.primary}40`} stroke="none" />
-            <span style={{
-              fontFamily: "'Inter',sans-serif",
-              fontSize: "0.68rem", color: "rgba(255,255,255,0.18)",
-              fontStyle: "italic",
-            }}>
-              Only someone special knows the way in
-            </span>
-            <Heart size={9} fill={`${theme.primary}40`} stroke="none" />
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {[0,1,2,3,4].map(i => (
-              <div key={i} style={{
-                width: 3.5, height: 3.5, borderRadius: "50%",
-                background: `${theme.primary}35`,
-                animation: `lpDot 1.7s ease-in-out ${i * 0.24}s infinite alternate`,
-              }} />
-            ))}
-          </div>
-        </div>
-
+        </div>{/* end inner padding */}
       </form>
     </div>
   );

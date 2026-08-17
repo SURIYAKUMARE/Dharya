@@ -597,19 +597,7 @@ export default function LoginPage({ onLogin }) {
                 animation:"lp4-orbitCCW 14s linear infinite",
               }} />
 
-              {/* sparkle dots on orbit */}
-              {[0,1,2,3].map(i => (
-                <div key={i} style={{
-                  position:"absolute",
-                  top:"50%", left:"50%",
-                  width:5, height:5, borderRadius:"50%",
-                  background:theme.accent,
-                  boxShadow:`0 0 6px ${theme.primary}`,
-                  transform:`translate(-50%,-50%) rotate(${i*90}deg) translateY(-42px)`,
-                  animation:`lp4-orbitCW 8s linear infinite`,
-                  animationDelay:`${i*0.5}s`,
-                }} />
-              ))}
+
 
               {/* avatar box */}
               <div style={{

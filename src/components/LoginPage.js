@@ -11,37 +11,37 @@ const USERS = {
 const THEMES = {
   sadhana: {
     primary:"#ff1a6e", secondary:"#8b3fc8", glow:"rgba(255,26,110,0.32)",
-    avatar:"💗", burst:["💖","🌸","✨","💕","🌷","💗","⭐","🌺"],
+    avatar:"ðŸ’—", burst:["ðŸ’–","ðŸŒ¸","âœ¨","ðŸ’•","ðŸŒ·","ðŸ’—","â­","ðŸŒº"],
     greeting:"Welcome back,", name:"Sadhana",
-    sub:"Your special place is waiting for you ✨",
+    sub:"Your special place is waiting for you âœ¨",
     btnText:"Enter your world",
     bg:"linear-gradient(160deg,#08010f 0%,#0e0118 50%,#130120 100%)",
     orb1:"rgba(194,0,92,0.28)", orb2:"rgba(91,14,166,0.20)",
-    particles:["💗","🌸","✨","💕","⭐","🌷","💖","🌺","✦","◦"],
+    particles:["ðŸ’—","ðŸŒ¸","âœ¨","ðŸ’•","â­","ðŸŒ·","ðŸ’–","ðŸŒº","âœ¦","â—¦"],
   },
   surya: {
     primary:"#00d97e", secondary:"#06B6D4", glow:"rgba(0,217,126,0.28)",
-    avatar:"🌿", burst:["💚","🌿","✨","🍃","⭐","🌊","💎","🌱"],
+    avatar:"ðŸŒ¿", burst:["ðŸ’š","ðŸŒ¿","âœ¨","ðŸƒ","â­","ðŸŒŠ","ðŸ’Ž","ðŸŒ±"],
     greeting:"Welcome back,", name:"Surya",
-    sub:"Your private space is ready 🌿",
+    sub:"Your private space is ready ðŸŒ¿",
     btnText:"Enter your world",
     bg:"linear-gradient(160deg,#000f06 0%,#011508 50%,#021a0a 100%)",
     orb1:"rgba(0,217,126,0.20)", orb2:"rgba(6,182,212,0.14)",
-    particles:["🌿","✦","·","✧","◦","🍃","∘","🌱","⭐","💚"],
+    particles:["ðŸŒ¿","âœ¦","Â·","âœ§","â—¦","ðŸƒ","âˆ˜","ðŸŒ±","â­","ðŸ’š"],
   },
   default: {
     primary:"#ff1a6e", secondary:"#e8a030", glow:"rgba(255,26,110,0.22)",
-    avatar:"✨", burst:["💫","⭐","✨","🌟","💛","🔥","💥","🌠"],
+    avatar:"âœ¨", burst:["ðŸ’«","â­","âœ¨","ðŸŒŸ","ðŸ’›","ðŸ”¥","ðŸ’¥","ðŸŒ "],
     greeting:"Welcome to", name:"Dharya",
-    sub:"Only someone special knows the way in 🔐",
-    btnText:"Enter →",
+    sub:"Only someone special knows the way in ðŸ”",
+    btnText:"Enter â†’",
     bg:"linear-gradient(160deg,#08010f 0%,#0e0118 50%,#130120 100%)",
     orb1:"rgba(194,0,92,0.18)", orb2:"rgba(91,14,166,0.14)",
-    particles:["✦","·","✧","◦","∘","⭐","💫","✨","🌟","◈"],
+    particles:["âœ¦","Â·","âœ§","â—¦","âˆ˜","â­","ðŸ’«","âœ¨","ðŸŒŸ","â—ˆ"],
   },
 };
 
-/* ══ STARFIELD CANVAS ══ */
+/* â•â• STARFIELD CANVAS â•â• */
 function Starfield({ theme }) {
   const cvRef = useRef(null);
   const rafRef = useRef(null);
@@ -159,7 +159,126 @@ function Starfield({ theme }) {
   );
 }
 
-/* ── Floating emoji particles ── */
+/* â•â• SHOOTING STARS â€” login page background â•â• */
+
+/* â”€â”€ Card animation keyframes injected once â”€â”€ */
+function injectCardStyles() {
+  if (document.getElementById("lp-card-styles")) return;
+  const s = document.createElement("style");
+  s.id = "lp-card-styles";
+  s.textContent = `
+    @keyframes lp-borderSpin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes lp-orbFloat {
+      0%,100% { transform: translate(0,0) scale(1); opacity:0.18; }
+      33%      { transform: translate(12px,-18px) scale(1.15); opacity:0.28; }
+      66%      { transform: translate(-10px,14px) scale(0.88); opacity:0.14; }
+    }
+    @keyframes lp-sparkRing {
+      0%   { transform: scale(0.7) rotate(0deg);   opacity:0; }
+      20%  { opacity:1; }
+      100% { transform: scale(1.6) rotate(180deg); opacity:0; }
+    }
+    @keyframes lp-heartbeat {
+      0%,100% { transform: scale(1); }
+      14%     { transform: scale(1.06); }
+      28%     { transform: scale(1); }
+      42%     { transform: scale(1.04); }
+    }
+    @keyframes lp-inputGlow {
+      0%,100% { box-shadow: 0 0 0 3px var(--lp-glow,rgba(255,34,114,0.25)); }
+      50%      { box-shadow: 0 0 0 5px var(--lp-glow,rgba(255,34,114,0.40)); }
+    }
+    @keyframes lp-dividerPulse {
+      0%,100% { opacity:0.25; transform:scaleX(1); }
+      50%      { opacity:0.60; transform:scaleX(1.04); }
+    }
+    @keyframes lp-titleShine {
+      0%   { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+    @keyframes lp-cardEntrance {
+      0%   { opacity:0; transform: perspective(900px) rotateX(14deg) translateY(48px) scale(0.94); }
+      100% { opacity:1; transform: perspective(900px) rotateX(0deg)  translateY(0)    scale(1); }
+    }
+    @keyframes lp-avatarPop {
+      0%   { transform: scale(0.6) rotate(-12deg); opacity:0; }
+      60%  { transform: scale(1.08) rotate(3deg);  opacity:1; }
+      100% { transform: scale(1) rotate(0deg);     opacity:1; }
+    }
+    @keyframes lp-badgeBounce {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-3px); }
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+/* â”€â”€ Rotating conic border wrapper â”€â”€ */
+function SpinBorder({ color, secondary }) {
+  return (
+    <div style={{
+      position:"absolute", inset:-2, borderRadius:34, zIndex:0,
+      background:`conic-gradient(from 0deg, transparent 0deg, ${color} 60deg, ${secondary} 120deg, transparent 180deg, transparent 360deg)`,
+      animation:"lp-borderSpin 3.5s linear infinite",
+      WebkitMaskImage:"radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
+      maskImage:"radial-gradient(farthest-side, transparent calc(100% - 2px), white calc(100% - 2px))",
+      opacity:0.7,
+    }}/>
+  );
+}
+
+/* â”€â”€ Floating orbs inside the card â”€â”€ */
+function CardOrbs({ color }) {
+  const orbs = [
+    { w:120, h:120, top:"-20px",  left:"-20px",  delay:"0s",    dur:"6s" },
+    { w:90,  h:90,  top:"30%",    right:"-15px",  delay:"2s",    dur:"8s" },
+    { w:70,  h:70,  bottom:"10%", left:"10%",    delay:"1.2s",  dur:"7s" },
+  ];
+  return (
+    <div style={{ position:"absolute", inset:0, borderRadius:32, overflow:"hidden", pointerEvents:"none", zIndex:0 }}>
+      {orbs.map((o,i) => (
+        <div key={i} style={{
+          position:"absolute",
+          width:o.w, height:o.h,
+          top:o.top, left:o.left, right:o.right, bottom:o.bottom,
+          borderRadius:"50%",
+          background:`radial-gradient(circle, ${color}44 0%, transparent 70%)`,
+          filter:"blur(22px)",
+          animation:`lp-orbFloat ${o.dur} ease-in-out ${o.delay} infinite`,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+/* â”€â”€ Sparkle ring around avatar â”€â”€ */
+function AvatarSparkles({ color }) {
+  const sparks = [...Array(8)].map((_, i) => {
+    const angle = (i / 8) * 360;
+    return { angle, delay:`${i * 0.18}s` };
+  });
+  return (
+    <div style={{ position:"absolute", inset:-20, pointerEvents:"none" }}>
+      {sparks.map((s,i) => (
+        <div key={i} style={{
+          position:"absolute",
+          top:"50%", left:"50%",
+          width:6, height:6, borderRadius:"50%",
+          background:color,
+          boxShadow:`0 0 6px 2px ${color}88`,
+          transform:`translate(-50%,-50%) rotate(${s.angle}deg) translateY(-52px)`,
+          animation:`lp-sparkRing 2.4s ease-out ${s.delay} infinite`,
+          opacity:0,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+/* â”€â”€ Floating emoji particles â”€â”€ */
 function FloatingParticles({ theme }) {
   const items = useRef(
     [...Array(16)].map((_, i) => ({
@@ -187,7 +306,7 @@ function FloatingParticles({ theme }) {
   );
 }
 
-/* ── Pulse rings ── */
+/* â”€â”€ Pulse rings â”€â”€ */
 function PulseRings({ theme }) {
   return (
     <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", pointerEvents:"none", zIndex:1 }}>
@@ -204,7 +323,7 @@ function PulseRings({ theme }) {
   );
 }
 
-/* ── Sparkle cursor trail ── */
+/* â”€â”€ Sparkle cursor trail â”€â”€ */
 function SparkleTrail({ color }) {
   const [sparks, setSparks] = useState([]);
   useEffect(() => {
@@ -230,7 +349,7 @@ function SparkleTrail({ color }) {
   );
 }
 
-/* ── Success overlay ── */
+/* â”€â”€ Success overlay â”€â”€ */
 function SuccessOverlay({ theme, name }) {
   return (
     <div style={{
@@ -245,10 +364,10 @@ function SuccessOverlay({ theme, name }) {
           {theme.avatar}
         </div>
         <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.8rem", fontWeight:600, fontStyle:"italic", color:"#fff", marginTop:18, animation:"fadeInUp 0.5s ease 0.3s both", textShadow:`0 0 60px ${theme.glow}` }}>
-          Hello, {name} 💫
+          Hello, {name} ðŸ’«
         </div>
         <div style={{ fontFamily:"'Inter',sans-serif", fontSize:"1rem", color:"rgba(255,255,255,0.45)", marginTop:8, animation:"fadeInUp 0.5s ease 0.5s both" }}>
-          Opening your world…
+          Opening your worldâ€¦
         </div>
         <div style={{ display:"flex", gap:8, justifyContent:"center", marginTop:24, animation:"fadeInUp 0.5s ease 0.7s both" }}>
           {[...Array(5)].map((_,i) => (
@@ -260,7 +379,7 @@ function SuccessOverlay({ theme, name }) {
   );
 }
 
-/* ── Typewriter ── */
+/* â”€â”€ Typewriter â”€â”€ */
 function useTypewriter(text, speed = 55, start = true) {
   const [displayed, setDisplayed] = useState("");
   useEffect(() => {
@@ -273,7 +392,7 @@ function useTypewriter(text, speed = 55, start = true) {
   return displayed;
 }
 
-/* ══ MAIN LOGIN PAGE ══ */
+/* â•â• MAIN LOGIN PAGE â•â• */
 export default function LoginPage({ onLogin }) {
   const [username,  setUsername]  = useState("");
   const [password,  setPassword]  = useState("");
@@ -287,7 +406,10 @@ export default function LoginPage({ onLogin }) {
   const [cardHover, setCardHover] = useState(false);
   const tilt = useTilt(6);
 
-  useEffect(() => { const t = setTimeout(() => setMounted(true), 100); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    injectCardStyles();
+    const t = setTimeout(() => setMounted(true), 100); return () => clearTimeout(t);
+  }, []);
 
   const detectedUser = USERS[password] || "default";
   const theme        = THEMES[detectedUser];
@@ -309,7 +431,7 @@ export default function LoginPage({ onLogin }) {
       setTimeout(() => setSuccess({ name:THEMES[user]?.name || "Guest" }), 400);
       setTimeout(() => onLogin(user), 1900);
     } else {
-      setError(!validName ? "That name doesn't match 💔" : "Wrong password, try again 🔐");
+      setError(!validName ? "That name doesn't match ðŸ’”" : "Wrong password, try again ðŸ”");
       setShake(true);
       setTimeout(() => { setShake(false); setError(""); }, 800);
     }
@@ -354,7 +476,7 @@ export default function LoginPage({ onLogin }) {
 
       {success && <SuccessOverlay theme={theme} name={success.name} />}
 
-      {/* ══ CARD ══ */}
+      {/* CARD */}
       <form
         onSubmit={handleSubmit}
         autoComplete="off"
@@ -366,85 +488,104 @@ export default function LoginPage({ onLogin }) {
         style={{
           position:"relative", zIndex:10,
           width:"100%", maxWidth:"420px",
-          background:"linear-gradient(145deg,rgba(8,2,20,0.75) 0%,rgba(12,4,28,0.82) 100%)",
+          background:"linear-gradient(145deg,rgba(8,2,20,0.78) 0%,rgba(14,4,32,0.85) 100%)",
           border:`1px solid ${theme.primary}28`,
           borderRadius:"32px",
           padding:"52px 42px 46px",
-          boxShadow:`0 40px 100px rgba(0,0,0,0.75), 0 0 80px ${theme.glow}, 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07)`,
+          boxShadow:`0 40px 100px rgba(0,0,0,0.75), 0 0 80px ${theme.glow}, 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08)`,
           backdropFilter:"blur(28px)",
           WebkitBackdropFilter:"blur(28px)",
           opacity: mounted ? 1 : 0,
-          transform: mounted ? "translateY(0) scale(1)" : "translateY(36px) scale(0.97)",
-          transition:"opacity 0.65s ease, transform 0.65s cubic-bezier(0.34,1.56,0.64,1), border-color 0.6s, box-shadow 0.6s",
+          animation: mounted ? "lp-cardEntrance 0.7s cubic-bezier(0.34,1.56,0.64,1) both" : "none",
+          overflow:"hidden",
         }}
       >
-        <div className="tilt-shine" style={{ borderRadius:"32px" }}/>
+        {/* Spinning conic border */}
+        <SpinBorder color={theme.primary} secondary={theme.secondary} />
+
+        {/* Floating inner orbs */}
+        <CardOrbs color={theme.primary} />
+
+        <div className="tilt-shine" style={{ borderRadius:"32px", zIndex:2 }}/>
 
         {/* Top shimmer ribbon */}
         <div style={{
-          position:"absolute", top:0, left:0, right:0, height:"2px",
+          position:"absolute", top:0, left:0, right:0, height:"2px", zIndex:3,
           background:`linear-gradient(90deg,transparent,${theme.primary},${theme.secondary},${theme.primary},transparent)`,
           borderRadius:"32px 32px 0 0", backgroundSize:"200% 100%",
           animation:"shimmerRibbon 2.5s linear infinite",
         }}/>
 
         {/* Corner dots */}
-        <div style={{ position:"absolute", top:18, right:18, display:"flex", gap:5 }}>
+        <div style={{ position:"absolute", top:18, right:18, display:"flex", gap:5, zIndex:3 }}>
           {[0,1,2].map(i => (
             <div key={i} style={{ width:5, height:5, borderRadius:"50%", background:theme.primary, opacity:cardHover?0.9:0.22, animation:`dotPulse 1.8s ease-in-out ${i*0.3}s infinite alternate`, transition:"opacity 0.3s" }}/>
           ))}
         </div>
 
-        {/* Avatar with orbit + halo */}
-        <div style={{ textAlign:"center", marginBottom:28 }}>
+        {/* Avatar — double orbit + sparkle ring + halo */}
+        <div style={{ textAlign:"center", marginBottom:28, position:"relative", zIndex:2 }}>
           <div style={{ position:"relative", display:"inline-block" }}>
-            {/* Halo glow */}
-            <div style={{ position:"absolute", inset:-18, borderRadius:"50%", background:`radial-gradient(circle, ${theme.primary}22 0%, transparent 70%)`, animation:"floatEmoji 3s ease-in-out infinite alternate" }}/>
-            <div style={{ width:88, height:88, background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`, borderRadius:"26px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.4rem", boxShadow:`0 16px 48px ${theme.glow}, 0 0 0 1.5px rgba(255,255,255,0.1)`, animation:"floatEmoji 3s ease-in-out infinite alternate", position:"relative" }}>
+            <div style={{ position:"absolute", inset:-24, borderRadius:"50%", background:`radial-gradient(circle,${theme.primary}20 0%,transparent 70%)`, animation:"floatEmoji 3s ease-in-out infinite alternate" }}/>
+            <AvatarSparkles color={theme.primary} />
+            <div style={{ position:"absolute", inset:-14, borderRadius:"50%", border:`1.5px dashed ${theme.primary}38`, animation:"ring3DSpin 6s linear infinite" }}/>
+            <div style={{ position:"absolute", inset:-22, borderRadius:"50%", border:`1px dashed ${theme.secondary}22`, animation:"ring3DSpin 10s linear infinite reverse" }}/>
+            <div style={{ width:88, height:88, background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`, borderRadius:"26px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.4rem", boxShadow:`0 16px 48px ${theme.glow}, 0 0 0 1.5px rgba(255,255,255,0.12), 0 0 60px ${theme.primary}33`, animation:"lp-avatarPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.2s both", position:"relative", zIndex:1 }}>
               {theme.avatar}
-              {/* Orbit ring */}
-              <div style={{ position:"absolute", inset:-12, borderRadius:"50%", border:`1.5px dashed ${theme.primary}35`, animation:"ring3DSpin 8s linear infinite" }}/>
             </div>
           </div>
         </div>
 
         {/* Greeting */}
-        <div style={{ textAlign:"center", marginBottom:"30px" }}>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"3px", margin:"0 0 8px" }}>
-            ✦ &nbsp;{detectedUser === "default" ? "Welcome" : "Back again"}&nbsp; ✦
+        <div style={{ textAlign:"center", marginBottom:"30px", position:"relative", zIndex:2 }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"3px", margin:"0 0 8px", animation:"lp-badgeBounce 2.5s ease-in-out infinite" }}>
+            {"\u2756"}&nbsp;&nbsp;{detectedUser === "default" ? "Welcome" : "Back again"}&nbsp;&nbsp;{"\u2756"}
           </p>
-          <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 10px", lineHeight:1.1, textShadow:`0 0 50px ${theme.glow}`, minHeight:"3.2rem" }}>
-            {greetingTyped}<span style={{ animation:"cursorBlink 1s step-end infinite", opacity:0.45 }}>|</span>
+          <h1 style={{
+            fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic",
+            margin:"0 0 10px", lineHeight:1.1, minHeight:"3.2rem",
+            background:`linear-gradient(90deg,#fff 0%,${theme.primary} 30%,${theme.secondary} 60%,#fff 80%,${theme.primary} 100%)`,
+            backgroundSize:"300% auto",
+            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+            animation:"lp-titleShine 4s linear infinite",
+            filter:`drop-shadow(0 0 18px ${theme.glow})`,
+          }}>
+            {greetingTyped}<span style={{ animation:"cursorBlink 1s step-end infinite", opacity:0.45, WebkitTextFillColor:"rgba(255,255,255,0.45)" }}>|</span>
           </h1>
           <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", color:"rgba(255,255,255,0.32)", margin:0, lineHeight:1.7, opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(8px)", transition:"all 0.8s ease 0.5s" }}>
             {theme.sub}
           </p>
         </div>
 
-        {/* Divider */}
-        <div style={{ height:"1px", background:`linear-gradient(90deg,transparent,${theme.primary}30,transparent)`, marginBottom:"26px" }}/>
+        {/* Pulsing divider */}
+        <div style={{ height:"1px", background:`linear-gradient(90deg,transparent,${theme.primary}45,${theme.secondary}30,transparent)`, marginBottom:"26px", position:"relative", zIndex:2, animation:"lp-dividerPulse 3s ease-in-out infinite" }}/>
 
         {/* Username */}
-        <div style={{ marginBottom:"14px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.35s" }}>
-          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>
-            Username
-          </label>
+        <div style={{ marginBottom:"14px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.35s", position:"relative", zIndex:2 }}>
+          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>Username</label>
           <input type="text" placeholder="Enter your name…" value={username}
             onChange={e => { setUsername(e.target.value); setError(""); }}
             onFocus={() => setFocused("user")} onBlur={() => setFocused(null)}
-            autoComplete="off" style={inp(focused==="user", false)} />
+            autoComplete="off"
+            style={{
+              ...inp(focused==="user", false),
+              ...(focused==="user" ? { animation:"lp-inputGlow 1.4s ease-in-out infinite" } : {}),
+            }} />
         </div>
 
         {/* Password */}
-        <div style={{ marginBottom:"22px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.48s" }}>
-          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>
-            Password
-          </label>
+        <div style={{ marginBottom:"22px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.48s", position:"relative", zIndex:2 }}>
+          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>Password</label>
           <div style={{ position:"relative" }}>
             <input type={showPass?"text":"password"} placeholder="Enter password…" value={password}
               onChange={e => { setPassword(e.target.value); setError(""); }}
               onFocus={() => setFocused("pass")} onBlur={() => setFocused(null)}
-              autoComplete="off" style={{ ...inp(focused==="pass", !!USERS[password]), paddingRight:"50px" }} />
+              autoComplete="off"
+              style={{
+                ...inp(focused==="pass", !!USERS[password]),
+                paddingRight:"50px",
+                ...(focused==="pass" ? { animation:"lp-inputGlow 1.4s ease-in-out infinite" } : {}),
+              }} />
             <button type="button" onClick={() => setShowPass(v=>!v)} aria-label="Toggle password visibility"
               style={{ position:"absolute", right:"13px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:showPass?theme.primary:"rgba(255,255,255,0.28)", padding:"4px", display:"flex", alignItems:"center", transition:"color 0.2s" }}>
               {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
@@ -454,7 +595,7 @@ export default function LoginPage({ onLogin }) {
             <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:6, animation:"fadeInUp 0.3s ease" }}>
               <div style={{ width:5, height:5, borderRadius:"50%", background:theme.primary, animation:"dotPulse 1s ease-in-out infinite alternate" }}/>
               <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", color:theme.primary, fontWeight:600 }}>
-                {THEMES[USERS[password]].name} detected ✓
+                {THEMES[USERS[password]].name} detected {"\u2713"}
               </span>
             </div>
           )}
@@ -462,39 +603,38 @@ export default function LoginPage({ onLogin }) {
 
         {/* Error */}
         {error && (
-          <div style={{ marginBottom:"16px", padding:"12px 16px", background:"rgba(239,68,68,0.09)", border:"1px solid rgba(239,68,68,0.22)", borderRadius:"12px", fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"#fca5a5", textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", animation:"shakeIn 0.4s ease" }}>
-            <span>⚠️</span>{error}
+          <div style={{ marginBottom:"16px", padding:"12px 16px", background:"rgba(239,68,68,0.09)", border:"1px solid rgba(239,68,68,0.22)", borderRadius:"12px", fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"#fca5a5", textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", animation:"shakeIn 0.4s ease", position:"relative", zIndex:2 }}>
+            <span>{"⚠️"}</span>{error}
           </div>
         )}
 
-        {/* Submit */}
+        {/* Submit — heartbeat idle + shimmer sweep */}
         <button type="submit" style={{
           width:"100%", padding:"17px",
           background:`linear-gradient(135deg,${theme.primary} 0%,${theme.secondary} 100%)`,
           border:"none", borderRadius:"18px", color:"#fff",
           fontFamily:"'Inter',sans-serif", fontSize:"0.95rem", fontWeight:700,
           cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"10px",
-          boxShadow:`0 12px 40px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.15)`,
+          boxShadow:`0 12px 40px ${theme.glow}, 0 0 0 1px rgba(255,255,255,0.1) inset`,
           transition:"transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
           letterSpacing:"0.4px",
-          opacity:mounted?1:0,
-          animation:mounted?"btnAppear 0.5s ease 0.65s both":"none",
-          position:"relative", overflow:"hidden",
+          opacity: mounted ? 1 : 0,
+          animation: mounted ? "btnAppear 0.5s ease 0.65s both, lp-heartbeat 2.2s ease-in-out 2s infinite" : "none",
+          position:"relative", overflow:"hidden", zIndex:2,
         }}
-          onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px) scale(1.02)"; e.currentTarget.style.boxShadow=`0 22px 55px ${theme.glow}`; }}
-          onMouseLeave={e => { e.currentTarget.style.transform="translateY(0) scale(1)"; e.currentTarget.style.boxShadow=`0 12px 40px ${theme.glow}`; }}
+          onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px) scale(1.03)"; e.currentTarget.style.boxShadow=`0 22px 55px ${theme.glow}`; e.currentTarget.style.animationPlayState="paused"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform="translateY(0) scale(1)"; e.currentTarget.style.boxShadow=`0 12px 40px ${theme.glow}`; e.currentTarget.style.animationPlayState="running"; }}
           onMouseDown={e => e.currentTarget.style.transform="translateY(1px) scale(0.98)"}
-          onMouseUp={e => e.currentTarget.style.transform="translateY(-3px) scale(1.02)"}
+          onMouseUp={e => e.currentTarget.style.transform="translateY(-3px) scale(1.03)"}
         >
-          {/* button shimmer */}
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%)", backgroundSize:"200% 100%", animation:"fg-shimmer 2.5s linear infinite", borderRadius:"18px" }}/>
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.18) 50%,transparent 65%)", backgroundSize:"200% 100%", animation:"fg-shimmer 2s linear infinite", borderRadius:"18px" }}/>
           <Sparkles size={15} strokeWidth={2}/>
           <span>{theme.btnText}</span>
           <ArrowRight size={16} strokeWidth={2.5}/>
         </button>
 
         {/* Footer */}
-        <div style={{ marginTop:"26px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", opacity:mounted?1:0, transition:"opacity 0.8s ease 0.85s" }}>
+        <div style={{ marginTop:"26px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", opacity:mounted?1:0, transition:"opacity 0.8s ease 0.85s", position:"relative", zIndex:2 }}>
           <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
             <Heart size={8} fill={`${theme.primary}44`} stroke="none"/>
             <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"rgba(255,255,255,0.18)", margin:0, fontStyle:"italic" }}>

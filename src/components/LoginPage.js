@@ -4,11 +4,9 @@ import { useTilt } from "../App";
 
 const CORRECT_USER = "DHARYA";
 const USERS = {
-  "29/02/2008":    "sadhana",
-  "09/10/2007":    "surya",
-  "password123456":"demo",
+  "29/02/2008": "sadhana",
+  "09/10/2007": "surya",
 };
-const DEMO_PASSWORD = "password123456";
 
 const THEMES = {
   sadhana: {
@@ -30,16 +28,6 @@ const THEMES = {
     bg:"linear-gradient(160deg,#000f06 0%,#011508 50%,#021a0a 100%)",
     orb1:"rgba(0,217,126,0.20)", orb2:"rgba(6,182,212,0.14)",
     particles:["🌿","✦","·","✧","◦","🍃","∘","🌱","⭐","💚"],
-  },
-  demo: {
-    primary:"#f59e0b", secondary:"#ec4899", glow:"rgba(245,158,11,0.28)",
-    avatar:"👀", burst:["✨","⭐","💫","🌟","🎉","🎊","💥","🔥"],
-    greeting:"Demo Preview —", name:"Dharya",
-    sub:"Exploring as a guest 👀",
-    btnText:"Enter demo",
-    bg:"linear-gradient(160deg,#0a0800 0%,#120e00 50%,#1a1400 100%)",
-    orb1:"rgba(245,158,11,0.18)", orb2:"rgba(236,72,153,0.12)",
-    particles:["✨","⭐","💫","🌟","◦","✦","·","✧","🎉","◈"],
   },
   default: {
     primary:"#ff1a6e", secondary:"#e8a030", glow:"rgba(255,26,110,0.22)",
@@ -327,8 +315,6 @@ export default function LoginPage({ onLogin }) {
     }
   };
 
-  const fillDemo = () => { setUsername("ADMIN"); setPassword(DEMO_PASSWORD); setError(""); };
-
   const inp = (isFoc, valid) => ({
     width:"100%", boxSizing:"border-box",
     padding:"15px 20px",
@@ -379,81 +365,95 @@ export default function LoginPage({ onLogin }) {
         className={`tilt-card ${shake ? "login-shake" : ""}`}
         style={{
           position:"relative", zIndex:10,
-          width:"100%", maxWidth:"410px",
-          background:"rgba(5,1,14,0.62)",
-          border:`1.5px solid ${theme.primary}35`,
-          borderRadius:"28px",
-          padding:"48px 38px 42px",
-          boxShadow:`0 32px 90px rgba(0,0,0,0.7), 0 0 70px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.07)`,
-          backdropFilter:"blur(24px)",
-          WebkitBackdropFilter:"blur(24px)",
+          width:"100%", maxWidth:"420px",
+          background:"linear-gradient(145deg,rgba(8,2,20,0.75) 0%,rgba(12,4,28,0.82) 100%)",
+          border:`1px solid ${theme.primary}28`,
+          borderRadius:"32px",
+          padding:"52px 42px 46px",
+          boxShadow:`0 40px 100px rgba(0,0,0,0.75), 0 0 80px ${theme.glow}, 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07)`,
+          backdropFilter:"blur(28px)",
+          WebkitBackdropFilter:"blur(28px)",
           opacity: mounted ? 1 : 0,
           transform: mounted ? "translateY(0) scale(1)" : "translateY(36px) scale(0.97)",
           transition:"opacity 0.65s ease, transform 0.65s cubic-bezier(0.34,1.56,0.64,1), border-color 0.6s, box-shadow 0.6s",
         }}
       >
-        <div className="tilt-shine" style={{ borderRadius:"28px" }}/>
+        <div className="tilt-shine" style={{ borderRadius:"32px" }}/>
 
         {/* Top shimmer ribbon */}
         <div style={{
           position:"absolute", top:0, left:0, right:0, height:"2px",
           background:`linear-gradient(90deg,transparent,${theme.primary},${theme.secondary},${theme.primary},transparent)`,
-          borderRadius:"28px 28px 0 0", backgroundSize:"200% 100%",
+          borderRadius:"32px 32px 0 0", backgroundSize:"200% 100%",
           animation:"shimmerRibbon 2.5s linear infinite",
         }}/>
 
         {/* Corner dots */}
-        <div style={{ position:"absolute", top:16, right:16, display:"flex", gap:5 }}>
+        <div style={{ position:"absolute", top:18, right:18, display:"flex", gap:5 }}>
           {[0,1,2].map(i => (
-            <div key={i} style={{ width:5, height:5, borderRadius:"50%", background:theme.primary, opacity:cardHover?0.85:0.25, animation:`dotPulse 1.8s ease-in-out ${i*0.3}s infinite alternate`, transition:"opacity 0.3s" }}/>
+            <div key={i} style={{ width:5, height:5, borderRadius:"50%", background:theme.primary, opacity:cardHover?0.9:0.22, animation:`dotPulse 1.8s ease-in-out ${i*0.3}s infinite alternate`, transition:"opacity 0.3s" }}/>
           ))}
         </div>
 
-        {/* Avatar */}
-        <div style={{ width:80, height:80, margin:"0 auto 24px", background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`, borderRadius:"22px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.2rem", boxShadow:`0 14px 42px ${theme.glow}, 0 0 0 1.5px rgba(255,255,255,0.1)`, animation:"floatEmoji 3s ease-in-out infinite alternate", position:"relative" }}>
-          {theme.avatar}
-          <div style={{ position:"absolute", inset:-10, borderRadius:"50%", border:`1px dashed ${theme.primary}40`, animation:"ring3DSpin 8s linear infinite" }}/>
+        {/* Avatar with orbit + halo */}
+        <div style={{ textAlign:"center", marginBottom:28 }}>
+          <div style={{ position:"relative", display:"inline-block" }}>
+            {/* Halo glow */}
+            <div style={{ position:"absolute", inset:-18, borderRadius:"50%", background:`radial-gradient(circle, ${theme.primary}22 0%, transparent 70%)`, animation:"floatEmoji 3s ease-in-out infinite alternate" }}/>
+            <div style={{ width:88, height:88, background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`, borderRadius:"26px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"2.4rem", boxShadow:`0 16px 48px ${theme.glow}, 0 0 0 1.5px rgba(255,255,255,0.1)`, animation:"floatEmoji 3s ease-in-out infinite alternate", position:"relative" }}>
+              {theme.avatar}
+              {/* Orbit ring */}
+              <div style={{ position:"absolute", inset:-12, borderRadius:"50%", border:`1.5px dashed ${theme.primary}35`, animation:"ring3DSpin 8s linear infinite" }}/>
+            </div>
+          </div>
         </div>
 
         {/* Greeting */}
-        <div style={{ textAlign:"center", marginBottom:"32px" }}>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"2.5px", margin:"0 0 8px" }}>
-            {detectedUser === "default" ? "✦ Welcome ✦" : "✦ Back again ✦"}
+        <div style={{ textAlign:"center", marginBottom:"30px" }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"3px", margin:"0 0 8px" }}>
+            ✦ &nbsp;{detectedUser === "default" ? "Welcome" : "Back again"}&nbsp; ✦
           </p>
-          <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.5rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 8px", lineHeight:1.1, textShadow:`0 0 50px ${theme.glow}`, minHeight:"3rem" }}>
-            {greetingTyped}<span style={{ animation:"cursorBlink 1s step-end infinite", opacity:0.5 }}>|</span>
+          <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 10px", lineHeight:1.1, textShadow:`0 0 50px ${theme.glow}`, minHeight:"3.2rem" }}>
+            {greetingTyped}<span style={{ animation:"cursorBlink 1s step-end infinite", opacity:0.45 }}>|</span>
           </h1>
-          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", color:"rgba(255,255,255,0.35)", margin:0, lineHeight:1.7, opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(8px)", transition:"all 0.8s ease 0.5s" }}>
+          <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.85rem", color:"rgba(255,255,255,0.32)", margin:0, lineHeight:1.7, opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(8px)", transition:"all 0.8s ease 0.5s" }}>
             {theme.sub}
           </p>
         </div>
 
-        {/* Username field */}
-        <div style={{ marginBottom:"14px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(18px)", transition:"all 0.55s ease 0.35s" }}>
-          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1.5px", marginBottom:"7px" }}>Username</label>
+        {/* Divider */}
+        <div style={{ height:"1px", background:`linear-gradient(90deg,transparent,${theme.primary}30,transparent)`, marginBottom:"26px" }}/>
+
+        {/* Username */}
+        <div style={{ marginBottom:"14px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.35s" }}>
+          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>
+            Username
+          </label>
           <input type="text" placeholder="Enter your name…" value={username}
             onChange={e => { setUsername(e.target.value); setError(""); }}
             onFocus={() => setFocused("user")} onBlur={() => setFocused(null)}
             autoComplete="off" style={inp(focused==="user", false)} />
         </div>
 
-        {/* Password field */}
-        <div style={{ marginBottom:"20px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(18px)", transition:"all 0.55s ease 0.5s" }}>
-          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1.5px", marginBottom:"7px" }}>Password</label>
+        {/* Password */}
+        <div style={{ marginBottom:"22px", opacity:mounted?1:0, transform:mounted?"translateY(0)":"translateY(16px)", transition:"all 0.55s ease 0.48s" }}>
+          <label style={{ display:"block", fontFamily:"'Inter',sans-serif", fontSize:"0.63rem", fontWeight:700, color:"rgba(255,255,255,0.28)", textTransform:"uppercase", letterSpacing:"1.8px", marginBottom:"8px" }}>
+            Password
+          </label>
           <div style={{ position:"relative" }}>
             <input type={showPass?"text":"password"} placeholder="Enter password…" value={password}
               onChange={e => { setPassword(e.target.value); setError(""); }}
               onFocus={() => setFocused("pass")} onBlur={() => setFocused(null)}
               autoComplete="off" style={{ ...inp(focused==="pass", !!USERS[password]), paddingRight:"50px" }} />
             <button type="button" onClick={() => setShowPass(v=>!v)} aria-label="Toggle password visibility"
-              style={{ position:"absolute", right:"13px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:showPass?theme.primary:"rgba(255,255,255,0.3)", padding:"4px", display:"flex", alignItems:"center", transition:"color 0.2s" }}>
+              style={{ position:"absolute", right:"13px", top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:showPass?theme.primary:"rgba(255,255,255,0.28)", padding:"4px", display:"flex", alignItems:"center", transition:"color 0.2s" }}>
               {showPass ? <EyeOff size={15}/> : <Eye size={15}/>}
             </button>
           </div>
           {USERS[password] && (
-            <div style={{ marginTop:7, display:"flex", alignItems:"center", gap:6, animation:"fadeInUp 0.3s ease" }}>
+            <div style={{ marginTop:8, display:"flex", alignItems:"center", gap:6, animation:"fadeInUp 0.3s ease" }}>
               <div style={{ width:5, height:5, borderRadius:"50%", background:theme.primary, animation:"dotPulse 1s ease-in-out infinite alternate" }}/>
-              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:theme.primary, fontWeight:600 }}>
+              <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", color:theme.primary, fontWeight:600 }}>
                 {THEMES[USERS[password]].name} detected ✓
               </span>
             </div>
@@ -462,45 +462,49 @@ export default function LoginPage({ onLogin }) {
 
         {/* Error */}
         {error && (
-          <div style={{ marginBottom:"14px", padding:"11px 16px", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.22)", borderRadius:"12px", fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"#fca5a5", textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", animation:"shakeIn 0.4s ease" }}>
+          <div style={{ marginBottom:"16px", padding:"12px 16px", background:"rgba(239,68,68,0.09)", border:"1px solid rgba(239,68,68,0.22)", borderRadius:"12px", fontFamily:"'Inter',sans-serif", fontSize:"0.82rem", color:"#fca5a5", textAlign:"center", display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", animation:"shakeIn 0.4s ease" }}>
             <span>⚠️</span>{error}
           </div>
         )}
 
-        {/* Submit button */}
-        <button type="submit"
-          style={{ width:"100%", padding:"16px", background:`linear-gradient(135deg,${theme.primary},${theme.secondary})`, border:"none", borderRadius:"16px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:"0.95rem", fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"10px", boxShadow:`0 10px 36px ${theme.glow}`, transition:"transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s", letterSpacing:"0.3px", opacity:mounted?1:0, animation:mounted?"btnAppear 0.5s ease 0.65s both":"none" }}
-          onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px) scale(1.02)"; e.currentTarget.style.boxShadow=`0 20px 50px ${theme.glow}`; }}
-          onMouseLeave={e => { e.currentTarget.style.transform="translateY(0) scale(1)"; e.currentTarget.style.boxShadow=`0 10px 36px ${theme.glow}`; }}
-          onMouseDown={e => { e.currentTarget.style.transform="translateY(1px) scale(0.98)"; }}
-          onMouseUp={e => { e.currentTarget.style.transform="translateY(-3px) scale(1.02)"; }}
+        {/* Submit */}
+        <button type="submit" style={{
+          width:"100%", padding:"17px",
+          background:`linear-gradient(135deg,${theme.primary} 0%,${theme.secondary} 100%)`,
+          border:"none", borderRadius:"18px", color:"#fff",
+          fontFamily:"'Inter',sans-serif", fontSize:"0.95rem", fontWeight:700,
+          cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:"10px",
+          boxShadow:`0 12px 40px ${theme.glow}, inset 0 1px 0 rgba(255,255,255,0.15)`,
+          transition:"transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s",
+          letterSpacing:"0.4px",
+          opacity:mounted?1:0,
+          animation:mounted?"btnAppear 0.5s ease 0.65s both":"none",
+          position:"relative", overflow:"hidden",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.transform="translateY(-3px) scale(1.02)"; e.currentTarget.style.boxShadow=`0 22px 55px ${theme.glow}`; }}
+          onMouseLeave={e => { e.currentTarget.style.transform="translateY(0) scale(1)"; e.currentTarget.style.boxShadow=`0 12px 40px ${theme.glow}`; }}
+          onMouseDown={e => e.currentTarget.style.transform="translateY(1px) scale(0.98)"}
+          onMouseUp={e => e.currentTarget.style.transform="translateY(-3px) scale(1.02)"}
         >
+          {/* button shimmer */}
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 50%,transparent 60%)", backgroundSize:"200% 100%", animation:"fg-shimmer 2.5s linear infinite", borderRadius:"18px" }}/>
           <Sparkles size={15} strokeWidth={2}/>
           <span>{theme.btnText}</span>
           <ArrowRight size={16} strokeWidth={2.5}/>
         </button>
 
         {/* Footer */}
-        <div style={{ marginTop:"24px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", opacity:mounted?1:0, transition:"opacity 0.8s ease 0.85s" }}>
-          <button type="button" onClick={fillDemo}
-            style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 18px", background:"rgba(245,158,11,0.07)", border:"1.5px solid rgba(245,158,11,0.28)", borderRadius:"50px", cursor:"pointer", fontFamily:"'Inter',sans-serif", fontSize:"0.76rem", fontWeight:700, color:"#f59e0b", transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)" }}
-            onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.background="rgba(245,158,11,0.13)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform="none"; e.currentTarget.style.background="rgba(245,158,11,0.07)"; }}
-          >
-            <span>👀</span><span>Try Demo Account</span><span style={{ fontSize:"0.65rem", opacity:0.65 }}>→</span>
-          </button>
-
-          <div style={{ display:"flex", alignItems:"center", gap:"7px" }}>
+        <div style={{ marginTop:"26px", textAlign:"center", display:"flex", flexDirection:"column", alignItems:"center", gap:"10px", opacity:mounted?1:0, transition:"opacity 0.8s ease 0.85s" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
             <Heart size={8} fill={`${theme.primary}44`} stroke="none"/>
             <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", color:"rgba(255,255,255,0.18)", margin:0, fontStyle:"italic" }}>
               Only someone special knows the way in
             </p>
             <Heart size={8} fill={`${theme.primary}44`} stroke="none"/>
           </div>
-
           <div style={{ display:"flex", gap:5 }}>
             {[0,1,2,3,4].map(i => (
-              <div key={i} style={{ width:3.5, height:3.5, borderRadius:"50%", background:`${theme.primary}38`, animation:`dotPulse 1.5s ease-in-out ${i*0.2}s infinite alternate` }}/>
+              <div key={i} style={{ width:3.5, height:3.5, borderRadius:"50%", background:`${theme.primary}35`, animation:`dotPulse 1.5s ease-in-out ${i*0.2}s infinite alternate` }}/>
             ))}
           </div>
         </div>

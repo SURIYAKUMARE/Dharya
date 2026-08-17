@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Edit3, Trash2, Upload, X, MapPin, Clock, User, Users } from "lucide-react";
 import { dbGet, dbSet, getPhoto, uploadPhoto, deletePhoto } from "../api";

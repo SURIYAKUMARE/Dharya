@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Sparkles, Heart, TrendingUp, Edit3, CheckCircle, ChevronDown, X, Mail } from "lucide-react";
+import { Star, Sparkles, TrendingUp, Edit3, CheckCircle, ChevronDown, X, Mail } from "lucide-react";
 import { getDreams, saveDreams, dbGet, dbSet } from "../api";
 import { useTilt } from "../App";
 

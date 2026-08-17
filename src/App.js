@@ -21,7 +21,6 @@ import LoginPage from "./components/LoginPage";
 import RelationshipQuiz from "./components/RelationshipQuiz";
 import FlowerGarden from "./components/FlowerGarden";
 import SecretUniverse from "./components/SecretUniverse";
-import InteractiveBirthdayGift from "./components/InteractiveBirthdayGift";
 import "./App.css";
 
 export function useTilt(strength = 12) {

@@ -153,54 +153,132 @@ function injectStyles() {
 }
 
 /* ─────────────────────────────────────────────────
-   STARFIELD
+   STARFIELD  (upgraded shooting stars)
 ───────────────────────────────────────────────── */
 function Starfield({ color }) {
   const cvRef  = useRef(null);
   const rafRef = useRef(null);
+
   useEffect(() => {
     const cv = cvRef.current; if (!cv) return;
     const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
     resize(); window.addEventListener("resize", resize);
     const ctx = cv.getContext("2d");
-    const stars = Array.from({ length: 150 }, () => ({
-      x:Math.random(), y:Math.random(), r:0.35+Math.random()*1.65,
-      b:0.06+Math.random()*0.44, ph:Math.random()*Math.PI*2, sp:0.22+Math.random()*0.88,
+
+    /* twinkling stars */
+    const stars = Array.from({ length: 160 }, () => ({
+      x:  Math.random(), y:  Math.random(),
+      r:  0.3 + Math.random() * 1.7,
+      b:  0.05 + Math.random() * 0.50,
+      ph: Math.random() * Math.PI * 2,
+      sp: 0.20 + Math.random() * 1.0,
     }));
+
+    /* shooting star pool */
     const shots = [];
-    const spawn = () => shots.push({
-      x:Math.random()*cv.width*0.55, y:Math.random()*cv.height*0.35,
-      vx:5+Math.random()*9, vy:2+Math.random()*4,
-      len:80+Math.random()*150, life:1,
-    });
-    const timer = setInterval(spawn, 2800);
-    const tick = () => {
-      const cw=cv.width, ch=cv.height, t=Date.now()/1000;
-      ctx.clearRect(0,0,cw,ch);
-      stars.forEach(s => {
-        const a = s.b*(0.45+0.55*Math.sin(t*s.sp+s.ph));
-        ctx.beginPath(); ctx.arc(s.x*cw,s.y*ch,s.r,0,Math.PI*2);
-        ctx.fillStyle=`rgba(255,255,255,${a.toFixed(3)})`; ctx.fill();
+
+    const spawnShot = () => {
+      /* random angle between 20°–45° downward */
+      const angle  = (20 + Math.random() * 25) * (Math.PI / 180);
+      const speed  = 10 + Math.random() * 14;          /* faster */
+      const bright = Math.random() < 0.3;              /* 30% chance of bright gold star */
+      shots.push({
+        x:     Math.random() * cv.width  * 0.75,
+        y:     Math.random() * cv.height * 0.45,
+        vx:    Math.cos(angle) * speed,
+        vy:    Math.sin(angle) * speed,
+        len:   120 + Math.random() * 200,              /* longer tails */
+        life:  1,
+        decay: 0.013 + Math.random() * 0.010,          /* varied fade speed */
+        width: bright ? 2.2 : 1.6,
+        headR: bright ? 3.5 : 2.2,
+        color: bright ? "#ffd97d" : color,             /* gold or theme colour */
+        bright,
       });
-      for (let i=shots.length-1;i>=0;i--) {
-        const s=shots[i]; s.x+=s.vx; s.y+=s.vy; s.life-=0.018;
-        if (s.life<=0||s.x>cw+200) { shots.splice(i,1); continue; }
-        const tx=s.x-s.vx*(s.len/Math.max(s.vx,1)), ty=s.y-s.vy*(s.len/Math.max(s.vx,1));
-        const g=ctx.createLinearGradient(tx,ty,s.x,s.y);
-        g.addColorStop(0,"transparent"); g.addColorStop(0.55,color+"99"); g.addColorStop(1,"#ffffff");
-        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(s.x,s.y);
-        ctx.strokeStyle=g; ctx.lineWidth=1.8; ctx.globalAlpha=Math.max(0,s.life);
-        ctx.shadowColor=color; ctx.shadowBlur=8; ctx.stroke();
-        ctx.globalAlpha=1; ctx.shadowBlur=0;
-        ctx.beginPath(); ctx.arc(s.x,s.y,2.4,0,Math.PI*2);
-        ctx.fillStyle="#fff"; ctx.globalAlpha=Math.max(0,s.life)*0.88; ctx.fill(); ctx.globalAlpha=1;
-      }
-      rafRef.current=requestAnimationFrame(tick);
     };
-    rafRef.current=requestAnimationFrame(tick);
-    return ()=>{ cancelAnimationFrame(rafRef.current); clearInterval(timer); window.removeEventListener("resize",resize); };
+
+    /* spawn 1 immediately, then stagger */
+    spawnShot();
+    const timer = setInterval(spawnShot, 1400);        /* more frequent */
+
+    const tick = () => {
+      const cw = cv.width, ch = cv.height, t = Date.now() / 1000;
+      ctx.clearRect(0, 0, cw, ch);
+
+      /* ── stars ── */
+      stars.forEach(s => {
+        const a = s.b * (0.45 + 0.55 * Math.sin(t * s.sp + s.ph));
+        ctx.beginPath();
+        ctx.arc(s.x * cw, s.y * ch, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`;
+        ctx.fill();
+      });
+
+      /* ── shooting stars ── */
+      for (let i = shots.length - 1; i >= 0; i--) {
+        const s = shots[i];
+        s.x += s.vx; s.y += s.vy; s.life -= s.decay;
+        if (s.life <= 0 || s.x > cw + 250 || s.y > ch + 100) {
+          shots.splice(i, 1); continue;
+        }
+        const alpha = Math.max(0, s.life);
+
+        /* tail gradient */
+        const tx = s.x - s.vx * (s.len / Math.max(Math.abs(s.vx), 1));
+        const ty = s.y - s.vy * (s.len / Math.max(Math.abs(s.vx), 1));
+        const g  = ctx.createLinearGradient(tx, ty, s.x, s.y);
+        g.addColorStop(0,    "transparent");
+        g.addColorStop(0.40, s.color + "44");
+        g.addColorStop(0.75, s.color + "bb");
+        g.addColorStop(1,    "#ffffff");
+
+        ctx.save();
+        ctx.globalAlpha  = alpha;
+        ctx.strokeStyle  = g;
+        ctx.lineWidth    = s.width;
+        ctx.shadowColor  = s.color;
+        ctx.shadowBlur   = s.bright ? 18 : 10;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(s.x, s.y);
+        ctx.stroke();
+
+        /* bright sparkle tip */
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.headR, 0, Math.PI * 2);
+        ctx.fillStyle   = "#ffffff";
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur  = s.bright ? 24 : 14;
+        ctx.fill();
+
+        /* extra glow ring for bright shots */
+        if (s.bright) {
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.headR * 2.8, 0, Math.PI * 2);
+          ctx.fillStyle = s.color + "33";
+          ctx.shadowBlur = 0;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      clearInterval(timer);
+      window.removeEventListener("resize", resize);
+    };
   }, [color]);
-  return <canvas ref={cvRef} style={{position:"fixed",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}} />;
+
+  return (
+    <canvas
+      ref={cvRef}
+      style={{ position:"fixed", inset:0, width:"100%", height:"100%", pointerEvents:"none", zIndex:0 }}
+    />
+  );
 }
 
 /* ─────────────────────────────────────────────────

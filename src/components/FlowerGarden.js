@@ -27,30 +27,32 @@ const MILESTONES = [
   { n:100,e:"💐", label:"100 Days"     },
 ];
 
-/* ── minimal CSS (no cartoon keyframes) ── */
+/* ── CSS – purge all old garden style tags first ── */
 function injectCSS() {
-  if (document.getElementById("fg5-css")) return;
+  ["fg2-styles","fg3-styles","fg4-css","fg6-css","fg6-css"].forEach(id=>{
+    const old = document.getElementById(id); if(old) old.remove();
+  });
+  if (document.getElementById("fg6-css")) return;
   const s = document.createElement("style");
-  s.id = "fg5-css";
+  s.id = "fg6-css";
   s.textContent = `
-    @keyframes fg5-sway   { 0%,100%{transform:rotate(-3deg)translateY(0)} 50%{transform:rotate(3deg)translateY(-4px)} }
-    @keyframes fg5-bloom  { 0%,100%{filter:drop-shadow(0 2px 8px rgba(236,72,153,.5))} 50%{filter:drop-shadow(0 4px 20px rgba(236,72,153,.95))drop-shadow(0 0 30px rgba(251,191,36,.4))} }
-    @keyframes fg5-twink  { 0%,100%{opacity:.15} 50%{opacity:.9} }
-    @keyframes fg5-shoot  { 0%{transform:translateX(0)translateY(0);opacity:1} 100%{transform:translateX(180px)translateY(80px);opacity:0} }
-    @keyframes fg5-float  { 0%{transform:translateY(0)rotate(0);opacity:1} 100%{transform:translateY(-150px)rotate(360deg);opacity:0} }
-    @keyframes fg5-petal  { 0%{transform:translateY(-10px)translateX(0)rotate(0);opacity:1}
-                            50%{opacity:.85;transform:translateY(45vh)translateX(25px)rotate(200deg)}
-                            100%{transform:translateY(105vh)translateX(-15px)rotate(400deg);opacity:0} }
-    @keyframes fg5-drop   { 0%{transform:translateY(-50px);opacity:1} 100%{transform:translateY(100px);opacity:0} }
-    @keyframes fg5-ripple { 0%{transform:scale(.2);opacity:.9} 100%{transform:scale(4);opacity:0} }
-    @keyframes fg5-spin   { to{transform:rotate(360deg)} }
-    @keyframes fg5-pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(236,72,153,.5)} 50%{box-shadow:0 0 0 22px rgba(236,72,153,0)} }
-    @keyframes fg5-shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-    @keyframes fg5-sunray { 0%,100%{opacity:.4;transform:rotate(0deg)scale(1)} 50%{opacity:.7;transform:rotate(5deg)scale(1.04)} }
-    @keyframes fg5-badge  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
-    @keyframes fg5-cloud  { 0%{transform:translateX(0)} 100%{transform:translateX(25px)} }
-    @keyframes fg5-mist   { 0%,100%{opacity:.18} 50%{opacity:.28} }
-    @keyframes fg5-wind   { 0%{transform:translateX(-100%)skewX(-12deg);opacity:0} 50%{opacity:.15} 100%{transform:translateX(130vw)skewX(-12deg);opacity:0} }
+    @keyframes fg6-sway   { 0%,100%{transform-origin:bottom center;transform:rotate(-2.5deg)} 50%{transform-origin:bottom center;transform:rotate(2.5deg) translateY(-3px)} }
+    @keyframes fg6-swayW  { 0%,100%{transform-origin:bottom center;transform:rotate(-6deg)} 50%{transform-origin:bottom center;transform:rotate(6deg) translateY(-6px)} }
+    @keyframes fg6-bloom  { 0%,100%{filter:drop-shadow(0 2px 6px rgba(236,72,153,.45))} 50%{filter:drop-shadow(0 4px 18px rgba(236,72,153,.9)) drop-shadow(0 0 26px rgba(251,191,36,.4))} }
+    @keyframes fg6-twink  { 0%,100%{opacity:.1} 50%{opacity:.95} }
+    @keyframes fg6-float  { 0%{transform:translateY(0) rotate(0);opacity:1} 100%{transform:translateY(-160px) rotate(360deg);opacity:0} }
+    @keyframes fg6-petal  { 0%{transform:translateY(-12px) translateX(0) rotate(0);opacity:1} 50%{opacity:.8;transform:translateY(44vh) translateX(28px) rotate(210deg)} 100%{transform:translateY(108vh) translateX(-16px) rotate(420deg);opacity:0} }
+    @keyframes fg6-drop   { 0%{transform:translateY(-52px);opacity:1} 100%{transform:translateY(105px);opacity:0} }
+    @keyframes fg6-ripple { 0%{transform:scale(.2);opacity:.9} 100%{transform:scale(4.2);opacity:0} }
+    @keyframes fg6-spin   { to{transform:rotate(360deg)} }
+    @keyframes fg6-pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(236,72,153,.5)} 50%{box-shadow:0 0 0 24px rgba(236,72,153,0)} }
+    @keyframes fg6-shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    @keyframes fg6-sunray { 0%,100%{opacity:.35} 50%{opacity:.65} }
+    @keyframes fg6-badge  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+    @keyframes fg6-cloud  { 0%{transform:translateX(0)} 100%{transform:translateX(28px)} }
+    @keyframes fg6-mist   { 0%,100%{opacity:.16} 50%{opacity:.26} }
+    @keyframes fg6-wind   { 0%{transform:translateX(-110%) skewX(-12deg);opacity:0} 50%{opacity:.14} 100%{transform:translateX(130vw) skewX(-12deg);opacity:0} }
+    @keyframes fg6-grow   { 0%{transform:scaleY(0);transform-origin:bottom center} 100%{transform:scaleY(1);transform-origin:bottom center} }
   `;
   document.head.appendChild(s);
 }
@@ -112,12 +114,12 @@ function WaterDrops({on}) {
     <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:60,overflow:"hidden"}}>
       {[...Array(20)].map((_,i)=>(
         <span key={i} style={{position:"absolute",top:"8%",left:`${2+i*5}%`,fontSize:`${10+(i%4)*5}px`,
-          animation:`fg5-drop ${.45+i*.055}s ease-in ${i*.045}s both`}}>💧</span>
+          animation:`fg6-drop ${.45+i*.055}s ease-in ${i*.045}s both`}}>💧</span>
       ))}
       {[...Array(6)].map((_,i)=>(
         <div key={`r${i}`} style={{position:"absolute",bottom:"28%",left:`${8+i*15}%`,
           width:28,height:11,border:"1.5px solid rgba(147,197,253,.7)",borderRadius:"50%",
-          animation:`fg5-ripple 1s ease-out ${.5+i*.1}s both`}}/>
+          animation:`fg6-ripple 1s ease-out ${.5+i*.1}s both`}}/>
       ))}
     </div>
   );
@@ -132,69 +134,128 @@ function PetalRain({on}) {
       {p.map((x,i)=>(
         <span key={i} style={{position:"absolute",top:"-12px",left:`${1+i*6.2}%`,
           fontSize:`${12+(i%5)*6}px`,
-          animation:`fg5-petal ${2.6+i*.23}s ease-in-out ${i*.06}s forwards`}}>{x}</span>
+          animation:`fg6-petal ${2.6+i*.23}s ease-in-out ${i*.06}s forwards`}}>{x}</span>
       ))}
     </div>
   );
 }
 
-/* ── realistic single flower with proper stem+leaf ── */
-function Flower({ flower, index, wind }) {
-  const bloomed = flower.stage >= GROWTH_STAGES.length - 1;
-  const st      = GROWTH_STAGES[Math.min(flower.stage, GROWTH_STAGES.length - 1)];
-  const emoji   = bloomed ? flower.type : st.emoji;
-  const sz      = st.px + (index % 4) * 4;
-  const stemH   = 18 + flower.stage * 12;
-  const sway    = wind
-    ? `fg5-sway ${.9+(index%3)*.3}s ease-in-out ${index*.08}s infinite`
-    : bloomed
-      ? `fg5-sway ${2.2+(index%5)*.45}s ease-in-out ${index*.12}s infinite`
-      : `fg5-sway ${3+(index%4)*.5}s ease-in-out ${index*.18}s infinite`;
+/* ── SVG realistic plant drawn with paths ── */
+function RealisticPlant({ stage, flowerType, index, wind, bloomed }) {
+  const w = 72, h = 110;
+  const sway = wind
+    ? `fg6-swayW ${.85+(index%3)*.3}s ease-in-out ${index*.07}s infinite`
+    : `fg6-sway ${2.4+(index%5)*.45}s ease-in-out ${index*.13}s infinite`;
+
+  /* stem colour gets richer as plant matures */
+  const stemCol  = ["#4ade80","#22c55e","#16a34a","#15803d"][stage];
+  const leafCol  = ["#86efac","#4ade80","#22c55e","#15803d"][stage];
+  const darkLeaf = ["#16a34a","#15803d","#166534","#14532d"][stage];
+
+  /* stem height grows per stage */
+  const stemH = [28, 45, 62, 75][stage];
+  const stemY = h - 8; // base Y
+  const topY  = stemY - stemH;
 
   return (
     <motion.div layout
-      initial={{scale:0,y:60,opacity:0}}
+      initial={{scale:0,y:50,opacity:0}}
       animate={{scale:1,y:0,opacity:1}}
-      exit={{scale:0,y:30,opacity:0}}
-      transition={{type:"spring",stiffness:200,damping:18,delay:index*.05}}
-      style={{display:"flex",flexDirection:"column",alignItems:"center",position:"relative",zIndex:2}}
+      exit={{scale:0,y:25,opacity:0}}
+      transition={{type:"spring",stiffness:180,damping:18,delay:index*.05}}
+      style={{
+        display:"flex",flexDirection:"column",alignItems:"center",
+        position:"relative", width:w, flexShrink:0,
+        animation: sway,
+        filter: bloomed ? "drop-shadow(0 2px 12px rgba(236,72,153,.55))" : "none",
+      }}
     >
-      {/* flower head */}
-      <span style={{
-        fontSize:sz, lineHeight:1, display:"inline-block",
-        transformOrigin:"bottom center",
-        animation: bloomed ? `fg5-bloom 3s ease-in-out ${index*.3}s infinite` : sway,
-      }}>
-        <span style={{display:"inline-block",transformOrigin:"bottom center",animation:sway}}>
-          {emoji}
-        </span>
-      </span>
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{overflow:"visible"}}>
+        {/* soil mound */}
+        <ellipse cx={w/2} cy={stemY+4} rx={14} ry={5}
+          fill="rgba(101,67,33,.55)" filter="url(#blur)"/>
 
-      {/* realistic stem */}
-      <div style={{
-        width:3, height:stemH,
-        background: bloomed
-          ? `linear-gradient(180deg,#86efac 0%,#22c55e 40%,#15803d 100%)`
-          : `linear-gradient(180deg,#4ade80 0%,#16a34a 60%,#166534 100%)`,
-        borderRadius:"2px 2px 0 0",
-        boxShadow: bloomed ? "1px 0 4px rgba(34,197,94,.35)" : "none",
-      }}/>
+        {/* main stem */}
+        <path
+          d={stage===0
+            ? `M${w/2},${stemY} C${w/2},${stemY-10} ${w/2},${topY+6} ${w/2},${topY}`
+            : `M${w/2},${stemY} C${w/2-4},${stemY-stemH*.3} ${w/2+3},${stemY-stemH*.6} ${w/2},${topY}`
+          }
+          stroke={stemCol} strokeWidth={stage<2?2.5:3} fill="none"
+          strokeLinecap="round"
+          style={{filter:`drop-shadow(0 0 3px ${stemCol}66)`}}
+        />
 
-      {/* leaf pair */}
-      {flower.stage >= 1 && (
-        <div style={{position:"absolute",bottom:stemH*0.4+4,left:"50%",transform:"translateX(-50%)",display:"flex",gap:2,pointerEvents:"none"}}>
-          <span style={{fontSize:10,transform:"rotate(-40deg) translateX(-2px)",opacity:.85,display:"inline-block"}}>🍃</span>
-          <span style={{fontSize:10,transform:"rotate(40deg) translateX(2px) scaleX(-1)",opacity:.85,display:"inline-block"}}>🍃</span>
-        </div>
+        {/* leaves — stage 1+ */}
+        {stage >= 1 && (
+          <>
+            {/* left leaf */}
+            <path
+              d={`M${w/2-1},${topY+stemH*.45} C${w/2-18},${topY+stemH*.28} ${w/2-22},${topY+stemH*.55} ${w/2-10},${topY+stemH*.62}`}
+              stroke={darkLeaf} strokeWidth={1.2} fill={leafCol} opacity={.88}
+            />
+            {/* right leaf */}
+            <path
+              d={`M${w/2+1},${topY+stemH*.55} C${w/2+18},${topY+stemH*.38} ${w/2+20},${topY+stemH*.65} ${w/2+8},${topY+stemH*.72}`}
+              stroke={darkLeaf} strokeWidth={1.2} fill={leafCol} opacity={.88}
+            />
+          </>
+        )}
+
+        {/* extra leaf pair — stage 2+ */}
+        {stage >= 2 && (
+          <>
+            <path
+              d={`M${w/2-1},${topY+stemH*.2} C${w/2-16},${topY+stemH*.05} ${w/2-20},${topY+stemH*.28} ${w/2-9},${topY+stemH*.35}`}
+              stroke={darkLeaf} strokeWidth={1} fill={leafCol} opacity={.78}
+            />
+            <path
+              d={`M${w/2+1},${topY+stemH*.3} C${w/2+16},${topY+stemH*.15} ${w/2+18},${topY+stemH*.38} ${w/2+8},${topY+stemH*.44}`}
+              stroke={darkLeaf} strokeWidth={1} fill={leafCol} opacity={.78}
+            />
+          </>
+        )}
+
+        {/* bloom head — stage 3 uses flower emoji painted as foreignObject */}
+        {stage < 3 && (
+          /* bud */
+          <ellipse cx={w/2} cy={topY} rx={stage===0?4:6} ry={stage===0?5:8}
+            fill={stage===0?"#86efac":"#4ade80"}
+            stroke={darkLeaf} strokeWidth={.8}/>
+        )}
+
+        {/* defs for blur */}
+        <defs>
+          <filter id="blur"><feGaussianBlur stdDeviation="2"/></filter>
+        </defs>
+      </svg>
+
+      {/* emoji flower head overlaid at top of svg for bloomed stage */}
+      {stage === 3 && (
+        <div style={{
+          position:"absolute",
+          top: h - stemH - 42,
+          left:"50%", transform:"translateX(-50%)",
+          fontSize:44, lineHeight:1,
+          animation:`fg6-bloom 3s ease-in-out ${index*.3}s infinite`,
+          pointerEvents:"none",
+        }}>{flowerType}</div>
       )}
-
-      {/* soil mound */}
-      <div style={{
-        width: bloomed ? 24 : 18, height:5, borderRadius:"50%",
-        background:"radial-gradient(ellipse,rgba(101,67,33,.65) 0%,transparent 75%)",
-        marginTop:1,
-      }}/>
     </motion.div>
+  );
+}
+
+/* ── wrapper that picks the right plant ── */
+function Flower({ flower, index, wind }) {
+  const bloomed = flower.stage >= GROWTH_STAGES.length - 1;
+  return (
+    <RealisticPlant
+      stage={flower.stage}
+      flowerType={flower.type}
+      index={index}
+      wind={wind}
+      bloomed={bloomed}
+    />
   );
 }
 
@@ -218,10 +279,10 @@ function FlowerCard({ flower, index, isNew }) {
         borderRadius:18, backdropFilter:"blur(10px)", position:"relative", overflow:"hidden",
         boxShadow: bloomed ? "0 8px 30px rgba(236,72,153,.25)" : "0 4px 14px rgba(0,0,0,.2)",
       }}>
-      {bloomed && <div style={{position:"absolute",inset:0,background:"linear-gradient(105deg,transparent 36%,rgba(255,255,255,.08) 50%,transparent 64%)",backgroundSize:"200% 100%",animation:"fg5-shimmer 3.2s linear infinite",borderRadius:18,pointerEvents:"none"}}/>}
-      {isNew  && <span style={{position:"absolute",top:5,right:5,fontSize:".47rem",fontWeight:800,background:"linear-gradient(90deg,#ec4899,#8b5cf6)",color:"#fff",padding:"2px 7px",borderRadius:50,textTransform:"uppercase",animation:"fg5-badge .9s ease-in-out infinite"}}>NEW</span>}
+      {bloomed && <div style={{position:"absolute",inset:0,background:"linear-gradient(105deg,transparent 36%,rgba(255,255,255,.08) 50%,transparent 64%)",backgroundSize:"200% 100%",animation:"fg6-shimmer 3.2s linear infinite",borderRadius:18,pointerEvents:"none"}}/>}
+      {isNew  && <span style={{position:"absolute",top:5,right:5,fontSize:".47rem",fontWeight:800,background:"linear-gradient(90deg,#ec4899,#8b5cf6)",color:"#fff",padding:"2px 7px",borderRadius:50,textTransform:"uppercase",animation:"fg6-badge .9s ease-in-out infinite"}}>NEW</span>}
       <span style={{fontSize:bloomed?"2.4rem":"2rem",lineHeight:1,display:"inline-block",
-        animation:bloomed?`fg5-sway ${2+(index%3)*.6}s ease-in-out infinite`:"none",transformOrigin:"bottom center",
+        animation:bloomed?`fg6-sway ${2+(index%3)*.6}s ease-in-out infinite`:"none",transformOrigin:"bottom center",
         filter:bloomed?"drop-shadow(0 2px 12px rgba(236,72,153,.7))":"none"}}>{emoji}</span>
       <span style={{fontSize:".58rem",fontWeight:700,fontFamily:"'Inter',sans-serif",
         color:bloomed?"#ec4899":"#10b981",
@@ -307,7 +368,7 @@ export default function FlowerGarden({ user }) {
     const cs=["🌸","🌺","🌷","🌼","💕","✨","🌻","💗","🪷","💫","🌸","🌺"];
     for(let i=0;i<30;i++){
       const el=document.createElement("div");
-      el.style.cssText=`position:fixed;top:-22px;left:${Math.random()*100}%;font-size:${10+Math.random()*20}px;pointer-events:none;z-index:99;animation:fg5-float ${1.8+Math.random()*2.8}s ${Math.random()*.8}s ease-out forwards;`;
+      el.style.cssText=`position:fixed;top:-22px;left:${Math.random()*100}%;font-size:${10+Math.random()*20}px;pointer-events:none;z-index:99;animation:fg6-float ${1.8+Math.random()*2.8}s ${Math.random()*.8}s ease-out forwards;`;
       el.textContent=cs[Math.floor(Math.random()*cs.length)];
       confRef.current.appendChild(el);
       setTimeout(()=>el.remove(),5500);
@@ -351,7 +412,7 @@ export default function FlowerGarden({ user }) {
           {!isDay && skyStars.map((st,i)=>(
             <div key={i} style={{position:"absolute",top:st.t,left:st.l,width:st.sz,height:st.sz,
               background:"#fff",borderRadius:"50%",pointerEvents:"none",zIndex:1,
-              animation:`fg5-twink ${st.dur}s ease-in-out ${st.del}s infinite`}}/>
+              animation:`fg6-twink ${st.dur}s ease-in-out ${st.del}s infinite`}}/>
           ))}
 
           {/* sun — day/morning */}
@@ -362,12 +423,12 @@ export default function FlowerGarden({ user }) {
                 <div key={i} style={{position:"absolute",top:"50%",left:"50%",width:2,height:22+(i%2)*6,
                   background:"rgba(253,224,71,.5)",borderRadius:2,transformOrigin:"top center",
                   transform:`translate(-50%,-100%) rotate(${i*30}deg) translateY(-36px)`,
-                  animation:`fg5-sunray ${3+i*.2}s ease-in-out ${i*.15}s infinite`}}/>
+                  animation:`fg6-sunray ${3+i*.2}s ease-in-out ${i*.15}s infinite`}}/>
               ))}
               <div style={{position:"absolute",inset:0,borderRadius:"50%",
                 background:"radial-gradient(circle,#fefce8 0%,#fde047 45%,#f59e0b 100%)",
                 boxShadow:"0 0 40px 18px rgba(253,224,71,.6),0 0 90px 40px rgba(251,191,36,.3)",
-                animation:"fg5-sunray 4s ease-in-out infinite"}}/>
+                animation:"fg6-sunray 4s ease-in-out infinite"}}/>
             </div>
           )}
 
@@ -382,7 +443,7 @@ export default function FlowerGarden({ user }) {
           {/* horizon glow */}
           <div style={{position:"absolute",bottom:0,left:0,right:0,height:"35%",
             background:`linear-gradient(0deg,${sky.horizon},transparent)`,pointerEvents:"none",
-            animation:"fg5-mist 6s ease-in-out infinite"}}/>
+            animation:"fg6-mist 6s ease-in-out infinite"}}/>
 
           {/* clouds */}
           {clouds.map((c,i)=>(
@@ -391,7 +452,7 @@ export default function FlowerGarden({ user }) {
               background:"rgba(255,255,255,.14)",borderRadius:"50%",
               filter:`blur(${8*c.s}px)`,opacity:isDay?.75:.2,
               transition:"opacity 3s ease",
-              animation:`fg5-cloud ${c.d}s ease-in-out ${i*2.5}s infinite alternate`}}/>
+              animation:`fg6-cloud ${c.d}s ease-in-out ${i*2.5}s infinite alternate`}}/>
           ))}
 
           {/* subtle wind streaks */}
@@ -401,7 +462,7 @@ export default function FlowerGarden({ user }) {
                 <div key={i} style={{position:"absolute",top:`${14+i*11}%`,left:0,
                   width:`${80+i*50}px`,height:"1px",
                   background:"linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent)",
-                  animation:`fg5-wind ${1+i*.25}s linear ${i*.12}s infinite`}}/>
+                  animation:`fg6-wind ${1+i*.25}s linear ${i*.12}s infinite`}}/>
               ))}
             </div>
           )}
@@ -448,26 +509,26 @@ export default function FlowerGarden({ user }) {
           <div style={{position:"absolute",inset:0,
             background:"linear-gradient(180deg,#1a3a0f 0%,#143009 22%,#0f2407 45%,#1c3d08 58%,#3d1c02 78%,#2a1100 100%)"}}/>
 
-          {/* grass top edge */}
-          <div style={{position:"absolute",top:0,left:0,right:0,height:20,
-            background:"linear-gradient(180deg,#2d6a1a,#1f5213,transparent)",opacity:.9}}/>
+          {/* soft ground-level light */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:18,
+            background:"linear-gradient(180deg,rgba(74,222,128,.18),transparent)"}}/>
 
-          {/* subtle soil texture stripes */}
-          <div style={{position:"absolute",bottom:0,left:0,right:0,height:55,
-            background:"repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0px,rgba(0,0,0,.08) 2px,transparent 2px,transparent 24px),linear-gradient(180deg,#4a2005,#2d1100)"}}/>
+          {/* soil base */}
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:38,
+            background:"linear-gradient(180deg,#5c2a06,#3d1800,#1a0a00)"}}/>
 
           {/* ground mist */}
-          <div style={{position:"absolute",top:12,left:0,right:0,height:40,
-            background:"radial-gradient(ellipse 80% 100% at 50% 0%,rgba(34,197,94,.1) 0%,transparent 100%)",
-            animation:"fg5-mist 8s ease-in-out infinite"}}/>
+          <div style={{position:"absolute",top:10,left:0,right:0,height:36,
+            background:"radial-gradient(ellipse 80% 100% at 50% 0%,rgba(74,222,128,.08) 0%,transparent 100%)",
+            animation:"fg6-mist 8s ease-in-out infinite"}}/>
 
           {/* flowers */}
           <div style={{
-            display:"flex",justifyContent:"center",alignItems:"flex-end",
-            flexWrap:"wrap",gap:18,
-            padding:"28px 24px 100px",
-            position:"relative",zIndex:3,
-            minHeight:200,
+            display:"flex", justifyContent:"center", alignItems:"flex-end",
+            flexWrap:"wrap", gap:20,
+            padding:"24px 28px 90px",
+            position:"relative", zIndex:3,
+            minHeight:210,
           }}>
             <AnimatePresence>
               {(garden.length===0
@@ -479,46 +540,50 @@ export default function FlowerGarden({ user }) {
             </AnimatePresence>
           </div>
 
-          {/* wooden path stones */}
-          <div style={{position:"absolute",bottom:62,left:0,right:0,
-            display:"flex",justifyContent:"center",gap:12,pointerEvents:"none",zIndex:2}}>
-            {[...Array(6)].map((_,i)=>(
-              <div key={i} style={{width:32,height:10,borderRadius:6,
-                background:"linear-gradient(180deg,rgba(180,140,90,.55),rgba(120,80,40,.4))",
-                border:"1px solid rgba(255,255,255,.07)"}}/>
-            ))}
+          {/* ── REALISTIC FENCE ── SVG-based wood planks */}
+          <div style={{position:"absolute",bottom:34,left:0,right:0,height:52,zIndex:5,pointerEvents:"none"}}>
+            <svg viewBox="0 0 800 52" preserveAspectRatio="none"
+              style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
+              <defs>
+                <linearGradient id="plankH" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"  stopColor="#a0541a"/>
+                  <stop offset="50%" stopColor="#7c3f08"/>
+                  <stop offset="100%" stopColor="#5a2a06"/>
+                </linearGradient>
+                <linearGradient id="postG" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#b86020"/>
+                  <stop offset="40%" stopColor="#8b4513"/>
+                  <stop offset="100%" stopColor="#5a2a06"/>
+                </linearGradient>
+                <filter id="fshadow"><feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity=".55"/></filter>
+              </defs>
+              {/* top horizontal plank */}
+              <rect x="0" y="8" width="800" height="10" rx="2" fill="url(#plankH)" filter="url(#fshadow)"/>
+              {/* bottom horizontal plank */}
+              <rect x="0" y="28" width="800" height="8" rx="2" fill="url(#plankH)" filter="url(#fshadow)"/>
+              {/* wood grain lines on top plank */}
+              {[50,120,190,260,330,400,470,540,610,680,750].map((x,i)=>(
+                <line key={i} x1={x} y1="8" x2={x+6} y2="18" stroke="rgba(0,0,0,.12)" strokeWidth="1"/>
+              ))}
+              {/* vertical posts — proper rectangle with rounded top */}
+              {[...Array(10)].map((_,i)=>{
+                const px = i*82+18;
+                return (
+                  <g key={i}>
+                    <rect x={px} y="0" width="13" height="52" rx="3" fill="url(#postG)" filter="url(#fshadow)"/>
+                    {/* wood grain */}
+                    <line x1={px+4} y1="2" x2={px+4} y2="50" stroke="rgba(255,255,255,.06)" strokeWidth="1"/>
+                    <line x1={px+8} y1="2" x2={px+8} y2="50" stroke="rgba(0,0,0,.08)" strokeWidth="1"/>
+                    {/* rounded cap highlight */}
+                    <ellipse cx={px+6.5} cy="3" rx="5" ry="2.5" fill="rgba(255,200,120,.2)"/>
+                  </g>
+                );
+              })}
+            </svg>
           </div>
-
-          {/* realistic low fence — horizontal planks + posts */}
-          <div style={{position:"absolute",bottom:22,left:0,right:0,height:46,zIndex:4,pointerEvents:"none"}}>
-            {/* planks */}
-            <div style={{position:"absolute",top:8,left:0,right:0,height:7,
-              background:"linear-gradient(180deg,#92530a,#7c3f08,#6b3207)",
-              boxShadow:"0 2px 8px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08)",
-              backgroundImage:"repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0px,rgba(0,0,0,.06) 1px,transparent 1px,transparent 18px)"}}/>
-            <div style={{position:"absolute",top:24,left:0,right:0,height:5,
-              background:"linear-gradient(180deg,#7c3f08,#6b3207,#5a2a06)",
-              boxShadow:"0 1px 5px rgba(0,0,0,.45)"}}/>
-            {/* posts */}
-            {[...Array(11)].map((_,i)=>(
-              <div key={i} style={{position:"absolute",bottom:0,
-                left:`${i*9.8+1}%`,width:9,height:44,transform:"translateX(-50%)",
-                background:"linear-gradient(180deg,#a0541a,#7c3f08,#5a2a06)",
-                borderRadius:"3px 3px 0 0",
-                boxShadow:"1px 0 4px rgba(0,0,0,.5),inset 1px 0 2px rgba(255,200,100,.1)",
-                backgroundImage:"repeating-linear-gradient(180deg,rgba(255,255,255,.04) 0px,rgba(255,255,255,.04) 1px,transparent 1px,transparent 8px)"}}>
-                <div style={{position:"absolute",top:-7,left:"50%",transform:"translateX(-50%)",
-                  width:0,height:0,borderLeft:"5px solid transparent",borderRight:"5px solid transparent",borderBottom:"8px solid #a0541a"}}/>
-              </div>
-            ))}
-          </div>
-
-          {/* soil base */}
-          <div style={{position:"absolute",bottom:0,left:0,right:0,height:24,
-            background:"linear-gradient(180deg,#4a2005,#2d1100,#1a0a00)"}}/>
 
           {/* stats pills */}
-          <div style={{position:"absolute",top:8,left:0,right:0,display:"flex",justifyContent:"center",gap:10,zIndex:6}}>
+          <div style={{position:"absolute",top:6,left:0,right:0,display:"flex",justifyContent:"center",gap:10,zIndex:6}}>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:".67rem",fontWeight:700,
               color:"#86efac",background:"rgba(0,0,0,.6)",padding:"4px 14px",borderRadius:50,
               backdropFilter:"blur(6px)",border:"1px solid rgba(134,239,172,.22)"}}>🌸 {bloomedCount} bloomed</span>
@@ -596,10 +661,10 @@ export default function FlowerGarden({ user }) {
                 border:"none",borderRadius:50,color:"#fff",
                 fontFamily:"'Manrope',sans-serif",fontSize:"1.05rem",fontWeight:800,cursor:"pointer",
                 boxShadow:"0 14px 44px rgba(29,78,216,.45),0 4px 16px rgba(0,0,0,.3)",
-                position:"relative",overflow:"hidden",animation:"fg5-pulse 2.8s ease-in-out 1.2s infinite"}}>
+                position:"relative",overflow:"hidden",animation:"fg6-pulse 2.8s ease-in-out 1.2s infinite"}}>
               <div style={{position:"absolute",inset:0,borderRadius:50,
                 background:"linear-gradient(105deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%)",
-                backgroundSize:"200% 100%",animation:"fg5-shimmer 2.2s linear infinite"}}/>
+                backgroundSize:"200% 100%",animation:"fg6-shimmer 2.2s linear infinite"}}/>
               <span style={{position:"relative"}}>💧 Water the Garden Today</span>
             </motion.button>
           )}
@@ -697,7 +762,7 @@ export default function FlowerGarden({ user }) {
                     borderRadius:14,boxShadow:done?"0 4px 20px rgba(236,72,153,.2)":"none"}}>
                   <div style={{fontSize:"1.5rem",marginBottom:5,filter:done?"none":"grayscale(1)",
                     display:"inline-block",
-                    animation:done?`fg5-sway ${3.5+i*.4}s ease-in-out ${i*.38}s infinite`:"none",
+                    animation:done?`fg6-sway ${3.5+i*.4}s ease-in-out ${i*.38}s infinite`:"none",
                     transformOrigin:"bottom center"}}>{m.e}</div>
                   <div style={{fontFamily:"'Inter',sans-serif",fontSize:".57rem",fontWeight:700,
                     color:done?"#ec4899":"rgba(255,255,255,.28)",lineHeight:1.3}}>{m.label}</div>
@@ -717,7 +782,7 @@ export default function FlowerGarden({ user }) {
           border:"1px solid rgba(236,72,153,.16)",borderRadius:22,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,
           background:"linear-gradient(105deg,transparent 36%,rgba(255,255,255,.04) 50%,transparent 64%)",
-          backgroundSize:"200% 100%",animation:"fg5-shimmer 5s linear infinite",pointerEvents:"none"}}/>
+          backgroundSize:"200% 100%",animation:"fg6-shimmer 5s linear infinite",pointerEvents:"none"}}/>
         <motion.div animate={{scale:[1,1.08,1]}} transition={{duration:3,repeat:Infinity}}
           style={{fontSize:"1.8rem",marginBottom:10}}>💍</motion.div>
         <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:"1.06rem",fontStyle:"italic",

@@ -108,7 +108,21 @@ const I = (key, size = 22, style = {}) => (
    WHATSAPP-STYLE CSS
 ══════════════════════════════════════════ */
 const WA_CSS = `
-.wa2 { display:flex; flex-direction:column; height:calc(100vh - 70px - 90px - 0px); max-height:calc(100vh - 70px - 90px); border-radius:20px; overflow:hidden; position:relative; font-family:'Inter',sans-serif; contain:strict; }
+.wa2 {
+  display: flex; flex-direction: column;
+  position: fixed;
+  top: 80px;
+  bottom: 104px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 700px;
+  border-radius: 20px;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  z-index: 10;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
 .wa2-hdr { display:flex; align-items:center; gap:10px; padding:10px 14px 10px 12px; background:#1f2c34; border-bottom:1px solid #2a3942; flex-shrink:0; z-index:20; }
 .wa2-av { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; }
 .wa2-av.pink { background:linear-gradient(135deg,#ff1a6e,#8b3fc8); box-shadow:0 0 0 2px rgba(255,26,110,0.35); }
@@ -467,7 +481,7 @@ function VoiceCall({ user, otherName, onEnd }) {
         <div className="wac-ripple"/><div className="wac-ripple"/><div className="wac-ripple"/>
       </div>
       <div className="wac-top">
-        <div className={`wac-av ${conn?"connected":""}`}>
+        <div className={"wac-av" + (conn?" connected":"")}>
           <CallAvatar name={otherName} color1="#ff1a6e" color2="#8b3fc8" size={110}/>
         </div>
         <div className="wac-name">{otherName}</div>
@@ -481,8 +495,8 @@ function VoiceCall({ user, otherName, onEnd }) {
       </div>
       <div className="wac-actions">
         <div className="wac-btns">
-          <button className={`wac-btn ${muted?"":"active"}`} onClick={toggleMute}>
-            <div className={`wac-btn-ic ${muted?"wac-ic-on":"wac-ic-mute"}`}>{I(muted?"micOff":"mic",24)}</div>
+          <button className={"wac-btn" + (muted?"":" active")} onClick={toggleMute}>
+            <div className={"wac-btn-ic " + (muted?"wac-ic-on":"wac-ic-mute")}>{I(muted?"micOff":"mic",24)}</div>
             <span className="wac-btn-lbl">{muted?"Unmute":"Mute"}</span>
           </button>
           <button className="wac-btn" onClick={endCall}>
@@ -490,7 +504,7 @@ function VoiceCall({ user, otherName, onEnd }) {
             <span className="wac-btn-lbl">End</span>
           </button>
           <button className="wac-btn" onClick={()=>setSpk(v=>!v)}>
-            <div className={`wac-btn-ic ${spk?"wac-ic-on":"wac-ic-spk"}`}>{I(spk?"speaker":"speakerOff",24)}</div>
+            <div className={"wac-btn-ic " + (spk?"wac-ic-on":"wac-ic-spk")}>{I(spk?"speaker":"speakerOff",24)}</div>
             <span className="wac-btn-lbl">Speaker</span>
           </button>
         </div>
@@ -586,11 +600,11 @@ function VideoCall({ user, otherName, onEnd }) {
         </div>
         <div className="wavc-bottom">
           <button className="wavc-btn" onClick={toggleMute}>
-            <div className={`wavc-btn-ic ${muted?"wavc-ic-on":"wavc-ic-base"}`}>{I(muted?"micOff":"mic",24)}</div>
+            <div className={"wavc-btn-ic " + (muted?"wavc-ic-on":"wavc-ic-base")}>{I(muted?"micOff":"mic",24)}</div>
             <span className="wavc-btn-lbl">{muted?"Unmute":"Mute"}</span>
           </button>
           <button className="wavc-btn" onClick={toggleCam}>
-            <div className={`wavc-btn-ic ${camOff?"wavc-ic-on":"wavc-ic-base"}`}>{I(camOff?"videoOff":"video",24)}</div>
+            <div className={"wavc-btn-ic " + (camOff?"wavc-ic-on":"wavc-ic-base")}>{I(camOff?"videoOff":"video",24)}</div>
             <span className="wavc-btn-lbl">{camOff?"Cam On":"Cam Off"}</span>
           </button>
           <button className="wavc-btn" onClick={endCall}>
@@ -1044,14 +1058,14 @@ export default function LoveChat({ user }) {
       {incoming && !callActive && <IncomingCall otherName={otherFull} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}
 
       {/* ── Chat info panel ── */}
-      <div className={`wa2-info-panel ${infoOpen?"open":""}`} onClick={e=>e.stopPropagation()}>
+      <div className={"wa2-info-panel " + (infoOpen?"open":"")} onClick={e=>e.stopPropagation()}>
         <div className="wa2-info-header">
           <button className="wa2-info-close" onClick={()=>setInfoOpen(false)}>✕</button>
           <span style={{color:"#e9edef",fontWeight:600,fontSize:"0.95rem"}}>Contact Info</span>
         </div>
         <div className="wa2-info-body">
           <div>
-            <div className={`wa2-info-av ${isSurya?"":""`} `} style={{background:isSurya?"linear-gradient(135deg,#ff1a6e,#8b3fc8)":"linear-gradient(135deg,#00d97e,#059669)"}}>
+            <div className="wa2-info-av" style={{background:isSurya?"linear-gradient(135deg,#ff1a6e,#8b3fc8)":"linear-gradient(135deg,#00d97e,#059669)"}}>
               <CallAvatar name={other} color1={isSurya?"#ff1a6e":"#00d97e"} color2={isSurya?"#8b3fc8":"#059669"} size={72}/>
             </div>
             <div className="wa2-info-name">{otherFull}</div>
@@ -1064,7 +1078,7 @@ export default function LoveChat({ user }) {
           <div>
             <div className="wa2-info-opt" onClick={cycleDisappear}>
               <span>⏱️</span>
-              <span>Disappearing messages{disappear ? ` (${disappearLabel})` : ""}</span>
+              <span>Disappearing messages{disappear ? " (" + disappearLabel + ")" : ""}</span>
             </div>
             <div className="wa2-info-opt" onClick={()=>{setMsgs([]);allIds.current=new Set();setInfoOpen(false);}}>
               <span>🗑️</span><span>Clear chat</span>
@@ -1078,7 +1092,7 @@ export default function LoveChat({ user }) {
 
       {/* ── Header ── */}
       <div className="wa2-hdr">
-        <div className={`wa2-av ${isSurya?"pink":"green"}`} style={{cursor:"pointer"}} onClick={e=>{e.stopPropagation();setInfoOpen(v=>!v);}}>
+        <div className={"wa2-av " + (isSurya?"pink":"green")} style={{cursor:"pointer"}} onClick={e=>{e.stopPropagation();setInfoOpen(v=>!v);}}>
           <CallAvatar name={other} color1={isSurya?"#ff1a6e":"#00d97e"} color2={isSurya?"#8b3fc8":"#059669"} size={40}/>
         </div>
         <div className="wa2-hdr-info" onClick={e=>{e.stopPropagation();setInfoOpen(v=>!v);}}>
@@ -1160,12 +1174,12 @@ export default function LoveChat({ user }) {
               return (
                 <div
                   key={key}
-                  className={`wa2-row ${isMine?"out":"in"}`}
+                  className={"wa2-row " + (isMine?"out":"in")}
                   style={{position:"relative"}}
                   ref={el => { if (el) msgRefs.current[String(m._id)] = el; }}
                 >
                   <div
-                    className={`wa2-bub ${isMine?"out":"in"} ${isMine&&isSurya?"surya-bub":""} ${m.pending?"pending":""} ${isStarred?"starred":""}`}
+                    className={"wa2-bub " + (isMine?"out":"in") + (isMine&&isSurya?" surya-bub":"") + (m.pending?" pending":"") + (isStarred?" starred":"")}
                     style={isSearchHit ? {outline:"2px solid rgba(0,168,132,0.6)"} : {}}
                     onContextMenu={e=>{e.preventDefault();e.stopPropagation();setMenuId(String(m._id));setReactId(null);}}
                     onDoubleClick={e=>{e.stopPropagation();setReactId(r=>r===String(m._id)?null:String(m._id));}}
@@ -1245,7 +1259,7 @@ export default function LoveChat({ user }) {
                       {m.viewOnce && <span style={{fontSize:"0.65rem"}}>👁️</span>}
                       {isStarred&&<span style={{fontSize:"0.65rem"}}>⭐</span>}
                       <span className="wa2-time">{fmtTime(m.createdAt)}</span>
-                      {isMine&&<span className={`wa2-ticks ${m.read?"wa2-tick-read":"wa2-tick-sent"}`}>{m.pending?"🕐":m.read?"✓✓":"✓✓"}</span>}
+                      {isMine&&<span className={"wa2-ticks " + (m.read?"wa2-tick-read":"wa2-tick-sent")}>{m.pending?"🕐":m.read?"✓✓":"✓✓"}</span>}
                     </div>
 
                     {/* Reaction picker */}
@@ -1367,12 +1381,12 @@ export default function LoveChat({ user }) {
       {/* Input bar */}
       {!recording && (
         <div className="wa2-bar">
-          <button className={`wa2-bar-btn ${showEmoji?"active":""}`} onClick={e=>{e.stopPropagation();setShowEmoji(v=>!v);setShowAttach(false);}}>{I("smile",22)}</button>
-          <button className={`wa2-bar-btn ${showAttach?"active":""}`} onClick={e=>{e.stopPropagation();setShowAttach(v=>!v);setShowEmoji(false);}}>{I("attach",22)}</button>
+          <button className={"wa2-bar-btn " + (showEmoji?"active":"")} onClick={e=>{e.stopPropagation();setShowEmoji(v=>!v);setShowAttach(false);}}>{I("smile",22)}</button>
+          <button className={"wa2-bar-btn " + (showAttach?"active":"")} onClick={e=>{e.stopPropagation();setShowAttach(v=>!v);setShowEmoji(false);}}>{I("attach",22)}</button>
           {/* View once toggle (only visible when image selected) */}
           {imgPrev && (
             <button
-              className={`wa2-bar-btn ${viewOnceMode?"active":""}`}
+              className={"wa2-bar-btn " + (viewOnceMode?"active":"")}
               title="View Once"
               onClick={e=>{e.stopPropagation();setViewOnceMode(v=>!v);}}
               style={{fontSize:"1.1rem"}}

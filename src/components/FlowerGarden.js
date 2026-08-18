@@ -439,15 +439,45 @@ export default function FlowerGarden({ user }) {
   const skyStars  = useRef([...Array(80)].map(()=>({ t:`${2+Math.random()*74}%`, l:`${Math.random()*98}%`, sz:1+Math.random()*2.5, dur:1.6+Math.random()*4, del:Math.random()*8 }))).current;
   const clouds    = useRef([{l:"3%",t:"9%",s:1,d:12},{l:"29%",t:"4%",s:.7,d:15},{l:"55%",t:"13%",s:.62,d:10},{l:"76%",t:"6%",s:.88,d:17}]).current;
 
-  /* load */
+  /* load — auto-seeds July+August data if garden is empty */
   useEffect(() => {
-    Promise.all([dbGet("fg_garden",[]),dbGet("fg_lastvisit",""),dbGet("fg_streak",0)])
-      .then(([g,v,s])=>{
-        if(Array.isArray(g)) setGarden(g);
-        if(v) setLastVisit(v);
-        if(typeof s==="number") setStreak(s);
+    (async () => {
+      try {
+        let [g, v, s] = await Promise.all([
+          dbGet("fg_garden", []),
+          dbGet("fg_lastvisit", ""),
+          dbGet("fg_streak", 0),
+        ]);
+
+        // If garden is empty (first time or data loss), call the seed endpoint
+        if (!Array.isArray(g) || g.length === 0) {
+          try {
+            const seedRes = await fetch("/api/seed-garden", { method: "POST" });
+            if (seedRes.ok) {
+              const data = await seedRes.json();
+              if (data.seeded) {
+                // Re-fetch fresh data after seeding
+                [g, v, s] = await Promise.all([
+                  dbGet("fg_garden", []),
+                  dbGet("fg_lastvisit", ""),
+                  dbGet("fg_streak", 0),
+                ]);
+              }
+            }
+          } catch (e) {
+            console.warn("seed-garden failed:", e.message);
+          }
+        }
+
+        if (Array.isArray(g) && g.length > 0) setGarden(g);
+        if (v) setLastVisit(v);
+        if (typeof s === "number") setStreak(s);
+      } catch (e) {
+        console.warn("garden load error:", e.message);
+      } finally {
         setLoading(false);
-      });
+      }
+    })();
   }, []); // eslint-disable-line
 
   /* confetti */
@@ -463,21 +493,53 @@ export default function FlowerGarden({ user }) {
     }
   },[]);
 
-  /* water / plant */
+  /* water / plant — adds today's flower, grows existing ones */
   const water = async () => {
-    if (alreadyW||watered) return;
-    setDrops(true); setTimeout(()=>setDrops(false),1600);
-    await new Promise(r=>setTimeout(r,750));
-    const fl = { id:Date.now(), type:FLOWER_TYPES[Math.floor(Math.random()*FLOWER_TYPES.length)], stage:0, date:new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short"}) };
-    const grown   = garden.map(f=>({...f,stage:Math.min(f.stage+1,GROWTH_STAGES.length-1)}));
-    const updated = [...grown, fl];
-    const ns      = streak+1;
-    const newBlooms = grown.filter(f=>f.stage===GROWTH_STAGES.length-1&&garden.find(g=>g.id===f.id&&g.stage===GROWTH_STAGES.length-2));
-    setGarden(updated); setNewId(fl.id); setWatered(true); setLastVisit(today); setStreak(ns);
-    if(newBlooms.length>0){setPetals(true);setTimeout(()=>setPetals(false),4000);}
+    if (alreadyW || watered) return;
+    setDrops(true); setTimeout(() => setDrops(false), 1600);
+    await new Promise(r => setTimeout(r, 750));
+
+    const fl = {
+      id:        Date.now(),
+      type:      FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)],
+      stage:     0,
+      date:      new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"short" }),
+      plantedAt: new Date().toISOString(),
+      daysAgo:   0,
+    };
+
+    // Grow all existing flowers by 1 stage
+    const grown = garden.map(f => ({
+      ...f,
+      stage: Math.min(f.stage + 1, GROWTH_STAGES.length - 1),
+    }));
+    const updated   = [...grown, fl];
+    const ns        = streak + 1;
+    const newBlooms = grown.filter(f =>
+      f.stage === GROWTH_STAGES.length - 1 &&
+      garden.find(g => g.id === f.id && g.stage === GROWTH_STAGES.length - 2)
+    );
+
+    // Update state immediately
+    setGarden(updated);
+    setNewId(fl.id);
+    setWatered(true);
+    setLastVisit(today);
+    setStreak(ns);
+
+    if (newBlooms.length > 0) {
+      setPetals(true);
+      setTimeout(() => setPetals(false), 4000);
+    }
     confetti();
-    await Promise.all([dbSet("fg_garden",updated),dbSet("fg_lastvisit",today),dbSet("fg_streak",ns)]);
-    setTimeout(()=>setNewId(null),3500);
+
+    // Persist to MongoDB + localStorage
+    await Promise.all([
+      dbSet("fg_garden",    updated),
+      dbSet("fg_lastvisit", today),
+      dbSet("fg_streak",    ns),
+    ]);
+    setTimeout(() => setNewId(null), 3500);
   };
 
   const sky = SKY[tod];

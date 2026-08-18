@@ -56,7 +56,7 @@ const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 const PAGE_SONGS = {
   box:"5KH2WKISoxs", journey:"gB1gPmtDohY", gallery:"wxmOt7Xhb6I",
   dream:"R5Wa9J3Whis", letters:"xP4mMpPAVME", vows:"gB1gPmtDohY",
-  chat:"xP4mMpPAVME", world:"5KH2WKISoxs", surprise:"gB1gPmtDohY",
+  world:"5KH2WKISoxs", surprise:"gB1gPmtDohY",
   notes:"xP4mMpPAVME", edit:"xP4mMpPAVME", garden:"R5Wa9J3Whis",
   quiz:"wxmOt7Xhb6I",
 };
@@ -197,6 +197,13 @@ function MusicPlayer({ page }) {
   }, []); // eslint-disable-line
 
   useEffect(() => {
+    if (page === "chat") {
+      // Pause music on chat page so it doesn't interfere
+      if (ready && playerRef.current) {
+        try { playerRef.current.pauseVideo(); setPlaying(false); } catch (_) {}
+      }
+      return;
+    }
     const newId = PAGE_SONGS[page] || DEFAULT_SONG;
     if (newId === trackId) return;
     setTrackId(newId);

@@ -460,7 +460,7 @@ export default function App() {
 
       <AnimatePresence mode="wait">
         <motion.main
-          className="main-content"
+          className={`main-content${page === "chat" ? " main-content--chat" : ""}`}
           key={page}
           initial={{ opacity:0, rotateX:8, y:40, scale:0.96, filter:"blur(6px)" }}
           animate={{ opacity:1, rotateX:0, y:0, scale:1, filter:"blur(0px)" }}

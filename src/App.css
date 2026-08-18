@@ -510,6 +510,13 @@ h1 {
 }
 .main-content > * { will-change: transform, opacity; }
 
+/* Chat page — no padding, no min-height, exact fit */
+.main-content--chat {
+  padding: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+}
+
 /* ══ LOCK SCREEN ══ */
 .lock-screen {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -1868,10 +1875,7 @@ textarea.login-input, textarea { resize: vertical; min-height: 80px; line-height
 /* ══════════════════════════════════════════════════
    CHAT PAGE — override old chat-page for wa-page
 ══════════════════════════════════════════════════ */
-/* wa-page styles are injected by LoveChat.js — this just ensures height works */
-.main-content > .wa-page {
-  height: calc(100vh - 150px);
-  border-radius: 20px;
+/* wa2 chat component heights are handled internally */
   overflow: hidden;
 }
 

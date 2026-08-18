@@ -88,7 +88,18 @@ const I = (key, size = 22, style = {}) => (
 ══════════════════════════════════════════ */
 const WA_CSS = `
 /* page */
-.wa2 { display:flex; flex-direction:column; height:calc(100vh - 128px); border-radius:20px; overflow:hidden; position:relative; font-family:'Inter',sans-serif; }
+.wa2 {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px - 90px - 0px);   /* full viewport minus topbar & bottom-tabs */
+  max-height: calc(100vh - 70px - 90px);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  /* prevent the card from moving while typing or opening panels */
+  contain: strict;
+}
 
 /* header */
 .wa2-hdr {
@@ -261,7 +272,7 @@ const WA_CSS = `
 .wa2-send:disabled { opacity:0.4; cursor:default; transform:none; }
 
 /* scroll to bottom btn */
-.wa2-scroll-btn { position:absolute; bottom:80px; right:14px; width:38px; height:38px; border-radius:50%; background:#233138; border:1px solid #2a3942; color:#8696a0; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:15; box-shadow:0 2px 8px rgba(0,0,0,0.4); transition:all 0.18s; }
+.wa2-scroll-btn { position:absolute; bottom:16px; right:14px; width:38px; height:38px; border-radius:50%; background:#233138; border:1px solid #2a3942; color:#8696a0; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:15; box-shadow:0 2px 8px rgba(0,0,0,0.4); transition:all 0.18s; }
 .wa2-scroll-btn:hover { background:#2a3942; color:#e9edef; }
 .wa2-unread-badge { position:absolute; top:-5px; right:-3px; background:#00a884; color:#fff; font-size:0.62rem; font-weight:700; min-width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
 

@@ -143,17 +143,24 @@ export default function JourneyTimeline({ setPage, user }) {
 
         {/* Live days together badge */}
         <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} transition={{delay:0.3,type:"spring"}}
-          style={{ display:"inline-flex", alignItems:"center", gap:"16px", padding:"16px 28px", background:"rgba(9,4,21,0.8)", border:"1px solid rgba(232,48,90,0.2)", borderRadius:"20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.3)" }}>
+          style={{ display:"inline-flex", alignItems:"center", gap:"16px", padding:"16px 28px", background:"rgba(9,4,21,0.8)", border:"1px solid rgba(232,48,90,0.2)", borderRadius:"20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04) inset" }}>
           <div style={{ textAlign:"center" }}>
-            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2rem", fontWeight:600, background:"linear-gradient(135deg,#e8305a,#6b2fa0,#e8bb6e)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.2rem", fontWeight:600, background:"linear-gradient(135deg,#e8305a,#6b2fa0,#e8bb6e)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
               {Math.max(0,Math.floor((Date.now()-new Date("2026-05-20").getTime())/86400000))}
             </span>
             <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)", margin:0, textTransform:"uppercase", letterSpacing:"1px" }}>Days Together</p>
           </div>
           <div style={{ width:"1px", height:"36px", background:"rgba(255,255,255,0.1)" }}/>
           <div style={{ textAlign:"center" }}>
-            <span style={{ fontSize:"1.4rem" }}>🌸</span>
+            <span style={{ fontSize:"1.6rem" }}>💕</span>
             <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)", margin:0, textTransform:"uppercase", letterSpacing:"1px" }}>Since May 20</p>
+          </div>
+          <div style={{ width:"1px", height:"36px", background:"rgba(255,255,255,0.1)" }}/>
+          <div style={{ textAlign:"center" }}>
+            <span style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.2rem", fontWeight:600, color:"#e8bb6e" }}>
+              {moments.length}
+            </span>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.35)", margin:0, textTransform:"uppercase", letterSpacing:"1px" }}>Memories</p>
           </div>
         </motion.div>
       </motion.div>

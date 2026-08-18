@@ -170,19 +170,20 @@ export default function OurVows({ user }) {
         {/* Ring ceremony visual */}
         <motion.div
           initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} transition={{delay:0.3,type:"spring"}}
-          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"16px", marginTop:"24px", padding:"18px 24px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"20px", backdropFilter:"blur(12px)" }}
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"16px", marginTop:"24px", padding:"18px 28px", background:"rgba(9,4,21,0.8)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)" }}
         >
           <div style={{ textAlign:"center" }}>
-            <span style={{ fontSize:"1.8rem" }}>💙</span>
-            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(59,130,246,0.7)", margin:"4px 0 0", textTransform:"uppercase", letterSpacing:"1px" }}>Surya</p>
+            <div style={{ fontSize:"2rem", lineHeight:1 }}>💙</div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"0.85rem", fontWeight:600, fontStyle:"italic", color:"rgba(100,160,255,0.85)", margin:"6px 0 0" }}>Surya</p>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"4px" }}>
-            <span style={{ fontSize:"1.4rem" }}>💍</span>
-            <div style={{ width:"60px", height:"1px", background:"linear-gradient(90deg,#3b82f6,#EC4899)" }}/>
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
+            <span style={{ fontSize:"1.6rem" }}>💍</span>
+            <div style={{ width:"70px", height:"1.5px", background:"linear-gradient(90deg,#3b82f6,#EC4899)", borderRadius:"2px", boxShadow:"0 0 8px rgba(236,72,153,0.4)" }}/>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.6rem", fontWeight:700, color:"rgba(255,255,255,0.25)", letterSpacing:"2px", textTransform:"uppercase" }}>Forever</span>
           </div>
           <div style={{ textAlign:"center" }}>
-            <span style={{ fontSize:"1.8rem" }}>💗</span>
-            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.7rem", fontWeight:700, color:"rgba(236,72,153,0.7)", margin:"4px 0 0", textTransform:"uppercase", letterSpacing:"1px" }}>Sadhana</p>
+            <div style={{ fontSize:"2rem", lineHeight:1 }}>💗</div>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"0.85rem", fontWeight:600, fontStyle:"italic", color:"rgba(255,130,180,0.85)", margin:"6px 0 0" }}>Sadhana</p>
           </div>
         </motion.div>
 

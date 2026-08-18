@@ -255,9 +255,20 @@ export default function SadhanaWorld({ setPage }) {
         <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"2.6rem", fontWeight:600, fontStyle:"italic", color:"#fff", margin:"0 0 8px", textShadow:"0 0 40px rgba(236,72,153,0.25)" }}>
           Sadhana's World 🌸
         </h1>
-        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:0 }}>
+        <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.9rem", color:"rgba(255,255,255,0.4)", margin:"0 0 18px" }}>
           Everything here was made with love, just for you 💗
         </p>
+        {/* Love banner */}
+        <motion.div initial={{opacity:0,scale:0.92}} animate={{opacity:1,scale:1}} transition={{delay:0.3,type:"spring"}}
+          style={{ display:"inline-flex", alignItems:"center", gap:"12px", padding:"14px 24px", background:"rgba(9,4,21,0.85)", border:"1px solid rgba(236,72,153,0.2)", borderRadius:"20px", backdropFilter:"blur(16px)", boxShadow:"0 8px 32px rgba(0,0,0,0.3), 0 0 40px rgba(236,72,153,0.06)" }}>
+          <span style={{ fontSize:"1.6rem" }}>💗</span>
+          <div style={{ textAlign:"left" }}>
+            <p style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:"1rem", fontStyle:"italic", color:"rgba(255,255,255,0.75)", margin:0, lineHeight:1.5 }}>
+              "You are the reason I smile every day"
+            </p>
+            <p style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.65rem", fontWeight:700, color:"rgba(236,72,153,0.6)", margin:"3px 0 0", letterSpacing:"0.5px" }}>— Surya 💙</p>
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Tab bar */}

@@ -305,6 +305,44 @@ export default function DreamDashboard({ user }) {
       <LoveNoteCard />
       <MoodPicker mood={mood} onChange={setMood} />
 
+      {/* ── Overall Progress Overview ── */}
+      {saved.length > 0 && saved.some(d => d.trim()) && (
+        <motion.div
+          initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.35,duration:0.45}}
+          style={{ background:"rgba(9,4,21,0.75)", border:"1px solid rgba(139,92,246,0.18)", borderRadius:"20px", padding:"20px 22px", marginBottom:"16px", backdropFilter:"blur(16px)" }}
+        >
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px" }}>
+            <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.68rem", fontWeight:700, color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"1.5px" }}>
+              Overall Dream Progress
+            </span>
+            <span style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.9rem", fontWeight:800, color:"#EC4899" }}>
+              {Math.round(savedProg.filter((_,i)=>saved[i]?.trim()).reduce((a,b)=>a+b,0) / Math.max(1, saved.filter(d=>d.trim()).length))}%
+            </span>
+          </div>
+          <div style={{ height:"6px", background:"rgba(255,255,255,0.07)", borderRadius:"3px", overflow:"hidden" }}>
+            <div style={{
+              height:"100%",
+              width: Math.round(savedProg.filter((_,i)=>saved[i]?.trim()).reduce((a,b)=>a+b,0) / Math.max(1, saved.filter(d=>d.trim()).length)) + "%",
+              background:"linear-gradient(90deg,#EC4899,#8B5CF6,#06B6D4)",
+              borderRadius:"3px",
+              transition:"width 0.6s ease",
+              boxShadow:"0 0 12px rgba(236,72,153,0.5)",
+            }}/>
+          </div>
+          <div style={{ display:"flex", gap:"8px", marginTop:"14px", flexWrap:"wrap" }}>
+            {saved.map((d, i) => d.trim() ? (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:"6px", padding:"4px 10px", background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"50px" }}>
+                <span style={{ fontSize:"0.85rem" }}>{["🌟","💖","🌈","✨","🦋"][i]}</span>
+                <div style={{ width:"32px", height:"3px", background:"rgba(255,255,255,0.1)", borderRadius:"2px", overflow:"hidden" }}>
+                  <div style={{ height:"100%", width:`${savedProg[i]}%`, background:"linear-gradient(90deg,#EC4899,#8B5CF6)", borderRadius:"2px" }}/>
+                </div>
+                <span style={{ fontFamily:"'Inter',sans-serif", fontSize:"0.62rem", color:"rgba(255,255,255,0.35)", fontWeight:600 }}>{savedProg[i]}%</span>
+              </div>
+            ) : null)}
+          </div>
+        </motion.div>
+      )}
+
       {/* Dream Form */}
       <motion.div
         initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.4, duration:0.5 }}

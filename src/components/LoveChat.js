@@ -109,19 +109,15 @@ const I = (key, size = 22, style = {}) => (
 ══════════════════════════════════════════ */
 const WA_CSS = `
 .wa2 {
-  display: flex; flex-direction: column;
-  position: fixed;
-  top: 80px;
-  bottom: 104px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 700px;
-  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border-radius: 16px;
   overflow: hidden;
   font-family: 'Inter', sans-serif;
-  z-index: 10;
   box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  background: #0b141a;
 }
 .wa2-hdr { display:flex; align-items:center; gap:10px; padding:10px 14px 10px 12px; background:#1f2c34; border-bottom:1px solid #2a3942; flex-shrink:0; z-index:20; }
 .wa2-av { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; }
@@ -136,7 +132,7 @@ const WA_CSS = `
 .wa2-hdr-btn.video { color:#00a884; }
 .wa2-bg { position:absolute; inset:0; background:#0b141a; z-index:0; }
 .wa2-bg::before { content:''; position:absolute; inset:0; opacity:0.06; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ctext y='50' font-size='32' opacity='0.5'%3E💙%3C/text%3E%3C/svg%3E"); background-size:100px 100px; }
-.wa2-msgs { flex:1; overflow-y:auto; padding:12px 10px 8px; display:flex; flex-direction:column; gap:2px; position:relative; z-index:1; scroll-behavior:smooth; }
+.wa2-msgs { flex:1; min-height:0; overflow-y:auto; padding:12px 10px 8px; display:flex; flex-direction:column; gap:2px; position:relative; z-index:1; scroll-behavior:smooth; }
 .wa2-msgs::-webkit-scrollbar { width:4px; }
 .wa2-msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.12); border-radius:2px; }
 .wa2-date { display:flex; justify-content:center; margin:10px 0 6px; }
@@ -232,7 +228,7 @@ const WA_CSS = `
 .wa2-send { width:44px; height:44px; border-radius:50%; border:none; background:#00a884; color:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; box-shadow:0 2px 8px rgba(0,168,132,0.4); }
 .wa2-send:hover:not(:disabled) { background:#02b396; transform:scale(1.07); }
 .wa2-send:disabled { opacity:0.4; cursor:default; transform:none; }
-.wa2-scroll-btn { position:absolute; bottom:16px; right:14px; width:38px; height:38px; border-radius:50%; background:#233138; border:1px solid #2a3942; color:#8696a0; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:15; box-shadow:0 2px 8px rgba(0,0,0,0.4); transition:all 0.18s; }
+.wa2-scroll-btn { position:absolute; bottom:10px; right:10px; width:36px; height:36px; border-radius:50%; background:#233138; border:1px solid #2a3942; color:#8696a0; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:15; box-shadow:0 2px 8px rgba(0,0,0,0.4); transition:all 0.18s; }
 .wa2-scroll-btn:hover { background:#2a3942; color:#e9edef; }
 .wa2-unread-badge { position:absolute; top:-5px; right:-3px; background:#00a884; color:#fff; font-size:0.62rem; font-weight:700; min-width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
 @keyframes waStarPop { 0%{background:rgba(0,168,132,0.3)} 100%{background:transparent} }
@@ -1303,15 +1299,14 @@ export default function LoveChat({ user }) {
           </div>
         )}
         <div ref={bottomRef}/>
+        {/* Scroll to bottom — anchored inside msgs container */}
+        {!atBottom && (
+          <button className="wa2-scroll-btn" onClick={()=>{setAtBottom(true);setUnread(0);bottomRef.current?.scrollIntoView({behavior:"smooth"});}}>
+            {unread>0 && <span className="wa2-unread-badge">{unread}</span>}
+            ↓
+          </button>
+        )}
       </div>
-
-      {/* Scroll to bottom */}
-      {!atBottom && (
-        <button className="wa2-scroll-btn" onClick={()=>{setAtBottom(true);setUnread(0);bottomRef.current?.scrollIntoView({behavior:"smooth"});}}>
-          {unread>0 && <span className="wa2-unread-badge">{unread}</span>}
-          ↓
-        </button>
-      )}
 
       {/* Attach menu */}
       {showAttach && (

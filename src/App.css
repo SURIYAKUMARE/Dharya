@@ -510,10 +510,13 @@ h1 {
 }
 .main-content > * { will-change: transform, opacity; }
 
-/* Chat page — no padding, no min-height, exact fit */
+/* Chat page — no padding, fills available space between topbar and tabs */
 .main-content--chat {
   padding: 0 !important;
   min-height: 0 !important;
+  height: calc(100vh - 80px - 104px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 

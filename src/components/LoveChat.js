@@ -1,20 +1,31 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const POLL_MS = 2000;
-/* ── ICE servers ── */
-const ICE = [
+
+/* ── ICE servers: fetched fresh from /api/ice-servers before each call ──
+   Fallback list is used only if the API request fails.               */
+const ICE_FALLBACK = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
   { urls: "stun:stun.cloudflare.com:3478" },
   { urls: "stun:stun.relay.metered.ca:80" },
-  { urls: "turn:global.relay.metered.ca:80",             username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:global.relay.metered.ca:80?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:global.relay.metered.ca:443",            username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:80",                  username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:80?transport=tcp",    username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:443",                 username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turns:global.relay.metered.ca:443?transport=tcp",  username: "openrelayproject", credential: "openrelayproject" },
 ];
+
+async function fetchIceServers() {
+  try {
+    const res = await fetch("/api/ice-servers", { cache: "no-store" });
+    if (!res.ok) throw new Error(`ice-servers API ${res.status}`);
+    const { iceServers } = await res.json();
+    if (Array.isArray(iceServers) && iceServers.length > 0) return iceServers;
+  } catch (e) {
+    console.warn("fetchIceServers failed, using fallback:", e.message);
+  }
+  return ICE_FALLBACK;
+}
 
 /* ─── AI ─── */
 const AI_REPLIES = [
@@ -430,7 +441,7 @@ function CallAvatar({ name, color1, color2, size = 110 }) {
 }
 
 /* ══ VOICE CALL SCREEN ══ */
-function VoiceCall({ user, otherName, onEnd, isInitiator }) {
+function VoiceCall({ user, otherName, onEnd, isInitiator, iceServers }) {
   const [state,   setState]   = useState("ringing");
   const [muted,   setMuted]   = useState(false);
   const [spk,     setSpk]     = useState(true);
@@ -513,7 +524,7 @@ function VoiceCall({ user, otherName, onEnd, isInitiator }) {
         lStream.current = stream;
 
         const p = new RTCPeerConnection({
-          iceServers: ICE,
+          iceServers: iceServers || ICE_FALLBACK,
           iceTransportPolicy: "all",
           bundlePolicy: "max-bundle",
           rtcpMuxPolicy: "require",
@@ -615,7 +626,7 @@ function VoiceCall({ user, otherName, onEnd, isInitiator }) {
 }
 
 /* ══ VIDEO CALL SCREEN ══ */
-function VideoCall({ user, otherName, onEnd, isInitiator }) {
+function VideoCall({ user, otherName, onEnd, isInitiator, iceServers }) {
   const [state,    setState]    = useState("ringing");
   const [muted,    setMuted]    = useState(false);
   const [camOff,   setCamOff]   = useState(false);
@@ -709,7 +720,7 @@ function VideoCall({ user, otherName, onEnd, isInitiator }) {
         }
 
         const p = new RTCPeerConnection({
-          iceServers: ICE,
+          iceServers: iceServers || ICE_FALLBACK,
           iceTransportPolicy: "all",
           bundlePolicy: "max-bundle",
           rtcpMuxPolicy: "require",
@@ -862,8 +873,9 @@ export default function LoveChat({ user }) {
   const [starred,    setStarred]    = useState(new Set());
   const [callMode,   setCallMode]   = useState(null);
   const [callActive, setCallActive] = useState(false);
+  const [callIce,    setCallIce]    = useState(null);   // ICE servers fetched fresh per call
   const [incoming,   setIncoming]   = useState(null);
-  const [isInitiator,setIsInitiator]= useState(false); // FIX: track who started the call
+  const [isInitiator,setIsInitiator]= useState(false);
 
   /* ── new state: pinned messages ── */
   const [pinned,     setPinned]     = useState([]);
@@ -1105,6 +1117,9 @@ export default function LoveChat({ user }) {
 
   const startCall = async (mode) => {
     if (isDemo) { alert("Calls not available in demo."); return; }
+    // Fetch fresh TURN credentials before opening the call screen
+    const ice = await fetchIceServers();
+    setCallIce(ice);
     // Clear stale signals from previous calls before starting
     try { await fetch(`/api/signal?room=${encodeURIComponent(callRoom)}`, { method: "DELETE" }); } catch {}
     // Advance the incoming-call poll timestamp BEFORE posting the signal
@@ -1123,10 +1138,15 @@ export default function LoveChat({ user }) {
     } catch {}
   };
 
-  const acceptCall = () => {
-    if(!incoming) return;
-    setIsInitiator(false); // FIX: callee is never the initiator
-    setIncoming(null); setCallMode(incoming.mode); setCallActive(true);
+  const acceptCall = async () => {
+    if (!incoming) return;
+    // Fetch fresh TURN credentials before joining the call
+    const ice = await fetchIceServers();
+    setCallIce(ice);
+    setIsInitiator(false);
+    setIncoming(null);
+    setCallMode(incoming.mode);
+    setCallActive(true);
   };
   const declineCall = () => {
     fetch("/api/signal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room:callRoom,from:me,type:"call_end",data:{}})}).catch(()=>{});
@@ -1259,8 +1279,8 @@ export default function LoveChat({ user }) {
     <div className="wa2" onClick={closeAll}>
 
       {/* ── Active calls ── */}
-      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} isInitiator={isInitiator} onEnd={()=>{setCallActive(false);setCallMode(null);setIsInitiator(false);}}/>}
-      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} isInitiator={isInitiator} onEnd={()=>{setCallActive(false);setCallMode(null);setIsInitiator(false);}}/>}
+      {callActive && callMode==="voice" && <VoiceCall user={me} otherName={otherFull} isInitiator={isInitiator} iceServers={callIce} onEnd={()=>{setCallActive(false);setCallMode(null);setIsInitiator(false);setCallIce(null);}}/>}
+      {callActive && callMode==="video" && <VideoCall user={me} otherName={otherFull} isInitiator={isInitiator} iceServers={callIce} onEnd={()=>{setCallActive(false);setCallMode(null);setIsInitiator(false);setCallIce(null);}}/>}
 
       {/* ── Incoming ── */}
       {incoming && !callActive && <IncomingCall otherName={otherFull} mode={incoming.mode} onAccept={acceptCall} onDecline={declineCall}/>}

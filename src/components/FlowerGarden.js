@@ -140,121 +140,207 @@ function PetalRain({on}) {
   );
 }
 
-/* ── SVG realistic plant drawn with paths ── */
-function RealisticPlant({ stage, flowerType, index, wind, bloomed }) {
-  const w = 72, h = 110;
+/* ══════════════════════════════════════════════════
+   BOTANICAL SVG PLANTS — each stage hand-drawn
+══════════════════════════════════════════════════ */
+
+/* Seedling — tiny sprout with two seed-leaves */
+function PlantSeedling({ sway }) {
+  return (
+    <g style={{animation:sway,transformOrigin:"36px 90px",display:"block"}}>
+      {/* soil */}
+      <ellipse cx="36" cy="90" rx="18" ry="6" fill="#3d1f0a" opacity=".7"/>
+      <ellipse cx="36" cy="88" rx="12" ry="4" fill="#5c3010" opacity=".55"/>
+      {/* main stem */}
+      <path d="M36,88 C36,80 35,72 36,64" stroke="#4ade80" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+      {/* cotyledon left */}
+      <path d="M35,74 C28,68 24,60 28,56 C32,52 36,58 35,66 Z" fill="#86efac" stroke="#22c55e" strokeWidth="1"/>
+      {/* cotyledon right */}
+      <path d="M37,70 C44,64 48,56 44,52 C40,48 36,54 37,62 Z" fill="#86efac" stroke="#22c55e" strokeWidth="1"/>
+      {/* apical bud */}
+      <ellipse cx="36" cy="63" rx="4" ry="5.5" fill="#a3e635" stroke="#4ade80" strokeWidth=".8"/>
+      <path d="M34,60 C35,57 37,57 38,60" stroke="#65a30d" strokeWidth=".8" fill="none"/>
+    </g>
+  );
+}
+
+/* Sprouting — taller with first true leaves */
+function PlantSprouting({ sway }) {
+  return (
+    <g style={{animation:sway,transformOrigin:"36px 90px",display:"block"}}>
+      <ellipse cx="36" cy="90" rx="20" ry="7" fill="#3d1f0a" opacity=".65"/>
+      <ellipse cx="36" cy="88" rx="13" ry="4.5" fill="#5c3010" opacity=".5"/>
+      {/* curved stem */}
+      <path d="M36,88 C35,76 37,62 35,48" stroke="#22c55e" strokeWidth="3" fill="none" strokeLinecap="round"/>
+      {/* lower leaf pair */}
+      <path d="M35,76 C25,70 18,62 22,55 C26,48 34,56 35,68 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1.2"/>
+      <path d="M37,72 C47,66 54,58 50,51 C46,44 38,52 37,64 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1.2"/>
+      {/* upper leaf */}
+      <path d="M34,60 C26,53 22,44 27,39 C32,34 36,42 35,54 Z" fill="#86efac" stroke="#22c55e" strokeWidth="1"/>
+      <path d="M36,57 C44,50 48,41 43,36 C38,31 35,39 36,51 Z" fill="#86efac" stroke="#22c55e" strokeWidth="1"/>
+      {/* bud */}
+      <ellipse cx="35" cy="47" rx="5" ry="6" fill="#bbf7d0" stroke="#4ade80" strokeWidth=".9"/>
+      {/* leaf veins */}
+      <path d="M29,63 C31,59 33,57 35,56" stroke="#15803d" strokeWidth=".5" fill="none" opacity=".6"/>
+      <path d="M42,59 C40,55 38,53 37,52" stroke="#15803d" strokeWidth=".5" fill="none" opacity=".6"/>
+    </g>
+  );
+}
+
+/* Growing — mature leafy plant */
+function PlantGrowing({ sway }) {
+  return (
+    <g style={{animation:sway,transformOrigin:"38px 90px",display:"block"}}>
+      <ellipse cx="38" cy="91" rx="22" ry="7" fill="#3d1f0a" opacity=".65"/>
+      <ellipse cx="38" cy="89" rx="14" ry="5" fill="#5c3010" opacity=".5"/>
+      {/* main stem slightly curved */}
+      <path d="M38,89 C37,74 39,58 37,40" stroke="#16a34a" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      {/* secondary stem */}
+      <path d="M38,65 C42,58 46,52 48,44" stroke="#15803d" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      {/* bottom leaves */}
+      <path d="M37,82 C24,74 16,64 20,55 C24,46 36,56 37,72 Z" fill="#22c55e" stroke="#15803d" strokeWidth="1.3"/>
+      <path d="M39,78 C52,70 60,60 56,51 C52,42 40,52 39,68 Z" fill="#22c55e" stroke="#15803d" strokeWidth="1.3"/>
+      {/* mid leaves */}
+      <path d="M37,66 C26,58 20,48 25,42 C30,36 37,46 37,58 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1.1"/>
+      <path d="M39,62 C50,54 56,44 51,38 C46,32 39,42 39,54 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1.1"/>
+      {/* upper small leaves */}
+      <path d="M36,50 C29,44 26,37 30,33 C34,29 37,37 37,46 Z" fill="#86efac" stroke="#22c55e" strokeWidth=".9"/>
+      <path d="M38,47 C45,41 48,34 44,30 C40,26 37,34 38,43 Z" fill="#86efac" stroke="#22c55e" strokeWidth=".9"/>
+      {/* branch leaves */}
+      <path d="M46,51 C52,44 58,40 60,34 C61,30 56,30 52,36 Z" fill="#4ade80" stroke="#16a34a" strokeWidth="1"/>
+      {/* stem veins */}
+      <path d="M29,71 C32,66 35,63 37,62" stroke="#14532d" strokeWidth=".6" fill="none" opacity=".55"/>
+      <path d="M48,69 C45,64 42,61 39,60" stroke="#14532d" strokeWidth=".6" fill="none" opacity=".55"/>
+      {/* bud */}
+      <ellipse cx="37" cy="39" rx="5.5" ry="7" fill="#bbf7d0" stroke="#4ade80" strokeWidth="1"/>
+    </g>
+  );
+}
+
+/* Bloomed — full flower with petals */
+function PlantBloomed({ flowerColor, sway, index }) {
+  /* pick petal colour from flower type */
+  const PETAL_SETS = [
+    {p:"#f9a8d4",c:"#ec4899",center:"#fde047"}, // pink
+    {p:"#fca5a5",c:"#ef4444",center:"#fde047"}, // red
+    {p:"#fde047",c:"#f59e0b",center:"#a16207"}, // yellow
+    {p:"#f9a8d4",c:"#db2777",center:"#fde047"}, // deep pink
+    {p:"#c4b5fd",c:"#7c3aed",center:"#fde047"}, // purple
+    {p:"#fde68a",c:"#d97706",center:"#92400e"}, // amber
+    {p:"#ddd6fe",c:"#8b5cf6",center:"#fde047"}, // violet
+    {p:"#fbcfe8",c:"#ec4899",center:"#fde047"}, // light pink
+  ];
+  const pal = PETAL_SETS[index % PETAL_SETS.length];
+  const cx = 38, cy = 28;
+
+  return (
+    <g style={{animation:sway,transformOrigin:`${cx}px 90px`,display:"block"}}>
+      <ellipse cx={cx} cy="91" rx="22" ry="7" fill="#3d1f0a" opacity=".65"/>
+      <ellipse cx={cx} cy="89" rx="14" ry="5" fill="#5c3010" opacity=".5"/>
+      {/* main stem */}
+      <path d={`M${cx},89 C${cx-2},74 ${cx+2},58 ${cx},${cy+36}`}
+        stroke="#15803d" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+      {/* left branch */}
+      <path d={`M${cx},65 C${cx-8},58 ${cx-14},50 ${cx-16},44`}
+        stroke="#166534" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      {/* right branch */}
+      <path d={`M${cx},58 C${cx+8},52 ${cx+12},45 ${cx+14},40`}
+        stroke="#166534" strokeWidth="2" fill="none" strokeLinecap="round"/>
+      {/* leaves */}
+      <path d={`M${cx-1},78 C${cx-14},70 ${cx-20},60 ${cx-16},52 C${cx-12},44 ${cx-1},54 ${cx-1},68 Z`}
+        fill="#22c55e" stroke="#15803d" strokeWidth="1.2"/>
+      <path d={`M${cx+1},74 C${cx+14},66 ${cx+20},56 ${cx+16},48 C${cx+12},40 ${cx+1},50 ${cx+1},64 Z`}
+        fill="#22c55e" stroke="#15803d" strokeWidth="1.2"/>
+      {/* upper small leaves */}
+      <path d={`M${cx-2},60 C${cx-12},53 ${cx-16},45 ${cx-12},40 C${cx-8},35 ${cx-2},43 ${cx-2},54 Z`}
+        fill="#4ade80" stroke="#16a34a" strokeWidth="1"/>
+      <path d={`M${cx+2},56 C${cx+12},49 ${cx+15},41 ${cx+11},36 C${cx+7},31 ${cx+2},39 ${cx+2},50 Z`}
+        fill="#4ade80" stroke="#16a34a" strokeWidth="1"/>
+
+      {/* ── FLOWER HEAD ── */}
+      {/* 8 petals */}
+      {[...Array(8)].map((_,i)=>{
+        const angle = (i/8)*Math.PI*2;
+        const pr = 16; // petal reach
+        const px1 = cx + Math.cos(angle-0.35)*8;
+        const py1 = cy + Math.sin(angle-0.35)*8;
+        const px2 = cx + Math.cos(angle+0.35)*8;
+        const py2 = cy + Math.sin(angle+0.35)*8;
+        const tip_x = cx + Math.cos(angle)*pr;
+        const tip_y = cy + Math.sin(angle)*pr;
+        return (
+          <path key={i}
+            d={`M${cx},${cy} C${px1},${py1} ${tip_x-Math.cos(angle+1.2)*4},${tip_y-Math.sin(angle+1.2)*4} ${tip_x},${tip_y} C${tip_x-Math.cos(angle-1.2)*4},${tip_y-Math.sin(angle-1.2)*4} ${px2},${py2} Z`}
+            fill={pal.p} stroke={pal.c} strokeWidth=".8" opacity=".92"
+          />
+        );
+      })}
+      {/* petal vein highlights */}
+      {[...Array(8)].map((_,i)=>{
+        const angle=(i/8)*Math.PI*2;
+        return <line key={i} x1={cx} y1={cy} x2={cx+Math.cos(angle)*14} y2={cy+Math.sin(angle)*14}
+          stroke={pal.c} strokeWidth=".4" opacity=".4"/>;
+      })}
+      {/* outer petal ring shading */}
+      <circle cx={cx} cy={cy} r="10" fill={pal.p} opacity=".35"/>
+      {/* stamen ring */}
+      <circle cx={cx} cy={cy} r="7" fill={pal.center} stroke="#92400e" strokeWidth=".6"/>
+      {/* pollen dots */}
+      {[...Array(6)].map((_,i)=>{
+        const a=(i/6)*Math.PI*2;
+        return <circle key={i} cx={cx+Math.cos(a)*4.5} cy={cy+Math.sin(a)*4.5} r="1.2"
+          fill="#78350f" opacity=".8"/>;
+      })}
+      {/* center highlight */}
+      <circle cx={cx-1.5} cy={cy-1.5} r="2.5" fill="rgba(255,255,255,.45)"/>
+
+      {/* stem veins */}
+      <path d={`M${cx-13},69 C${cx-10},65 ${cx-6},63 ${cx-1},62`}
+        stroke="#14532d" strokeWidth=".6" fill="none" opacity=".5"/>
+      <path d={`M${cx+13},65 C${cx+10},61 ${cx+6},59 ${cx+1},58`}
+        stroke="#14532d" strokeWidth=".6" fill="none" opacity=".5"/>
+    </g>
+  );
+}
+
+/* ── master plant switcher ── */
+function RealisticPlant({ stage, flowerType, index, wind }) {
+  const W = 78, H = 110;
   const sway = wind
-    ? `fg6-swayW ${.85+(index%3)*.3}s ease-in-out ${index*.07}s infinite`
-    : `fg6-sway ${2.4+(index%5)*.45}s ease-in-out ${index*.13}s infinite`;
-
-  /* stem colour gets richer as plant matures */
-  const stemCol  = ["#4ade80","#22c55e","#16a34a","#15803d"][stage];
-  const leafCol  = ["#86efac","#4ade80","#22c55e","#15803d"][stage];
-  const darkLeaf = ["#16a34a","#15803d","#166534","#14532d"][stage];
-
-  /* stem height grows per stage */
-  const stemH = [28, 45, 62, 75][stage];
-  const stemY = h - 8; // base Y
-  const topY  = stemY - stemH;
+    ? `fg6-swayW ${.9+(index%3)*.3}s ease-in-out ${index*.07}s infinite`
+    : `fg6-sway ${2.5+(index%6)*.4}s ease-in-out ${index*.14}s infinite`;
 
   return (
     <motion.div layout
-      initial={{scale:0,y:50,opacity:0}}
+      initial={{scale:0,y:55,opacity:0}}
       animate={{scale:1,y:0,opacity:1}}
       exit={{scale:0,y:25,opacity:0}}
-      transition={{type:"spring",stiffness:180,damping:18,delay:index*.05}}
-      style={{
-        display:"flex",flexDirection:"column",alignItems:"center",
-        position:"relative", width:w, flexShrink:0,
-        animation: sway,
-        filter: bloomed ? "drop-shadow(0 2px 12px rgba(236,72,153,.55))" : "none",
-      }}
+      transition={{type:"spring",stiffness:175,damping:17,delay:index*.055}}
+      style={{flexShrink:0,position:"relative",
+        filter: stage===3 ? "drop-shadow(0 3px 14px rgba(236,72,153,.45))" : "none"}}
     >
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{overflow:"visible"}}>
-        {/* soil mound */}
-        <ellipse cx={w/2} cy={stemY+4} rx={14} ry={5}
-          fill="rgba(101,67,33,.55)" filter="url(#blur)"/>
-
-        {/* main stem */}
-        <path
-          d={stage===0
-            ? `M${w/2},${stemY} C${w/2},${stemY-10} ${w/2},${topY+6} ${w/2},${topY}`
-            : `M${w/2},${stemY} C${w/2-4},${stemY-stemH*.3} ${w/2+3},${stemY-stemH*.6} ${w/2},${topY}`
-          }
-          stroke={stemCol} strokeWidth={stage<2?2.5:3} fill="none"
-          strokeLinecap="round"
-          style={{filter:`drop-shadow(0 0 3px ${stemCol}66)`}}
-        />
-
-        {/* leaves — stage 1+ */}
-        {stage >= 1 && (
-          <>
-            {/* left leaf */}
-            <path
-              d={`M${w/2-1},${topY+stemH*.45} C${w/2-18},${topY+stemH*.28} ${w/2-22},${topY+stemH*.55} ${w/2-10},${topY+stemH*.62}`}
-              stroke={darkLeaf} strokeWidth={1.2} fill={leafCol} opacity={.88}
-            />
-            {/* right leaf */}
-            <path
-              d={`M${w/2+1},${topY+stemH*.55} C${w/2+18},${topY+stemH*.38} ${w/2+20},${topY+stemH*.65} ${w/2+8},${topY+stemH*.72}`}
-              stroke={darkLeaf} strokeWidth={1.2} fill={leafCol} opacity={.88}
-            />
-          </>
-        )}
-
-        {/* extra leaf pair — stage 2+ */}
-        {stage >= 2 && (
-          <>
-            <path
-              d={`M${w/2-1},${topY+stemH*.2} C${w/2-16},${topY+stemH*.05} ${w/2-20},${topY+stemH*.28} ${w/2-9},${topY+stemH*.35}`}
-              stroke={darkLeaf} strokeWidth={1} fill={leafCol} opacity={.78}
-            />
-            <path
-              d={`M${w/2+1},${topY+stemH*.3} C${w/2+16},${topY+stemH*.15} ${w/2+18},${topY+stemH*.38} ${w/2+8},${topY+stemH*.44}`}
-              stroke={darkLeaf} strokeWidth={1} fill={leafCol} opacity={.78}
-            />
-          </>
-        )}
-
-        {/* bloom head — stage 3 uses flower emoji painted as foreignObject */}
-        {stage < 3 && (
-          /* bud */
-          <ellipse cx={w/2} cy={topY} rx={stage===0?4:6} ry={stage===0?5:8}
-            fill={stage===0?"#86efac":"#4ade80"}
-            stroke={darkLeaf} strokeWidth={.8}/>
-        )}
-
-        {/* defs for blur */}
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible",display:"block"}}>
         <defs>
-          <filter id="blur"><feGaussianBlur stdDeviation="2"/></filter>
+          <filter id={`fg-shadow-${index}`}>
+            <feGaussianBlur stdDeviation="2.5"/>
+          </filter>
         </defs>
+        {stage===0 && <PlantSeedling  sway={sway}/>}
+        {stage===1 && <PlantSprouting sway={sway}/>}
+        {stage===2 && <PlantGrowing   sway={sway}/>}
+        {stage===3 && <PlantBloomed   flowerColor={flowerType} sway={sway} index={index}/>}
       </svg>
-
-      {/* emoji flower head overlaid at top of svg for bloomed stage */}
-      {stage === 3 && (
-        <div style={{
-          position:"absolute",
-          top: h - stemH - 42,
-          left:"50%", transform:"translateX(-50%)",
-          fontSize:44, lineHeight:1,
-          animation:`fg6-bloom 3s ease-in-out ${index*.3}s infinite`,
-          pointerEvents:"none",
-        }}>{flowerType}</div>
-      )}
     </motion.div>
   );
 }
 
-/* ── wrapper that picks the right plant ── */
 function Flower({ flower, index, wind }) {
-  const bloomed = flower.stage >= GROWTH_STAGES.length - 1;
   return (
     <RealisticPlant
       stage={flower.stage}
       flowerType={flower.type}
       index={index}
       wind={wind}
-      bloomed={bloomed}
     />
   );
 }
@@ -263,7 +349,6 @@ function Flower({ flower, index, wind }) {
 function FlowerCard({ flower, index, isNew }) {
   const st      = GROWTH_STAGES[Math.min(flower.stage, GROWTH_STAGES.length-1)];
   const bloomed = flower.stage >= GROWTH_STAGES.length-1;
-  const emoji   = bloomed ? flower.type : st.emoji;
   return (
     <motion.div layout
       initial={{scale:0,opacity:0,y:18}} animate={{scale:1,opacity:1,y:0}} exit={{scale:0,opacity:0}}
@@ -281,9 +366,12 @@ function FlowerCard({ flower, index, isNew }) {
       }}>
       {bloomed && <div style={{position:"absolute",inset:0,background:"linear-gradient(105deg,transparent 36%,rgba(255,255,255,.08) 50%,transparent 64%)",backgroundSize:"200% 100%",animation:"fg6-shimmer 3.2s linear infinite",borderRadius:18,pointerEvents:"none"}}/>}
       {isNew  && <span style={{position:"absolute",top:5,right:5,fontSize:".47rem",fontWeight:800,background:"linear-gradient(90deg,#ec4899,#8b5cf6)",color:"#fff",padding:"2px 7px",borderRadius:50,textTransform:"uppercase",animation:"fg6-badge .9s ease-in-out infinite"}}>NEW</span>}
-      <span style={{fontSize:bloomed?"2.4rem":"2rem",lineHeight:1,display:"inline-block",
-        animation:bloomed?`fg6-sway ${2+(index%3)*.6}s ease-in-out infinite`:"none",transformOrigin:"bottom center",
-        filter:bloomed?"drop-shadow(0 2px 12px rgba(236,72,153,.7))":"none"}}>{emoji}</span>
+      <svg width="60" height="80" viewBox="0 0 78 110" style={{display:"block",marginBottom:2}}>
+        {flower.stage===0 && <PlantSeedling  sway="none"/>}
+        {flower.stage===1 && <PlantSprouting sway="none"/>}
+        {flower.stage===2 && <PlantGrowing   sway="none"/>}
+        {flower.stage===3 && <PlantBloomed   flowerColor={flower.type} sway="none" index={index}/>}
+      </svg>
       <span style={{fontSize:".58rem",fontWeight:700,fontFamily:"'Inter',sans-serif",
         color:bloomed?"#ec4899":"#10b981",
         background:bloomed?"rgba(236,72,153,.15)":"rgba(16,185,129,.15)",

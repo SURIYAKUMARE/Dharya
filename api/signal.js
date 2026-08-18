@@ -79,8 +79,8 @@ module.exports = async (req, res) => {
       const sinceMs = since ? new Date(since).getTime() : 0;
       let sigs = purgeRoom(room).filter(s => s.ts > sinceMs);
 
-      /* If memory is empty and sinceMs is old, try DB */
-      if (sigs.length === 0 && sinceMs < Date.now() - 5000) {
+      /* If memory is empty, always try DB (cold serverless instance) */
+      if (sigs.length === 0) {
         sigs = await loadFromDB(room, sinceMs);
         /* Warm the memory store with DB data */
         if (sigs.length > 0) {

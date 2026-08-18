@@ -1879,8 +1879,6 @@ textarea.login-input, textarea { resize: vertical; min-height: 80px; line-height
    CHAT PAGE — override old chat-page for wa-page
 ══════════════════════════════════════════════════ */
 /* wa2 chat component heights are handled internally */
-  overflow: hidden;
-}
 
 /* ══════════════════════════════════════════════════
    GARDEN PAGE
@@ -1923,8 +1921,7 @@ textarea.login-input, textarea { resize: vertical; min-height: 80px; line-height
    RESPONSIVE — Bottom tabs safe area
 ══════════════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .wa-page { height: calc(100vh - 145px); border-radius: 16px; }
-  .main-content > .wa-page { height: calc(100vh - 145px); }
+  .main-content--chat { height: calc(100vh - 74px - 94px); }
 }
 
 /* ══════════════════════════════════════════════════

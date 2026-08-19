@@ -305,7 +305,10 @@ function PlantBloomed({ flowerColor, sway, index }) {
 
 /* ── master plant switcher ── */
 function RealisticPlant({ stage, flowerType, index, wind }) {
-  const W = 78, H = 110;
+  /* Size scales up per stage so the garden feels alive */
+  const sizes  = [{ w:70,  h:100 }, { w:82,  h:115 }, { w:92,  h:130 }, { w:104, h:148 }];
+  const { w: W, h: H } = sizes[Math.min(stage, 3)];
+
   const sway = wind
     ? `fg6-swayW ${.9+(index%3)*.3}s ease-in-out ${index*.07}s infinite`
     : `fg6-sway ${2.5+(index%6)*.4}s ease-in-out ${index*.14}s infinite`;
@@ -316,15 +319,16 @@ function RealisticPlant({ stage, flowerType, index, wind }) {
       animate={{scale:1,y:0,opacity:1}}
       exit={{scale:0,y:25,opacity:0}}
       transition={{type:"spring",stiffness:175,damping:17,delay:index*.055}}
-      style={{flexShrink:0,position:"relative",
-        filter: stage===3 ? "drop-shadow(0 3px 14px rgba(236,72,153,.45))" : "none"}}
+      style={{
+        flexShrink:0, position:"relative",
+        filter: stage===3
+          ? "drop-shadow(0 4px 16px rgba(236,72,153,.5)) drop-shadow(0 0 8px rgba(251,191,36,.25))"
+          : stage===2
+            ? "drop-shadow(0 3px 8px rgba(34,197,94,.35))"
+            : "drop-shadow(0 2px 6px rgba(0,0,0,.4))",
+      }}
     >
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{overflow:"visible",display:"block"}}>
-        <defs>
-          <filter id={`fg-shadow-${index}`}>
-            <feGaussianBlur stdDeviation="2.5"/>
-          </filter>
-        </defs>
+      <svg width={W} height={H} viewBox="0 0 78 110" style={{overflow:"visible",display:"block"}}>
         {stage===0 && <PlantSeedling  sway={sway}/>}
         {stage===1 && <PlantSprouting sway={sway}/>}
         {stage===2 && <PlantGrowing   sway={sway}/>}
@@ -439,7 +443,7 @@ export default function FlowerGarden({ user }) {
   const skyStars  = useRef([...Array(80)].map(()=>({ t:`${2+Math.random()*74}%`, l:`${Math.random()*98}%`, sz:1+Math.random()*2.5, dur:1.6+Math.random()*4, del:Math.random()*8 }))).current;
   const clouds    = useRef([{l:"3%",t:"9%",s:1,d:12},{l:"29%",t:"4%",s:.7,d:15},{l:"55%",t:"13%",s:.62,d:10},{l:"76%",t:"6%",s:.88,d:17}]).current;
 
-  /* load — auto-seeds July+August data if garden is empty */
+  /* load — auto-seeds July+August data if garden has fewer than 48 flowers */
   useEffect(() => {
     (async () => {
       try {
@@ -449,20 +453,17 @@ export default function FlowerGarden({ user }) {
           dbGet("fg_streak", 0),
         ]);
 
-        // If garden is empty (first time or data loss), call the seed endpoint
-        if (!Array.isArray(g) || g.length === 0) {
+        // Seed if we have fewer than 48 flowers (catches fresh DB + old partial data)
+        if (!Array.isArray(g) || g.length < 48) {
           try {
-            const seedRes = await fetch("/api/seed-garden", { method: "POST" });
+            const seedRes = await fetch("/api/seed-garden?force=1", { method: "POST" });
             if (seedRes.ok) {
-              const data = await seedRes.json();
-              if (data.seeded) {
-                // Re-fetch fresh data after seeding
-                [g, v, s] = await Promise.all([
-                  dbGet("fg_garden", []),
-                  dbGet("fg_lastvisit", ""),
-                  dbGet("fg_streak", 0),
-                ]);
-              }
+              // Re-fetch fresh data after seeding
+              [g, v, s] = await Promise.all([
+                dbGet("fg_garden", []),
+                dbGet("fg_lastvisit", ""),
+                dbGet("fg_streak", 0),
+              ]);
             }
           } catch (e) {
             console.warn("seed-garden failed:", e.message);
@@ -653,93 +654,99 @@ export default function FlowerGarden({ user }) {
         </div>
 
         {/* ─ GROUND ─ */}
-        <div style={{position:"relative",overflow:"hidden",minHeight:240}}>
+        <div style={{position:"relative",overflow:"hidden",minHeight:280,
+          background:"linear-gradient(180deg,#1e4d10 0%,#163a09 18%,#0f2a05 38%,#0c2004 55%,#3a1800 78%,#1e0d00 100%)"}}>
 
-          {/* layered ground – realistic soil + grass */}
-          <div style={{position:"absolute",inset:0,
-            background:"linear-gradient(180deg,#1a3a0f 0%,#143009 22%,#0f2407 45%,#1c3d08 58%,#3d1c02 78%,#2a1100 100%)"}}/>
-
-          {/* soft ground-level light */}
-          <div style={{position:"absolute",top:0,left:0,right:0,height:18,
-            background:"linear-gradient(180deg,rgba(74,222,128,.18),transparent)"}}/>
+          {/* top grass-light edge */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:14,
+            background:"linear-gradient(180deg,rgba(74,222,128,.28) 0%,rgba(34,197,94,.1) 60%,transparent 100%)"}}/>
 
           {/* soil base */}
-          <div style={{position:"absolute",bottom:0,left:0,right:0,height:38,
-            background:"linear-gradient(180deg,#5c2a06,#3d1800,#1a0a00)"}}/>
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:50,
+            background:"linear-gradient(180deg,#5c2a06 0%,#3d1800 50%,#1a0900 100%)"}}/>
 
-          {/* ground mist */}
-          <div style={{position:"absolute",top:10,left:0,right:0,height:36,
-            background:"radial-gradient(ellipse 80% 100% at 50% 0%,rgba(74,222,128,.08) 0%,transparent 100%)",
-            animation:"fg6-mist 8s ease-in-out infinite"}}/>
+          {/* ambient under-soil glow */}
+          <div style={{position:"absolute",bottom:45,left:"10%",right:"10%",height:28,
+            background:"radial-gradient(ellipse at 50% 100%,rgba(74,222,128,.06) 0%,transparent 70%)"}}/>
 
           {/* flowers */}
           <div style={{
             display:"flex", justifyContent:"center", alignItems:"flex-end",
-            flexWrap:"wrap", gap:20,
-            padding:"24px 28px 90px",
+            flexWrap:"wrap", gap:10,
+            padding:"18px 16px 105px",
             position:"relative", zIndex:3,
-            minHeight:210,
+            minHeight:250,
           }}>
             <AnimatePresence>
               {(garden.length===0
-                ? [{id:0,type:"🌱",stage:0,date:""}]
+                ? [{id:0,type:"🌹",stage:0,date:""}]
                 : garden
-              ).slice().reverse().slice(0,28).map((f,i)=>(
+              ).slice().reverse().slice(0,30).map((f,i)=>(
                 <Flower key={f.id} flower={f} index={i} wind={wind}/>
               ))}
             </AnimatePresence>
           </div>
 
-          {/* ── REALISTIC FENCE ── SVG-based wood planks */}
-          <div style={{position:"absolute",bottom:34,left:0,right:0,height:52,zIndex:5,pointerEvents:"none"}}>
-            <svg viewBox="0 0 800 52" preserveAspectRatio="none"
-              style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>
-              <defs>
-                <linearGradient id="plankH" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="#a0541a"/>
-                  <stop offset="50%" stopColor="#7c3f08"/>
-                  <stop offset="100%" stopColor="#5a2a06"/>
-                </linearGradient>
-                <linearGradient id="postG" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#b86020"/>
-                  <stop offset="40%" stopColor="#8b4513"/>
-                  <stop offset="100%" stopColor="#5a2a06"/>
-                </linearGradient>
-                <filter id="fshadow"><feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity=".55"/></filter>
-              </defs>
-              {/* top horizontal plank */}
-              <rect x="0" y="8" width="800" height="10" rx="2" fill="url(#plankH)" filter="url(#fshadow)"/>
-              {/* bottom horizontal plank */}
-              <rect x="0" y="28" width="800" height="8" rx="2" fill="url(#plankH)" filter="url(#fshadow)"/>
-              {/* wood grain lines on top plank */}
-              {[50,120,190,260,330,400,470,540,610,680,750].map((x,i)=>(
-                <line key={i} x1={x} y1="8" x2={x+6} y2="18" stroke="rgba(0,0,0,.12)" strokeWidth="1"/>
-              ))}
-              {/* vertical posts — proper rectangle with rounded top */}
-              {[...Array(10)].map((_,i)=>{
-                const px = i*82+18;
-                return (
-                  <g key={i}>
-                    <rect x={px} y="0" width="13" height="52" rx="3" fill="url(#postG)" filter="url(#fshadow)"/>
-                    {/* wood grain */}
-                    <line x1={px+4} y1="2" x2={px+4} y2="50" stroke="rgba(255,255,255,.06)" strokeWidth="1"/>
-                    <line x1={px+8} y1="2" x2={px+8} y2="50" stroke="rgba(0,0,0,.08)" strokeWidth="1"/>
-                    {/* rounded cap highlight */}
-                    <ellipse cx={px+6.5} cy="3" rx="5" ry="2.5" fill="rgba(255,200,120,.2)"/>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
+          {/* ── SVG FENCE ── */}
+          <svg viewBox="0 0 900 68" preserveAspectRatio="none"
+            style={{position:"absolute",bottom:0,left:0,width:"100%",height:"68px",zIndex:5,display:"block"}}>
+            <defs>
+              <linearGradient id="fg-rail" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stopColor="#c8722a"/>
+                <stop offset="40%"  stopColor="#9a4e1a"/>
+                <stop offset="100%" stopColor="#6b3010"/>
+              </linearGradient>
+              <linearGradient id="fg-post" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"   stopColor="#d4884a"/>
+                <stop offset="35%"  stopColor="#a05a20"/>
+                <stop offset="100%" stopColor="#6b3010"/>
+              </linearGradient>
+              <filter id="fg-dropshadow">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity=".5"/>
+              </filter>
+              <filter id="fg-postshadow">
+                <feDropShadow dx="1" dy="0" stdDeviation="1.5" floodOpacity=".4"/>
+              </filter>
+            </defs>
+            {/* soil strip */}
+            <rect x="0" y="52" width="900" height="16" fill="#3d1800"/>
+            {/* top plank */}
+            <rect x="0" y="10" width="900" height="11" rx="2" fill="url(#fg-rail)" filter="url(#fg-dropshadow)"/>
+            {/* bottom plank */}
+            <rect x="0" y="32" width="900" height="9"  rx="2" fill="url(#fg-rail)" filter="url(#fg-dropshadow)"/>
+            {/* plank highlights */}
+            <rect x="0" y="10" width="900" height="2" rx="1" fill="rgba(255,200,120,.18)"/>
+            <rect x="0" y="32" width="900" height="1.5" rx="1" fill="rgba(255,200,120,.14)"/>
+            {/* wood grain on planks */}
+            {[60,140,210,290,370,450,530,610,690,770,840].map((x,i)=>(
+              <g key={i}>
+                <line x1={x} y1="10" x2={x+8} y2="21" stroke="rgba(0,0,0,.14)" strokeWidth="1.2"/>
+                <line x1={x+3} y1="10" x2={x+11} y2="21" stroke="rgba(255,255,255,.05)" strokeWidth=".8"/>
+              </g>
+            ))}
+            {/* posts */}
+            {[...Array(11)].map((_,i)=>{
+              const px = i*84+14;
+              return (
+                <g key={i} filter="url(#fg-postshadow)">
+                  <rect x={px} y="0" width="14" height="54" rx="3" fill="url(#fg-post)"/>
+                  <line x1={px+4}  y1="2" x2={px+4}  y2="52" stroke="rgba(255,255,255,.07)" strokeWidth="1"/>
+                  <line x1={px+9}  y1="2" x2={px+9}  y2="52" stroke="rgba(0,0,0,.1)"        strokeWidth="1"/>
+                  <ellipse cx={px+7} cy="3.5" rx="5.5" ry="2.5" fill="rgba(255,210,140,.28)"/>
+                  <rect x={px} y="0" width="14" height="6" rx="3" fill="rgba(220,140,60,.3)"/>
+                </g>
+              );
+            })}
+          </svg>
 
           {/* stats pills */}
-          <div style={{position:"absolute",top:6,left:0,right:0,display:"flex",justifyContent:"center",gap:10,zIndex:6}}>
+          <div style={{position:"absolute",top:8,left:0,right:0,display:"flex",justifyContent:"center",gap:10,zIndex:6}}>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:".67rem",fontWeight:700,
-              color:"#86efac",background:"rgba(0,0,0,.6)",padding:"4px 14px",borderRadius:50,
+              color:"#86efac",background:"rgba(0,0,0,.65)",padding:"4px 14px",borderRadius:50,
               backdropFilter:"blur(6px)",border:"1px solid rgba(134,239,172,.22)"}}>🌸 {bloomedCount} bloomed</span>
             <span style={{fontFamily:"'Inter',sans-serif",fontSize:".67rem",fontWeight:700,
-              color:"rgba(255,255,255,.5)",background:"rgba(0,0,0,.6)",padding:"4px 14px",borderRadius:50,
-              backdropFilter:"blur(6px)",border:"1px solid rgba(255,255,255,.12)"}}>🌱 {garden.length-bloomedCount} growing</span>
+              color:"rgba(255,255,255,.55)",background:"rgba(0,0,0,.65)",padding:"4px 14px",borderRadius:50,
+              backdropFilter:"blur(6px)",border:"1px solid rgba(255,255,255,.14)"}}>🌱 {garden.length-bloomedCount} growing</span>
           </div>
         </div>
       </motion.div>

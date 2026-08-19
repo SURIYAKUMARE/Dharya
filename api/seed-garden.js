@@ -64,14 +64,14 @@ module.exports = async (req, res) => {
     const client = await clientPromise;
     const col    = client.db("dharya").collection("appdata");
 
-    // Check if garden already has data
+    // Check if garden already has enough data (48+ flowers)
     if (!force) {
       const existing = await col.findOne({ _id: "fg_garden" });
-      if (existing && Array.isArray(existing.value) && existing.value.length > 0) {
+      if (existing && Array.isArray(existing.value) && existing.value.length >= 48) {
         return res.status(200).json({
           ok: true,
           seeded: false,
-          message: "Garden already has data — skipped. Use ?force=1 to overwrite.",
+          message: "Garden already fully seeded.",
           count: existing.value.length,
         });
       }

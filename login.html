@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome — Login</title>
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-primary:   #00ff88;
+      --green-secondary: #00c468;
+      --green-glow:      #00ff8855;
+      --green-soft:      #0a2e1e;
+      --pink-primary:    #ff6eb4;
+      --pink-secondary:  #e0407a;
+      --pink-glow:       #ff6eb455;
+      --pink-soft:       #2e0a1e;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ─── Sky / Background ─── */
+    body {
+      background: radial-gradient(ellipse at 50% 0%, #0d0a2e 0%, #050510 60%, #000000 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background 0.8s ease;
+    }
+
+    body.theme-green {
+      background: radial-gradient(ellipse at 50% 0%, #041a10 0%, #020d07 60%, #000000 100%);
+    }
+
+    body.theme-pink {
+      background: radial-gradient(ellipse at 50% 0%, #1a0410 0%, #0d0207 60%, #000000 100%);
+    }
+
+    /* ─── Static Stars ─── */
+    #star-field {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: twinkle var(--d, 3s) var(--delay, 0s) infinite alternate ease-in-out;
+    }
+
+    @keyframes twinkle {
+      from { opacity: var(--min-op, 0.2); transform: scale(1); }
+      to   { opacity: var(--max-op, 1);   transform: scale(1.4); }
+    }
+
+    /* ─── Shooting Stars ─── */
+    #shooting-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .shooting-star {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, #fff 100%);
+      border-radius: 999px;
+      transform-origin: left center;
+      animation: shoot var(--dur, 1.2s) var(--delay, 0s) linear forwards;
+      opacity: 0;
+    }
+
+    @keyframes shoot {
+      0%   { opacity: 0;   transform: translateX(0) rotate(var(--angle, -30deg)); }
+      5%   { opacity: 1; }
+      80%  { opacity: 0.8; }
+      100% { opacity: 0;   transform: translateX(var(--travel, 600px)) rotate(var(--angle, -30deg)); }
+    }
+
+    /* ─── Nebula Blobs ─── */
+    .nebula {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+      transition: background 0.8s ease;
+    }
+
+    /* ─── Card ─── */
+    .card-wrapper {
+      position: relative;
+      z-index: 10;
+      perspective: 1200px;
+    }
+
+    .card {
+      width: 420px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 48px 40px 40px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.06),
+        0 32px 80px rgba(0,0,0,0.6),
+        0 0 120px var(--card-glow, transparent);
+      transform-style: preserve-3d;
+      transition: box-shadow 0.6s ease, border-color 0.6s ease;
+      animation: floatCard 6s ease-in-out infinite;
+    }
+
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0px) rotateX(1deg); }
+      50%       { transform: translateY(-8px) rotateX(-1deg); }
+    }
+
+    body.theme-green .card {
+      --card-glow: rgba(0,255,136,0.15);
+      border-color: rgba(0,255,136,0.2);
+    }
+
+    body.theme-pink .card {
+      --card-glow: rgba(255,110,180,0.15);
+      border-color: rgba(255,110,180,0.2);
+    }
+
+    /* ─── Logo / Avatar ─── */
+    .avatar-ring {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      position: relative;
+      transition: background 0.6s, box-shadow 0.6s;
+      background: rgba(255,255,255,0.06);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.1), 0 0 30px transparent;
+    }
+
+    body.theme-green .avatar-ring {
+      background: rgba(0,255,136,0.1);
+      box-shadow: 0 0 0 2px var(--green-primary), 0 0 30px var(--green-glow);
+    }
+
+    body.theme-pink .avatar-ring {
+      background: rgba(255,110,180,0.1);
+      box-shadow: 0 0 0 2px var(--pink-primary), 0 0 30px var(--pink-glow);
+    }
+
+    .avatar-ring::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      animation: spinRing 3s linear infinite;
+      transition: color 0.6s;
+    }
+
+    body.theme-green .avatar-ring::before { color: var(--green-primary); }
+    body.theme-pink  .avatar-ring::before { color: var(--pink-primary); }
+
+    @keyframes spinRing {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Headings ─── */
+    .card-title {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+      margin-bottom: 6px;
+      text-shadow: 0 0 20px transparent;
+      transition: text-shadow 0.6s;
+    }
+
+    body.theme-green .card-title { text-shadow: 0 0 20px var(--green-primary); }
+    body.theme-pink  .card-title { text-shadow: 0 0 20px var(--pink-primary); }
+
+    .card-subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 32px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ─── User Selector ─── */
+    .user-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .user-btn {
+      flex: 1;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.5);
+      font-size: 0.88rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.35s ease;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-btn .btn-emoji { font-size: 1.3rem; }
+    .user-btn .btn-label { font-size: 0.75rem; opacity: 0.7; }
+
+    .user-btn:hover {
+      border-color: rgba(255,255,255,0.3);
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-2px);
+    }
+
+    .user-btn.active-green {
+      border-color: var(--green-primary);
+      background: rgba(0,255,136,0.1);
+      color: var(--green-primary);
+      box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(0,255,136,0.05);
+    }
+
+    .user-btn.active-pink {
+      border-color: var(--pink-primary);
+      background: rgba(255,110,180,0.1);
+      color: var(--pink-primary);
+      box-shadow: 0 0 20px var(--pink-glow), inset 0 0 20px rgba(255,110,180,0.05);
+    }
+
+    /* ─── Form Fields ─── */
+    .field {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+      transition: color 0.4s;
+    }
+
+    .field:focus-within label {
+      color: var(--accent, rgba(255,255,255,0.8));
+    }
+
+    body.theme-green .field:focus-within label { color: var(--green-primary); }
+    body.theme-pink  .field:focus-within label { color: var(--pink-primary); }
+
+    .field input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.35s ease;
+      letter-spacing: 0.02em;
+    }
+
+    .field input::placeholder { color: rgba(255,255,255,0.25); }
+
+    .field input:focus {
+      border-color: var(--accent-border, rgba(255,255,255,0.4));
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 3px var(--accent-shadow, rgba(255,255,255,0.05));
+    }
+
+    body.theme-green .field input:focus {
+      border-color: var(--green-primary);
+      box-shadow: 0 0 0 3px var(--green-glow);
+    }
+
+    body.theme-pink .field input:focus {
+      border-color: var(--pink-primary);
+      box-shadow: 0 0 0 3px var(--pink-glow);
+    }
+
+    /* password toggle */
+    .field .toggle-pw {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.35);
+      font-size: 1rem;
+      transition: color 0.3s;
+      padding: 0;
+      line-height: 1;
+    }
+    .field .toggle-pw:hover { color: rgba(255,255,255,0.7); }
+
+    /* ─── Login Button ─── */
+    .login-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.4s;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      color: #fff;
+    }
+
+    .login-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    body.theme-green .login-btn {
+      background: linear-gradient(135deg, var(--green-primary), var(--green-secondary));
+      color: #031a0e;
+      box-shadow: 0 0 30px var(--green-glow), 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    body.theme-pink .login-btn {
+      background: linear-gradient(135deg, var(--pink-primary), var(--pink-secondary));
+      color: #2e031a;
+      box-shadow: 0 0 30px var(--pink-glow), 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+    }
+
+    body.theme-green .login-btn:hover { box-shadow: 0 0 50px var(--green-glow), 0 8px 30px rgba(0,0,0,0.5); }
+    body.theme-pink  .login-btn:hover { box-shadow: 0 0 50px var(--pink-glow),  0 8px 30px rgba(0,0,0,0.5); }
+
+    .login-btn:active { transform: translateY(0) scale(0.99); }
+
+    /* ripple */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: scale(0);
+      animation: rippleAnim 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes rippleAnim {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* ─── Error / Success Messages ─── */
+    .msg {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 16px;
+      text-align: center;
+      display: none;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.error {
+      background: rgba(255, 60, 80, 0.15);
+      border: 1px solid rgba(255, 60, 80, 0.4);
+      color: #ff6b7a;
+    }
+
+    .msg.success-green {
+      background: rgba(0,255,136,0.1);
+      border: 1px solid rgba(0,255,136,0.4);
+      color: var(--green-primary);
+    }
+
+    .msg.success-pink {
+      background: rgba(255,110,180,0.1);
+      border: 1px solid rgba(255,110,180,0.4);
+      color: var(--pink-primary);
+    }
+
+    /* ─── Welcome Overlay ─── */
+    #welcome-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+      backdrop-filter: blur(0px);
+    }
+
+    #welcome-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+      backdrop-filter: blur(8px);
+    }
+
+    .welcome-text {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-align: center;
+      text-shadow: 0 0 40px currentColor;
+      animation: pulseText 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseText {
+      from { opacity: 0.8; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.04); }
+    }
+
+    .welcome-text.green { color: var(--green-primary); }
+    .welcome-text.pink  { color: var(--pink-primary); }
+
+    .welcome-sub {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Particles (confetti on login) ─── */
+    .particle {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 50;
+      animation: particleFall var(--pd, 2s) ease-out forwards;
+    }
+
+    @keyframes particleFall {
+      0%   { transform: translateY(0) rotate(0deg)    scale(1);   opacity: 1; }
+      100% { transform: translateY(120vh) rotate(720deg) scale(0); opacity: 0; }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 480px) {
+      .card { width: 92vw; padding: 36px 24px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nebula blobs -->
+  <div class="nebula" id="neb1" style="width:500px;height:500px;top:-100px;left:-150px;background:#3b1a6b;"></div>
+  <div class="nebula" id="neb2" style="width:400px;height:400px;bottom:-80px;right:-100px;background:#1a1a4a;"></div>
+
+  <!-- Static star field -->
+  <div id="star-field"></div>
+
+  <!-- Shooting stars -->
+  <div id="shooting-container"></div>
+
+  <!-- Welcome overlay -->
+  <div id="welcome-overlay">
+    <div class="welcome-text" id="welcome-text"></div>
+    <div class="welcome-sub">Welcome Back ✦</div>
+  </div>
+
+  <!-- Login Card -->
+  <div class="card-wrapper">
+    <div class="card" id="card">
+
+      <div class="avatar-ring" id="avatar">🌟</div>
+      <h1 class="card-title" id="card-title">Hello There</h1>
+      <p class="card-subtitle">Choose your identity</p>
+
+      <!-- User Selector -->
+      <div class="user-selector">
+        <button class="user-btn" id="btn-dharya" onclick="selectUser('dharya')">
+          <span class="btn-emoji">🌿</span>
+          <span>DHARYA</span>
+          <span class="btn-label">Green</span>
+        </button>
+        <button class="user-btn" id="btn-sadhana" onclick="selectUser('sadhana')">
+          <span class="btn-emoji">🌸</span>
+          <span>SADHANA</span>
+          <span class="btn-label">Pink</span>
+        </button>
+      </div>
+
+      <!-- Username -->
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter your name" autocomplete="off" />
+      </div>
+
+      <!-- Password -->
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="DD/MM/YYYY" autocomplete="off" />
+        <button class="toggle-pw" onclick="togglePassword()" title="Show/Hide">👁</button>
+      </div>
+
+      <button class="login-btn" id="login-btn" onclick="handleLogin()">
+        Sign In
+      </button>
+
+      <div class="msg" id="msg-box"></div>
+    </div>
+  </div>
+
+<script>
+  /* ══════════════════════════════════════════════
+     USERS
+  ══════════════════════════════════════════════ */
+  const USERS = {
+    dharya:  { username: 'DHARYA', password: '09/10/2007', theme: 'green', emoji: '🌿', greeting: 'Welcome, Dharya!' },
+    sadhana: { username: 'DHARYA', password: '29/02/2008', theme: 'pink',  emoji: '🌸', greeting: 'Welcome, Sadhana!' },
+  };
+
+  let activeUser = null;
+
+  /* ══════════════════════════════════════════════
+     STATIC STAR FIELD
+  ══════════════════════════════════════════════ */
+  const starField = document.getElementById('star-field');
+  for (let i = 0; i < 220; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      top:${Math.random()*100}%;
+      left:${Math.random()*100}%;
+      --d:${(Math.random()*3+2).toFixed(1)}s;
+      --delay:${(Math.random()*4).toFixed(1)}s;
+      --min-op:${(Math.random()*0.2+0.05).toFixed(2)};
+      --max-op:${(Math.random()*0.6+0.3).toFixed(2)};
+    `;
+    starField.appendChild(s);
+  }
+
+  /* ══════════════════════════════════════════════
+     SHOOTING STARS
+  ══════════════════════════════════════════════ */
+  const shootingContainer = document.getElementById('shooting-container');
+
+  function createShootingStar() {
+    const el = document.createElement('div');
+    el.className = 'shooting-star';
+
+    const angle = -(Math.random() * 30 + 10);         // -10° to -40°
+    const length = Math.random() * 250 + 100;          // tail length
+    const travel = Math.random() * 500 + 400;
+    const dur    = (Math.random() * 0.8 + 0.7).toFixed(2);
+    const delay  = (Math.random() * 3).toFixed(2);
+    const top    = Math.random() * 70;
+    const left   = Math.random() * 80;
+
+    // colour tint based on active theme
+    let colour = '#ffffff';
+    if (activeUser === 'dharya')  colour = '#80ffcc';
+    if (activeUser === 'sadhana') colour = '#ffb3d9';
+
+    el.style.cssText = `
+      width:${length}px;
+      top:${top}%;
+      left:${left}%;
+      --angle:${angle}deg;
+      --travel:${travel}px;
+      --dur:${dur}s;
+      --delay:${delay}s;
+      background: linear-gradient(90deg, transparent 0%, ${colour}88 40%, ${colour} 100%);
+      box-shadow: 0 0 6px 1px ${colour}66;
+    `;
+
+    shootingContainer.appendChild(el);
+
+    const totalTime = (parseFloat(dur) + parseFloat(delay)) * 1000 + 200;
+    setTimeout(() => el.remove(), totalTime);
+  }
+
+  // Spawn shooting stars continuously
+  function spawnLoop() {
+    createShootingStar();
+    const next = Math.random() * 900 + 300;
+    setTimeout(spawnLoop, next);
+  }
+  spawnLoop();
+
+  /* ══════════════════════════════════════════════
+     USER SELECTION
+  ══════════════════════════════════════════════ */
+  function selectUser(key) {
+    activeUser = key;
+    const u = USERS[key];
+    const body = document.body;
+
+    body.classList.remove('theme-green', 'theme-pink');
+    body.classList.add('theme-' + u.theme);
+
+    // update nebula colours
+    if (u.theme === 'green') {
+      document.getElementById('neb1').style.background = '#0d3b20';
+      document.getElementById('neb2').style.background = '#0a2e18';
+    } else {
+      document.getElementById('neb1').style.background = '#3b0d20';
+      document.getElementById('neb2').style.background = '#2e0a18';
+    }
+
+    // avatar emoji
+    document.getElementById('avatar').textContent = u.emoji;
+
+    // title
+    document.getElementById('card-title').textContent =
+      key === 'dharya' ? 'Hey, Dharya 💚' : 'Hey, Sadhana 💗';
+
+    // active button styling
+    document.getElementById('btn-dharya').className  = 'user-btn' + (key === 'dharya'  ? ' active-green' : '');
+    document.getElementById('btn-sadhana').className = 'user-btn' + (key === 'sadhana' ? ' active-pink'  : '');
+
+    // prefill username
+    document.getElementById('username').value = u.username;
+
+    clearMsg();
+  }
+
+  /* ══════════════════════════════════════════════
+     PASSWORD TOGGLE
+  ══════════════════════════════════════════════ */
+  let pwVisible = false;
+  function togglePassword() {
+    const inp = document.getElementById('password');
+    pwVisible = !pwVisible;
+    inp.type = pwVisible ? 'text' : 'password';
+  }
+
+  /* ══════════════════════════════════════════════
+     LOGIN LOGIC
+  ══════════════════════════════════════════════ */
+  function handleLogin() {
+    const btn = document.getElementById('login-btn');
+    const username = document.getElementById('username').value.trim().toUpperCase();
+    const password = document.getElementById('password').value.trim();
+
+    if (!activeUser) {
+      showMsg('Please select a user first ✦', 'error');
+      shakeCard();
+      return;
+    }
+
+    const u = USERS[activeUser];
+
+    if (username !== u.username.toUpperCase()) {
+      showMsg('Username does not match ✦', 'error');
+      shakeCard();
+      return;
+    }
+
+    if (password !== u.password) {
+      showMsg('Incorrect password ✦', 'error');
+      shakeCard();
+      return;
+    }
+
+    // ── Success ──
+    btn.textContent = 'Signing in…';
+    btn.style.pointerEvents = 'none';
+    rippleEffect(btn);
+
+    showMsg(u.greeting, 'success-' + u.theme);
+
+    // burst particles
+    burstParticles(u.theme === 'green' ? '#00ff88' : '#ff6eb4');
+
+    // fire a bunch of shooting stars
+    for (let i = 0; i < 12; i++) {
+      setTimeout(createShootingStar, i * 80);
+    }
+
+    setTimeout(() => {
+      showWelcome(u.greeting, u.theme);
+    }, 1000);
+  }
+
+  /* ══════════════════════════════════════════════
+     HELPERS
+  ══════════════════════════════════════════════ */
+  function showMsg(text, type) {
+    const box = document.getElementById('msg-box');
+    box.textContent = text;
+    box.className = 'msg ' + type;
+    box.style.display = 'block';
+  }
+
+  function clearMsg() {
+    const box = document.getElementById('msg-box');
+    box.style.display = 'none';
+  }
+
+  function shakeCard() {
+    const card = document.getElementById('card');
+    card.style.animation = 'none';
+    card.style.transform = 'translateX(-10px)';
+    setTimeout(() => card.style.transform = 'translateX(10px)',  80);
+    setTimeout(() => card.style.transform = 'translateX(-6px)',  160);
+    setTimeout(() => card.style.transform = 'translateX(6px)',   240);
+    setTimeout(() => card.style.transform = 'translateX(0)',     320);
+    setTimeout(() => card.style.animation = 'floatCard 6s ease-in-out infinite', 400);
+  }
+
+  function rippleEffect(btn) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    r.style.cssText = 'width:200px;height:200px;top:calc(50% - 100px);left:calc(50% - 100px);';
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 700);
+  }
+
+  function burstParticles(colour) {
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `
+        left:${30 + Math.random()*40}%;
+        top:${Math.random()*40}%;
+        background:${colour};
+        box-shadow: 0 0 6px ${colour};
+        --pd:${(Math.random()*1.5+1).toFixed(2)}s;
+        transform: rotate(${Math.random()*360}deg);
+        border-radius:${Math.random()>0.5?'50%':'2px'};
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 3000);
+    }
+  }
+
+  function showWelcome(text, theme) {
+    const overlay = document.getElementById('welcome-overlay');
+    const wt = document.getElementById('welcome-text');
+    wt.textContent = text;
+    wt.className = 'welcome-text ' + theme;
+    overlay.style.background = theme === 'green'
+      ? 'rgba(0,20,10,0.6)'
+      : 'rgba(20,0,10,0.6)';
+    overlay.classList.add('show');
+
+    // More shooting stars on welcome screen
+    for (let i = 0; i < 20; i++) {
+      setTimeout(createShootingStar, i * 150);
+    }
+  }
+
+  /* Allow Enter key */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  /* Click welcome overlay to dismiss */
+  document.getElementById('welcome-overlay').addEventListener('click', () => {
+    document.getElementById('welcome-overlay').classList.remove('show');
+    const btn = document.getElementById('login-btn');
+    btn.textContent = 'Sign In';
+    btn.style.pointerEvents = '';
+    document.getElementById('password').value = '';
+    clearMsg();
+  });
+</script>
+</body>
+</html>

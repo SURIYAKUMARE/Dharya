@@ -5,18 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome — Login</title>
   <style>
-    /* ─── Reset & Base ─── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --green-primary:   #00ff88;
       --green-secondary: #00c468;
       --green-glow:      #00ff8855;
-      --green-soft:      #0a2e1e;
       --pink-primary:    #ff6eb4;
       --pink-secondary:  #e0407a;
       --pink-glow:       #ff6eb455;
-      --pink-soft:       #2e0a1e;
     }
 
     html, body {
@@ -25,25 +22,34 @@
       overflow: hidden;
     }
 
-    /* ─── Sky / Background ─── */
     body {
-      background: radial-gradient(ellipse at 50% 0%, #0d0a2e 0%, #050510 60%, #000000 100%);
+      background: radial-gradient(ellipse at 50% 0%, #0d0a2e 0%, #050510 60%, #000 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
-      transition: background 0.8s ease;
+      transition: background 0.9s ease;
     }
 
     body.theme-green {
-      background: radial-gradient(ellipse at 50% 0%, #041a10 0%, #020d07 60%, #000000 100%);
+      background: radial-gradient(ellipse at 50% 0%, #041a10 0%, #020d07 60%, #000 100%);
     }
-
     body.theme-pink {
-      background: radial-gradient(ellipse at 50% 0%, #1a0410 0%, #0d0207 60%, #000000 100%);
+      background: radial-gradient(ellipse at 50% 0%, #1a0410 0%, #0d0207 60%, #000 100%);
     }
 
-    /* ─── Static Stars ─── */
+    /* ── Nebula ── */
+    .nebula {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.13;
+      pointer-events: none;
+      z-index: 0;
+      transition: background 0.9s ease, opacity 0.9s ease;
+    }
+
+    /* ── Static Stars ── */
     #star-field {
       position: fixed;
       inset: 0;
@@ -51,20 +57,18 @@
       z-index: 0;
       overflow: hidden;
     }
-
     .star {
       position: absolute;
       border-radius: 50%;
       background: #fff;
-      animation: twinkle var(--d, 3s) var(--delay, 0s) infinite alternate ease-in-out;
+      animation: twinkle var(--d,3s) var(--delay,0s) infinite alternate ease-in-out;
     }
-
     @keyframes twinkle {
-      from { opacity: var(--min-op, 0.2); transform: scale(1); }
-      to   { opacity: var(--max-op, 1);   transform: scale(1.4); }
+      from { opacity: var(--min-op,.2); transform: scale(1); }
+      to   { opacity: var(--max-op,1); transform: scale(1.5); }
     }
 
-    /* ─── Shooting Stars ─── */
+    /* ── Shooting Stars ── */
     #shooting-container {
       position: fixed;
       inset: 0;
@@ -72,362 +76,306 @@
       z-index: 1;
       overflow: hidden;
     }
-
     .shooting-star {
       position: absolute;
       height: 2px;
-      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, #fff 100%);
       border-radius: 999px;
       transform-origin: left center;
-      animation: shoot var(--dur, 1.2s) var(--delay, 0s) linear forwards;
+      animation: shoot var(--dur,1.2s) var(--delay,0s) linear forwards;
       opacity: 0;
     }
-
     @keyframes shoot {
-      0%   { opacity: 0;   transform: translateX(0) rotate(var(--angle, -30deg)); }
+      0%   { opacity: 0;   transform: translateX(0) rotate(var(--angle,-30deg)); }
       5%   { opacity: 1; }
       80%  { opacity: 0.8; }
-      100% { opacity: 0;   transform: translateX(var(--travel, 600px)) rotate(var(--angle, -30deg)); }
+      100% { opacity: 0;   transform: translateX(var(--travel,600px)) rotate(var(--angle,-30deg)); }
     }
 
-    /* ─── Nebula Blobs ─── */
-    .nebula {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.12;
-      pointer-events: none;
-      z-index: 0;
-      transition: background 0.8s ease;
-    }
-
-    /* ─── Card ─── */
+    /* ── Card ── */
     .card-wrapper {
       position: relative;
       z-index: 10;
       perspective: 1200px;
     }
-
     .card {
-      width: 420px;
-      background: rgba(255, 255, 255, 0.04);
+      width: 400px;
+      background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 48px 40px 40px;
+      border-radius: 26px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      padding: 50px 40px 42px;
       box-shadow:
-        0 0 0 1px rgba(255,255,255,0.06),
-        0 32px 80px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(255,255,255,0.05),
+        0 32px 80px rgba(0,0,0,0.65),
         0 0 120px var(--card-glow, transparent);
-      transform-style: preserve-3d;
-      transition: box-shadow 0.6s ease, border-color 0.6s ease;
+      transition: box-shadow 0.7s, border-color 0.7s;
       animation: floatCard 6s ease-in-out infinite;
     }
-
     @keyframes floatCard {
-      0%, 100% { transform: translateY(0px) rotateX(1deg); }
-      50%       { transform: translateY(-8px) rotateX(-1deg); }
+      0%,100% { transform: translateY(0) rotateX(1deg); }
+      50%     { transform: translateY(-9px) rotateX(-1deg); }
     }
+    body.theme-green .card { --card-glow: rgba(0,255,136,0.18); border-color: rgba(0,255,136,0.22); }
+    body.theme-pink  .card { --card-glow: rgba(255,110,180,0.18); border-color: rgba(255,110,180,0.22); }
 
-    body.theme-green .card {
-      --card-glow: rgba(0,255,136,0.15);
-      border-color: rgba(0,255,136,0.2);
-    }
-
-    body.theme-pink .card {
-      --card-glow: rgba(255,110,180,0.15);
-      border-color: rgba(255,110,180,0.2);
-    }
-
-    /* ─── Logo / Avatar ─── */
+    /* ── Avatar ── */
     .avatar-ring {
-      width: 80px;
-      height: 80px;
+      width: 84px;
+      height: 84px;
       border-radius: 50%;
-      margin: 0 auto 24px;
+      margin: 0 auto 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
+      font-size: 2.2rem;
       position: relative;
-      transition: background 0.6s, box-shadow 0.6s;
       background: rgba(255,255,255,0.06);
       box-shadow: 0 0 0 2px rgba(255,255,255,0.1), 0 0 30px transparent;
+      transition: background 0.7s, box-shadow 0.7s;
     }
-
     body.theme-green .avatar-ring {
       background: rgba(0,255,136,0.1);
-      box-shadow: 0 0 0 2px var(--green-primary), 0 0 30px var(--green-glow);
+      box-shadow: 0 0 0 2px var(--green-primary), 0 0 34px var(--green-glow);
     }
-
     body.theme-pink .avatar-ring {
       background: rgba(255,110,180,0.1);
-      box-shadow: 0 0 0 2px var(--pink-primary), 0 0 30px var(--pink-glow);
+      box-shadow: 0 0 0 2px var(--pink-primary), 0 0 34px var(--pink-glow);
     }
-
     .avatar-ring::before {
       content: '';
       position: absolute;
-      inset: -4px;
+      inset: -5px;
       border-radius: 50%;
       border: 2px solid transparent;
       border-top-color: currentColor;
       animation: spinRing 3s linear infinite;
-      transition: color 0.6s;
+      transition: color 0.7s;
     }
-
     body.theme-green .avatar-ring::before { color: var(--green-primary); }
     body.theme-pink  .avatar-ring::before { color: var(--pink-primary); }
+    @keyframes spinRing { to { transform: rotate(360deg); } }
 
-    @keyframes spinRing {
-      to { transform: rotate(360deg); }
-    }
-
-    /* ─── Headings ─── */
+    /* ── Headings ── */
     .card-title {
       text-align: center;
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
+      font-size: 1.65rem;
+      font-weight: 800;
       color: #fff;
-      margin-bottom: 6px;
-      text-shadow: 0 0 20px transparent;
-      transition: text-shadow 0.6s;
+      margin-bottom: 5px;
+      letter-spacing: 0.03em;
+      transition: text-shadow 0.7s;
     }
-
-    body.theme-green .card-title { text-shadow: 0 0 20px var(--green-primary); }
-    body.theme-pink  .card-title { text-shadow: 0 0 20px var(--pink-primary); }
+    body.theme-green .card-title { text-shadow: 0 0 22px var(--green-primary); }
+    body.theme-pink  .card-title { text-shadow: 0 0 22px var(--pink-primary); }
 
     .card-subtitle {
       text-align: center;
-      font-size: 0.82rem;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 32px;
-      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 36px;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
+      transition: color 0.7s;
     }
+    body.theme-green .card-subtitle { color: rgba(0,255,136,0.45); }
+    body.theme-pink  .card-subtitle { color: rgba(255,110,180,0.45); }
 
-    /* ─── User Selector ─── */
-    .user-selector {
+    /* ── Hint badges (show which user is detected) ── */
+    .hint-badges {
       display: flex;
+      justify-content: center;
       gap: 10px;
       margin-bottom: 28px;
+      min-height: 32px;
     }
-
-    .user-btn {
-      flex: 1;
-      padding: 12px 10px;
-      border-radius: 14px;
-      border: 1.5px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.5);
-      font-size: 0.88rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: all 0.35s ease;
-      text-transform: uppercase;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .user-btn .btn-emoji { font-size: 1.3rem; }
-    .user-btn .btn-label { font-size: 0.75rem; opacity: 0.7; }
-
-    .user-btn:hover {
-      border-color: rgba(255,255,255,0.3);
-      color: #fff;
-      background: rgba(255,255,255,0.08);
-      transform: translateY(-2px);
-    }
-
-    .user-btn.active-green {
-      border-color: var(--green-primary);
-      background: rgba(0,255,136,0.1);
-      color: var(--green-primary);
-      box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(0,255,136,0.05);
-    }
-
-    .user-btn.active-pink {
-      border-color: var(--pink-primary);
-      background: rgba(255,110,180,0.1);
-      color: var(--pink-primary);
-      box-shadow: 0 0 20px var(--pink-glow), inset 0 0 20px rgba(255,110,180,0.05);
-    }
-
-    /* ─── Form Fields ─── */
-    .field {
-      position: relative;
-      margin-bottom: 20px;
-    }
-
-    .field label {
-      display: block;
+    .hint-badge {
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 8px;
-      transition: color 0.4s;
+      padding: 5px 14px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.03);
+      transition: all 0.5s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hint-badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.4;
+      transition: opacity 0.4s;
+    }
+    .hint-badge.active-green {
+      border-color: var(--green-primary);
+      color: var(--green-primary);
+      background: rgba(0,255,136,0.08);
+      box-shadow: 0 0 14px var(--green-glow);
+    }
+    .hint-badge.active-green .dot { opacity: 1; animation: pulseDot 1s ease-in-out infinite alternate; }
+    .hint-badge.active-pink {
+      border-color: var(--pink-primary);
+      color: var(--pink-primary);
+      background: rgba(255,110,180,0.08);
+      box-shadow: 0 0 14px var(--pink-glow);
+    }
+    .hint-badge.active-pink .dot { opacity: 1; animation: pulseDot 1s ease-in-out infinite alternate; }
+    @keyframes pulseDot {
+      from { transform: scale(1); }
+      to   { transform: scale(1.5); }
     }
 
-    .field:focus-within label {
-      color: var(--accent, rgba(255,255,255,0.8));
+    /* ── Field ── */
+    .field {
+      position: relative;
+      margin-bottom: 22px;
     }
-
+    .field label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 9px;
+      transition: color 0.5s;
+    }
+    .field:focus-within label { color: rgba(255,255,255,0.75); }
     body.theme-green .field:focus-within label { color: var(--green-primary); }
     body.theme-pink  .field:focus-within label { color: var(--pink-primary); }
 
     .field input {
       width: 100%;
-      padding: 14px 18px;
-      border-radius: 12px;
+      padding: 15px 48px 15px 18px;
+      border-radius: 13px;
       border: 1.5px solid rgba(255,255,255,0.1);
       background: rgba(255,255,255,0.05);
       color: #fff;
-      font-size: 0.95rem;
+      font-size: 1rem;
       outline: none;
-      transition: all 0.35s ease;
-      letter-spacing: 0.02em;
+      transition: all 0.4s ease;
+      letter-spacing: 0.04em;
     }
-
-    .field input::placeholder { color: rgba(255,255,255,0.25); }
-
+    .field input::placeholder { color: rgba(255,255,255,0.22); }
     .field input:focus {
-      border-color: var(--accent-border, rgba(255,255,255,0.4));
       background: rgba(255,255,255,0.08);
-      box-shadow: 0 0 0 3px var(--accent-shadow, rgba(255,255,255,0.05));
+      border-color: rgba(255,255,255,0.35);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
     }
-
     body.theme-green .field input:focus {
       border-color: var(--green-primary);
       box-shadow: 0 0 0 3px var(--green-glow);
     }
-
     body.theme-pink .field input:focus {
       border-color: var(--pink-primary);
       box-shadow: 0 0 0 3px var(--pink-glow);
     }
 
-    /* password toggle */
-    .field .toggle-pw {
+    /* strength bar under password */
+    .pw-bar-wrap {
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .pw-bar {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.35s ease, background 0.5s ease;
+    }
+    body.theme-green .pw-bar { background: var(--green-primary); }
+    body.theme-pink  .pw-bar { background: var(--pink-primary); }
+
+    .toggle-pw {
       position: absolute;
       right: 14px;
-      bottom: 14px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
       cursor: pointer;
-      color: rgba(255,255,255,0.35);
-      font-size: 1rem;
-      transition: color 0.3s;
+      color: rgba(255,255,255,0.3);
+      font-size: 1.05rem;
       padding: 0;
       line-height: 1;
+      transition: color 0.3s;
     }
-    .field .toggle-pw:hover { color: rgba(255,255,255,0.7); }
+    .toggle-pw:hover { color: rgba(255,255,255,0.7); }
 
-    /* ─── Login Button ─── */
+    /* ── Login Button ── */
     .login-btn {
       width: 100%;
       padding: 15px;
       border: none;
       border-radius: 14px;
       font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-weight: 800;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       cursor: pointer;
-      margin-top: 8px;
+      margin-top: 4px;
       position: relative;
       overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.4s;
-      background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-      color: #fff;
+      transition: transform 0.2s, box-shadow 0.4s, background 0.7s;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.5);
+      border: 1.5px solid rgba(255,255,255,0.12);
     }
-
-    .login-btn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-
     body.theme-green .login-btn {
       background: linear-gradient(135deg, var(--green-primary), var(--green-secondary));
       color: #031a0e;
+      border-color: transparent;
       box-shadow: 0 0 30px var(--green-glow), 0 4px 20px rgba(0,0,0,0.4);
     }
-
     body.theme-pink .login-btn {
       background: linear-gradient(135deg, var(--pink-primary), var(--pink-secondary));
       color: #2e031a;
+      border-color: transparent;
       box-shadow: 0 0 30px var(--pink-glow), 0 4px 20px rgba(0,0,0,0.4);
     }
+    .login-btn:hover { transform: translateY(-2px) scale(1.01); }
+    body.theme-green .login-btn:hover { box-shadow: 0 0 55px var(--green-glow), 0 8px 30px rgba(0,0,0,0.5); }
+    body.theme-pink  .login-btn:hover { box-shadow: 0 0 55px var(--pink-glow),  0 8px 30px rgba(0,0,0,0.5); }
+    .login-btn:active { transform: scale(0.99); }
 
-    .login-btn:hover {
-      transform: translateY(-2px) scale(1.01);
-    }
-
-    body.theme-green .login-btn:hover { box-shadow: 0 0 50px var(--green-glow), 0 8px 30px rgba(0,0,0,0.5); }
-    body.theme-pink  .login-btn:hover { box-shadow: 0 0 50px var(--pink-glow),  0 8px 30px rgba(0,0,0,0.5); }
-
-    .login-btn:active { transform: translateY(0) scale(0.99); }
-
-    /* ripple */
     .ripple {
       position: absolute;
       border-radius: 50%;
-      background: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.28);
       transform: scale(0);
       animation: rippleAnim 0.6s linear;
       pointer-events: none;
     }
+    @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
 
-    @keyframes rippleAnim {
-      to { transform: scale(4); opacity: 0; }
-    }
-
-    /* ─── Error / Success Messages ─── */
+    /* ── Messages ── */
     .msg {
       font-size: 0.82rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.06em;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-top: 16px;
+      border-radius: 11px;
+      padding: 11px 14px;
+      margin-top: 18px;
       text-align: center;
       display: none;
-      animation: fadeUp 0.4s ease;
+      animation: fadeUp 0.35s ease;
     }
-
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    .msg.error        { background: rgba(255,60,80,0.14); border: 1px solid rgba(255,60,80,0.4); color: #ff6b7a; }
+    .msg.success-green{ background: rgba(0,255,136,0.09); border: 1px solid rgba(0,255,136,0.4); color: var(--green-primary); }
+    .msg.success-pink { background: rgba(255,110,180,0.09); border: 1px solid rgba(255,110,180,0.4); color: var(--pink-primary); }
 
-    .msg.error {
-      background: rgba(255, 60, 80, 0.15);
-      border: 1px solid rgba(255, 60, 80, 0.4);
-      color: #ff6b7a;
-    }
-
-    .msg.success-green {
-      background: rgba(0,255,136,0.1);
-      border: 1px solid rgba(0,255,136,0.4);
-      color: var(--green-primary);
-    }
-
-    .msg.success-pink {
-      background: rgba(255,110,180,0.1);
-      border: 1px solid rgba(255,110,180,0.4);
-      color: var(--pink-primary);
-    }
-
-    /* ─── Welcome Overlay ─── */
+    /* ── Welcome Overlay ── */
     #welcome-overlay {
       position: fixed;
       inset: 0;
@@ -436,116 +384,110 @@
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.6s ease;
-      backdrop-filter: blur(0px);
+      transition: opacity 0.6s ease, backdrop-filter 0.6s ease;
     }
-
     #welcome-overlay.show {
       opacity: 1;
       pointer-events: all;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
-
     .welcome-text {
-      font-size: clamp(2rem, 6vw, 4rem);
-      font-weight: 800;
-      letter-spacing: 0.05em;
+      font-size: clamp(2rem, 7vw, 4.2rem);
+      font-weight: 900;
+      letter-spacing: 0.04em;
       text-align: center;
-      text-shadow: 0 0 40px currentColor;
+      text-shadow: 0 0 50px currentColor;
       animation: pulseText 2s ease-in-out infinite alternate;
     }
-
     @keyframes pulseText {
       from { opacity: 0.8; transform: scale(1); }
-      to   { opacity: 1;   transform: scale(1.04); }
+      to   { opacity: 1;   transform: scale(1.05); }
     }
-
     .welcome-text.green { color: var(--green-primary); }
     .welcome-text.pink  { color: var(--pink-primary); }
-
     .welcome-sub {
-      font-size: 1rem;
-      color: rgba(255,255,255,0.5);
-      letter-spacing: 0.2em;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.22em;
       text-transform: uppercase;
     }
+    .welcome-tap {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 10px;
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:0.6} }
 
-    /* ─── Particles (confetti on login) ─── */
+    /* ── Particles ── */
     .particle {
       position: fixed;
-      width: 8px;
-      height: 8px;
-      border-radius: 2px;
       pointer-events: none;
       z-index: 50;
-      animation: particleFall var(--pd, 2s) ease-out forwards;
+      animation: particleFall var(--pd,2s) ease-out forwards;
     }
-
     @keyframes particleFall {
-      0%   { transform: translateY(0) rotate(0deg)    scale(1);   opacity: 1; }
-      100% { transform: translateY(120vh) rotate(720deg) scale(0); opacity: 0; }
+      0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translate(var(--px,0px), 120vh) rotate(720deg) scale(0); opacity: 0; }
     }
 
-    /* ─── Responsive ─── */
-    @media (max-width: 480px) {
-      .card { width: 92vw; padding: 36px 24px 32px; }
+    @media (max-width: 460px) {
+      .card { width: 93vw; padding: 38px 22px 32px; }
     }
   </style>
 </head>
 <body>
 
   <!-- Nebula blobs -->
-  <div class="nebula" id="neb1" style="width:500px;height:500px;top:-100px;left:-150px;background:#3b1a6b;"></div>
-  <div class="nebula" id="neb2" style="width:400px;height:400px;bottom:-80px;right:-100px;background:#1a1a4a;"></div>
+  <div class="nebula" id="neb1" style="width:520px;height:520px;top:-120px;left:-160px;background:#3b1a6b;"></div>
+  <div class="nebula" id="neb2" style="width:420px;height:420px;bottom:-90px;right:-110px;background:#1a1a4a;"></div>
 
-  <!-- Static star field -->
   <div id="star-field"></div>
-
-  <!-- Shooting stars -->
   <div id="shooting-container"></div>
 
   <!-- Welcome overlay -->
   <div id="welcome-overlay">
     <div class="welcome-text" id="welcome-text"></div>
-    <div class="welcome-sub">Welcome Back ✦</div>
+    <div class="welcome-sub" id="welcome-sub">Welcome Back ✦</div>
+    <div class="welcome-tap">tap anywhere to continue</div>
   </div>
 
-  <!-- Login Card -->
+  <!-- Card -->
   <div class="card-wrapper">
     <div class="card" id="card">
 
       <div class="avatar-ring" id="avatar">🌟</div>
-      <h1 class="card-title" id="card-title">Hello There</h1>
-      <p class="card-subtitle">Choose your identity</p>
+      <h1 class="card-title" id="card-title">Who's there?</h1>
+      <p class="card-subtitle" id="card-subtitle">Enter your password</p>
 
-      <!-- User Selector -->
-      <div class="user-selector">
-        <button class="user-btn" id="btn-dharya" onclick="selectUser('dharya')">
-          <span class="btn-emoji">🌿</span>
-          <span>DHARYA</span>
-          <span class="btn-label">Green</span>
-        </button>
-        <button class="user-btn" id="btn-sadhana" onclick="selectUser('sadhana')">
-          <span class="btn-emoji">🌸</span>
-          <span>SADHANA</span>
-          <span class="btn-label">Pink</span>
-        </button>
+      <!-- Live detection badges -->
+      <div class="hint-badges">
+        <div class="hint-badge" id="badge-dharya">
+          <span class="dot"></span> 🌿 Dharya
+        </div>
+        <div class="hint-badge" id="badge-sadhana">
+          <span class="dot"></span> 🌸 Sadhana
+        </div>
       </div>
 
-      <!-- Username -->
-      <div class="field">
-        <label for="username">Username</label>
-        <input type="text" id="username" placeholder="Enter your name" autocomplete="off" />
-      </div>
-
-      <!-- Password -->
+      <!-- Password only -->
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="DD/MM/YYYY" autocomplete="off" />
-        <button class="toggle-pw" onclick="togglePassword()" title="Show/Hide">👁</button>
+        <input
+          type="password"
+          id="password"
+          placeholder="DD/MM/YYYY"
+          autocomplete="off"
+          oninput="onPasswordInput(this.value)"
+        />
+        <button class="toggle-pw" onclick="togglePassword()" title="Show / Hide">👁</button>
+        <div class="pw-bar-wrap"><div class="pw-bar" id="pw-bar"></div></div>
       </div>
 
       <button class="login-btn" id="login-btn" onclick="handleLogin()">
@@ -557,124 +499,144 @@
   </div>
 
 <script>
-  /* ══════════════════════════════════════════════
-     USERS
-  ══════════════════════════════════════════════ */
+  /* ── Users ── */
   const USERS = {
-    dharya:  { username: 'DHARYA', password: '09/10/2007', theme: 'green', emoji: '🌿', greeting: 'Welcome, Dharya!' },
-    sadhana: { username: 'DHARYA', password: '29/02/2008', theme: 'pink',  emoji: '🌸', greeting: 'Welcome, Sadhana!' },
+    dharya:  { password: '09/10/2007', theme: 'green', emoji: '🌿', name: 'Dharya',  greeting: 'Welcome, Dharya! 💚' },
+    sadhana: { password: '29/02/2008', theme: 'pink',  emoji: '🌸', name: 'Sadhana', greeting: 'Welcome, Sadhana! 🌸' },
   };
 
   let activeUser = null;
 
-  /* ══════════════════════════════════════════════
-     STATIC STAR FIELD
-  ══════════════════════════════════════════════ */
+  /* ── Star Field ── */
   const starField = document.getElementById('star-field');
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < 230; i++) {
     const s = document.createElement('div');
     s.className = 'star';
-    const size = Math.random() * 2.5 + 0.5;
+    const sz = Math.random() * 2.6 + 0.4;
     s.style.cssText = `
-      width:${size}px; height:${size}px;
-      top:${Math.random()*100}%;
-      left:${Math.random()*100}%;
+      width:${sz}px;height:${sz}px;
+      top:${Math.random()*100}%;left:${Math.random()*100}%;
       --d:${(Math.random()*3+2).toFixed(1)}s;
-      --delay:${(Math.random()*4).toFixed(1)}s;
-      --min-op:${(Math.random()*0.2+0.05).toFixed(2)};
+      --delay:${(Math.random()*5).toFixed(1)}s;
+      --min-op:${(Math.random()*0.15+0.05).toFixed(2)};
       --max-op:${(Math.random()*0.6+0.3).toFixed(2)};
     `;
     starField.appendChild(s);
   }
 
-  /* ══════════════════════════════════════════════
-     SHOOTING STARS
-  ══════════════════════════════════════════════ */
+  /* ── Shooting Stars ── */
   const shootingContainer = document.getElementById('shooting-container');
 
-  function createShootingStar() {
+  function createShootingStar(forced) {
     const el = document.createElement('div');
     el.className = 'shooting-star';
-
-    const angle = -(Math.random() * 30 + 10);         // -10° to -40°
-    const length = Math.random() * 250 + 100;          // tail length
-    const travel = Math.random() * 500 + 400;
-    const dur    = (Math.random() * 0.8 + 0.7).toFixed(2);
-    const delay  = (Math.random() * 3).toFixed(2);
-    const top    = Math.random() * 70;
-    const left   = Math.random() * 80;
-
-    // colour tint based on active theme
-    let colour = '#ffffff';
-    if (activeUser === 'dharya')  colour = '#80ffcc';
-    if (activeUser === 'sadhana') colour = '#ffb3d9';
-
+    const angle  = -(Math.random() * 30 + 10);
+    const length = Math.random() * 260 + 90;
+    const travel = Math.random() * 520 + 380;
+    const dur    = (Math.random() * 0.9 + 0.6).toFixed(2);
+    const delay  = forced ? '0' : (Math.random() * 2.5).toFixed(2);
+    const top    = Math.random() * 72;
+    const left   = Math.random() * 82;
+    let c = '#ffffff';
+    if (activeUser === 'dharya')  c = '#80ffcc';
+    if (activeUser === 'sadhana') c = '#ffb3d9';
     el.style.cssText = `
-      width:${length}px;
-      top:${top}%;
-      left:${left}%;
-      --angle:${angle}deg;
-      --travel:${travel}px;
-      --dur:${dur}s;
-      --delay:${delay}s;
-      background: linear-gradient(90deg, transparent 0%, ${colour}88 40%, ${colour} 100%);
-      box-shadow: 0 0 6px 1px ${colour}66;
+      width:${length}px;top:${top}%;left:${left}%;
+      --angle:${angle}deg;--travel:${travel}px;
+      --dur:${dur}s;--delay:${delay}s;
+      background:linear-gradient(90deg,transparent 0%,${c}88 40%,${c} 100%);
+      box-shadow:0 0 6px 1px ${c}55;
     `;
-
     shootingContainer.appendChild(el);
-
-    const totalTime = (parseFloat(dur) + parseFloat(delay)) * 1000 + 200;
-    setTimeout(() => el.remove(), totalTime);
+    setTimeout(() => el.remove(), (parseFloat(dur)+parseFloat(delay))*1000+300);
   }
 
-  // Spawn shooting stars continuously
-  function spawnLoop() {
-    createShootingStar();
-    const next = Math.random() * 900 + 300;
-    setTimeout(spawnLoop, next);
-  }
-  spawnLoop();
+  (function spawnLoop() {
+    createShootingStar(false);
+    setTimeout(spawnLoop, Math.random()*850+250);
+  })();
 
-  /* ══════════════════════════════════════════════
-     USER SELECTION
-  ══════════════════════════════════════════════ */
-  function selectUser(key) {
+  /* ── Password → detect user live ── */
+  function onPasswordInput(val) {
+    clearMsg();
+    const matched = Object.entries(USERS).find(([,u]) => val === u.password);
+
+    // strength bar — proportional to how many chars typed vs password length
+    const longestPw = 10; // DD/MM/YYYY = 10 chars
+    const pct = Math.min(100, Math.round((val.length / longestPw) * 100));
+    document.getElementById('pw-bar').style.width = pct + '%';
+
+    if (matched) {
+      const [key, u] = matched;
+      applyTheme(key);
+    } else if (val.length === 0) {
+      resetTheme();
+    }
+    // partial match hints
+    updateBadgeHints(val);
+  }
+
+  function updateBadgeHints(val) {
+    const bd = document.getElementById('badge-dharya');
+    const bs = document.getElementById('badge-sadhana');
+
+    const dharya  = USERS.dharya;
+    const sadhana = USERS.sadhana;
+
+    // full match
+    if (val === dharya.password) {
+      bd.className = 'hint-badge active-green';
+      bs.className = 'hint-badge';
+      return;
+    }
+    if (val === sadhana.password) {
+      bs.className = 'hint-badge active-pink';
+      bd.className = 'hint-badge';
+      return;
+    }
+
+    // partial prefix hints
+    const dMatch = val.length > 0 && dharya.password.startsWith(val);
+    const sMatch = val.length > 0 && sadhana.password.startsWith(val);
+
+    bd.className = 'hint-badge' + (dMatch ? ' active-green' : '');
+    bs.className = 'hint-badge' + (sMatch ? ' active-pink'  : '');
+  }
+
+  function applyTheme(key) {
+    if (activeUser === key) return;
     activeUser = key;
     const u = USERS[key];
     const body = document.body;
 
-    body.classList.remove('theme-green', 'theme-pink');
+    body.classList.remove('theme-green','theme-pink');
     body.classList.add('theme-' + u.theme);
 
-    // update nebula colours
-    if (u.theme === 'green') {
-      document.getElementById('neb1').style.background = '#0d3b20';
-      document.getElementById('neb2').style.background = '#0a2e18';
-    } else {
-      document.getElementById('neb1').style.background = '#3b0d20';
-      document.getElementById('neb2').style.background = '#2e0a18';
-    }
+    document.getElementById('neb1').style.background = u.theme === 'green' ? '#0d3b20' : '#3b0d20';
+    document.getElementById('neb2').style.background = u.theme === 'green' ? '#0a2e18' : '#2e0a18';
 
-    // avatar emoji
-    document.getElementById('avatar').textContent = u.emoji;
+    document.getElementById('avatar').textContent  = u.emoji;
+    document.getElementById('card-title').textContent    = `Hey, ${u.name}!`;
+    document.getElementById('card-subtitle').textContent = u.theme === 'green' ? '💚 Green mode active' : '🌸 Pink mode active';
 
-    // title
-    document.getElementById('card-title').textContent =
-      key === 'dharya' ? 'Hey, Dharya 💚' : 'Hey, Sadhana 💗';
-
-    // active button styling
-    document.getElementById('btn-dharya').className  = 'user-btn' + (key === 'dharya'  ? ' active-green' : '');
-    document.getElementById('btn-sadhana').className = 'user-btn' + (key === 'sadhana' ? ' active-pink'  : '');
-
-    // prefill username
-    document.getElementById('username').value = u.username;
-
-    clearMsg();
+    // fire a couple of celebratory shooting stars
+    for (let i = 0; i < 5; i++) setTimeout(() => createShootingStar(true), i * 100);
   }
 
-  /* ══════════════════════════════════════════════
-     PASSWORD TOGGLE
-  ══════════════════════════════════════════════ */
+  function resetTheme() {
+    activeUser = null;
+    document.body.classList.remove('theme-green','theme-pink');
+    document.getElementById('neb1').style.background = '#3b1a6b';
+    document.getElementById('neb2').style.background = '#1a1a4a';
+    document.getElementById('avatar').textContent   = '🌟';
+    document.getElementById('card-title').textContent     = "Who's there?";
+    document.getElementById('card-subtitle').textContent  = 'Enter your password';
+    document.getElementById('badge-dharya').className  = 'hint-badge';
+    document.getElementById('badge-sadhana').className = 'hint-badge';
+    document.getElementById('pw-bar').style.width = '0%';
+  }
+
+  /* ── Toggle password visibility ── */
   let pwVisible = false;
   function togglePassword() {
     const inp = document.getElementById('password');
@@ -682,134 +644,102 @@
     inp.type = pwVisible ? 'text' : 'password';
   }
 
-  /* ══════════════════════════════════════════════
-     LOGIN LOGIC
-  ══════════════════════════════════════════════ */
+  /* ── Login ── */
   function handleLogin() {
+    const pw  = document.getElementById('password').value.trim();
     const btn = document.getElementById('login-btn');
-    const username = document.getElementById('username').value.trim().toUpperCase();
-    const password = document.getElementById('password').value.trim();
 
-    if (!activeUser) {
-      showMsg('Please select a user first ✦', 'error');
-      shakeCard();
-      return;
+    if (!pw) {
+      showMsg('Please enter your password ✦', 'error');
+      shakeCard(); return;
     }
 
-    const u = USERS[activeUser];
-
-    if (username !== u.username.toUpperCase()) {
-      showMsg('Username does not match ✦', 'error');
-      shakeCard();
-      return;
-    }
-
-    if (password !== u.password) {
+    const matched = Object.entries(USERS).find(([,u]) => pw === u.password);
+    if (!matched) {
       showMsg('Incorrect password ✦', 'error');
-      shakeCard();
-      return;
+      shakeCard(); return;
     }
 
-    // ── Success ──
+    const [key, u] = matched;
+    applyTheme(key);
+
     btn.textContent = 'Signing in…';
     btn.style.pointerEvents = 'none';
     rippleEffect(btn);
-
     showMsg(u.greeting, 'success-' + u.theme);
-
-    // burst particles
     burstParticles(u.theme === 'green' ? '#00ff88' : '#ff6eb4');
+    for (let i = 0; i < 14; i++) setTimeout(() => createShootingStar(true), i * 70);
 
-    // fire a bunch of shooting stars
-    for (let i = 0; i < 12; i++) {
-      setTimeout(createShootingStar, i * 80);
-    }
-
-    setTimeout(() => {
-      showWelcome(u.greeting, u.theme);
-    }, 1000);
+    setTimeout(() => showWelcome(u.greeting, u.theme), 1000);
   }
 
-  /* ══════════════════════════════════════════════
-     HELPERS
-  ══════════════════════════════════════════════ */
+  /* ── Helpers ── */
   function showMsg(text, type) {
-    const box = document.getElementById('msg-box');
-    box.textContent = text;
-    box.className = 'msg ' + type;
-    box.style.display = 'block';
+    const b = document.getElementById('msg-box');
+    b.textContent = text; b.className = 'msg ' + type; b.style.display = 'block';
   }
-
   function clearMsg() {
-    const box = document.getElementById('msg-box');
-    box.style.display = 'none';
+    const b = document.getElementById('msg-box');
+    b.style.display = 'none';
   }
 
   function shakeCard() {
-    const card = document.getElementById('card');
-    card.style.animation = 'none';
-    card.style.transform = 'translateX(-10px)';
-    setTimeout(() => card.style.transform = 'translateX(10px)',  80);
-    setTimeout(() => card.style.transform = 'translateX(-6px)',  160);
-    setTimeout(() => card.style.transform = 'translateX(6px)',   240);
-    setTimeout(() => card.style.transform = 'translateX(0)',     320);
-    setTimeout(() => card.style.animation = 'floatCard 6s ease-in-out infinite', 400);
+    const c = document.getElementById('card');
+    c.style.animation = 'none';
+    [[-12,0],[12,80],[-7,160],[7,240],[0,320]].forEach(([x,t]) =>
+      setTimeout(() => c.style.transform = `translateX(${x}px)`, t)
+    );
+    setTimeout(() => c.style.animation = 'floatCard 6s ease-in-out infinite', 400);
   }
 
   function rippleEffect(btn) {
     const r = document.createElement('span');
     r.className = 'ripple';
-    r.style.cssText = 'width:200px;height:200px;top:calc(50% - 100px);left:calc(50% - 100px);';
+    r.style.cssText = 'width:220px;height:220px;top:calc(50% - 110px);left:calc(50% - 110px);';
     btn.appendChild(r);
     setTimeout(() => r.remove(), 700);
   }
 
   function burstParticles(colour) {
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 50; i++) {
       const p = document.createElement('div');
+      const size = Math.random() * 8 + 4;
       p.className = 'particle';
       p.style.cssText = `
-        left:${30 + Math.random()*40}%;
-        top:${Math.random()*40}%;
+        width:${size}px;height:${size}px;
+        left:${25+Math.random()*50}%;top:${20+Math.random()*30}%;
         background:${colour};
-        box-shadow: 0 0 6px ${colour};
-        --pd:${(Math.random()*1.5+1).toFixed(2)}s;
-        transform: rotate(${Math.random()*360}deg);
-        border-radius:${Math.random()>0.5?'50%':'2px'};
+        box-shadow:0 0 8px ${colour};
+        --pd:${(Math.random()*1.6+0.9).toFixed(2)}s;
+        --px:${(Math.random()*200-100).toFixed(0)}px;
+        border-radius:${Math.random()>0.4?'50%':'3px'};
       `;
       document.body.appendChild(p);
-      setTimeout(() => p.remove(), 3000);
+      setTimeout(() => p.remove(), 3200);
     }
   }
 
   function showWelcome(text, theme) {
-    const overlay = document.getElementById('welcome-overlay');
+    const ov = document.getElementById('welcome-overlay');
     const wt = document.getElementById('welcome-text');
     wt.textContent = text;
     wt.className = 'welcome-text ' + theme;
-    overlay.style.background = theme === 'green'
-      ? 'rgba(0,20,10,0.6)'
-      : 'rgba(20,0,10,0.6)';
-    overlay.classList.add('show');
-
-    // More shooting stars on welcome screen
-    for (let i = 0; i < 20; i++) {
-      setTimeout(createShootingStar, i * 150);
-    }
+    ov.style.background = theme === 'green' ? 'rgba(0,18,9,0.65)' : 'rgba(18,0,9,0.65)';
+    ov.classList.add('show');
+    for (let i = 0; i < 22; i++) setTimeout(() => createShootingStar(true), i * 130);
   }
 
-  /* Allow Enter key */
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleLogin();
-  });
+  /* ── Keyboard ── */
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
 
-  /* Click welcome overlay to dismiss */
+  /* ── Dismiss welcome ── */
   document.getElementById('welcome-overlay').addEventListener('click', () => {
     document.getElementById('welcome-overlay').classList.remove('show');
     const btn = document.getElementById('login-btn');
     btn.textContent = 'Sign In';
     btn.style.pointerEvents = '';
     document.getElementById('password').value = '';
+    resetTheme();
     clearMsg();
   });
 </script>

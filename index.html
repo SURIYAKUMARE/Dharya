@@ -4,663 +4,625 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Welcome — Login</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700;1,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --g1: #00ffaa;
-      --g2: #00cc77;
-      --gg: rgba(0,255,170,0.3);
-      --p1: #ff5fa0;
-      --p2: #cc2266;
-      --pg: rgba(255,95,160,0.3);
-      --neutral: rgba(255,255,255,0.06);
-      --border:  rgba(255,255,255,0.09);
-      --text:    rgba(255,255,255,0.85);
-      --muted:   rgba(255,255,255,0.35);
-      --card-bg: rgba(12,12,24,0.75);
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, sans-serif;
     }
 
-    html, body { height: 100%; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
-
+    /* ── BACKGROUND ── */
     body {
-      background: #04040f;
-      display: flex; align-items: center; justify-content: center;
+      background: #120818;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       position: relative;
-      transition: background 1s ease;
-    }
-    body.g { background: radial-gradient(ellipse 120% 80% at 50% -10%, #001a0d 0%, #04040f 60%); }
-    body.p { background: radial-gradient(ellipse 120% 80% at 50% -10%, #1a0009 0%, #04040f 60%); }
-
-    /* ── AURORA CANVAS ── */
-    #aurora { position:fixed;inset:0;z-index:0;opacity:.5; }
-
-    /* ── STARS ── */
-    #stars { position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden; }
-    .s {
-      position:absolute;border-radius:50%;background:#fff;
-      animation: tw var(--d,3s) var(--dl,0s) infinite alternate ease-in-out;
-    }
-    @keyframes tw {
-      from { opacity:var(--lo,.05); transform:scale(1); }
-      to   { opacity:var(--hi,.8);  transform:scale(1.7); }
     }
 
-    /* ── METEORS ── */
-    #meteors { position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden; }
-    .m {
-      position:absolute;border-radius:999px;transform-origin:left center;
-      animation:mfly var(--md,1s) var(--ml,0s) linear forwards;opacity:0;
-    }
-    @keyframes mfly {
-      0%  {opacity:0;  transform:rotate(var(--ma,-22deg)) translateX(0);}
-      6%  {opacity:1;}
-      85% {opacity:.7;}
-      100%{opacity:0;  transform:rotate(var(--ma,-22deg)) translateX(var(--mt,550px));}
-    }
-
-    /* ── ORBS ── */
-    .orb {
-      position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:1;
-      animation:orbf var(--of,18s) var(--od,0s) ease-in-out infinite alternate;
-      transition:background 1.2s,opacity 1.2s;
-    }
-    @keyframes orbf {
-      0%  {transform:translate(0,0) scale(1);}
-      50% {transform:translate(40px,-50px) scale(1.1);}
-      100%{transform:translate(-20px,30px) scale(0.95);}
+    /* deep purple radial glow */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 40%, #2a0a3a 0%, transparent 65%),
+        radial-gradient(ellipse 60% 50% at 70% 60%, #1a0528 0%, transparent 60%),
+        radial-gradient(ellipse 100% 80% at 50% 100%, #0d0415 0%, transparent 70%);
+      z-index: 0;
     }
 
-    /* ── CARD ── */
-    .wrap { position:relative;z-index:20;perspective:1400px; }
+    /* ── STARS CANVAS ── */
+    #stars-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
 
-    .card {
-      width:440px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      padding: 48px 40px 40px;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04),
-        0 40px 100px rgba(0,0,0,0.8),
-        0 0 160px var(--cg,transparent);
-      transition: box-shadow .8s, border-color .8s;
-      animation: fc 7s ease-in-out infinite;
-      position: relative;
+    /* ── SHOOTING STARS ── */
+    #meteors {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
       overflow: hidden;
     }
-    /* shimmer */
-    .card::before {
-      content:'';position:absolute;inset:0;border-radius:28px;pointer-events:none;
-      background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.035) 50%,transparent 60%);
-      background-size:200% 100%;animation:sh 4s ease-in-out infinite;
+    .meteor {
+      position: absolute;
+      border-radius: 999px;
+      transform-origin: left center;
+      opacity: 0;
+      animation: mfly var(--md,1.2s) var(--ml,0s) linear forwards;
     }
-    @keyframes sh { 0%{background-position:200% 0}100%{background-position:-200% 0} }
-    @keyframes fc {
-      0%,100%{transform:translateY(0) rotateX(1deg) rotateY(0);}
-      25%    {transform:translateY(-5px) rotateX(-0.5deg) rotateY(.4deg);}
-      50%    {transform:translateY(-10px) rotateX(0) rotateY(0);}
-      75%    {transform:translateY(-4px) rotateX(.5deg) rotateY(-.4deg);}
+    @keyframes mfly {
+      0%   { opacity: 0;   transform: rotate(var(--ma,-30deg)) translateX(0); }
+      8%   { opacity: 1; }
+      80%  { opacity: 0.7; }
+      100% { opacity: 0;   transform: rotate(var(--ma,-30deg)) translateX(var(--mt,500px)); }
     }
-    body.g .card { --cg:rgba(0,255,170,.18); border-color:rgba(0,255,170,.2); }
-    body.p .card { --cg:rgba(255,95,160,.18); border-color:rgba(255,95,160,.2); }
 
-    /* ── AVATAR ── */
-    .av-wrap { width:86px;height:86px;margin:0 auto 22px;position:relative; }
-    .av {
-      width:86px;height:86px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;font-size:2.3rem;
-      background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.1);
-      transition:background .8s,border-color .8s,box-shadow .8s;
-      animation:ab 3.5s ease-in-out infinite;
+    /* floating star emojis */
+    .float-star {
+      position: fixed;
+      font-size: var(--fs, 1.2rem);
+      opacity: var(--fo, 0.25);
+      z-index: 2;
+      pointer-events: none;
+      animation: fst var(--fd, 6s) var(--fdl, 0s) ease-in-out infinite alternate;
     }
-    @keyframes ab { 0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-5px) scale(1.06);} }
-    body.g .av { background:rgba(0,255,170,.1);border-color:var(--g1);box-shadow:0 0 0 5px rgba(0,255,170,.1),0 0 40px var(--gg); }
-    body.p .av { background:rgba(255,95,160,.1);border-color:var(--p1);box-shadow:0 0 0 5px rgba(255,95,160,.1),0 0 40px var(--pg); }
+    @keyframes fst {
+      from { transform: translateY(0) rotate(0deg); opacity: var(--fo, 0.2); }
+      to   { transform: translateY(-18px) rotate(15deg); opacity: calc(var(--fo, 0.2) * 1.8); }
+    }
 
-    /* spin rings */
-    .sr {
-      position:absolute;border-radius:50%;border:2px solid transparent;pointer-events:none;
-      transition:border-color .8s;
+    /* ── PHONE CARD ── */
+    .phone-wrap {
+      position: relative;
+      z-index: 10;
     }
-    .sr1 { inset:-8px; animation:scw 3s linear infinite; }
-    .sr2 { inset:-15px; animation:sccw 4.5s linear infinite; }
-    body.g .sr1 { border-top-color:var(--g1);border-right-color:rgba(0,255,170,.3); }
-    body.g .sr2 { border-bottom-color:rgba(0,255,170,.5);border-left-color:rgba(0,255,170,.15); }
-    body.p .sr1 { border-top-color:var(--p1);border-right-color:rgba(255,95,160,.3); }
-    body.p .sr2 { border-bottom-color:rgba(255,95,160,.5);border-left-color:rgba(255,95,160,.15); }
-    .sr1::after,.sr2::after {
-      content:'';position:absolute;width:6px;height:6px;border-radius:50%;
-      background:currentColor;top:-2px;left:50%;transform:translateX(-50%);
+
+    .phone {
+      width: 340px;
+      min-height: 580px;
+      background: linear-gradient(170deg, #1e1030 0%, #150922 50%, #110720 100%);
+      border-radius: 36px;
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04),
+        0 40px 100px rgba(0,0,0,0.85),
+        0 0 80px rgba(180,50,200,0.1),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+      padding: 36px 32px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      animation: phoneFloat 5s ease-in-out infinite;
     }
-    body.g .sr1::after,body.g .sr2::after { background:var(--g1);box-shadow:0 0 8px var(--g1); }
-    body.p .sr1::after,body.p .sr2::after { background:var(--p1);box-shadow:0 0 8px var(--p1); }
-    @keyframes scw  { to{transform:rotate(360deg);} }
-    @keyframes sccw { to{transform:rotate(-360deg);} }
+    @keyframes phoneFloat {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-8px); }
+    }
+
+    /* top dots */
+    .phone-dots {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      display: flex;
+      gap: 5px;
+    }
+    .phone-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+    }
+    .phone-dots span:last-child { background: rgba(255,80,120,0.6); }
+
+    /* inner glow */
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(255,100,150,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── APP ICON ── */
+    .app-icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ff4d6d 0%, #ff8c42 50%, #ffb347 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 18px;
+      box-shadow:
+        0 8px 32px rgba(255,80,80,0.45),
+        0 2px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+      animation: iconPop 3s ease-in-out infinite;
+      position: relative;
+    }
+    @keyframes iconPop {
+      0%,100% { transform: scale(1) rotate(0deg); box-shadow: 0 8px 32px rgba(255,80,80,0.45), 0 2px 8px rgba(0,0,0,0.4); }
+      50%     { transform: scale(1.06) rotate(-2deg); box-shadow: 0 12px 44px rgba(255,100,80,0.6), 0 2px 8px rgba(0,0,0,0.4); }
+    }
+    .icon-sparkle {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 6px rgba(255,220,100,0.8));
+    }
+
+    /* ── WELCOME BADGE ── */
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .badge-line {
+      width: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #e8944a);
+    }
+    .badge-line.r { background: linear-gradient(90deg, #e8944a, transparent); }
+    .badge span {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #e8944a;
+    }
+    .badge-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #e8944a;
+      box-shadow: 0 0 6px #e8944a;
+      animation: bdpulse 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes bdpulse { from{opacity:.5;transform:scale(1)} to{opacity:1;transform:scale(1.6)} }
 
     /* ── TITLE ── */
-    .title {
-      text-align:center;font-size:1.75rem;font-weight:900;color:#fff;
-      margin-bottom:5px;letter-spacing:.02em;position:relative;
-      transition:text-shadow .8s;
+    .card-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-weight: 800;
+      font-size: 2rem;
+      line-height: 1.15;
+      text-align: center;
+      background: linear-gradient(135deg, #ffb347 0%, #ff8c42 40%, #ff6b6b 80%, #e8944a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 20px rgba(255,140,66,0.4));
+      animation: titleGlow 3s ease-in-out infinite alternate;
     }
-    body.g .title { text-shadow:0 0 28px var(--g1),0 0 70px rgba(0,255,170,.15); }
-    body.p .title { text-shadow:0 0 28px var(--p1),0 0 70px rgba(255,95,160,.15); }
-    /* glitch */
-    .title::before,.title::after {
-      content:attr(data-t);position:absolute;left:0;right:0;top:0;
-      text-align:center;opacity:0;
-    }
-    .title::before { animation:gA 6s infinite; }
-    .title::after  { animation:gB 6s infinite; }
-    body.g .title::before { color:#00ffdd; }
-    body.g .title::after  { color:#aaff44; }
-    body.p .title::before { color:#ff99cc; }
-    body.p .title::after  { color:#ff2277; }
-    @keyframes gA {
-      0%,88%,100%{opacity:0;transform:translate(0)}
-      89%{opacity:.7;transform:translate(-3px,1px);clip-path:polygon(0 10%,100% 10%,100% 40%,0 40%)}
-      91%{opacity:0}
-      93%{opacity:.5;transform:translate(2px,-1px);clip-path:polygon(0 55%,100% 55%,100% 80%,0 80%)}
-      95%{opacity:0}
-    }
-    @keyframes gB {
-      0%,90%,100%{opacity:0;transform:translate(0)}
-      91%{opacity:.6;transform:translate(3px,-1px);clip-path:polygon(0 30%,100% 30%,100% 55%,0 55%)}
-      93%{opacity:0}
-      94%{opacity:.4;transform:translate(-2px,2px);clip-path:polygon(0 68%,100% 68%,100% 88%,0 88%)}
-      96%{opacity:0}
+    @keyframes titleGlow {
+      from { filter: drop-shadow(0 0 15px rgba(255,140,66,0.3)); }
+      to   { filter: drop-shadow(0 0 28px rgba(255,140,66,0.6)); }
     }
 
     /* ── SUBTITLE ── */
-    .sub {
-      text-align:center;font-size:.75rem;font-weight:600;color:var(--muted);
-      margin-bottom:28px;letter-spacing:.15em;text-transform:uppercase;
-      transition:color .8s;min-height:1.1em;
+    .card-sub {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.38);
+      text-align: center;
+      letter-spacing: 0.03em;
+      margin-bottom: 26px;
+      line-height: 1.5;
     }
-    body.g .sub { color:rgba(0,255,170,.5); }
-    body.p .sub { color:rgba(255,95,160,.5); }
-    .cur {
-      display:inline-block;width:2px;height:.85em;
-      background:currentColor;margin-left:2px;vertical-align:text-bottom;
-      animation:cb 1s step-end infinite;
-    }
-    @keyframes cb { 0%,100%{opacity:1}50%{opacity:0} }
 
     /* ── DIVIDER ── */
-    .divider {
-      display:flex;align-items:center;gap:12px;margin-bottom:22px;
-    }
-    .divider span {
-      flex:1;height:1px;
-      background:linear-gradient(90deg,transparent,var(--border),transparent);
-    }
-    .divider p {
-      font-size:.68rem;font-weight:700;letter-spacing:.14em;
-      text-transform:uppercase;color:var(--muted);white-space:nowrap;
+    .hdiv {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      margin-bottom: 24px;
     }
 
     /* ── FIELDS ── */
-    .field { position:relative;margin-bottom:16px; }
-    .field label {
-      display:block;font-size:.68rem;font-weight:700;
-      letter-spacing:.14em;text-transform:uppercase;
-      color:var(--muted);margin-bottom:8px;transition:color .4s;
+    .field {
+      width: 100%;
+      margin-bottom: 14px;
     }
-    .field:focus-within label { color:rgba(255,255,255,.8); }
-    body.g .field:focus-within label { color:var(--g1); }
-    body.p .field:focus-within label { color:var(--p1); }
+    .field label {
+      display: block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 7px;
+      padding-left: 2px;
+      transition: color 0.4s;
+    }
+    .field:focus-within label { color: #ffb347; }
 
     .field input {
-      width:100%;padding:14px 46px 14px 18px;
-      border-radius:14px;
-      border:1.5px solid var(--border);
-      background:rgba(255,255,255,0.045);
-      color:#fff;font-size:.97rem;font-family:inherit;
-      outline:none;letter-spacing:.04em;
-      transition:border-color .4s,box-shadow .4s,background .4s;
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.95);
+      color: #1a0828;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      outline: none;
+      transition: box-shadow 0.3s, background 0.3s;
+      letter-spacing: 0.04em;
     }
-    .field input::placeholder { color:rgba(255,255,255,.2); }
+    .field input::placeholder {
+      color: rgba(100,80,120,0.4);
+      font-weight: 400;
+    }
     .field input:focus {
-      background:rgba(255,255,255,.07);
-      border-color:rgba(255,255,255,.28);
-      box-shadow:0 0 0 3px rgba(255,255,255,.04);
+      background: #fff;
+      box-shadow: 0 0 0 2.5px #ff8c42, 0 4px 20px rgba(255,140,66,0.25);
     }
-    body.g .field input:focus { border-color:var(--g1);box-shadow:0 0 0 4px rgba(0,255,170,.12); }
-    body.p .field input:focus { border-color:var(--p1);box-shadow:0 0 0 4px rgba(255,95,160,.12); }
 
-    /* animated bottom line */
-    .fline {
-      position:absolute;bottom:0;left:8px;right:8px;
-      height:2px;border-radius:999px;
-      background:linear-gradient(90deg,transparent,currentColor,transparent);
-      transform:scaleX(0);transition:transform .4s ease,color .6s;
-      transform-origin:left;
+    /* password wrapper for eye toggle */
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 42px; }
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      color: rgba(100,80,120,0.5);
+      padding: 0;
+      line-height: 1;
+      transition: color 0.2s;
     }
-    .field input:focus ~ .fline { transform:scaleX(1); }
-    body.g .fline { color:var(--g1);box-shadow:0 0 8px var(--g1); }
-    body.p .fline { color:var(--p1);box-shadow:0 0 8px var(--p1); }
+    .eye-btn:hover { color: #ff8c42; }
 
-    /* icons inside input */
-    .fi {
-      position:absolute;right:14px;top:50%;transform:translateY(-50%);
-      color:rgba(255,255,255,.28);font-size:1.05rem;
-      display:flex;align-items:center;gap:6px;
+    /* ── ENTER BUTTON ── */
+    .enter-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      margin-top: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #ff4d8b 0%, #ff7043 50%, #ffb347 100%);
+      color: #fff;
+      box-shadow: 0 6px 28px rgba(255,80,100,0.5), 0 2px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    .fi button {
-      background:none;border:none;cursor:pointer;
-      color:rgba(255,255,255,.28);font-size:1rem;padding:0;line-height:1;
-      transition:color .3s,transform .2s;
+    .enter-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 36px rgba(255,80,100,0.65), 0 2px 8px rgba(0,0,0,0.3);
     }
-    .fi button:hover { color:rgba(255,255,255,.7);transform:scale(1.15); }
+    .enter-btn:active { transform: scale(0.98); }
+    /* shine */
+    .enter-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -80%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      transform: skewX(-18deg);
+      animation: btnshine 3s ease-in-out infinite;
+    }
+    @keyframes btnshine { 0%{left:-80%} 40%,100%{left:130%;} }
+    .arrow-icon { font-size: 1rem; animation: arrwobble 1.5s ease-in-out infinite; }
+    @keyframes arrwobble { 0%,100%{transform:translateX(0)} 50%{transform:translateX(4px)} }
 
-    /* user id match indicator */
-    .uid-status {
-      position:absolute;right:14px;top:50%;transform:translateY(-50%);
-      font-size:.75rem;font-weight:700;opacity:0;
-      transition:opacity .4s,color .4s;
-    }
-    .uid-status.show { opacity:1; }
-    .uid-status.ok { color:var(--g1); }
-    body.p .uid-status.ok { color:var(--p1); }
-    .uid-status.no { color:#ff5566; }
-
-    /* progress bar */
-    .pwbar-wrap {
-      height:3px;border-radius:999px;
-      background:rgba(255,255,255,.05);margin-top:8px;overflow:hidden;
-    }
-    .pwbar {
-      height:100%;width:0%;border-radius:999px;
-      transition:width .35s ease,background .6s;
-    }
-    body.g .pwbar { background:linear-gradient(90deg,#00ffaa,#00ffee);box-shadow:0 0 6px #00ffaa; }
-    body.p .pwbar { background:linear-gradient(90deg,#ff5fa0,#ff99cc);box-shadow:0 0 6px #ff5fa0; }
-
-
-
-    /* ── BUTTON ── */
-    .btn {
-      width:100%;padding:16px;border:1.5px solid var(--border);
-      border-radius:15px;font-size:.95rem;font-weight:900;
-      letter-spacing:.18em;text-transform:uppercase;
-      cursor:pointer;margin-top:8px;position:relative;overflow:hidden;
-      transition:transform .25s,box-shadow .45s,background .7s,color .7s,border-color .7s;
-      background:rgba(255,255,255,.07);color:rgba(255,255,255,.35);
-      font-family:inherit;
-    }
-    body.g .btn {
-      background:linear-gradient(135deg,var(--g1),var(--g2));
-      color:#021a0c;border-color:transparent;
-      box-shadow:0 0 35px var(--gg),0 6px 24px rgba(0,0,0,.5);
-    }
-    body.p .btn {
-      background:linear-gradient(135deg,var(--p1),var(--p2));
-      color:#1a0008;border-color:transparent;
-      box-shadow:0 0 35px var(--pg),0 6px 24px rgba(0,0,0,.5);
-    }
-    .btn:hover { transform:translateY(-3px) scale(1.012); }
-    body.g .btn:hover { box-shadow:0 0 65px var(--gg),0 10px 35px rgba(0,0,0,.55); }
-    body.p .btn:hover { box-shadow:0 0 65px var(--pg),0 10px 35px rgba(0,0,0,.55); }
-    .btn:active { transform:scale(.98); }
-    /* shine sweep */
-    .btn::before {
-      content:'';position:absolute;top:0;left:-100%;width:55%;height:100%;
-      background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
-      transform:skewX(-18deg);animation:bs 3s ease-in-out infinite;
-    }
-    @keyframes bs { 0%{left:-100%}40%,100%{left:160%;} }
-
+    /* ripple */
     .rip {
-      position:absolute;border-radius:50%;background:rgba(255,255,255,.3);
-      transform:scale(0);animation:ra .7s linear;pointer-events:none;
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
     }
-    @keyframes ra { to{transform:scale(5);opacity:0;} }
+    @keyframes ripple { to{transform:scale(4);opacity:0;} }
 
-    /* ── MSG ── */
+    /* ── MESSAGE ── */
     .msg {
-      font-size:.8rem;font-weight:700;letter-spacing:.06em;
-      border-radius:12px;padding:11px 16px;margin-top:16px;
-      text-align:center;display:none;
-      animation:mp .4s cubic-bezier(.175,.885,.32,1.275);
+      width: 100%;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 12px;
+      text-align: center;
+      display: none;
+      letter-spacing: 0.04em;
+      animation: msgpop 0.35s cubic-bezier(.175,.885,.32,1.275);
     }
-    @keyframes mp { from{opacity:0;transform:scale(.85) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)} }
-    .msg.err  { background:rgba(255,50,70,.12);border:1px solid rgba(255,50,70,.4);color:#ff6677; }
-    .msg.ok-g { background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.38);color:var(--g1); }
-    .msg.ok-p { background:rgba(255,95,160,.08);border:1px solid rgba(255,95,160,.38);color:var(--p1); }
+    @keyframes msgpop { from{opacity:0;transform:scale(.88) translateY(6px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .msg.err  { background:rgba(255,60,80,0.15); border:1px solid rgba(255,60,80,0.4); color:#ff7080; }
+    .msg.ok-g { background:rgba(0,255,160,0.1);  border:1px solid rgba(0,255,160,0.35); color:#00ffaa; }
+    .msg.ok-p { background:rgba(255,100,160,0.1); border:1px solid rgba(255,100,160,0.35); color:#ff88cc; }
+
+    /* ── FOOTER TEXT ── */
+    .card-footer {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.18);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+    }
+    .card-footer span { width: 18px; height: 1px; background: rgba(255,255,255,0.15); }
+    .footer-dots {
+      display: flex; gap: 4px; margin-top: 8px;
+    }
+    .footer-dots b {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: block;
+    }
+    .footer-dots b:nth-child(2) { background: rgba(255,140,66,0.5); }
 
     /* ── WELCOME OVERLAY ── */
     #ov {
-      position:fixed;inset:0;z-index:200;
-      display:flex;align-items:center;justify-content:center;
-      flex-direction:column;gap:20px;
-      opacity:0;pointer-events:none;
-      transition:opacity .7s,backdrop-filter .7s;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.7s;
     }
     #ov.show {
-      opacity:1;pointer-events:all;
-      backdrop-filter:blur(14px) brightness(.55);
-      -webkit-backdrop-filter:blur(14px) brightness(.55);
+      opacity: 1;
+      pointer-events: all;
+      backdrop-filter: blur(14px) brightness(0.5);
+      -webkit-backdrop-filter: blur(14px) brightness(0.5);
     }
-    .wt {
-      font-size:clamp(2rem,7vw,4.5rem);font-weight:900;
-      letter-spacing:.05em;text-align:center;
-      text-shadow:0 0 60px currentColor,0 0 120px currentColor;
-      animation:wp 2s ease-in-out infinite alternate;min-height:1.2em;
+    .ov-icon { font-size: 4rem; animation: ovspin 2s ease-in-out infinite; }
+    @keyframes ovspin { 0%,100%{transform:rotate(-12deg)scale(1)}50%{transform:rotate(12deg)scale(1.2)} }
+    .ov-title {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-weight: 800;
+      font-size: clamp(2rem, 6vw, 3.8rem);
+      text-align: center;
+      background: linear-gradient(135deg, #ffb347, #ff8c42, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+      filter: drop-shadow(0 0 30px rgba(255,140,66,0.7));
+      animation: ovglow 2s ease-in-out infinite alternate;
+      min-height: 1.2em;
     }
-    @keyframes wp { from{opacity:.75;transform:scale(1) translateY(0)}to{opacity:1;transform:scale(1.06) translateY(-4px)} }
-    .wt.g { color:var(--g1); }
-    .wt.p { color:var(--p1); }
-    .wem { font-size:3.2rem;animation:we 2s ease-in-out infinite; }
-    @keyframes we { 0%,100%{transform:rotate(-12deg) scale(1)}50%{transform:rotate(12deg) scale(1.25)} }
-    .wsub { font-size:.88rem;color:rgba(255,255,255,.38);letter-spacing:.25em;text-transform:uppercase; }
-    .wtap { font-size:.68rem;color:rgba(255,255,255,.16);letter-spacing:.14em;text-transform:uppercase;animation:tb 2.2s ease-in-out infinite; }
-    @keyframes tb { 0%,100%{opacity:.16}50%{opacity:.5} }
+    @keyframes ovglow { from{filter:drop-shadow(0 0 20px rgba(255,140,66,.5))} to{filter:drop-shadow(0 0 50px rgba(255,140,66,.9))} }
+    .ov-sub { font-size: .85rem; color:rgba(255,255,255,.4); letter-spacing:.22em; text-transform:uppercase; }
+    .ov-tap { font-size:.65rem; color:rgba(255,255,255,.18); letter-spacing:.14em; text-transform:uppercase; animation: tap 2.2s ease-in-out infinite; margin-top:6px; }
+    @keyframes tap { 0%,100%{opacity:.18} 50%{opacity:.5} }
 
     /* ── PARTICLES ── */
     .pt {
-      position:fixed;pointer-events:none;z-index:150;
-      animation:pf var(--pd,2s) var(--pde,0s) ease-out forwards;
+      position: fixed;
+      pointer-events: none;
+      z-index: 150;
+      animation: ptfall var(--pd,2s) var(--pde,0s) ease-out forwards;
     }
-    @keyframes pf {
-      0%  {transform:translate(0,0) rotate(0) scale(1);opacity:1;}
-      100%{transform:translate(var(--px,0),130vh) rotate(800deg) scale(.15);opacity:0;}
-    }
-
-    /* ── SPARKS ── */
-    .sp {
-      position:fixed;border-radius:50%;pointer-events:none;z-index:300;
-      animation:sf .65s ease-out forwards;
-    }
-    @keyframes sf {
-      0%  {transform:scale(1) translate(-50%,-50%);opacity:.85;}
-      100%{transform:scale(0) translate(-50%,-50%);opacity:0;}
+    @keyframes ptfall {
+      0%  { transform:translate(0,0) rotate(0) scale(1); opacity:1; }
+      100%{ transform:translate(var(--px,0),130vh) rotate(800deg) scale(.1); opacity:0; }
     }
 
-    @media(max-width:480px){
-      .card{width:94vw;padding:36px 20px 30px;}
+    @media(max-width:400px) {
+      .phone { width:94vw; padding:30px 22px 24px; }
     }
   </style>
 </head>
 <body>
-  <canvas id="aurora"></canvas>
-  <div id="stars"></div>
+
+  <canvas id="stars-canvas"></canvas>
   <div id="meteors"></div>
 
-  <!-- orbs -->
-  <div class="orb" id="o1" style="width:380px;height:380px;top:-90px;left:-130px;background:#3a1060;opacity:.16;--of:20s;--od:0s;"></div>
-  <div class="orb" id="o2" style="width:300px;height:300px;bottom:-60px;right:-90px;background:#10104a;opacity:.14;--of:15s;--od:4s;"></div>
-  <div class="orb" id="o3" style="width:180px;height:180px;top:45%;left:65%;background:#200a40;opacity:.1;--of:11s;--od:8s;"></div>
+  <!-- Floating star emojis -->
+  <div class="float-star" style="top:18%;left:8%;--fs:1.4rem;--fo:0.22;--fd:7s;--fdl:0s;">⭐</div>
+  <div class="float-star" style="top:55%;left:5%;--fs:1rem;--fo:0.18;--fd:9s;--fdl:2s;">✦</div>
+  <div class="float-star" style="top:75%;left:12%;--fs:1.6rem;--fo:0.2;--fd:6s;--fdl:1s;">★</div>
+  <div class="float-star" style="top:25%;right:8%;--fs:1.2rem;--fo:0.2;--fd:8s;--fdl:3s;">✦</div>
+  <div class="float-star" style="top:65%;right:6%;--fs:1.4rem;--fo:0.16;--fd:10s;--fdl:0.5s;">⭐</div>
+  <div class="float-star" style="top:40%;right:15%;--fs:0.9rem;--fo:0.14;--fd:5s;--fdl:4s;">★</div>
+  <div class="float-star" style="top:85%;right:18%;--fs:1.1rem;--fo:0.18;--fd:7s;--fdl:1.5s;">✦</div>
+  <div class="float-star" style="top:10%;left:40%;--fs:0.8rem;--fo:0.12;--fd:11s;--fdl:2.5s;">★</div>
 
-  <!-- welcome overlay -->
+  <!-- Welcome overlay -->
   <div id="ov">
-    <div class="wem" id="wem">🌟</div>
-    <div class="wt"  id="wt"></div>
-    <div class="wsub">Welcome Back ✦</div>
-    <div class="wtap">tap anywhere to continue</div>
+    <div class="ov-icon" id="ov-icon">✨</div>
+    <div class="ov-title" id="ov-title"></div>
+    <div class="ov-sub">Welcome Back ✦</div>
+    <div class="ov-tap">tap anywhere to continue</div>
   </div>
 
-  <!-- CARD -->
-  <div class="wrap">
-    <div class="card" id="card">
+  <!-- Phone card -->
+  <div class="phone-wrap">
+    <div class="phone" id="phone">
 
-      <!-- avatar -->
-      <div class="av-wrap">
-        <div class="av"  id="av">🌟</div>
-        <div class="sr sr1" id="sr1"></div>
-        <div class="sr sr2" id="sr2"></div>
+      <div class="phone-dots"><span></span><span></span><span></span></div>
+
+      <!-- App icon -->
+      <div class="app-icon">
+        <span class="icon-sparkle">✦</span>
       </div>
 
-      <h1 class="title" id="title" data-t="Who's there?">Who's there?</h1>
-      <p  class="sub"   id="sub">Enter your details<span class="cur"></span></p>
+      <!-- Welcome badge -->
+      <div class="badge">
+        <div class="badge-dot"></div>
+        <div class="badge-line"></div>
+        <span>Welcome</span>
+        <div class="badge-line r"></div>
+        <div class="badge-dot"></div>
+      </div>
 
-      <div class="divider"><span></span><p>Sign in</p><span></span></div>
+      <!-- Title -->
+      <h1 class="card-title">Welcome to Dharya</h1>
+      <p class="card-sub">Only someone special knows the way in 🗝</p>
 
-      <!-- USER ID -->
+      <div class="hdiv"></div>
+
+      <!-- USERNAME -->
       <div class="field">
-        <label for="uid">User ID</label>
-        <input type="text" id="uid" placeholder="Enter your user ID"
-               autocomplete="off" oninput="onUID(this.value)" spellcheck="false"/>
-        <div class="uid-status" id="uid-st"></div>
-        <div class="fline"></div>
+        <label for="uid">Username</label>
+        <input type="text" id="uid" placeholder="Enter username"
+               autocomplete="off" spellcheck="false"
+               oninput="onUID(this.value)"/>
       </div>
 
       <!-- PASSWORD -->
       <div class="field">
         <label for="pw">Password</label>
-        <input type="password" id="pw" placeholder="DD/MM/YYYY"
-               autocomplete="off" oninput="onPW(this.value)" spellcheck="false"/>
-        <div class="fi">
-          <button onclick="togglePw()" title="Show/Hide" id="eye">👁</button>
+        <div class="pw-wrap">
+          <input type="password" id="pw" placeholder="••••••••••"
+                 autocomplete="off" spellcheck="false"
+                 oninput="onPW(this.value)"/>
+          <button class="eye-btn" id="eye" onclick="togglePw()">👁</button>
         </div>
-        <div class="fline"></div>
-        <div class="pwbar-wrap"><div class="pwbar" id="pwbar"></div></div>
       </div>
 
-      <button class="btn" id="btn" onclick="login()">Sign In</button>
+      <button class="enter-btn" id="btn" onclick="login()">
+        Enter →&nbsp;<span class="arrow-icon">→</span>
+      </button>
+
       <div class="msg" id="msg"></div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <span></span>
+        Only someone special knows the way in
+        <span></span>
+      </div>
+      <div class="footer-dots">
+        <b></b><b></b><b></b>
+      </div>
     </div>
   </div>
 
 <script>
-/* ═══════════════════════════
+/* ═══════════════════════
    USERS
-═══════════════════════════ */
-const U = {
-  dharya:  { id:'DHARYA',  pw:'09/10/2007', theme:'g', emoji:'🌿', name:'Dharya',  greet:'Welcome, Dharya! 💚' },
-  sadhana: { id:'DHARYA',  pw:'29/02/2008', theme:'p', emoji:'🌸', name:'Sadhana', greet:'Welcome, Sadhana! 🌸' },
+═══════════════════════ */
+const USERS = {
+  dharya:  { id:'DHARYA', pw:'09/10/2007', emoji:'🌿', name:'Dharya',  greet:'Welcome, Dharya!' },
+  sadhana: { id:'DHARYA', pw:'29/02/2008', emoji:'🌸', name:'Sadhana', greet:'Welcome, Sadhana!' },
 };
-let who = null;   // current detected user key
-let uidOk = false;
-let pwOk  = false;
 
-/* ═══════════════════════════
-   AURORA
-═══════════════════════════ */
-const ac = document.getElementById('aurora');
-const ax = ac.getContext('2d');
-let aw, ah, at = 0, ahue = 0;
-const waves = [0,1,2,3,4].map(i=>({off:i*Math.PI*.4, sp:.0003+i*.00016, amp:55+i*22, y:.22+i*.13, h:i*45}));
-function rsz(){ aw=ac.width=innerWidth; ah=ac.height=innerHeight; }
-rsz(); addEventListener('resize',rsz);
-function aurora(){
-  ax.clearRect(0,0,aw,ah); at++;
-  waves.forEach(w=>{
-    ax.beginPath();
-    const by=ah*w.y;
-    ax.moveTo(0,by);
-    for(let x=0;x<=aw;x+=7){
-      const y=by+Math.sin(x*.006+at*w.sp*1000+w.off)*w.amp+Math.cos(x*.003+at*w.sp*600)*(w.amp*.4);
-      ax.lineTo(x,y);
-    }
-    ax.lineTo(aw,0);ax.lineTo(0,0);ax.closePath();
-    const hue=(w.h+ahue+at*.035)%360;
-    const g=ax.createLinearGradient(0,0,aw,ah*.5);
-    g.addColorStop(0,  `hsla(${hue},80%,55%,0)`);
-    g.addColorStop(.4, `hsla(${hue},90%,50%,.04)`);
-    g.addColorStop(.7, `hsla(${(hue+35)%360},85%,55%,.07)`);
-    g.addColorStop(1,  `hsla(${(hue+65)%360},80%,50%,0)`);
-    ax.fillStyle=g; ax.fill();
+/* ═══════════════════════
+   STARS CANVAS
+═══════════════════════ */
+const sc = document.getElementById('stars-canvas');
+const sx = sc.getContext('2d');
+let sw, sh;
+function rsz(){ sw=sc.width=innerWidth; sh=sc.height=innerHeight; }
+rsz(); addEventListener('resize', rsz);
+
+// generate stars
+const STARS = Array.from({length:300}, ()=>({
+  x: Math.random(),
+  y: Math.random(),
+  r: Math.random()*1.8+0.2,
+  a: Math.random(),
+  da: (Math.random()*0.006+0.002)*(Math.random()>.5?1:-1),
+  baseA: Math.random()*0.4+0.05,
+}));
+
+function drawStars(){
+  sx.clearRect(0,0,sw,sh);
+  STARS.forEach(s=>{
+    s.a += s.da;
+    if(s.a>1||s.a<0) s.da*=-1;
+    sx.beginPath();
+    sx.arc(s.x*sw, s.y*sh, s.r, 0, Math.PI*2);
+    sx.fillStyle=`rgba(255,255,255,${s.baseA*Math.abs(s.a)})`;
+    sx.fill();
   });
-  requestAnimationFrame(aurora);
+  requestAnimationFrame(drawStars);
 }
-aurora();
+drawStars();
 
-/* ═══════════════════════════
-   STARS
-═══════════════════════════ */
-const sf2 = document.getElementById('stars');
-for(let i=0;i<270;i++){
-  const s=document.createElement('div'); s.className='s';
-  const sz=Math.random()*2.8+.3;
-  s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;
-    --d:${(Math.random()*3+1.5).toFixed(1)}s;--dl:${(Math.random()*7).toFixed(1)}s;
-    --lo:${(Math.random()*.1+.03).toFixed(2)};--hi:${(Math.random()*.65+.25).toFixed(2)};`;
-  sf2.appendChild(s);
-}
-
-/* ═══════════════════════════
+/* ═══════════════════════
    METEORS
-═══════════════════════════ */
+═══════════════════════ */
 const ml = document.getElementById('meteors');
-function meteor(forced){
-  const el=document.createElement('div'); el.className='m';
-  const len=Math.random()*290+80, travel=Math.random()*600+400;
-  const dur=(Math.random()*1.0+.55).toFixed(2), delay=forced?0:(Math.random()*3).toFixed(2);
-  const angle=-(Math.random()*28+7);
-  let c='#ffffff';
-  if(who==='dharya')  c='#80ffcc';
-  if(who==='sadhana') c='#ffaad9';
-  el.style.cssText=`width:${len}px;height:${Math.random()>.5?2:1.5}px;
-    top:${Math.random()*75}%;left:${Math.random()*85}%;
+function spawnMeteor(){
+  const el = document.createElement('div');
+  el.className = 'meteor';
+  const len = Math.random()*240+80;
+  const travel = Math.random()*500+350;
+  const dur = (Math.random()*1.0+0.7).toFixed(2);
+  const delay = (Math.random()*4).toFixed(2);
+  const angle = -(Math.random()*25+10);
+  el.style.cssText=`
+    width:${len}px;height:${Math.random()>.4?1.5:2}px;
+    top:${Math.random()*70}%;left:${Math.random()*80}%;
+    border-radius:999px;
     --ma:${angle}deg;--mt:${travel}px;--md:${dur}s;--ml:${delay}s;
-    background:linear-gradient(90deg,transparent 0%,${c}77 35%,${c} 100%);
-    box-shadow:0 0 7px 1px ${c}44;`;
+    background:linear-gradient(90deg,transparent,rgba(255,180,100,.6) 40%,rgba(255,220,180,.9) 100%);
+    box-shadow:0 0 6px rgba(255,200,150,.4);
+  `;
   ml.appendChild(el);
   setTimeout(()=>el.remove(),(parseFloat(dur)+parseFloat(delay))*1000+400);
 }
-(function ml2(){ meteor(false); setTimeout(ml2,Math.random()*700+200); })();
+(function mloop(){ spawnMeteor(); setTimeout(mloop, Math.random()*900+300); })();
 
-/* ═══════════════════════════
-   3D TILT
-═══════════════════════════ */
-const card=document.getElementById('card');
+/* ═══════════════════════
+   PHONE TILT
+═══════════════════════ */
+const phone = document.getElementById('phone');
 addEventListener('mousemove',e=>{
   const dx=(e.clientX-innerWidth/2)/(innerWidth/2);
   const dy=(e.clientY-innerHeight/2)/(innerHeight/2);
-  card.style.animation='none';
-  card.style.transform=`rotateX(${-dy*9}deg) rotateY(${dx*9}deg) translateZ(12px)`;
+  phone.style.animation='none';
+  phone.style.transform=`rotateX(${-dy*6}deg) rotateY(${dx*6}deg) translateZ(8px)`;
 });
 addEventListener('mouseleave',()=>{
-  card.style.transition='transform .8s ease';
-  card.style.transform='';
-  setTimeout(()=>{ card.style.animation='fc 7s ease-in-out infinite'; card.style.transition=''; },850);
+  phone.style.transition='transform .8s ease';
+  phone.style.transform='';
+  setTimeout(()=>{ phone.style.animation='phoneFloat 5s ease-in-out infinite'; phone.style.transition=''; },850);
 });
 
-/* ═══════════════════════════
-   SPARK TRAIL
-═══════════════════════════ */
-addEventListener('mousemove',e=>{
-  if(Math.random()>.32)return;
-  const sp=document.createElement('div'); sp.className='sp';
-  let c='rgba(255,255,255,.6)';
-  if(who==='dharya')  c='#80ffcc';
-  if(who==='sadhana') c='#ffaad9';
-  sp.style.cssText=`width:5px;height:5px;left:${e.clientX}px;top:${e.clientY}px;
-    background:${c};box-shadow:0 0 6px ${c};`;
-  document.body.appendChild(sp);
-  setTimeout(()=>sp.remove(),700);
-});
-
-/* ═══════════════════════════
+/* ═══════════════════════
    INPUT HANDLERS
-═══════════════════════════ */
-function onUID(val){
-  clearMsg();
-  const v=val.trim().toUpperCase();
-  const st=document.getElementById('uid-st');
+═══════════════════════ */
+function onUID(v){ clearMsg(); }
+function onPW(v){ clearMsg(); }
 
-  // detect user by ID
-  const match=Object.entries(U).find(([,u])=>u.id===v);
-  if(v===''){
-    uidOk=false; who=null;
-    st.textContent=''; st.className='uid-status';
-    resetTheme(); return;
-  }
-  if(match){
-    // if password field already has something, pick the right user
-    const pwVal=document.getElementById('pw').value.trim();
-    const byPw=Object.entries(U).find(([,u])=>u.id===v && u.pw===pwVal);
-    if(byPw){ who=byPw[0]; }
-    else { who=match[0]; } // default to first match
-    uidOk=true;
-    st.textContent='✓'; st.className='uid-status show ok';
-    applyTheme(who);
-  } else {
-    uidOk=false;
-    st.textContent='✗'; st.className='uid-status show no';
-    // don't reset theme harshly, just clear pills
-    document.getElementById('pd').className='pill';
-    document.getElementById('ps').className='pill';
-  }
-}
-
-function onPW(val){
-  clearMsg();
-  const pct=Math.min(100,Math.round((val.length/10)*100));
-  document.getElementById('pwbar').style.width=pct+'%';
-
-  if(!val){ pwOk=false; return; }
-  const match=Object.entries(U).find(([,u])=>val===u.pw);
-  if(match){
-    pwOk=true;
-    // if uid matches too, apply specific user
-    const uid=document.getElementById('uid').value.trim().toUpperCase();
-    if(uid===match[1].id){ who=match[0]; applyTheme(who); }
-  } else { pwOk=false; }
-}
-
-/* ═══════════════════════════
-   THEME
-═══════════════════════════ */
-function applyTheme(key){
-  const u=U[key];
-  document.body.className=u.theme;
-  ahue=u.theme==='g'?120:310;
-  document.getElementById('o1').style.background=u.theme==='g'?'#0a3a1a':'#3a0a1a';
-  document.getElementById('o2').style.background=u.theme==='g'?'#063218':'#320618';
-  document.getElementById('av').textContent=u.emoji;
-  const t=document.getElementById('title');
-  t.textContent=`Hey, ${u.name}!`; t.dataset.t=`Hey, ${u.name}!`;
-  typeIt(document.getElementById('sub'), u.theme==='g'?'💚 Green mode unlocked':'🌸 Pink mode unlocked');
-
-  flash(u.theme);
-  for(let i=0;i<6;i++) setTimeout(()=>meteor(true),i*90);
-}
-
-function resetTheme(){
-  document.body.className='';
-  ahue=0;
-  document.getElementById('o1').style.background='#3a1060';
-  document.getElementById('o2').style.background='#10104a';
-  document.getElementById('av').textContent='🌟';
-  const t=document.getElementById('title');
-  t.textContent="Who's there?"; t.dataset.t="Who's there?";
-  typeIt(document.getElementById('sub'),'Enter your details');
-
-  document.getElementById('pwbar').style.width='0%';
-}
-
-/* ═══════════════════════════
-   TYPEWRITER
-═══════════════════════════ */
-let tto=null;
-function typeIt(el,text){
-  clearTimeout(tto);
-  el.innerHTML='<span class="cur"></span>'; let i=0;
-  (function t(){ if(i<=text.length){ el.innerHTML=text.slice(0,i++)+'<span class="cur"></span>'; tto=setTimeout(t,36); } })();
-}
-
-/* ═══════════════════════════
-   FLASH
-═══════════════════════════ */
-function flash(th){
-  const f=document.createElement('div');
-  f.style.cssText=`position:fixed;inset:0;z-index:9999;pointer-events:none;
-    background:${th==='g'?'rgba(0,255,170,.05)':'rgba(255,95,160,.05)'};
-    animation:fout .6s ease-out forwards;`;
-  const sty=document.createElement('style');
-  sty.textContent='@keyframes fout{from{opacity:1}to{opacity:0}}';
-  document.head.appendChild(sty); document.body.appendChild(f);
-  setTimeout(()=>{ f.remove(); sty.remove(); },700);
-}
-
-/* ═══════════════════════════
-   TOGGLE PW
-═══════════════════════════ */
+/* ═══════════════════════
+   TOGGLE PASSWORD
+═══════════════════════ */
 let pvis=false;
 function togglePw(){
   const inp=document.getElementById('pw');
@@ -668,98 +630,92 @@ function togglePw(){
   document.getElementById('eye').textContent=pvis?'🙈':'👁';
 }
 
-/* ═══════════════════════════
+/* ═══════════════════════
    LOGIN
-═══════════════════════════ */
+═══════════════════════ */
 function login(){
-  const uidVal=document.getElementById('uid').value.trim().toUpperCase();
-  const pwVal =document.getElementById('pw').value.trim();
-  const btn   =document.getElementById('btn');
+  const uid=document.getElementById('uid').value.trim().toUpperCase();
+  const pw =document.getElementById('pw').value.trim();
+  const btn=document.getElementById('btn');
 
-  if(!uidVal){ showMsg('Please enter your User ID ✦','err'); shake(); return; }
-  if(!pwVal)  { showMsg('Please enter your password ✦','err'); shake(); return; }
+  if(!uid){ showMsg('Please enter your username ✦','err'); shake(); return; }
+  if(!pw){  showMsg('Please enter your password ✦','err'); shake(); return; }
 
-  // find user where both id AND pw match
-  const match=Object.entries(U).find(([,u])=>u.id===uidVal && u.pw===pwVal);
-  if(!match){ showMsg('Incorrect User ID or Password ✦','err'); shake(); return; }
+  const match=Object.entries(USERS).find(([,u])=>u.id===uid && u.pw===pw);
+  if(!match){ showMsg('Incorrect username or password ✦','err'); shake(); return; }
 
   const [key,u]=match;
-  who=key; applyTheme(key);
-
-  btn.textContent='Signing in…'; btn.style.pointerEvents='none';
-  ripple(btn);
-  showMsg(u.greet,'ok-'+u.theme);
-  burst(u.theme==='g'?'#00ffaa':'#ff5fa0');
-  for(let i=0;i<20;i++) setTimeout(()=>meteor(true),i*60);
-  setTimeout(()=>welcome(u.greet,u.emoji,u.theme),1100);
+  btn.innerHTML='Entering… ✦';
+  btn.style.pointerEvents='none';
+  rippleBtn(btn);
+  showMsg(u.greet + (key==='dharya'?' 💚':' 🌸'), key==='dharya'?'ok-g':'ok-p');
+  burst(key==='dharya'?'#00ffaa':'#ff88cc');
+  for(let i=0;i<20;i++) setTimeout(spawnMeteor,i*60);
+  setTimeout(()=>showWelcome(u.greet,u.emoji,key),1100);
 }
 
-/* ═══════════════════════════
+/* ═══════════════════════
    HELPERS
-═══════════════════════════ */
-function showMsg(t,c){ const b=document.getElementById('msg'); b.textContent=t; b.className='msg '+c; b.style.display='block'; }
+═══════════════════════ */
+function showMsg(t,c){
+  const b=document.getElementById('msg');
+  b.textContent=t; b.className='msg '+c; b.style.display='block';
+}
 function clearMsg(){ document.getElementById('msg').style.display='none'; }
 
 function shake(){
-  card.style.animation='none';
-  [[-14,0],[14,75],[-8,148],[8,222],[0,295]].forEach(([x,t])=>setTimeout(()=>card.style.transform=`translateX(${x}px)`,t));
-  setTimeout(()=>{ card.style.transform=''; card.style.animation='fc 7s ease-in-out infinite'; },380);
+  phone.style.animation='none';
+  [[-12,0],[12,70],[-7,140],[7,210],[0,280]].forEach(([x,t])=>
+    setTimeout(()=>phone.style.transform=`translateX(${x}px)`,t));
+  setTimeout(()=>{ phone.style.transform=''; phone.style.animation='phoneFloat 5s ease-in-out infinite'; },350);
 }
 
-function ripple(btn){
+function rippleBtn(btn){
   const r=document.createElement('span'); r.className='rip';
-  r.style.cssText='width:250px;height:250px;top:calc(50% - 125px);left:calc(50% - 125px);';
-  btn.appendChild(r); setTimeout(()=>r.remove(),800);
+  r.style.cssText='width:220px;height:220px;top:calc(50% - 110px);left:calc(50% - 110px);';
+  btn.appendChild(r); setTimeout(()=>r.remove(),700);
 }
 
 function burst(col){
-  for(let i=0;i<75;i++){
+  for(let i=0;i<70;i++){
     const p=document.createElement('div'); p.className='pt';
     const sz=Math.random()*11+3;
     p.style.cssText=`width:${sz}px;height:${sz}px;
-      left:${18+Math.random()*64}%;top:${12+Math.random()*38}%;
+      left:${20+Math.random()*60}%;top:${15+Math.random()*40}%;
       background:${col};box-shadow:0 0 ${sz}px ${col};
       --pd:${(Math.random()*1.9+.7).toFixed(2)}s;
-      --pde:${(Math.random()*.45).toFixed(2)}s;
-      --px:${(Math.random()*300-150).toFixed(0)}px;
+      --pde:${(Math.random()*.4).toFixed(2)}s;
+      --px:${(Math.random()*280-140).toFixed(0)}px;
       border-radius:${Math.random()>.3?'50%':'4px'};`;
     document.body.appendChild(p);
-    setTimeout(()=>p.remove(),3600);
+    setTimeout(()=>p.remove(),3500);
   }
 }
 
-function welcome(text,emoji,th){
+function showWelcome(text,emoji,key){
   const ov=document.getElementById('ov');
-  const wt=document.getElementById('wt');
-  document.getElementById('wem').textContent=emoji;
-  wt.className='wt '+th;
-  ov.style.background=th==='g'?'rgba(0,8,4,.5)':'rgba(8,0,4,.5)';
+  const ot=document.getElementById('ov-title');
+  document.getElementById('ov-icon').textContent=emoji;
+  ov.style.background=key==='dharya'?'rgba(0,6,3,.4)':'rgba(6,0,3,.4)';
   ov.classList.add('show');
-  wt.textContent='';
-  let i=0; (function tw(){ if(i<=text.length){ wt.textContent=text.slice(0,i++); setTimeout(tw,55); } })();
-  for(let j=0;j<30;j++) setTimeout(()=>meteor(true),j*100);
-  burst(th==='g'?'#00ffaa':'#ff5fa0');
+  ot.textContent='';
+  let i=0;(function tw(){if(i<=text.length){ot.textContent=text.slice(0,i++);setTimeout(tw,55);}})();
+  for(let j=0;j<28;j++) setTimeout(spawnMeteor,j*90);
+  burst(key==='dharya'?'#00ffaa':'#ff88cc');
 }
 
-/* ═══════════════════════════
-   KEYBOARD & DISMISS
-═══════════════════════════ */
 addEventListener('keydown',e=>{ if(e.key==='Enter') login(); });
 document.getElementById('ov').addEventListener('click',()=>{
   document.getElementById('ov').classList.remove('show');
   const btn=document.getElementById('btn');
-  btn.textContent='Sign In'; btn.style.pointerEvents='';
+  btn.innerHTML='Enter →&nbsp;<span class="arrow-icon">→</span>';
+  btn.style.pointerEvents='';
   document.getElementById('uid').value='';
   document.getElementById('pw').value='';
   pvis=false; document.getElementById('pw').type='password';
   document.getElementById('eye').textContent='👁';
-  uidOk=pwOk=false; who=null;
-  resetTheme(); clearMsg();
-  document.getElementById('uid-st').className='uid-status';
-  document.getElementById('pwbar').style.width='0%';
+  clearMsg();
 });
-
-typeIt(document.getElementById('sub'),'Enter your details');
 </script>
 </body>
 </html>

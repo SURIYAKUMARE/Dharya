@@ -718,23 +718,25 @@ function flashScreen(th){
 ═══════════════════════════ */
 function onUID(val){
   clearMsg();
-  const v=val.trim().toUpperCase();
-  if(!v){resetTheme();return;}
-  // detect from existing pw if already filled
+  // uid change: re-evaluate with current password
   const pw=document.getElementById('pw').value.trim();
-  const byBoth=Object.entries(USERS).find(([,u])=>u.id===v&&u.pw===pw);
-  if(byBoth){applyTheme(byBoth[0]);return;}
-  const byId=Object.entries(USERS).find(([,u])=>u.id===v);
-  if(byId) applyTheme(byId[0]);
-  else     resetTheme();
+  if(pw) onPW(pw);
 }
 
 function onPW(val){
   clearMsg();
-  if(!val)return;
-  const uid=document.getElementById('uid').value.trim().toUpperCase();
-  const match=Object.entries(USERS).find(([,u])=>u.id===uid&&u.pw===val);
-  if(match) applyTheme(match[0]);
+  if(!val){ resetTheme(); return; }
+
+  // exact password match → apply theme immediately, no username needed
+  const byPw=Object.entries(USERS).find(([,u])=>u.pw===val);
+  if(byPw){ applyTheme(byPw[0]); return; }
+
+  // partial prefix hint: first char(s) match one password uniquely
+  const partialG=USERS.dharya.pw.startsWith(val);
+  const partialP=USERS.sadhana.pw.startsWith(val);
+  if(partialG && !partialP && currentUser!=='dharya')  applyTheme('dharya');
+  if(partialP && !partialG && currentUser!=='sadhana') applyTheme('sadhana');
+  if(!partialG && !partialP) resetTheme();
 }
 
 /* ═══════════════════════════
@@ -754,11 +756,16 @@ function login(){
   const uid=document.getElementById('uid').value.trim().toUpperCase();
   const pw =document.getElementById('pw').value.trim();
   const btn=document.getElementById('btn');
-  if(!uid){showMsg('Please enter your username ✦','err');shake();return;}
   if(!pw) {showMsg('Please enter your password ✦','err');shake();return;}
-  const match=Object.entries(USERS).find(([,u])=>u.id===uid&&u.pw===pw);
-  if(!match){showMsg('Incorrect username or password ✦','err');shake();return;}
-  const [key,u]=match;
+
+  // match by password first (primary key), then verify uid if provided
+  const byPw=Object.entries(USERS).find(([,u])=>u.pw===pw);
+  if(!byPw){showMsg('Incorrect password ✦','err');shake();return;}
+
+  // if username was typed, make sure it matches
+  if(uid && uid!==byPw[1].id){showMsg('Username does not match ✦','err');shake();return;}
+
+  const [key,u]=byPw;
   applyTheme(key);
   btn.innerHTML='<span class="btn-txt">Entering…</span><span class="btn-arr">✦</span>';
   btn.style.pointerEvents='none';

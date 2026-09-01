@@ -280,44 +280,7 @@
     body.g .pwbar { background:linear-gradient(90deg,#00ffaa,#00ffee);box-shadow:0 0 6px #00ffaa; }
     body.p .pwbar { background:linear-gradient(90deg,#ff5fa0,#ff99cc);box-shadow:0 0 6px #ff5fa0; }
 
-    /* ── USER PILLS ── */
-    .pills {
-      display:flex;gap:10px;margin-bottom:24px;
-    }
-    .pill {
-      flex:1;padding:9px 12px;border-radius:12px;
-      border:1.5px solid var(--border);
-      background:var(--neutral);
-      color:var(--muted);font-size:.75rem;font-weight:700;
-      letter-spacing:.1em;text-transform:uppercase;
-      cursor:pointer;display:flex;align-items:center;
-      gap:7px;justify-content:center;
-      transition:all .4s ease;position:relative;overflow:hidden;
-    }
-    .pill:hover { border-color:rgba(255,255,255,.22);color:#fff;background:rgba(255,255,255,.07); }
-    .pill::after {
-      content:'';position:absolute;inset:0;
-      background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
-      transform:translateX(-100%);
-    }
-    .pill.ag::after,.pill.ap::after { animation:psh 1.6s ease-in-out infinite; }
-    @keyframes psh { to{transform:translateX(200%);} }
-    .pill.ag {
-      border-color:var(--g1);color:var(--g1);
-      background:rgba(0,255,170,.07);
-      box-shadow:0 0 18px rgba(0,255,170,.22);
-    }
-    .pill.ap {
-      border-color:var(--p1);color:var(--p1);
-      background:rgba(255,95,160,.07);
-      box-shadow:0 0 18px rgba(255,95,160,.22);
-    }
-    .pill .pdot {
-      width:7px;height:7px;border-radius:50%;
-      background:currentColor;opacity:.3;flex-shrink:0;
-    }
-    .pill.ag .pdot,.pill.ap .pdot { opacity:1;animation:dp .9s ease-in-out infinite alternate; }
-    @keyframes dp { from{transform:scale(1)}to{transform:scale(2)} }
+
 
     /* ── BUTTON ── */
     .btn {
@@ -453,12 +416,6 @@
 
       <h1 class="title" id="title" data-t="Who's there?">Who's there?</h1>
       <p  class="sub"   id="sub">Enter your details<span class="cur"></span></p>
-
-      <!-- user pills -->
-      <div class="pills">
-        <div class="pill" id="pd"><span class="pdot"></span>🌿 Dharya</div>
-        <div class="pill" id="ps"><span class="pdot"></span>🌸 Sadhana</div>
-      </div>
 
       <div class="divider"><span></span><p>Sign in</p><span></span></div>
 
@@ -659,8 +616,7 @@ function applyTheme(key){
   const t=document.getElementById('title');
   t.textContent=`Hey, ${u.name}!`; t.dataset.t=`Hey, ${u.name}!`;
   typeIt(document.getElementById('sub'), u.theme==='g'?'💚 Green mode unlocked':'🌸 Pink mode unlocked');
-  document.getElementById('pd').className='pill'+(key==='dharya'?' ag':'');
-  document.getElementById('ps').className='pill'+(key==='sadhana'?' ap':'');
+
   flash(u.theme);
   for(let i=0;i<6;i++) setTimeout(()=>meteor(true),i*90);
 }
@@ -674,8 +630,7 @@ function resetTheme(){
   const t=document.getElementById('title');
   t.textContent="Who's there?"; t.dataset.t="Who's there?";
   typeIt(document.getElementById('sub'),'Enter your details');
-  document.getElementById('pd').className='pill';
-  document.getElementById('ps').className='pill';
+
   document.getElementById('pwbar').style.width='0%';
 }
 

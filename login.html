@@ -505,7 +505,7 @@
       <!-- Title -->
       <h1 class="ctitle">
         Welcome back,<br>
-        <span class="ctitle-name" id="ctitle-name"><span id="tname">?</span><span class="cur"></span></span>
+        <span class="ctitle-name" id="ctitle-name"><span id="tname">Dharya</span><span class="cur"></span></span>
       </h1>
 
       <!-- Subtitle -->
@@ -685,7 +685,7 @@ function resetTheme(){
   currentUser=null;
   document.body.className='';
   document.getElementById('icon-bg').textContent='🌿';
-  document.getElementById('tname').textContent='?';
+  document.getElementById('tname').textContent='Dharya';
   document.getElementById('csub').textContent='Your special world is waiting ✨';
   document.getElementById('detected').classList.remove('show');
 }
@@ -718,7 +718,6 @@ function flashScreen(th){
 ═══════════════════════════ */
 function onUID(val){
   clearMsg();
-  // uid change: re-evaluate with current password
   const pw=document.getElementById('pw').value.trim();
   if(pw) onPW(pw);
 }
@@ -727,16 +726,17 @@ function onPW(val){
   clearMsg();
   if(!val){ resetTheme(); return; }
 
-  // exact password match → apply theme immediately, no username needed
+  // ONLY switch theme on EXACT / FULL password match
   const byPw=Object.entries(USERS).find(([,u])=>u.pw===val);
-  if(byPw){ applyTheme(byPw[0]); return; }
-
-  // partial prefix hint: first char(s) match one password uniquely
-  const partialG=USERS.dharya.pw.startsWith(val);
-  const partialP=USERS.sadhana.pw.startsWith(val);
-  if(partialG && !partialP && currentUser!=='dharya')  applyTheme('dharya');
-  if(partialP && !partialG && currentUser!=='sadhana') applyTheme('sadhana');
-  if(!partialG && !partialP) resetTheme();
+  if(byPw){
+    applyTheme(byPw[0]);
+  } else {
+    // partial typing — just reset back to default if a theme was applied from a different pw
+    // but don't flicker if still typing the correct one
+    const partialG=USERS.dharya.pw.startsWith(val);
+    const partialP=USERS.sadhana.pw.startsWith(val);
+    if(!partialG && !partialP) resetTheme();
+  }
 }
 
 /* ═══════════════════════════

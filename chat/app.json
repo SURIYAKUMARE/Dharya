@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Dharya",
+    "slug": "dharya-chat",
+    "version": "1.0.0",
+    "scheme": "dharya",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0a1a"
+    },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.dharya.chat" },
+    "android": {
+      "package": "com.dharya.chat",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0f0a1a"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        { "photosPermission": "Allow Dharya to access your photos." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#c026d3"
+        }
+      ]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}

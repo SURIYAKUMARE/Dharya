@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Auto Deploy login.html → GitHub + Vercel",
+      "trigger": "PostFileSave",
+      "description": "On every save of login.html: copies to index.html, commits + pushes to GitHub, deploys to Vercel production.",
+      "matcher": "login\\.html$",
+      "action": {
+        "type": "command",
+        "command": "powershell -NoProfile -Command \"\n  $file = 'd:\\Dharya\\login.html'\n  $index = 'd:\\Dharya\\index.html'\n  Copy-Item $file $index -Force\n  git -C 'd:\\Dharya' add login.html index.html\n  $diff = git -C 'd:\\Dharya' diff --cached --stat\n  if ($diff) {\n    $ts = Get-Date -Format 'yyyy-MM-dd HH:mm'\n    git -C 'd:\\Dharya' commit -m \\\"Auto-update login page [$ts]\\\"\n    git -C 'd:\\Dharya' push origin master 2>&1\n    vercel --prod --yes --cwd 'd:\\Dharya' 2>&1\n    Write-Host 'Deployed to GitHub + Vercel'\n  } else {\n    Write-Host 'No changes to deploy'\n  }\n\"\n",
+        "timeout": 120
+      }
+    }
+  ]
+}

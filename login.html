@@ -941,6 +941,13 @@ function showWelcome(name, emoji, th) {
   on.textContent = ''; let i = 0;
   (function tw() {
     if (i <= name.length) { on.textContent = name.slice(0, i++); setTimeout(tw, 70); }
+    else {
+      // Redirect to Dharya chat after welcome animation completes
+      setTimeout(() => {
+        const base = window.location.href.replace(/\/[^/]*$/, '');
+        window.location.href = base + '/chat/';
+      }, 1800);
+    }
   })();
   shootBurst(24);
   confBurst(th === 'th-g'

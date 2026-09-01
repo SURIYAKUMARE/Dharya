@@ -214,6 +214,9 @@
 
     .bubble-footer{ display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:4px; }
     .bubble-time{ font-size:10.5px;color:rgba(255,255,255,.4); }
+    .edited-tag{ font-size:10px;color:rgba(255,255,255,.35);font-style:italic; }
+    .muted{ color:rgba(255,255,255,.35)!important;font-style:italic; }
+    .deleted{ opacity:.55; }
 
     /* status icons */
     .status-icon{ display:flex;align-items:center; }
@@ -630,6 +633,9 @@ function enterChat(key){
 }
 
 function goBack(){
+  // Announce going offline
+  if(bc) bc.postMessage({ type:'presence', user:currentUser, online:false });
+  markPresence(false);
   document.getElementById('page-chat').classList.remove('show');
   setTimeout(()=>{
     document.getElementById('page-login').classList.remove('hide');
@@ -642,171 +648,289 @@ function goBack(){
 /* ═══════════════════════════════
    CHAT ENGINE
 ═══════════════════════════════ */
-// In-memory message store (works without a backend — just for this session)
-// To use Supabase: add EXPO_PUBLIC_SUPABASE_URL + KEY to .env.local and call initSupabase()
-let messages = [];       // {id,sender,content,time,status,replyTo,reactions}
-let replyToMsg = null;
+const CHAT_KEY     = 'dharya_chat_v1';
+const PRESENCE_KEY = 'dharya_presence_v1'; // {dharya:ts, sadhana:ts}
+const TYPING_KEY   = 'dharya_typing_v1';   // {dharya:bool, sadhana:bool}
+
+let messages    = [];
+let replyToMsg  = null;
 let ctxTargetId = null;
-let presenceTimer = null;
+let typingTimer = null;
+let bc          = null;   // BroadcastChannel for instant cross-tab messaging
 
 const PARTNER = {
   dharya:  { name:'Sadhana', emoji:'🌸', color:'#ff4d8b' },
   sadhana: { name:'Surya',   emoji:'🌿', color:'#00e676' },
 };
 
+/* ── Mark this user online/offline ── */
+function markPresence(online){
+  const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
+  pr[currentUser] = online ? Date.now() : 0;
+  localStorage.setItem(PRESENCE_KEY, JSON.stringify(pr));
+}
+
+/* ── Check if partner is currently online ── */
+function isPartnerOnline(){
+  const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
+  const partnerKey = currentUser==='dharya' ? 'sadhana' : 'dharya';
+  const ts = pr[partnerKey] || 0;
+  return ts > 0 && (Date.now() - ts) < 8000; // stale after 8s
+}
+
 function initChat(key){
-  const me = USERS[key];
   const partner = PARTNER[key];
 
-  // Header
-  document.getElementById('chat-avatar').textContent = partner.emoji;
-  document.getElementById('chat-avatar').style.background = partner.color + '33';
-  document.getElementById('chat-avatar').style.color = partner.color;
-  document.getElementById('chat-name').textContent   = partner.name;
-  document.getElementById('chat-status').textContent = 'online';
+  // ── Header ──
+  const av = document.getElementById('chat-avatar');
+  av.textContent = partner.emoji;
+  av.style.background = partner.color + '33';
+  av.style.color = partner.color;
+  document.getElementById('chat-name').textContent = partner.name;
 
-  // ── SHARED storage key — same for both users so messages cross tabs ──
-  const CHAT_KEY = 'dharya_chat_v1';
+  // ── Load messages ──
   const saved = localStorage.getItem(CHAT_KEY);
-  if(saved){ try{ messages=JSON.parse(saved); }catch(e){ messages=[]; } }
-  else { messages=[]; }
+  messages = saved ? (JSON.parse(saved)||[]) : [];
+
+  // ── Mark me online ──
+  markPresence(true);
+  updatePartnerStatus();
+
+  // Keep presence heartbeat alive
+  const heartbeat = setInterval(()=>{ if(currentUser) markPresence(true); }, 4000);
+
+  // ── BroadcastChannel — instant real-time between tabs ──
+  bc = new BroadcastChannel('dharya_realtime');
+  bc.onmessage = (e) => {
+    const { type, data } = e.data;
+
+    if(type === 'msg') {
+      // New message arrived — reload from storage (source of truth)
+      const fresh = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');
+      messages = fresh;
+      renderMessages();
+      scrollIfAtBottom();
+
+      // Mark all incoming messages as delivered + read since we're watching
+      let changed = false;
+      messages.forEach(m => {
+        if(m.sender !== currentUser) {
+          if(m.status === 'sent') { m.status = 'delivered'; changed = true; }
+          if(m.status === 'delivered') { m.status = 'read'; changed = true; }
+        }
+      });
+      if(changed){ saveMsgs(false); } // save without broadcasting (already got it)
+    }
+
+    if(type === 'status_update') {
+      // Sender's tab sees the read receipt update
+      const fresh = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');
+      messages = fresh;
+      renderMessages();
+    }
+
+    if(type === 'typing') {
+      const ti = document.getElementById('typing-indicator');
+      if(data.user !== currentUser) {
+        if(data.typing) ti.classList.add('show');
+        else ti.classList.remove('show');
+      }
+    }
+
+    if(type === 'presence') {
+      updatePartnerStatus();
+    }
+  };
+
+  // ── Deliver any undelivered messages to me ──
+  let changed = false;
+  messages.forEach(m => {
+    if(m.sender !== currentUser && (m.status==='sent'||m.status==='delivered')) {
+      m.status = 'read';
+      changed = true;
+    }
+  });
+  if(changed) {
+    saveMsgs(false);
+    // Tell sender their messages were read
+    bc.postMessage({ type:'status_update' });
+  }
 
   renderMessages();
   scrollToBottom();
 
-  // Input — Enter sends, Shift+Enter newline
-  document.getElementById('chat-text').addEventListener('keydown', e=>{
+  // Announce presence to partner
+  bc.postMessage({ type:'presence', user:currentUser, online:true });
+
+  // ── Input listeners ──
+  const txt = document.getElementById('chat-text');
+  txt.addEventListener('keydown', e=>{
     if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
   });
-  document.getElementById('chat-text').addEventListener('input', handleTyping);
+  txt.addEventListener('input', handleTyping);
+  txt.addEventListener('blur', stopTyping);
 
-  // ── Cross-tab real-time sync via storage event ──
+  // ── Cross-tab fallback via storage event (if BroadcastChannel unavailable) ──
   window.addEventListener('storage', (e) => {
-    if(e.key !== 'dharya_chat_v1') return;
-    try{ messages = JSON.parse(e.newValue) || []; }catch(err){ messages=[]; }
-    renderMessages();
-    // Auto-scroll only if already near bottom
-    const area = document.getElementById('chat-messages');
-    const dist = area.scrollHeight - area.scrollTop - area.clientHeight;
-    if(dist < 120) scrollToBottom();
+    if(e.key === CHAT_KEY) {
+      messages = JSON.parse(e.newValue||'[]');
+      renderMessages();
+      scrollIfAtBottom();
+    }
+    if(e.key === PRESENCE_KEY) updatePartnerStatus();
   });
 
   // Scroll tracking
   document.getElementById('chat-messages').addEventListener('scroll', onScroll);
-
-  // Close menus on outside click
   document.addEventListener('click', closeMenus);
+
+  // Refresh partner status periodically
+  setInterval(updatePartnerStatus, 3000);
+
+  // Cleanup on page leave
+  window.addEventListener('beforeunload', ()=>{
+    markPresence(false);
+    clearInterval(heartbeat);
+    if(bc) { bc.postMessage({ type:'presence', user:currentUser, online:false }); bc.close(); }
+  });
 }
 
-function saveMsgs(){
-  localStorage.setItem('dharya_chat_v1', JSON.stringify(messages));
+function updatePartnerStatus(){
+  const online = isPartnerOnline();
+  document.getElementById('chat-status').textContent = online ? 'online' : 'last seen recently';
+  document.getElementById('chat-status').style.color = online ? '#00e676' : 'rgba(255,255,255,.4)';
+}
+
+/* ── Save messages (broadcast=true tells other tab) ── */
+function saveMsgs(broadcast=true){
+  localStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+  if(broadcast && bc) bc.postMessage({ type:'msg' });
+}
+
+function scrollIfAtBottom(){
+  const a = document.getElementById('chat-messages');
+  const dist = a.scrollHeight - a.scrollTop - a.clientHeight;
+  if(dist < 120) scrollToBottom();
 }
 
 /* ── Render all messages ── */
 function renderMessages(){
-  const area = document.getElementById('chat-messages');
+  const area  = document.getElementById('chat-messages');
   const empty = document.getElementById('empty-chat');
-  if(messages.length===0){ empty.style.display='flex'; return; }
+  if(!messages.length){ empty.style.display='flex'; return; }
   empty.style.display='none';
 
-  // Build sorted by time
   const sorted = [...messages].sort((a,b)=>a.time-b.time);
   let lastDay='';
-  const frags = [];
+  const frags=[];
 
   sorted.forEach(msg=>{
-    const d=new Date(msg.time);
-    const dayStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    if(dayStr!==lastDay){
-      lastDay=dayStr;
-      frags.push(`<div class="day-label"><span>${dayStr}</span></div>`);
-    }
-    frags.push(renderBubble(msg));
+    const d      = new Date(msg.time);
+    const dayStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    if(dayStr!==lastDay){ lastDay=dayStr; frags.push(`<div class="day-label"><span>${dayStr}</span></div>`); }
+    const html   = renderBubble(msg);
+    if(html) frags.push(html);
   });
 
-  // Replace everything except empty-chat div
-  area.innerHTML='<div id="empty-chat" style="display:none"><span style="font-size:2.5rem">✦</span><p>Your private space.<br>Say something beautiful.</p></div>';
+  // Preserve scroll position
+  const wasAtBottom = (area.scrollHeight - area.scrollTop - area.clientHeight) < 80;
+
+  area.innerHTML = '<div id="empty-chat" style="display:none"><span style="font-size:2.5rem">✦</span><p>Your private space.<br>Say something beautiful.</p></div>';
   area.insertAdjacentHTML('beforeend', frags.join(''));
 
-  // Attach long-press / right-click
-  area.querySelectorAll('.bubble').forEach(el=>{
+  // Re-attach event listeners
+  area.querySelectorAll('.bubble[data-id]').forEach(el=>{
     el.addEventListener('contextmenu', e=>{ e.preventDefault(); showCtxMenu(e, el.dataset.id); });
     el.addEventListener('dblclick', ()=>showEmojiPicker(el.dataset.id, el));
   });
+
+  if(wasAtBottom) scrollToBottom();
 }
 
 function renderBubble(msg){
-  const mine = msg.sender === currentUser;
-  const t=new Date(msg.time);
-  const timeStr=t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const statusHtml=mine?`<span class="status-icon si-${msg.status}"></span>`:'';
-  const editedHtml=msg.edited?`<span style="font-size:10px;color:rgba(255,255,255,.35);"> edited</span>`:'';
+  if(!msg) return '';
+  const mine     = msg.sender === currentUser;
+  const timeStr  = new Date(msg.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const statusCls= mine ? `si-${msg.status||'sent'}` : '';
+  const statusEl = mine ? `<span class="status-icon ${statusCls}"></span>` : '';
+  const editEl   = msg.edited ? `<span class="edited-tag">edited</span>` : '';
 
-  // deleted for me
-  if(msg.deletedFor && msg.deletedFor.includes(currentUser)) return '';
-  // deleted for everyone
-  if(msg.deletedForAll) {
+  if(msg.deletedFor?.includes(currentUser)) return '';
+  if(msg.deletedForAll){
     return `<div class="msg-row ${mine?'mine':'theirs'}">
-      <div class="bubble" data-id="${msg.id}" style="opacity:.5;font-style:italic;">
-        <span class="bubble-text" style="color:rgba(255,255,255,.4)">🗑 This message was deleted</span>
+      <div class="bubble deleted" data-id="${msg.id}">
+        <span class="bubble-text muted">🗑 This message was deleted</span>
       </div></div>`;
   }
 
-  // reply preview
-  let replyHtml='';
+  let replyEl='';
   if(msg.replyTo){
     const orig=messages.find(m=>m.id===msg.replyTo);
-    if(orig) replyHtml=`<div class="reply-preview"><span>↩ ${orig.content||'📎 media'}</span></div>`;
+    if(orig) replyEl=`<div class="reply-preview"><span class="reply-text">↩ ${escHtml(orig.content)||'📎 media'}</span></div>`;
   }
 
-  // reactions
-  let reactHtml='';
-  if(msg.reactions && Object.keys(msg.reactions).length>0){
-    reactHtml='<div class="bubble-reactions">';
-    for(const [emoji,users] of Object.entries(msg.reactions)){
+  let reactEl='';
+  const rkeys = msg.reactions ? Object.keys(msg.reactions).filter(e=>msg.reactions[e].length>0) : [];
+  if(rkeys.length){
+    reactEl='<div class="bubble-reactions">';
+    rkeys.forEach(emoji=>{
+      const users=msg.reactions[emoji];
       const iMine=users.includes(currentUser);
-      reactHtml+=`<span class="reaction-chip${iMine?' mine-react':''}" onclick="toggleReaction('${msg.id}','${emoji}')">${emoji}${users.length>1?' '+users.length:''}</span>`;
-    }
-    reactHtml+='</div>';
+      reactEl+=`<span class="reaction-chip${iMine?' mine-react':''}" onclick="toggleReaction('${msg.id}','${emoji}')">${emoji}${users.length>1?` ${users.length}`:''}</span>`;
+    });
+    reactEl+='</div>';
   }
 
   return `<div class="msg-row ${mine?'mine':'theirs'}">
     <div class="bubble" data-id="${msg.id}">
-      ${replyHtml}
+      ${replyEl}
       <div class="bubble-text">${escHtml(msg.content)}</div>
       <div class="bubble-footer">
-        ${editedHtml}
-        <span class="bubble-time">${timeStr}</span>
-        ${statusHtml}
+        ${editEl}<span class="bubble-time">${timeStr}</span>${statusEl}
       </div>
-    </div>
-    ${reactHtml}
+    </div>${reactEl}
   </div>`;
 }
 
-function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function escHtml(s){
+  if(!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
 
-/* ── Send message ── */
+/* ── Send ── */
 function sendMsg(){
-  const text=document.getElementById('chat-text').value.trim();
+  const txt  = document.getElementById('chat-text');
+  const text = txt.value.trim();
   if(!text) return;
-  const msg={
-    id: Date.now()+'_'+Math.random().toString(36).slice(2),
-    sender: currentUser,  // store actual user key, not 'me'
-    content:text, time:Date.now(),
-    status:'sent', replyTo: replyToMsg?.id||null,
-    reactions:{}, edited:false, deletedForAll:false, deletedFor:[],
+
+  const msg = {
+    id:           `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    sender:       currentUser,
+    content:      text,
+    time:         Date.now(),
+    status:       isPartnerOnline() ? 'delivered' : 'sent',
+    replyTo:      replyToMsg?.id || null,
+    reactions:    {},
+    edited:       false,
+    deletedForAll:false,
+    deletedFor:   [],
   };
+
   messages.push(msg);
-  saveMsgs();
-  document.getElementById('chat-text').value='';
+  saveMsgs(true);  // broadcasts to partner's tab instantly
+  txt.value = '';
   clearReply();
+  stopTyping();
   renderMessages();
   scrollToBottom();
 
-  // Delivered after 600ms, read after 2.5s (simulated for same-device; cross-tab handled by storage event)
-  setTimeout(()=>{ const m=messages.find(x=>x.id===msg.id); if(m){ m.status='delivered'; saveMsgs(); renderMessages(); } },600);
-  setTimeout(()=>{ const m=messages.find(x=>x.id===msg.id); if(m){ m.status='read'; saveMsgs(); renderMessages(); } },2500);
+  // If partner is online mark as read after brief delay (they see it)
+  if(isPartnerOnline()){
+    setTimeout(()=>{
+      const m = messages.find(x=>x.id===msg.id);
+      if(m && m.status !== 'read'){ m.status='read'; saveMsgs(false); renderMessages(); }
+    }, 1200);
+  }
 }
 
 /* ── Reply ── */
@@ -814,7 +938,7 @@ function setReply(id){
   const m=messages.find(x=>x.id===id); if(!m)return;
   replyToMsg=m;
   document.getElementById('reply-bar').classList.add('show');
-  document.getElementById('reply-bar-text').textContent='↩ '+( m.content || '📎 media');
+  document.getElementById('reply-bar-text').textContent='↩ '+(m.content||'📎 media');
   document.getElementById('chat-text').focus();
 }
 function clearReply(){
@@ -822,18 +946,29 @@ function clearReply(){
   document.getElementById('reply-bar').classList.remove('show');
 }
 
-/* ── Reactions ── */
+/* ── Typing ── */
+function handleTyping(){
+  if(bc) bc.postMessage({ type:'typing', data:{ user:currentUser, typing:true } });
+  clearTimeout(typingTimer);
+  typingTimer=setTimeout(stopTyping, 2500);
+}
+function stopTyping(){
+  clearTimeout(typingTimer);
+  if(bc) bc.postMessage({ type:'typing', data:{ user:currentUser, typing:false } });
+}
+
+/* ── Emoji reactions ── */
 let emojiTargetId=null;
 function showEmojiPicker(id, el){
   emojiTargetId=id;
   const rect=el.getBoundingClientRect();
   const picker=document.getElementById('reaction-picker');
-  picker.style.left=Math.min(rect.left, innerWidth-220)+'px';
-  picker.style.top=(rect.top-60)+'px';
+  picker.style.left=Math.min(rect.left, innerWidth-250)+'px';
+  picker.style.top=Math.max(10, rect.top-60)+'px';
   picker.classList.add('show');
 }
 document.getElementById('reaction-picker').querySelectorAll('button').forEach(btn=>{
-  btn.addEventListener('click',e=>{
+  btn.addEventListener('click', e=>{
     e.stopPropagation();
     if(!emojiTargetId)return;
     toggleReaction(emojiTargetId, btn.dataset.e);
@@ -846,9 +981,10 @@ function toggleReaction(msgId, emoji){
   if(!m.reactions)m.reactions={};
   if(!m.reactions[emoji])m.reactions[emoji]=[];
   const idx=m.reactions[emoji].indexOf(currentUser);
-  if(idx>-1)m.reactions[emoji].splice(idx,1); else m.reactions[emoji].push(currentUser);
-  if(m.reactions[emoji].length===0)delete m.reactions[emoji];
-  saveMsgs(); renderMessages();
+  if(idx>-1) m.reactions[emoji].splice(idx,1);
+  else m.reactions[emoji].push(currentUser);
+  if(!m.reactions[emoji].length) delete m.reactions[emoji];
+  saveMsgs(true); renderMessages();
 }
 
 /* ── Context menu ── */
@@ -856,49 +992,46 @@ function showCtxMenu(e, id){
   ctxTargetId=id;
   const menu=document.getElementById('ctx-menu');
   const m=messages.find(x=>x.id===id);
-  const mine=m&&m.sender===currentUser;
+  const mine=m && m.sender===currentUser;
   document.getElementById('ctx-edit').style.display=mine?'flex':'none';
   document.getElementById('ctx-del-all').style.display=mine?'flex':'none';
-  menu.style.left=Math.min(e.clientX, innerWidth-160)+'px';
-  menu.style.top=Math.min(e.clientY, innerHeight-180)+'px';
+  menu.style.left=Math.min(e.clientX, innerWidth-165)+'px';
+  menu.style.top=Math.min(e.clientY, innerHeight-190)+'px';
   menu.classList.add('show');
+  e.stopPropagation();
 }
 function closeMenus(e){
-  if(!document.getElementById('ctx-menu').contains(e.target)) document.getElementById('ctx-menu').classList.remove('show');
-  if(!document.getElementById('reaction-picker').contains(e.target)) document.getElementById('reaction-picker').classList.remove('show');
+  if(!document.getElementById('ctx-menu').contains(e.target))
+    document.getElementById('ctx-menu').classList.remove('show');
+  if(!document.getElementById('reaction-picker').contains(e.target))
+    document.getElementById('reaction-picker').classList.remove('show');
 }
 document.getElementById('ctx-reply').onclick=()=>{ setReply(ctxTargetId); document.getElementById('ctx-menu').classList.remove('show'); };
 document.getElementById('ctx-edit').onclick=()=>{
   const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
   const val=window.prompt('Edit message:',m.content);
-  if(val!==null&&val.trim()){ m.content=val.trim(); m.edited=true; saveMsgs(); renderMessages(); }
+  if(val!==null && val.trim()){ m.content=val.trim(); m.edited=true; saveMsgs(true); renderMessages(); }
   document.getElementById('ctx-menu').classList.remove('show');
 };
 document.getElementById('ctx-del-me').onclick=()=>{
   const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
   if(!m.deletedFor)m.deletedFor=[];
-  m.deletedFor.push(currentUser); saveMsgs(); renderMessages();
+  if(!m.deletedFor.includes(currentUser)) m.deletedFor.push(currentUser);
+  saveMsgs(false); renderMessages();
   document.getElementById('ctx-menu').classList.remove('show');
 };
 document.getElementById('ctx-del-all').onclick=()=>{
   const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
-  m.deletedForAll=true; m.content=''; saveMsgs(); renderMessages();
+  m.deletedForAll=true; m.content='';
+  saveMsgs(true); renderMessages();
   document.getElementById('ctx-menu').classList.remove('show');
 };
-
-/* ── Typing indicator (cosmetic) ── */
-function handleTyping(){
-  document.getElementById('typing-indicator').classList.add('show');
-  clearTimeout(presenceTimer);
-  presenceTimer=setTimeout(()=>document.getElementById('typing-indicator').classList.remove('show'),2000);
-}
 
 /* ── Scroll helpers ── */
 function scrollToBottom(){ const a=document.getElementById('chat-messages'); a.scrollTop=a.scrollHeight; }
 function onScroll(){
   const a=document.getElementById('chat-messages');
-  const dist=a.scrollHeight-a.scrollTop-a.clientHeight;
-  document.getElementById('jump-btn').classList.toggle('show',dist>120);
+  document.getElementById('jump-btn').classList.toggle('show', a.scrollHeight-a.scrollTop-a.clientHeight>120);
 }
 </script>
 </body>

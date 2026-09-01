@@ -665,8 +665,9 @@ function initChat(key){
   document.getElementById('chat-name').textContent   = partner.name;
   document.getElementById('chat-status').textContent = 'online';
 
-  // Load saved messages from localStorage
-  const saved = localStorage.getItem('dharya_msgs_' + key);
+  // ── SHARED storage key — same for both users so messages cross tabs ──
+  const CHAT_KEY = 'dharya_chat_v1';
+  const saved = localStorage.getItem(CHAT_KEY);
   if(saved){ try{ messages=JSON.parse(saved); }catch(e){ messages=[]; } }
   else { messages=[]; }
 
@@ -679,6 +680,17 @@ function initChat(key){
   });
   document.getElementById('chat-text').addEventListener('input', handleTyping);
 
+  // ── Cross-tab real-time sync via storage event ──
+  window.addEventListener('storage', (e) => {
+    if(e.key !== 'dharya_chat_v1') return;
+    try{ messages = JSON.parse(e.newValue) || []; }catch(err){ messages=[]; }
+    renderMessages();
+    // Auto-scroll only if already near bottom
+    const area = document.getElementById('chat-messages');
+    const dist = area.scrollHeight - area.scrollTop - area.clientHeight;
+    if(dist < 120) scrollToBottom();
+  });
+
   // Scroll tracking
   document.getElementById('chat-messages').addEventListener('scroll', onScroll);
 
@@ -687,8 +699,7 @@ function initChat(key){
 }
 
 function saveMsgs(){
-  if(!currentUser)return;
-  localStorage.setItem('dharya_msgs_'+currentUser, JSON.stringify(messages));
+  localStorage.setItem('dharya_chat_v1', JSON.stringify(messages));
 }
 
 /* ── Render all messages ── */
@@ -725,14 +736,15 @@ function renderMessages(){
 }
 
 function renderBubble(msg){
-  const mine=msg.sender==='me';
+  const mine = msg.sender === currentUser;
   const t=new Date(msg.time);
   const timeStr=t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   const statusHtml=mine?`<span class="status-icon si-${msg.status}"></span>`:'';
   const editedHtml=msg.edited?`<span style="font-size:10px;color:rgba(255,255,255,.35);"> edited</span>`:'';
 
-  // deleted
-  if(msg.deletedFor && msg.deletedFor.includes('me') && mine) return '';
+  // deleted for me
+  if(msg.deletedFor && msg.deletedFor.includes(currentUser)) return '';
+  // deleted for everyone
   if(msg.deletedForAll) {
     return `<div class="msg-row ${mine?'mine':'theirs'}">
       <div class="bubble" data-id="${msg.id}" style="opacity:.5;font-style:italic;">
@@ -752,8 +764,8 @@ function renderBubble(msg){
   if(msg.reactions && Object.keys(msg.reactions).length>0){
     reactHtml='<div class="bubble-reactions">';
     for(const [emoji,users] of Object.entries(msg.reactions)){
-      const mine2=users.includes('me');
-      reactHtml+=`<span class="reaction-chip${mine2?' mine-react':''}" onclick="toggleReaction('${msg.id}','${emoji}')">${emoji}${users.length>1?' '+users.length:''}</span>`;
+      const iMine=users.includes(currentUser);
+      reactHtml+=`<span class="reaction-chip${iMine?' mine-react':''}" onclick="toggleReaction('${msg.id}','${emoji}')">${emoji}${users.length>1?' '+users.length:''}</span>`;
     }
     reactHtml+='</div>';
   }
@@ -780,7 +792,8 @@ function sendMsg(){
   if(!text) return;
   const msg={
     id: Date.now()+'_'+Math.random().toString(36).slice(2),
-    sender:'me', content:text, time:Date.now(),
+    sender: currentUser,  // store actual user key, not 'me'
+    content:text, time:Date.now(),
     status:'sent', replyTo: replyToMsg?.id||null,
     reactions:{}, edited:false, deletedForAll:false, deletedFor:[],
   };
@@ -791,9 +804,9 @@ function sendMsg(){
   renderMessages();
   scrollToBottom();
 
-  // Simulate delivery after 600ms, read after 2s
+  // Delivered after 600ms, read after 2.5s (simulated for same-device; cross-tab handled by storage event)
   setTimeout(()=>{ const m=messages.find(x=>x.id===msg.id); if(m){ m.status='delivered'; saveMsgs(); renderMessages(); } },600);
-  setTimeout(()=>{ const m=messages.find(x=>x.id===msg.id); if(m){ m.status='read'; saveMsgs(); renderMessages(); } },2200);
+  setTimeout(()=>{ const m=messages.find(x=>x.id===msg.id); if(m){ m.status='read'; saveMsgs(); renderMessages(); } },2500);
 }
 
 /* ── Reply ── */
@@ -832,8 +845,8 @@ function toggleReaction(msgId, emoji){
   const m=messages.find(x=>x.id===msgId); if(!m)return;
   if(!m.reactions)m.reactions={};
   if(!m.reactions[emoji])m.reactions[emoji]=[];
-  const idx=m.reactions[emoji].indexOf('me');
-  if(idx>-1)m.reactions[emoji].splice(idx,1); else m.reactions[emoji].push('me');
+  const idx=m.reactions[emoji].indexOf(currentUser);
+  if(idx>-1)m.reactions[emoji].splice(idx,1); else m.reactions[emoji].push(currentUser);
   if(m.reactions[emoji].length===0)delete m.reactions[emoji];
   saveMsgs(); renderMessages();
 }
@@ -843,7 +856,7 @@ function showCtxMenu(e, id){
   ctxTargetId=id;
   const menu=document.getElementById('ctx-menu');
   const m=messages.find(x=>x.id===id);
-  const mine=m&&m.sender==='me';
+  const mine=m&&m.sender===currentUser;
   document.getElementById('ctx-edit').style.display=mine?'flex':'none';
   document.getElementById('ctx-del-all').style.display=mine?'flex':'none';
   menu.style.left=Math.min(e.clientX, innerWidth-160)+'px';
@@ -864,7 +877,7 @@ document.getElementById('ctx-edit').onclick=()=>{
 document.getElementById('ctx-del-me').onclick=()=>{
   const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
   if(!m.deletedFor)m.deletedFor=[];
-  m.deletedFor.push('me'); saveMsgs(); renderMessages();
+  m.deletedFor.push(currentUser); saveMsgs(); renderMessages();
   document.getElementById('ctx-menu').classList.remove('show');
 };
 document.getElementById('ctx-del-all').onclick=()=>{

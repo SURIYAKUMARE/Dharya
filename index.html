@@ -631,8 +631,8 @@ addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.activeElement.id!==
    then from window.__SB_URL__ / window.__SB_KEY__ (deploy-time injection),
    then fall back to localStorage-only mode.
 ═══════════════════════════════ */
-const SB_URL = (['','__skip__','YOUR_SUPABASE_URL'].includes(localStorage.getItem('sb_url'))) ? '' : (localStorage.getItem('sb_url') || window.__SB_URL__ || '');
-const SB_KEY = (['','__skip__','YOUR_SUPABASE_ANON_KEY'].includes(localStorage.getItem('sb_key'))) ? '' : (localStorage.getItem('sb_key') || window.__SB_KEY__ || '');
+const SB_URL = 'https://xnkmbmhtwtnndyuzmuay.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhua21ibWh0d3RubmR5dXptdWF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNzU2NDksImV4cCI6MjEwMzg1MTY0OX0.ThzeYAEvAH_Xg0bH1FmJCKdKx16yeKTpNnFG6PqADzA';
 let sb = null;
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1181,41 +1181,10 @@ function onScroll(){
   document.getElementById('jump-btn').classList.toggle('show',a.scrollHeight-a.scrollTop-a.clientHeight>120);
 }
 
-/* ═══════════════════════════════
-   SUPABASE SETUP PANEL
-═══════════════════════════════ */
-function checkSbSetup(){
-  const url = localStorage.getItem('sb_url');
-  const key = localStorage.getItem('sb_key');
-  if(!url || !key || url==='YOUR_SUPABASE_URL'){
-    // Show setup panel after a short delay so login page is visible first
-    setTimeout(()=> document.getElementById('sb-setup').style.display='flex', 800);
-  }
-}
-
-function saveSbKeys(){
-  const url = document.getElementById('sb-url-input').value.trim();
-  const key = document.getElementById('sb-key-input').value.trim();
-  const err = document.getElementById('sb-setup-err');
-  if(!url.startsWith('https://') || !key.startsWith('eyJ')){
-    err.textContent='Please enter a valid Supabase URL and anon key.';
-    err.style.display='block'; return;
-  }
-  localStorage.setItem('sb_url', url);
-  localStorage.setItem('sb_key', key);
-  err.style.display='none';
-  document.getElementById('sb-setup').style.display='none';
-  // Reload so the keys take effect
-  location.reload();
-}
-
-function skipSbSetup(){
-  localStorage.setItem('sb_url','__skip__');
-  localStorage.setItem('sb_key','__skip__');
-  document.getElementById('sb-setup').style.display='none';
-}
-
-// Check on page load
+// Keys are hardcoded — no setup needed
+function checkSbSetup(){ /* keys already configured */ }
+function saveSbKeys(){}
+function skipSbSetup(){ document.getElementById('sb-setup').style.display='none'; }
 checkSbSetup();
 
 </script>
@@ -1241,4 +1210,5 @@ checkSbSetup();
 
 </body>
 </html>
+
 

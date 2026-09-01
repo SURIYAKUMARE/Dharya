@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -7,15 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700;1,800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
-    /* ═══════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        RESET & BASE
-    ═══════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#060210}
 
-    /* ═══════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        PAGES  (login | chat)
-    ═══════════════════════════════ */
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     #page-login{ position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;transition:opacity .6s,transform .6s; }
     #page-login.hide{ opacity:0;transform:scale(.96);pointer-events:none; }
 
@@ -23,9 +23,9 @@
                 opacity:0;pointer-events:none;transition:opacity .5s; }
     #page-chat.show{ opacity:1;pointer-events:all; }
 
-    /* ═══════════════════════════════
-       ── LOGIN STYLES ──
-    ═══════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       â”€â”€ LOGIN STYLES â”€â”€
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     body.th-g{ background:#030c06; }
     body.th-p{ background:#0c0212; }
 
@@ -160,9 +160,9 @@
     .conf{ position:fixed;pointer-events:none;z-index:40;animation:cfall var(--cd,2s) var(--cdl,0s) ease-out forwards; }
     @keyframes cfall{0%{transform:translate(0,0) rotate(0) scale(1);opacity:1;}100%{transform:translate(var(--cx,0),130vh) rotate(900deg) scale(.06);opacity:0;}}
 
-    /* ═══════════════════════════════
-       ── CHAT STYLES ──
-    ═══════════════════════════════ */
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       â”€â”€ CHAT STYLES â”€â”€
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
     #page-chat{ background:#0f0a1a;flex-direction:column; }
 
     /* chat header */
@@ -220,10 +220,10 @@
 
     /* status icons */
     .status-icon{ display:flex;align-items:center; }
-    .si-sending::before{ content:'🕐';font-size:10px; }
-    .si-sent::before{ content:'✓';font-size:11px;color:rgba(255,255,255,.45); }
-    .si-delivered::before{ content:'✓✓';font-size:11px;color:rgba(255,255,255,.45); }
-    .si-read::before{ content:'✓✓';font-size:11px;color:#00e5ff; }
+    .si-sending::before{ content:'ðŸ•';font-size:10px; }
+    .si-sent::before{ content:'âœ“';font-size:11px;color:rgba(255,255,255,.45); }
+    .si-delivered::before{ content:'âœ“âœ“';font-size:11px;color:rgba(255,255,255,.45); }
+    .si-read::before{ content:'âœ“âœ“';font-size:11px;color:#00e5ff; }
 
     /* reply preview inside bubble */
     .reply-preview{ border-left:3px solid rgba(255,255,255,.35);padding:4px 8px;margin-bottom:6px;border-radius:4px;background:rgba(255,255,255,.07); }
@@ -297,7 +297,7 @@
 </head>
 <body>
 
-  <!-- ── CANVAS (shared background) ── -->
+  <!-- â”€â”€ CANVAS (shared background) â”€â”€ -->
   <canvas id="cv"></canvas>
 
   <!-- Nebula orbs -->
@@ -306,34 +306,34 @@
   <div class="orb" id="ob3" style="width:200px;height:200px;top:46%;left:68%;background:#180432;opacity:.09;--of:12s;--od:9s;--ox:28px;--oy:40px;"></div>
 
   <!-- Floating glyphs -->
-  <span class="glyph" style="top:12%;left:5%;--gs:1.3rem;--go:.16;--gd:7s;--gdl:0s;">★</span>
-  <span class="glyph" style="top:55%;left:3.5%;--gs:.9rem;--go:.13;--gd:9s;--gdl:2s;">✦</span>
-  <span class="glyph" style="top:78%;left:7%;--gs:1.5rem;--go:.14;--gd:6s;--gdl:1s;">⭐</span>
-  <span class="glyph" style="top:22%;right:5%;--gs:1.1rem;--go:.16;--gd:8s;--gdl:3s;">✦</span>
-  <span class="glyph" style="top:62%;right:4%;--gs:1.3rem;--go:.13;--gd:11s;--gdl:.5s;">★</span>
-  <span class="glyph" style="top:84%;right:13%;--gs:1.1rem;--go:.15;--gd:7s;--gdl:1.5s;">✦</span>
+  <span class="glyph" style="top:12%;left:5%;--gs:1.3rem;--go:.16;--gd:7s;--gdl:0s;">â˜…</span>
+  <span class="glyph" style="top:55%;left:3.5%;--gs:.9rem;--go:.13;--gd:9s;--gdl:2s;">âœ¦</span>
+  <span class="glyph" style="top:78%;left:7%;--gs:1.5rem;--go:.14;--gd:6s;--gdl:1s;">â­</span>
+  <span class="glyph" style="top:22%;right:5%;--gs:1.1rem;--go:.16;--gd:8s;--gdl:3s;">âœ¦</span>
+  <span class="glyph" style="top:62%;right:4%;--gs:1.3rem;--go:.13;--gd:11s;--gdl:.5s;">â˜…</span>
+  <span class="glyph" style="top:84%;right:13%;--gs:1.1rem;--go:.15;--gd:7s;--gdl:1.5s;">âœ¦</span>
 
   <!-- Reaction picker -->
   <div id="reaction-picker">
-    <button data-e="❤️">❤️</button>
-    <button data-e="😂">😂</button>
-    <button data-e="😮">😮</button>
-    <button data-e="😢">😢</button>
-    <button data-e="👍">👍</button>
-    <button data-e="🙏">🙏</button>
+    <button data-e="â¤ï¸">â¤ï¸</button>
+    <button data-e="ðŸ˜‚">ðŸ˜‚</button>
+    <button data-e="ðŸ˜®">ðŸ˜®</button>
+    <button data-e="ðŸ˜¢">ðŸ˜¢</button>
+    <button data-e="ðŸ‘">ðŸ‘</button>
+    <button data-e="ðŸ™">ðŸ™</button>
   </div>
 
   <!-- Context menu -->
   <div id="ctx-menu">
-    <div class="ctx-item" id="ctx-reply">↩ Reply</div>
-    <div class="ctx-item" id="ctx-edit">✏️ Edit</div>
-    <div class="ctx-item danger" id="ctx-del-me">🗑 Delete for me</div>
-    <div class="ctx-item danger" id="ctx-del-all">🗑 Delete for everyone</div>
+    <div class="ctx-item" id="ctx-reply">â†© Reply</div>
+    <div class="ctx-item" id="ctx-edit">âœï¸ Edit</div>
+    <div class="ctx-item danger" id="ctx-del-me">ðŸ—‘ Delete for me</div>
+    <div class="ctx-item danger" id="ctx-del-all">ðŸ—‘ Delete for everyone</div>
   </div>
 
-  <!-- ════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        LOGIN PAGE
-  ════════════════════════════════ -->
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div id="page-login">
     <div class="scene">
       <div class="card" id="card">
@@ -341,7 +341,7 @@
         <div class="icon-wrap">
           <div class="ring b"></div>
           <div class="ring a"></div>
-          <div class="icon" id="icon">🌿</div>
+          <div class="icon" id="icon">ðŸŒ¿</div>
           <div class="odot" style="--ot:4s;--otl:0s;"></div>
           <div class="odot" style="--ot:4s;--otl:2s;"></div>
         </div>
@@ -351,7 +351,7 @@
           <div class="bl r"></div><div class="bdot"></div>
         </div>
         <h1 class="title">Welcome back,<br><span class="tname"><span id="tname">Dharya</span></span></h1>
-        <p class="sub" id="sub">Your special world is waiting ✨</p>
+        <p class="sub" id="sub">Your special world is waiting âœ¨</p>
         <div class="hdiv"></div>
         <div class="field fu">
           <label class="lbl">Username</label>
@@ -359,12 +359,12 @@
         </div>
         <div class="field fp">
           <label class="lbl">Password</label>
-          <input type="password" id="pw" placeholder="••••••••••" autocomplete="off" spellcheck="false" oninput="onPW(this.value)"/>
-          <button class="eyebtn" id="eye" onclick="togglePw()">👁</button>
+          <input type="password" id="pw" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="off" spellcheck="false" oninput="onPW(this.value)"/>
+          <button class="eyebtn" id="eye" onclick="togglePw()">ðŸ‘</button>
         </div>
-        <div class="det" id="det"><div class="detdot"></div><span id="dettxt">Dharya detected ✓</span></div>
+        <div class="det" id="det"><div class="detdot"></div><span id="dettxt">Dharya detected âœ“</span></div>
         <button class="btn" id="lbtn" onclick="login()">
-          <span class="btxt2">Enter my world</span><span class="barr">→</span>
+          <span class="btxt2">Enter my world</span><span class="barr">â†’</span>
         </button>
         <div class="msg" id="lmsg"></div>
         <div class="foot">
@@ -375,31 +375,31 @@
     </div>
   </div>
 
-  <!-- ════════════════════════════════
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        CHAT PAGE
-  ════════════════════════════════ -->
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
   <div id="page-chat">
 
     <!-- Reply bar (above input) -->
     <div id="reply-bar">
       <span id="reply-bar-text"></span>
-      <button id="reply-bar-close" onclick="clearReply()">✕</button>
+      <button id="reply-bar-close" onclick="clearReply()">âœ•</button>
     </div>
 
     <!-- Header -->
     <div id="chat-header">
-      <button id="chat-back" onclick="goBack()">←</button>
+      <button id="chat-back" onclick="goBack()">â†</button>
       <div id="chat-avatar"></div>
       <div id="chat-info">
-        <p id="chat-name">…</p>
-        <p id="chat-status">loading…</p>
+        <p id="chat-name">â€¦</p>
+        <p id="chat-status">loadingâ€¦</p>
       </div>
     </div>
 
     <!-- Messages -->
     <div id="chat-messages">
       <div id="empty-chat">
-        <span style="font-size:2.5rem">✦</span>
+        <span style="font-size:2.5rem">âœ¦</span>
         <p>Your private space.<br>Say something beautiful.</p>
       </div>
     </div>
@@ -411,30 +411,30 @@
 
     <!-- Input -->
     <div id="chat-input-area">
-      <textarea id="chat-text" rows="1" placeholder="Message…"></textarea>
-      <button id="send-btn" onclick="sendMsg()">➤</button>
+      <textarea id="chat-text" rows="1" placeholder="Messageâ€¦"></textarea>
+      <button id="send-btn" onclick="sendMsg()">âž¤</button>
     </div>
 
-    <button id="jump-btn" onclick="scrollToBottom()">↓</button>
+    <button id="jump-btn" onclick="scrollToBottom()">â†“</button>
   </div>
 
-<!-- ════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      JAVASCRIPT
-════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <script>
-/* ═══════════════════════════════
-   USERS (local auth — no backend)
-═══════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   USERS (local auth â€” no backend)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const USERS = {
-  dharya:  { id:'DHARYA', pw:'09/10/2007', th:'th-g', emoji:'🌿', name:'Surya',   sub:'Your private space is ready 🌿'  },
-  sadhana: { id:'DHARYA', pw:'29/02/2008', th:'th-p', emoji:'❤️',  name:'Sadhana', sub:'Your special world is waiting ✨' },
+  dharya:  { id:'DHARYA', pw:'09/10/2007', th:'th-g', emoji:'ðŸŒ¿', name:'Surya',   sub:'Your private space is ready ðŸŒ¿'  },
+  sadhana: { id:'DHARYA', pw:'29/02/2008', th:'th-p', emoji:'â¤ï¸',  name:'Sadhana', sub:'Your special world is waiting âœ¨' },
 };
 let who = null;
 let currentUser = null; // 'dharya' | 'sadhana'
 
-/* ═══════════════════════════════
-   CANVAS — stars + shooting stars
-═══════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   CANVAS â€” stars + shooting stars
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const CV = document.getElementById('cv');
 const CTX = CV.getContext('2d');
 let W, H;
@@ -502,9 +502,9 @@ function renderFrame(){
 renderFrame();
 function shootBurst(n=8){ for(let i=0;i<n;i++) setTimeout(spawnStar,i*80); }
 
-/* ═══════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    3D TILT
-═══════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const card=document.getElementById('card');
 addEventListener('mousemove',e=>{
   if(document.getElementById('page-chat').classList.contains('show')) return;
@@ -519,9 +519,9 @@ addEventListener('mouseleave',()=>{
   setTimeout(()=>{ card.style.animation='cardfloat 7s ease-in-out infinite'; card.style.transition=''; },950);
 });
 
-/* ═══════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CURSOR SPARKS
-═══════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 addEventListener('mousemove',e=>{
   if(Math.random()>.22)return;
   const sp=document.createElement('div'); sp.className='spark';
@@ -533,16 +533,16 @@ addEventListener('mousemove',e=>{
   document.body.appendChild(sp); setTimeout(()=>sp.remove(),800);
 });
 
-/* ═══════════════════════════════
-   LOGIN — THEME
-═══════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   LOGIN â€” THEME
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function applyTheme(key){
   if(who===key)return; who=key;
   const u=USERS[key];
   document.body.className=u.th;
   document.getElementById('icon').textContent=u.emoji;
   document.getElementById('sub').textContent=u.sub;
-  document.getElementById('dettxt').textContent=u.name+' detected ✓';
+  document.getElementById('dettxt').textContent=u.name+' detected âœ“';
   document.getElementById('det').className='det on';
   const el=document.getElementById('tname'); el.textContent=''; let i=0;
   (function tw(){ if(i<=u.name.length){ el.textContent=u.name.slice(0,i++); setTimeout(tw,55); } })();
@@ -550,9 +550,9 @@ function applyTheme(key){
 }
 function resetTheme(){
   who=null; document.body.className='';
-  document.getElementById('icon').textContent='🌿';
+  document.getElementById('icon').textContent='ðŸŒ¿';
   document.getElementById('tname').textContent='Dharya';
-  document.getElementById('sub').textContent='Your special world is waiting ✨';
+  document.getElementById('sub').textContent='Your special world is waiting âœ¨';
   document.getElementById('det').className='det';
 }
 function screenFlash(th){
@@ -575,7 +575,7 @@ function onPW(v){
 }
 
 let pvis=false;
-function togglePw(){ const i=document.getElementById('pw'); pvis=!pvis; i.type=pvis?'text':'password'; document.getElementById('eye').textContent=pvis?'🙈':'👁'; }
+function togglePw(){ const i=document.getElementById('pw'); pvis=!pvis; i.type=pvis?'text':'password'; document.getElementById('eye').textContent=pvis?'ðŸ™ˆ':'ðŸ‘'; }
 
 function showLMsg(t,c){ const b=document.getElementById('lmsg'); b.textContent=t; b.className='msg '+c; b.style.display='block'; }
 function clearLMsg(){ document.getElementById('lmsg').style.display='none'; }
@@ -597,20 +597,20 @@ function confBurst(cols){
   }
 }
 
-/* ═══════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    LOGIN SUBMIT
-═══════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function login(){
   const uid=document.getElementById('uid').value.trim().toUpperCase();
   const pw=document.getElementById('pw').value.trim();
   const btn=document.getElementById('lbtn');
-  if(!pw){ showLMsg('Please enter your password ✦','err'); shakeCard(); return; }
+  if(!pw){ showLMsg('Please enter your password âœ¦','err'); shakeCard(); return; }
   const m=Object.entries(USERS).find(([,u])=>u.pw===pw);
-  if(!m){ showLMsg('Incorrect password ✦','err'); shakeCard(); return; }
-  if(uid&&uid!==m[1].id){ showLMsg('Username does not match ✦','err'); shakeCard(); return; }
+  if(!m){ showLMsg('Incorrect password âœ¦','err'); shakeCard(); return; }
+  if(uid&&uid!==m[1].id){ showLMsg('Username does not match âœ¦','err'); shakeCard(); return; }
   const [key,u]=m;
   applyTheme(key); currentUser=key;
-  btn.innerHTML='<span class="btxt2">Entering…</span><span class="barr">✦</span>';
+  btn.innerHTML='<span class="btxt2">Enteringâ€¦</span><span class="barr">âœ¦</span>';
   btn.style.pointerEvents='none';
   ripBtn(btn);
   confBurst(key==='dharya'?['#00e676','#a0ffd0','#00bfa5','#fff']:['#ff4d8b','#ff8cf8','#c026d3','#fff']);
@@ -621,9 +621,23 @@ function login(){
 
 addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.activeElement.id!=='chat-text') login(); });
 
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SUPABASE CONFIG
+   â€” paste your keys here OR set them in .env before building
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 /* ═══════════════════════════════
-   TRANSITION TO CHAT
+   SUPABASE CONFIG
+   Keys are read from localStorage first (set via the setup UI),
+   then from window.__SB_URL__ / window.__SB_KEY__ (deploy-time injection),
+   then fall back to localStorage-only mode.
 ═══════════════════════════════ */
+const SB_URL = (['','__skip__','YOUR_SUPABASE_URL'].includes(localStorage.getItem('sb_url'))) ? '' : (localStorage.getItem('sb_url') || window.__SB_URL__ || '');
+const SB_KEY = (['','__skip__','YOUR_SUPABASE_ANON_KEY'].includes(localStorage.getItem('sb_key'))) ? '' : (localStorage.getItem('sb_key') || window.__SB_KEY__ || '');
+let sb = null;
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TRANSITION TO CHAT
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function enterChat(key){
   document.getElementById('page-login').classList.add('hide');
   setTimeout(()=>{
@@ -633,244 +647,320 @@ function enterChat(key){
 }
 
 function goBack(){
-  // Announce going offline
-  if(bc) bc.postMessage({ type:'presence', user:currentUser, online:false });
+  // unsubscribe realtime
+  if(realtimeCh){ realtimeCh.unsubscribe(); realtimeCh=null; }
   markPresence(false);
   document.getElementById('page-chat').classList.remove('show');
   setTimeout(()=>{
     document.getElementById('page-login').classList.remove('hide');
     const btn=document.getElementById('lbtn');
-    btn.innerHTML='<span class="btxt2">Enter my world</span><span class="barr">→</span>';
+    btn.innerHTML='<span class="btxt2">Enter my world</span><span class="barr">â†’</span>';
     btn.style.pointerEvents='';
   }, 300);
 }
 
-/* ═══════════════════════════════
-   CHAT ENGINE
-═══════════════════════════════ */
-const CHAT_KEY     = 'dharya_chat_v1';
-const PRESENCE_KEY = 'dharya_presence_v1'; // {dharya:ts, sadhana:ts}
-const TYPING_KEY   = 'dharya_typing_v1';   // {dharya:bool, sadhana:bool}
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   CHAT ENGINE â€” Supabase backend
+   Falls back to localStorage if no Supabase keys configured
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const CHAT_KEY     = 'dharya_chat_v1';      // localStorage fallback key
+const PRESENCE_KEY = 'dharya_presence_v1';
+const CHAT_ID      = 'dharya-surya-sadhana'; // fixed chat room id
 
 let messages    = [];
 let replyToMsg  = null;
 let ctxTargetId = null;
 let typingTimer = null;
-let bc          = null;   // BroadcastChannel for instant cross-tab messaging
+let realtimeCh  = null;
+let bc          = null;
+let heartbeatId = null;
+let useSupabase = false;
 
 const PARTNER = {
-  dharya:  { name:'Sadhana', emoji:'🌸', color:'#ff4d8b' },
-  sadhana: { name:'Surya',   emoji:'🌿', color:'#00e676' },
+  dharya:  { name:'Sadhana', emoji:'ðŸŒ¸', color:'#ff4d8b' },
+  sadhana: { name:'Surya',   emoji:'ðŸŒ¿', color:'#00e676' },
 };
 
-/* ── Mark this user online/offline ── */
+/* â”€â”€ Presence helpers â”€â”€ */
 function markPresence(online){
-  const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
-  pr[currentUser] = online ? Date.now() : 0;
-  localStorage.setItem(PRESENCE_KEY, JSON.stringify(pr));
+  try{
+    const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
+    pr[currentUser] = online ? Date.now() : 0;
+    localStorage.setItem(PRESENCE_KEY, JSON.stringify(pr));
+    if(bc) bc.postMessage({ type:'presence', user:currentUser, online });
+  }catch(e){}
 }
-
-/* ── Check if partner is currently online ── */
 function isPartnerOnline(){
-  const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
-  const partnerKey = currentUser==='dharya' ? 'sadhana' : 'dharya';
-  const ts = pr[partnerKey] || 0;
-  return ts > 0 && (Date.now() - ts) < 8000; // stale after 8s
+  try{
+    const pr = JSON.parse(localStorage.getItem(PRESENCE_KEY)||'{}');
+    const pk = currentUser==='dharya' ? 'sadhana' : 'dharya';
+    return (Date.now() - (pr[pk]||0)) < 8000;
+  }catch(e){ return false; }
 }
 
-function initChat(key){
+/* â”€â”€ Init â”€â”€ */
+async function initChat(key){
   const partner = PARTNER[key];
 
-  // ── Header ──
+  // Header
   const av = document.getElementById('chat-avatar');
   av.textContent = partner.emoji;
-  av.style.background = partner.color + '33';
+  av.style.background = partner.color+'33';
   av.style.color = partner.color;
   document.getElementById('chat-name').textContent = partner.name;
+  document.getElementById('chat-status').textContent = 'connectingâ€¦';
 
-  // ── Load messages ──
-  const saved = localStorage.getItem(CHAT_KEY);
-  messages = saved ? (JSON.parse(saved)||[]) : [];
+  // Try Supabase
+  useSupabase = !!(SB_URL && SB_KEY && SB_URL !== '' && SB_KEY !== '');
+  if(useSupabase){
+    try{
+      sb = supabase.createClient(SB_URL, SB_KEY);
+      await loadFromSupabase();
+      subscribeSupabase();
+    }catch(err){
+      console.warn('Supabase unavailable, falling back to localStorage', err);
+      useSupabase = false;
+    }
+  }
 
-  // ── Mark me online ──
+  if(!useSupabase){
+    // localStorage mode
+    try{ messages = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ messages=[]; }
+    initBroadcastChannel();
+  }
+
+  // Presence
   markPresence(true);
   updatePartnerStatus();
+  heartbeatId = setInterval(()=>{ markPresence(true); updatePartnerStatus(); }, 4000);
 
-  // Keep presence heartbeat alive
-  const heartbeat = setInterval(()=>{ if(currentUser) markPresence(true); }, 4000);
-
-  // ── BroadcastChannel — instant real-time between tabs ──
-  bc = new BroadcastChannel('dharya_realtime');
-  bc.onmessage = (e) => {
-    const { type, data } = e.data;
-
-    if(type === 'msg') {
-      // New message arrived — reload from storage (source of truth)
-      const fresh = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');
-      messages = fresh;
-      renderMessages();
-      scrollIfAtBottom();
-
-      // Mark all incoming messages as delivered + read since we're watching
-      let changed = false;
-      messages.forEach(m => {
-        if(m.sender !== currentUser) {
-          if(m.status === 'sent') { m.status = 'delivered'; changed = true; }
-          if(m.status === 'delivered') { m.status = 'read'; changed = true; }
-        }
-      });
-      if(changed){ saveMsgs(false); } // save without broadcasting (already got it)
-    }
-
-    if(type === 'status_update') {
-      // Sender's tab sees the read receipt update
-      const fresh = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');
-      messages = fresh;
-      renderMessages();
-    }
-
-    if(type === 'typing') {
-      const ti = document.getElementById('typing-indicator');
-      if(data.user !== currentUser) {
-        if(data.typing) ti.classList.add('show');
-        else ti.classList.remove('show');
-      }
-    }
-
-    if(type === 'presence') {
-      updatePartnerStatus();
-    }
-  };
-
-  // ── Deliver any undelivered messages to me ──
-  let changed = false;
-  messages.forEach(m => {
-    if(m.sender !== currentUser && (m.status==='sent'||m.status==='delivered')) {
-      m.status = 'read';
-      changed = true;
-    }
-  });
-  if(changed) {
-    saveMsgs(false);
-    // Tell sender their messages were read
-    bc.postMessage({ type:'status_update' });
-  }
+  // Mark all incoming messages read
+  markIncomingRead();
 
   renderMessages();
   scrollToBottom();
 
-  // Announce presence to partner
-  bc.postMessage({ type:'presence', user:currentUser, online:true });
-
-  // ── Input listeners ──
+  // Input listeners
   const txt = document.getElementById('chat-text');
   txt.addEventListener('keydown', e=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+    if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMsg(); }
   });
   txt.addEventListener('input', handleTyping);
   txt.addEventListener('blur', stopTyping);
 
-  // ── Cross-tab fallback via storage event (if BroadcastChannel unavailable) ──
-  window.addEventListener('storage', (e) => {
-    if(e.key === CHAT_KEY) {
-      messages = JSON.parse(e.newValue||'[]');
-      renderMessages();
-      scrollIfAtBottom();
+  // localStorage storage event (cross-tab fallback)
+  window.addEventListener('storage', (e)=>{
+    if(e.key===CHAT_KEY && !useSupabase){
+      try{ messages=JSON.parse(e.newValue||'[]'); }catch(x){ messages=[]; }
+      markIncomingRead();
+      renderMessages(); scrollIfAtBottom();
     }
-    if(e.key === PRESENCE_KEY) updatePartnerStatus();
+    if(e.key===PRESENCE_KEY) updatePartnerStatus();
   });
 
-  // Scroll tracking
   document.getElementById('chat-messages').addEventListener('scroll', onScroll);
   document.addEventListener('click', closeMenus);
-
-  // Refresh partner status periodically
   setInterval(updatePartnerStatus, 3000);
 
-  // Cleanup on page leave
-  window.addEventListener('beforeunload', ()=>{
+  window.addEventListener('beforeunload',()=>{
     markPresence(false);
-    clearInterval(heartbeat);
-    if(bc) { bc.postMessage({ type:'presence', user:currentUser, online:false }); bc.close(); }
+    clearInterval(heartbeatId);
+    if(realtimeCh){ realtimeCh.unsubscribe(); }
+    if(bc){ bc.postMessage({type:'presence',user:currentUser,online:false}); bc.close(); }
   });
+}
+
+/* â”€â”€ Supabase: load messages â”€â”€ */
+async function loadFromSupabase(){
+  const { data, error } = await sb
+    .from('messages')
+    .select('*')
+    .eq('chat_id', CHAT_ID)
+    .order('created_at', { ascending: true });
+  if(error) throw error;
+  // Map DB rows â†’ internal format
+  messages = (data||[])
+    .filter(r => !(r.deleted_for||[]).includes(currentUser))
+    .map(dbToMsg);
+  document.getElementById('chat-status').textContent = isPartnerOnline()?'online':'last seen recently';
+}
+
+/* â”€â”€ Supabase: real-time subscription â”€â”€ */
+function subscribeSupabase(){
+  realtimeCh = sb
+    .channel(`chat:${CHAT_ID}`)
+    .on('postgres_changes',
+      { event:'INSERT', schema:'public', table:'messages', filter:`chat_id=eq.${CHAT_ID}` },
+      async (payload) => {
+        const row = payload.new;
+        if((row.deleted_for||[]).includes(currentUser)) return;
+        const msg = dbToMsg(row);
+        // avoid duplicate (optimistic already added)
+        if(!messages.find(m=>m.id===row.id)) messages.push(msg);
+        else messages = messages.map(m=>m.id===row.id?msg:m);
+
+        // Mark as read immediately if from partner
+        if(row.sender_id !== currentUser){
+          await sb.from('messages').update({
+            status:'read',
+            read_at: new Date().toISOString()
+          }).eq('id', row.id);
+        }
+        renderMessages(); scrollIfAtBottom();
+      }
+    )
+    .on('postgres_changes',
+      { event:'UPDATE', schema:'public', table:'messages', filter:`chat_id=eq.${CHAT_ID}` },
+      (payload) => {
+        const row = payload.new;
+        if((row.deleted_for||[]).includes(currentUser)){
+          messages = messages.filter(m=>m.id!==row.id);
+        } else {
+          const msg = dbToMsg(row);
+          messages = messages.map(m=>m.id===row.id?msg:m);
+          if(!messages.find(m=>m.id===row.id)) messages.push(msg);
+        }
+        renderMessages();
+      }
+    )
+    .subscribe((status)=>{
+      document.getElementById('chat-status').textContent =
+        status==='SUBSCRIBED'
+          ? (isPartnerOnline()?'online':'last seen recently')
+          : 'connectingâ€¦';
+    });
+}
+
+/* â”€â”€ DB row â†’ internal message â”€â”€ */
+function dbToMsg(row){
+  return {
+    id:           row.id,
+    sender:       row.sender_id,          // 'dharya' or 'sadhana'
+    content:      row.content,
+    time:         new Date(row.created_at).getTime(),
+    status:       row.status || 'sent',
+    replyTo:      row.reply_to || null,
+    reactions:    row.reactions || {},
+    edited:       !!row.edited_at,
+    deletedForAll:row.deleted_for_all || false,
+    deletedFor:   row.deleted_for || [],
+  };
+}
+
+/* â”€â”€ BroadcastChannel (localStorage mode) â”€â”€ */
+function initBroadcastChannel(){
+  try{
+    bc = new BroadcastChannel('dharya_realtime');
+    bc.onmessage = (e)=>{
+      const { type, data } = e.data;
+      if(type==='msg'){
+        try{ messages=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(x){}
+        markIncomingRead();
+        renderMessages(); scrollIfAtBottom();
+      }
+      if(type==='status_update'){
+        try{ messages=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(x){}
+        renderMessages();
+      }
+      if(type==='typing' && data.user!==currentUser){
+        const ti=document.getElementById('typing-indicator');
+        if(data.typing) ti.classList.add('show');
+        else ti.classList.remove('show');
+      }
+      if(type==='presence') updatePartnerStatus();
+    };
+  }catch(e){ bc=null; }
+}
+
+/* â”€â”€ Mark all received messages as read â”€â”€ */
+async function markIncomingRead(){
+  let changed=false;
+  if(useSupabase){
+    // Find unread received messages
+    const unread = messages.filter(m=>m.sender!==currentUser && m.status!=='read');
+    if(unread.length){
+      await sb.from('messages').update({ status:'read', read_at:new Date().toISOString() })
+        .in('id', unread.map(m=>m.id));
+      unread.forEach(m=>{ m.status='read'; });
+      changed=true;
+    }
+  } else {
+    messages.forEach(m=>{
+      if(m.sender!==currentUser && m.status!=='read'){ m.status='read'; changed=true; }
+    });
+    if(changed){ saveLocal(false); if(bc) bc.postMessage({type:'status_update'}); }
+  }
 }
 
 function updatePartnerStatus(){
   const online = isPartnerOnline();
-  document.getElementById('chat-status').textContent = online ? 'online' : 'last seen recently';
-  document.getElementById('chat-status').style.color = online ? '#00e676' : 'rgba(255,255,255,.4)';
+  document.getElementById('chat-status').textContent  = online?'online':'last seen recently';
+  document.getElementById('chat-status').style.color  = online?'#00e676':'rgba(255,255,255,.4)';
 }
 
-/* ── Save messages (broadcast=true tells other tab) ── */
-function saveMsgs(broadcast=true){
+/* â”€â”€ Save (localStorage fallback) â”€â”€ */
+function saveLocal(broadcast=true){
   localStorage.setItem(CHAT_KEY, JSON.stringify(messages));
-  if(broadcast && bc) bc.postMessage({ type:'msg' });
+  if(broadcast && bc) bc.postMessage({type:'msg'});
 }
 
 function scrollIfAtBottom(){
-  const a = document.getElementById('chat-messages');
-  const dist = a.scrollHeight - a.scrollTop - a.clientHeight;
-  if(dist < 120) scrollToBottom();
+  const a=document.getElementById('chat-messages');
+  if(a.scrollHeight-a.scrollTop-a.clientHeight<120) scrollToBottom();
 }
 
-/* ── Render all messages ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RENDER
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function renderMessages(){
   const area  = document.getElementById('chat-messages');
   const empty = document.getElementById('empty-chat');
   if(!messages.length){ empty.style.display='flex'; return; }
   empty.style.display='none';
 
-  const sorted = [...messages].sort((a,b)=>a.time-b.time);
-  let lastDay='';
-  const frags=[];
+  const sorted=[...messages].sort((a,b)=>a.time-b.time);
+  let lastDay='', frags=[];
 
   sorted.forEach(msg=>{
-    const d      = new Date(msg.time);
-    const dayStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    if(dayStr!==lastDay){ lastDay=dayStr; frags.push(`<div class="day-label"><span>${dayStr}</span></div>`); }
-    const html   = renderBubble(msg);
+    if(!msg) return;
+    const d=new Date(msg.time);
+    const day=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    if(day!==lastDay){ lastDay=day; frags.push(`<div class="day-label"><span>${day}</span></div>`); }
+    const html=renderBubble(msg);
     if(html) frags.push(html);
   });
 
-  // Preserve scroll position
-  const wasAtBottom = (area.scrollHeight - area.scrollTop - area.clientHeight) < 80;
-
-  area.innerHTML = '<div id="empty-chat" style="display:none"><span style="font-size:2.5rem">✦</span><p>Your private space.<br>Say something beautiful.</p></div>';
+  const wasAtBottom=(area.scrollHeight-area.scrollTop-area.clientHeight)<80;
+  area.innerHTML='<div id="empty-chat" style="display:none"><span style="font-size:2.5rem">âœ¦</span><p>Your private space.<br>Say something beautiful.</p></div>';
   area.insertAdjacentHTML('beforeend', frags.join(''));
 
-  // Re-attach event listeners
   area.querySelectorAll('.bubble[data-id]').forEach(el=>{
-    el.addEventListener('contextmenu', e=>{ e.preventDefault(); showCtxMenu(e, el.dataset.id); });
-    el.addEventListener('dblclick', ()=>showEmojiPicker(el.dataset.id, el));
+    el.addEventListener('contextmenu',e=>{ e.preventDefault(); showCtxMenu(e,el.dataset.id); });
+    el.addEventListener('dblclick',()=>showEmojiPicker(el.dataset.id,el));
   });
 
   if(wasAtBottom) scrollToBottom();
 }
 
 function renderBubble(msg){
-  if(!msg) return '';
-  const mine     = msg.sender === currentUser;
-  const timeStr  = new Date(msg.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  const statusCls= mine ? `si-${msg.status||'sent'}` : '';
-  const statusEl = mine ? `<span class="status-icon ${statusCls}"></span>` : '';
-  const editEl   = msg.edited ? `<span class="edited-tag">edited</span>` : '';
+  if(!msg||msg.deletedFor?.includes(currentUser)) return '';
+  const mine    = msg.sender===currentUser;
+  const timeStr = new Date(msg.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  const statusEl= mine?`<span class="status-icon si-${msg.status||'sent'}"></span>`:'';
+  const editEl  = msg.edited?`<span class="edited-tag">edited</span>`:'';
 
-  if(msg.deletedFor?.includes(currentUser)) return '';
   if(msg.deletedForAll){
-    return `<div class="msg-row ${mine?'mine':'theirs'}">
-      <div class="bubble deleted" data-id="${msg.id}">
-        <span class="bubble-text muted">🗑 This message was deleted</span>
-      </div></div>`;
+    return `<div class="msg-row ${mine?'mine':'theirs'}"><div class="bubble deleted" data-id="${msg.id}"><span class="bubble-text muted">ðŸ—‘ This message was deleted</span></div></div>`;
   }
 
   let replyEl='';
   if(msg.replyTo){
     const orig=messages.find(m=>m.id===msg.replyTo);
-    if(orig) replyEl=`<div class="reply-preview"><span class="reply-text">↩ ${escHtml(orig.content)||'📎 media'}</span></div>`;
+    if(orig) replyEl=`<div class="reply-preview"><span class="reply-text">â†© ${escHtml(orig.content)||'ðŸ“Ž media'}</span></div>`;
   }
 
   let reactEl='';
-  const rkeys = msg.reactions ? Object.keys(msg.reactions).filter(e=>msg.reactions[e].length>0) : [];
+  const rkeys=Object.keys(msg.reactions||{}).filter(e=>msg.reactions[e]?.length>0);
   if(rkeys.length){
     reactEl='<div class="bubble-reactions">';
     rkeys.forEach(emoji=>{
@@ -883,11 +973,8 @@ function renderBubble(msg){
 
   return `<div class="msg-row ${mine?'mine':'theirs'}">
     <div class="bubble" data-id="${msg.id}">
-      ${replyEl}
-      <div class="bubble-text">${escHtml(msg.content)}</div>
-      <div class="bubble-footer">
-        ${editEl}<span class="bubble-time">${timeStr}</span>${statusEl}
-      </div>
+      ${replyEl}<div class="bubble-text">${escHtml(msg.content)}</div>
+      <div class="bubble-footer">${editEl}<span class="bubble-time">${timeStr}</span>${statusEl}</div>
     </div>${reactEl}
   </div>`;
 }
@@ -897,48 +984,74 @@ function escHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
 
-/* ── Send ── */
-function sendMsg(){
-  const txt  = document.getElementById('chat-text');
-  const text = txt.value.trim();
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SEND
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+async function sendMsg(){
+  const txt=document.getElementById('chat-text');
+  const text=txt.value.trim();
   if(!text) return;
-
-  const msg = {
-    id:           `${Date.now()}_${Math.random().toString(36).slice(2)}`,
-    sender:       currentUser,
-    content:      text,
-    time:         Date.now(),
-    status:       isPartnerOnline() ? 'delivered' : 'sent',
-    replyTo:      replyToMsg?.id || null,
-    reactions:    {},
-    edited:       false,
-    deletedForAll:false,
-    deletedFor:   [],
-  };
-
-  messages.push(msg);
-  saveMsgs(true);  // broadcasts to partner's tab instantly
-  txt.value = '';
-  clearReply();
+  txt.value='';
   stopTyping();
+
+  const optimisticId=`opt_${Date.now()}`;
+  const optimistic={
+    id:optimisticId, sender:currentUser, content:text,
+    time:Date.now(), status:'sending',
+    replyTo:replyToMsg?.id||null, reactions:{},
+    edited:false, deletedForAll:false, deletedFor:[],
+  };
+  messages.push(optimistic);
+  clearReply();
   renderMessages();
   scrollToBottom();
 
-  // If partner is online mark as read after brief delay (they see it)
-  if(isPartnerOnline()){
-    setTimeout(()=>{
-      const m = messages.find(x=>x.id===msg.id);
-      if(m && m.status !== 'read'){ m.status='read'; saveMsgs(false); renderMessages(); }
-    }, 1200);
+  if(useSupabase){
+    try{
+      const { data, error } = await sb.from('messages').insert({
+        chat_id:     CHAT_ID,
+        sender_id:   currentUser,
+        content:     text,
+        status:      'sent',
+        reply_to:    replyToMsg?.id || null,
+        reactions:   {},
+        deleted_for: [],
+        deleted_for_all: false,
+      }).select().single();
+
+      if(error) throw error;
+
+      // Replace optimistic with real row
+      messages = messages.map(m=>m.id===optimisticId ? dbToMsg(data) : m);
+      renderMessages();
+    }catch(err){
+      console.error('Send failed:', err);
+      messages = messages.map(m=>m.id===optimisticId ? {...m, status:'sent'} : m);
+      renderMessages();
+    }
+  } else {
+    // localStorage mode
+    messages = messages.map(m=>m.id===optimisticId ? {...m, status:isPartnerOnline()?'delivered':'sent'} : m);
+    saveLocal(true);
+    renderMessages();
+    // Auto-read if partner is online
+    if(isPartnerOnline()){
+      setTimeout(()=>{
+        messages=messages.map(m=>m.id===optimisticId?{...m,status:'read'}:m);
+        saveLocal(false); renderMessages();
+      }, 1200);
+    }
   }
 }
 
-/* ── Reply ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   REPLY
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function setReply(id){
   const m=messages.find(x=>x.id===id); if(!m)return;
   replyToMsg=m;
   document.getElementById('reply-bar').classList.add('show');
-  document.getElementById('reply-bar-text').textContent='↩ '+(m.content||'📎 media');
+  document.getElementById('reply-bar-text').textContent='â†© '+(m.content||'ðŸ“Ž media');
   document.getElementById('chat-text').focus();
 }
 function clearReply(){
@@ -946,37 +1059,42 @@ function clearReply(){
   document.getElementById('reply-bar').classList.remove('show');
 }
 
-/* ── Typing ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   TYPING
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function handleTyping(){
-  if(bc) bc.postMessage({ type:'typing', data:{ user:currentUser, typing:true } });
+  if(bc) bc.postMessage({type:'typing',data:{user:currentUser,typing:true}});
   clearTimeout(typingTimer);
   typingTimer=setTimeout(stopTyping, 2500);
 }
 function stopTyping(){
   clearTimeout(typingTimer);
-  if(bc) bc.postMessage({ type:'typing', data:{ user:currentUser, typing:false } });
+  if(bc) bc.postMessage({type:'typing',data:{user:currentUser,typing:false}});
+  document.getElementById('typing-indicator').classList.remove('show');
 }
 
-/* ── Emoji reactions ── */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   REACTIONS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 let emojiTargetId=null;
-function showEmojiPicker(id, el){
+function showEmojiPicker(id,el){
   emojiTargetId=id;
   const rect=el.getBoundingClientRect();
-  const picker=document.getElementById('reaction-picker');
-  picker.style.left=Math.min(rect.left, innerWidth-250)+'px';
-  picker.style.top=Math.max(10, rect.top-60)+'px';
-  picker.classList.add('show');
+  const p=document.getElementById('reaction-picker');
+  p.style.left=Math.min(rect.left,innerWidth-250)+'px';
+  p.style.top=Math.max(10,rect.top-60)+'px';
+  p.classList.add('show');
 }
 document.getElementById('reaction-picker').querySelectorAll('button').forEach(btn=>{
-  btn.addEventListener('click', e=>{
+  btn.addEventListener('click',e=>{
     e.stopPropagation();
     if(!emojiTargetId)return;
-    toggleReaction(emojiTargetId, btn.dataset.e);
+    toggleReaction(emojiTargetId,btn.dataset.e);
     document.getElementById('reaction-picker').classList.remove('show');
     emojiTargetId=null;
   });
 });
-function toggleReaction(msgId, emoji){
+async function toggleReaction(msgId,emoji){
   const m=messages.find(x=>x.id===msgId); if(!m)return;
   if(!m.reactions)m.reactions={};
   if(!m.reactions[emoji])m.reactions[emoji]=[];
@@ -984,19 +1102,27 @@ function toggleReaction(msgId, emoji){
   if(idx>-1) m.reactions[emoji].splice(idx,1);
   else m.reactions[emoji].push(currentUser);
   if(!m.reactions[emoji].length) delete m.reactions[emoji];
-  saveMsgs(true); renderMessages();
+
+  if(useSupabase){
+    await sb.from('messages').update({reactions:m.reactions}).eq('id',msgId);
+  } else {
+    saveLocal(true);
+  }
+  renderMessages();
 }
 
-/* ── Context menu ── */
-function showCtxMenu(e, id){
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   CONTEXT MENU
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function showCtxMenu(e,id){
   ctxTargetId=id;
   const menu=document.getElementById('ctx-menu');
   const m=messages.find(x=>x.id===id);
-  const mine=m && m.sender===currentUser;
+  const mine=m&&m.sender===currentUser;
   document.getElementById('ctx-edit').style.display=mine?'flex':'none';
   document.getElementById('ctx-del-all').style.display=mine?'flex':'none';
-  menu.style.left=Math.min(e.clientX, innerWidth-165)+'px';
-  menu.style.top=Math.min(e.clientY, innerHeight-190)+'px';
+  menu.style.left=Math.min(e.clientX,innerWidth-165)+'px';
+  menu.style.top=Math.min(e.clientY,innerHeight-190)+'px';
   menu.classList.add('show');
   e.stopPropagation();
 }
@@ -1006,33 +1132,113 @@ function closeMenus(e){
   if(!document.getElementById('reaction-picker').contains(e.target))
     document.getElementById('reaction-picker').classList.remove('show');
 }
-document.getElementById('ctx-reply').onclick=()=>{ setReply(ctxTargetId); document.getElementById('ctx-menu').classList.remove('show'); };
-document.getElementById('ctx-edit').onclick=()=>{
-  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
-  const val=window.prompt('Edit message:',m.content);
-  if(val!==null && val.trim()){ m.content=val.trim(); m.edited=true; saveMsgs(true); renderMessages(); }
-  document.getElementById('ctx-menu').classList.remove('show');
-};
-document.getElementById('ctx-del-me').onclick=()=>{
-  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
-  if(!m.deletedFor)m.deletedFor=[];
-  if(!m.deletedFor.includes(currentUser)) m.deletedFor.push(currentUser);
-  saveMsgs(false); renderMessages();
-  document.getElementById('ctx-menu').classList.remove('show');
-};
-document.getElementById('ctx-del-all').onclick=()=>{
-  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
-  m.deletedForAll=true; m.content='';
-  saveMsgs(true); renderMessages();
+
+document.getElementById('ctx-reply').onclick=()=>{
+  setReply(ctxTargetId);
   document.getElementById('ctx-menu').classList.remove('show');
 };
 
-/* ── Scroll helpers ── */
+document.getElementById('ctx-edit').onclick=async ()=>{
+  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
+  const val=window.prompt('Edit message:',m.content);
+  if(val===null||!val.trim()){ document.getElementById('ctx-menu').classList.remove('show'); return; }
+  m.content=val.trim(); m.edited=true;
+  if(useSupabase){
+    await sb.from('messages').update({content:m.content, edited_at:new Date().toISOString()}).eq('id',m.id);
+  } else { saveLocal(true); }
+  renderMessages();
+  document.getElementById('ctx-menu').classList.remove('show');
+};
+
+document.getElementById('ctx-del-me').onclick=async ()=>{
+  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
+  if(!m.deletedFor) m.deletedFor=[];
+  if(!m.deletedFor.includes(currentUser)) m.deletedFor.push(currentUser);
+  if(useSupabase){
+    await sb.from('messages').update({deleted_for:m.deletedFor}).eq('id',m.id);
+    messages=messages.filter(x=>x.id!==m.id);
+  } else { saveLocal(false); }
+  renderMessages();
+  document.getElementById('ctx-menu').classList.remove('show');
+};
+
+document.getElementById('ctx-del-all').onclick=async ()=>{
+  const m=messages.find(x=>x.id===ctxTargetId); if(!m)return;
+  m.deletedForAll=true; m.content='';
+  if(useSupabase){
+    await sb.from('messages').update({deleted_for_all:true, content:''}).eq('id',m.id);
+  } else { saveLocal(true); }
+  renderMessages();
+  document.getElementById('ctx-menu').classList.remove('show');
+};
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SCROLL HELPERS
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function scrollToBottom(){ const a=document.getElementById('chat-messages'); a.scrollTop=a.scrollHeight; }
 function onScroll(){
   const a=document.getElementById('chat-messages');
-  document.getElementById('jump-btn').classList.toggle('show', a.scrollHeight-a.scrollTop-a.clientHeight>120);
+  document.getElementById('jump-btn').classList.toggle('show',a.scrollHeight-a.scrollTop-a.clientHeight>120);
 }
+
+/* ═══════════════════════════════
+   SUPABASE SETUP PANEL
+═══════════════════════════════ */
+function checkSbSetup(){
+  const url = localStorage.getItem('sb_url');
+  const key = localStorage.getItem('sb_key');
+  if(!url || !key || url==='YOUR_SUPABASE_URL'){
+    // Show setup panel after a short delay so login page is visible first
+    setTimeout(()=> document.getElementById('sb-setup').style.display='flex', 800);
+  }
+}
+
+function saveSbKeys(){
+  const url = document.getElementById('sb-url-input').value.trim();
+  const key = document.getElementById('sb-key-input').value.trim();
+  const err = document.getElementById('sb-setup-err');
+  if(!url.startsWith('https://') || !key.startsWith('eyJ')){
+    err.textContent='Please enter a valid Supabase URL and anon key.';
+    err.style.display='block'; return;
+  }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  err.style.display='none';
+  document.getElementById('sb-setup').style.display='none';
+  // Reload so the keys take effect
+  location.reload();
+}
+
+function skipSbSetup(){
+  localStorage.setItem('sb_url','__skip__');
+  localStorage.setItem('sb_key','__skip__');
+  document.getElementById('sb-setup').style.display='none';
+}
+
+// Check on page load
+checkSbSetup();
+
 </script>
+  <!-- Supabase setup panel (shown only when keys are not configured) -->
+  <div id="sb-setup" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;">
+    <div style="background:#1a1228;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:32px;max-width:460px;width:90%;display:flex;flex-direction:column;gap:16px;">
+      <div style="font-size:1.5rem;font-weight:800;color:#fff;">Connect Supabase ✦</div>
+      <div style="font-size:.85rem;color:rgba(255,255,255,.5);line-height:1.6;">
+        Paste your Supabase project URL and anon key so messages are stored in a real database and synced across devices.<br><br>
+        Get them from <a href="https://supabase.com/dashboard" target="_blank" style="color:#c026d3;">supabase.com/dashboard</a> → your project → Settings → API.
+      </div>
+      <input id="sb-url-input" type="text" placeholder="https://xxxx.supabase.co"
+        style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:12px 14px;color:#fff;font-size:.9rem;outline:none;"/>
+      <input id="sb-key-input" type="text" placeholder="eyJhb... (anon public key)"
+        style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:12px 14px;color:#fff;font-size:.9rem;outline:none;"/>
+      <div style="display:flex;gap:10px;">
+        <button onclick="saveSbKeys()" style="flex:1;padding:13px;background:#c026d3;border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;font-size:.95rem;">Save &amp; Connect</button>
+        <button onclick="skipSbSetup()" style="padding:13px 18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:rgba(255,255,255,.5);cursor:pointer;font-size:.9rem;">Skip (local only)</button>
+      </div>
+      <div id="sb-setup-err" style="font-size:.8rem;color:#ff7080;display:none;"></div>
+    </div>
+  </div>
+
 </body>
 </html>
+

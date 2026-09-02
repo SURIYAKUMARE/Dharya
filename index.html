@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
   <title>Dharya</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,700;1,800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -335,6 +335,74 @@
       padding:0 4px;
     }
     #jump-badge.show{display:flex;}
+  /* ════ MOBILE RESPONSIVE ════ */
+  @media(max-width:600px){
+    .card{width:96vw;padding:32px 20px 24px;}
+    .bub{max-width:85%;}
+    #ch-header{padding:0 4px 0 0;height:54px;}
+    #ch-msgs{padding:4px 2px 2px;}
+    .mrow{padding:1px 2px;}
+    #ch-input-bar{padding:5px 5px;}
+    #send-btn,#mic-btn{width:48px;height:48px;}
+    #ch-text{padding:10px 10px 10px 44px;min-height:48px;font-size:16px;}
+    #attach-btn-wrap{left:10px;bottom:12px;}
+  }
+  @media(max-width:380px){
+    .card{width:98vw;padding:28px 14px 20px;}
+    .l-title{font-size:1.7rem;}.tname{font-size:1.9rem;}
+  }
+
+  /* ════ AVATAR IMAGE ════ */
+  .av-img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
+
+  /* ════ GARDEN PAGE ════ */
+  #page-garden{
+    position:fixed;inset:0;z-index:11;
+    display:flex;flex-direction:column;
+    opacity:0;pointer-events:none;
+    transition:opacity .5s,transform .5s;
+    transform:translateY(16px);
+    background:linear-gradient(180deg,#0a1a0e 0%,#0d2b14 40%,#071a0b 100%);
+    overflow:hidden;
+  }
+  #page-garden.show{opacity:1;pointer-events:all;transform:translateY(0);}
+
+  #garden-header{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top,12px));
+    background:rgba(10,30,15,.9);
+    border-bottom:1px solid rgba(255,255,255,.06);
+    flex-shrink:0;backdrop-filter:blur(20px);z-index:2;position:relative;
+  }
+  #garden-header h2{flex:1;font-size:17px;font-weight:700;color:#a7f3d0;}
+  #garden-back{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:1.2rem;padding:4px 8px;}
+
+  #garden-canvas{flex:1;display:block;touch-action:none;}
+
+  #garden-controls{
+    display:flex;align-items:center;gap:8px;padding:10px 14px;
+    padding-bottom:max(10px,env(safe-area-inset-bottom,10px));
+    background:rgba(10,25,14,.92);border-top:1px solid rgba(255,255,255,.06);
+    flex-shrink:0;flex-wrap:wrap;
+  }
+  #garden-controls p{font-size:12px;color:rgba(255,255,255,.4);flex:100%;text-align:center;margin-bottom:2px;}
+  .seed-btn{
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    padding:10px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.05);cursor:pointer;transition:background .18s,border-color .18s;
+    color:#fff;font-size:12px;font-weight:600;letter-spacing:.02em;
+    font-family:'Inter',sans-serif;
+  }
+  .seed-btn:hover,.seed-btn.sel{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.4);}
+  .seed-btn span{font-size:1.8rem;line-height:1;}
+  #garden-hint{
+    position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
+    font-size:13px;color:rgba(255,255,255,.5);background:rgba(0,0,0,.5);
+    padding:6px 16px;border-radius:20px;pointer-events:none;
+    animation:hintfade 3s ease-in-out forwards;
+  }
+  @keyframes hintfade{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
+
   </style>
 </head>
 <body>
@@ -452,6 +520,7 @@
         <p id="ch-status">connecting…</p>
       </div>
       <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">🔍</button>
+      <button class="hdr-btn" id="btn-garden" onclick="openGarden()" title="Our Garden">🌸</button>
       <button class="hdr-btn" id="btn-settings" onclick="openSettings()" title="Settings">⋮</button>
     </div>
     <!-- Pin bar -->
@@ -842,7 +911,15 @@ function isPartnerOnline(){
 async function initChat(key){
   const p=PARTNER[key];
   const av=document.getElementById('ch-avatar');
-  av.textContent=p.emoji;av.style.background=p.color+'22';av.style.color=p.color;
+  // Show profile picture if available, otherwise emoji
+  const picKey='profile_pic_'+key;
+  const savedPic=localStorage.getItem(picKey);
+  if(savedPic){
+    av.innerHTML=`<img class="av-img" src="${savedPic}" alt="${p.name}"/>`;
+    av.style.background='transparent';
+  } else {
+    av.textContent=p.emoji;av.style.background=p.color+'22';av.style.color=p.color;
+  }
   document.getElementById('ch-name').textContent=p.name;
   document.getElementById('ch-status').textContent='connecting…';
   document.getElementById('ch-status').classList.remove('online');
@@ -1372,6 +1449,338 @@ function skipDbSetup() {
   renderMessages();
   scrollToBottom();
 }
+/* ═══════════════════════════════════════
+   PROFILE PICTURES
+═══════════════════════════════════════ */
+let picTargetKey=null;
+function changePic(key){
+  picTargetKey=key;
+  const inp=document.getElementById('file-input');
+  inp.accept='image/*';
+  inp.click();
+}
+// Override handleFilePick for profile pics
+const _origHandleFilePick=handleFilePick;
+function handleFilePick(input){
+  if(picTargetKey){
+    const file=input.files[0]; if(!file)return;
+    input.value='';
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const dataUrl=e.target.result;
+      localStorage.setItem('profile_pic_'+picTargetKey,dataUrl);
+      // Update preview
+      const prev=document.getElementById('pic-'+picTargetKey+'-preview');
+      if(prev) prev.innerHTML=`<img style="width:100%;height:100%;object-fit:cover;border-radius:50%;" src="${dataUrl}"/>`;
+      document.getElementById('pic-'+picTargetKey+'-sub').textContent='Photo set ✓';
+      // Update live avatar if this is the current partner
+      if(currentUser){
+        const partnerKey=currentUser==='dharya'?'sadhana':'dharya';
+        if(picTargetKey===partnerKey){
+          const av=document.getElementById('ch-avatar');
+          av.innerHTML=`<img class="av-img" src="${dataUrl}"/>`;
+          av.style.background='transparent';
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    picTargetKey=null;
+    return;
+  }
+  _origHandleFilePick(input);
+}
+
+function openSettings(){
+  closeAllMenus();
+  ['readReceipts','lastSeen'].forEach(k=>{const t=document.getElementById('tog-'+k);if(t){if(getSetting(k,true))t.classList.add('on');else t.classList.remove('on');}});
+  const dm=getSetting('disappearMode','off'); setDisappear(dm);
+  const lh=getSetting('chatLockHash_'+currentUser,'');
+  document.getElementById('lock-sub').textContent=lh?'Change or remove PIN':'Set a PIN to lock this chat';
+  // Load profile picture previews
+  ['dharya','sadhana'].forEach(k=>{
+    const pic=localStorage.getItem('profile_pic_'+k);
+    const prev=document.getElementById('pic-'+k+'-preview');
+    const sub=document.getElementById('pic-'+k+'-sub');
+    if(pic&&prev){
+      prev.innerHTML=`<img style="width:100%;height:100%;object-fit:cover;border-radius:50%;" src="${pic}"/>`;
+      if(sub) sub.textContent='Photo set ✓';
+    }
+  });
+  document.getElementById('settings-modal').classList.add('show');
+}
+
+/* ═══════════════════════════════════════
+   GARDEN PAGE
+═══════════════════════════════════════ */
+const GARDEN_KEY='dharya_garden_v1';
+let gardenFlowers=[];
+let selectedSeed='rose';
+let gardenCanvas=null, gardenCtx=null;
+let gardenAnimId=null;
+let gardenW=0, gardenH=0;
+
+const FLOWER_TYPES={
+  rose:{
+    petalColor:'#e11d48',petalDark:'#9f1239',centerColor:'#fbbf24',
+    petalCount:12,petalLen:22,petalW:10,
+    stemColor:'#16a34a',leafColor:'#15803d',label:'Rose'
+  },
+  sunflower:{
+    petalColor:'#fbbf24',petalDark:'#d97706',centerColor:'#78350f',
+    petalCount:16,petalLen:26,petalW:10,
+    stemColor:'#16a34a',leafColor:'#15803d',label:'Sunflower'
+  },
+  tulip:{
+    petalColor:'#e879f9',petalDark:'#a21caf',centerColor:'#fde68a',
+    petalCount:6,petalLen:30,petalW:16,
+    stemColor:'#16a34a',leafColor:'#15803d',label:'Tulip'
+  },
+  daisy:{
+    petalColor:'#f9fafb',petalDark:'#d1d5db',centerColor:'#fde047',
+    petalCount:20,petalLen:18,petalW:7,
+    stemColor:'#16a34a',leafColor:'#15803d',label:'Daisy'
+  },
+  cherry:{
+    petalColor:'#fbcfe8',petalDark:'#f9a8d4',centerColor:'#fde68a',
+    petalCount:5,petalLen:14,petalW:13,
+    stemColor:'#92400e',leafColor:'#16a34a',label:'Cherry'
+  }
+};
+
+function selectSeed(type){
+  selectedSeed=type;
+  document.querySelectorAll('.seed-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('seed-'+type).classList.add('sel');
+}
+
+function openGarden(){
+  document.getElementById('page-garden').classList.add('show');
+  setTimeout(initGarden,100);
+}
+function closeGarden(){
+  document.getElementById('page-garden').classList.remove('show');
+  if(gardenAnimId){cancelAnimationFrame(gardenAnimId);gardenAnimId=null;}
+}
+
+function initGarden(){
+  gardenCanvas=document.getElementById('garden-canvas');
+  gardenCtx=gardenCanvas.getContext('2d');
+  resizeGardenCanvas();
+  window.addEventListener('resize',resizeGardenCanvas);
+
+  // Load saved flowers
+  try{gardenFlowers=JSON.parse(localStorage.getItem(GARDEN_KEY)||'[]');}catch(e){gardenFlowers=[];}
+  // Animate growth
+  gardenFlowers.forEach(f=>{ if(f.growth<1) f.growth=Math.min(1,f.growth+0.3); });
+  updateFlowerCount();
+
+  gardenCanvas.addEventListener('click',onGardenTap);
+  gardenCanvas.addEventListener('touchend',onGardenTouch,{passive:false});
+
+  renderGarden();
+}
+
+function resizeGardenCanvas(){
+  if(!gardenCanvas)return;
+  gardenW=gardenCanvas.clientWidth||gardenCanvas.parentElement.clientWidth||window.innerWidth;
+  gardenH=gardenCanvas.clientHeight||gardenCanvas.parentElement.clientHeight-200||400;
+  gardenCanvas.width=gardenW;
+  gardenCanvas.height=gardenH;
+}
+
+function onGardenTap(e){
+  const rect=gardenCanvas.getBoundingClientRect();
+  const x=e.clientX-rect.left, y=e.clientY-rect.top;
+  plantFlower(x,y);
+}
+function onGardenTouch(e){
+  e.preventDefault();
+  const rect=gardenCanvas.getBoundingClientRect();
+  const t=e.changedTouches[0];
+  const x=t.clientX-rect.left, y=t.clientY-rect.top;
+  plantFlower(x,y);
+}
+
+function plantFlower(x,y){
+  // Don't plant too close to controls area (bottom 10%)
+  if(y>gardenH*0.9)return;
+  const flower={
+    id:Date.now(),type:selectedSeed,
+    x,y,growth:0,sway:Math.random()*Math.PI*2,
+    swaySpeed:0.4+Math.random()*0.4,
+    scale:0.8+Math.random()*0.5,
+    planted:Date.now()
+  };
+  gardenFlowers.push(flower);
+  saveGarden();
+  updateFlowerCount();
+
+  // Show hint
+  let hint=document.getElementById('garden-hint');
+  if(hint){hint.remove();}
+  const h=document.createElement('div');
+  h.id='garden-hint';h.textContent='🌱 Growing…';
+  document.getElementById('page-garden').appendChild(h);
+  setTimeout(()=>{const el=document.getElementById('garden-hint');if(el)el.remove();},3000);
+}
+
+function saveGarden(){
+  localStorage.setItem(GARDEN_KEY,JSON.stringify(gardenFlowers));
+}
+function updateFlowerCount(){
+  const el=document.getElementById('garden-flower-count');
+  if(el) el.textContent=gardenFlowers.length>0?`${gardenFlowers.length} flower${gardenFlowers.length!==1?'s':''}  planted`:'';
+}
+
+let gTime=0;
+function renderGarden(){
+  gardenAnimId=requestAnimationFrame(renderGarden);
+  gTime+=0.016;
+  const ctx=gardenCtx;
+  const W=gardenW, H=gardenH;
+  if(!W||!H)return;
+
+  // Sky gradient
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a1a0e');
+  sky.addColorStop(0.6,'#0d2b14');
+  sky.addColorStop(1,'#0a1f0b');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+  // Ground
+  const ground=ctx.createLinearGradient(0,H*0.82,0,H);
+  ground.addColorStop(0,'#1a3a1c');
+  ground.addColorStop(0.3,'#14310f');
+  ground.addColorStop(1,'#0c1f0d');
+  ctx.fillStyle=ground;
+  ctx.beginPath();
+  ctx.moveTo(0,H*0.82);
+  // Slightly wavy ground line
+  for(let x=0;x<=W;x+=20){
+    const waveY=H*0.82+Math.sin(x*0.04+gTime*0.3)*2;
+    ctx.lineTo(x,waveY);
+  }
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fill();
+
+  // Draw ground texture dots
+  ctx.fillStyle='rgba(255,255,255,.04)';
+  for(let i=0;i<20;i++){
+    const gx=(i*137+50)%W, gy=H*0.86+(i*53)%((H-H*0.86));
+    ctx.beginPath(); ctx.arc(gx,gy,1,0,Math.PI*2); ctx.fill();
+  }
+
+  // Grow flowers over time
+  gardenFlowers.forEach(f=>{
+    if(f.growth<1) f.growth=Math.min(1,f.growth+0.008);
+  });
+
+  // Sort by Y so closer flowers appear in front
+  const sorted=[...gardenFlowers].sort((a,b)=>a.y-b.y);
+
+  sorted.forEach(f=>drawFlower(ctx,f,gTime));
+}
+
+function drawFlower(ctx,f,t){
+  const type=FLOWER_TYPES[f.type]||FLOWER_TYPES.rose;
+  const g=f.growth;
+  const sc=f.scale*g;
+  const sway=Math.sin(t*f.swaySpeed+f.sway)*3*g;
+  const groundY=f.y;
+  const stemH=60*sc;
+  const headY=groundY-stemH;
+
+  ctx.save();
+  ctx.translate(f.x,groundY);
+
+  // Stem
+  ctx.strokeStyle=type.stemColor;
+  ctx.lineWidth=3*sc;
+  ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(0,0);
+  ctx.bezierCurveTo(sway/2,-stemH*0.3,sway,-stemH*0.7,sway,-stemH);
+  ctx.stroke();
+
+  // Leaves (only after 50% growth)
+  if(g>0.5){
+    const leafG=(g-0.5)*2;
+    ctx.fillStyle=type.leafColor;
+    // Left leaf
+    ctx.save();
+    ctx.translate(sway/3,-stemH*0.4);
+    ctx.rotate(-0.5+Math.sin(t*f.swaySpeed+f.sway)*0.1);
+    ctx.scale(leafG,leafG);
+    ctx.beginPath();
+    ctx.ellipse(-8,0,12,5,Math.PI/6,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+    // Right leaf
+    ctx.save();
+    ctx.translate(sway*0.7,-stemH*0.62);
+    ctx.rotate(0.5+Math.sin(t*f.swaySpeed+f.sway)*0.1);
+    ctx.scale(leafG,leafG);
+    ctx.beginPath();
+    ctx.ellipse(8,0,12,5,-Math.PI/6,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Flower head (only after 30% growth)
+  if(g>0.3){
+    const headG=Math.min(1,(g-0.3)/0.7);
+    ctx.translate(sway,-stemH);
+    drawFlowerHead(ctx,type,headG*sc,t,f.swaySpeed+f.sway);
+  }
+
+  ctx.restore();
+}
+
+function drawFlowerHead(ctx,type,sc,t,phase){
+  const {petalColor,petalDark,centerColor,petalCount,petalLen,petalW}=type;
+  const angleStep=Math.PI*2/petalCount;
+
+  // Petals (two layers for depth)
+  for(let pass=0;pass<2;pass++){
+    const offset=pass===0?angleStep/2:0;
+    const col=pass===0?petalDark:petalColor;
+    for(let i=0;i<petalCount;i++){
+      const angle=i*angleStep+offset+Math.sin(t*0.5+phase)*0.04;
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.translate(0,-petalLen*0.3*sc);
+      // Petal gradient
+      const pg=ctx.createLinearGradient(0,0,0,-petalLen*sc);
+      pg.addColorStop(0,col);
+      pg.addColorStop(1,col+'88');
+      ctx.fillStyle=pg;
+      ctx.beginPath();
+      ctx.ellipse(0,-petalLen*0.35*sc,petalW*0.45*sc,petalLen*0.55*sc,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Center
+  const cr=petalW*0.6*sc;
+  const cg=ctx.createRadialGradient(0,0,0,0,0,cr);
+  cg.addColorStop(0,'#fff8');
+  cg.addColorStop(0.3,centerColor);
+  cg.addColorStop(1,centerColor+'cc');
+  ctx.fillStyle=cg;
+  ctx.beginPath(); ctx.arc(0,0,cr,0,Math.PI*2); ctx.fill();
+
+  // Center dots for realism
+  if(cr>4){
+    ctx.fillStyle='rgba(0,0,0,.25)';
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3, r=cr*0.55;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*r,Math.sin(a)*r,cr*0.18,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+}
 
 </script>  <!-- Attach menu -->
   <div id="attach-menu" style="display:none">
@@ -1423,6 +1832,19 @@ function skipDbSetup() {
         <span>⚙️ Chat Settings</span>
         <button onclick="closeSettings()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.5);font-size:20px;padding:0">✕</button>
       </div>
+      <!-- Profile pictures -->
+      <div class="ssect"><div class="ssect-title">Profile Pictures</div></div>
+      <div class="srow" onclick="changePic('dharya')">
+        <div class="srow-icon">🌿</div>
+        <div class="srow-info"><div class="srow-label">Surya's photo</div><div class="srow-sub" id="pic-dharya-sub">Tap to upload</div></div>
+        <div id="pic-dharya-preview" style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">🌿</div>
+      </div>
+      <div class="srow" onclick="changePic('sadhana')">
+        <div class="srow-icon">❤️</div>
+        <div class="srow-info"><div class="srow-label">Sadhana's photo</div><div class="srow-sub" id="pic-sadhana-sub">Tap to upload</div></div>
+        <div id="pic-sadhana-preview" style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">❤️</div>
+      </div>
+      <div class="ssep"></div>
       <div class="ssect"><div class="ssect-title">Privacy</div></div>
       <div class="srow" onclick="toggleSetting('readReceipts')">
         <div class="srow-icon">👁️</div>
@@ -1503,6 +1925,8 @@ function skipDbSetup() {
 
   <!-- Hidden file input -->
   <input type="file" id="file-input" style="display:none" onchange="handleFilePick(this)"/>
+  <!-- Profile pic input -->
+  <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="handleFilePick(this)"/>
 
   <!-- DB Setup modal (shown if messages table doesn't exist yet) -->
   <div id="db-setup" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.88);align-items:center;justify-content:center;backdrop-filter:blur(8px)">
@@ -1519,6 +1943,23 @@ function skipDbSetup() {
         <button onclick="retryDbConnect()" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px">🔄 Retry</button>
       </div>
       <button onclick="skipDbSetup()" style="padding:10px;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:13px">Continue without database (local only)</button>
+    </div>
+  </div>
+  <!-- ══ GARDEN PAGE ══ -->
+  <div id="page-garden">
+    <div id="garden-header">
+      <button id="garden-back" onclick="closeGarden()">←</button>
+      <h2>🌸 Our Garden</h2>
+      <span id="garden-flower-count" style="font-size:13px;color:rgba(255,255,255,.4);"></span>
+    </div>
+    <canvas id="garden-canvas"></canvas>
+    <div id="garden-controls">
+      <p>Tap anywhere on the garden to plant a seed 🌱</p>
+      <button class="seed-btn sel" id="seed-rose" onclick="selectSeed('rose')"><span>🌹</span>Rose</button>
+      <button class="seed-btn" id="seed-sunflower" onclick="selectSeed('sunflower')"><span>🌻</span>Sunflower</button>
+      <button class="seed-btn" id="seed-tulip" onclick="selectSeed('tulip')"><span>🌷</span>Tulip</button>
+      <button class="seed-btn" id="seed-daisy" onclick="selectSeed('daisy')"><span>🌼</span>Daisy</button>
+      <button class="seed-btn" id="seed-cherry" onclick="selectSeed('cherry')"><span>🌸</span>Cherry</button>
     </div>
   </div>
 

@@ -1374,7 +1374,7 @@ function skipDbSetup() {
 }
 
 </script>  <!-- Attach menu -->
-  <div id="attach-menu">
+  <div id="attach-menu" style="display:none">
     <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px;">Attach</div>
     <div class="attach-grid">
       <div class="att-item" onclick="pickFile('image')"><div class="att-icon" style="background:rgba(251,146,60,.2);">🖼️</div><div class="att-label">Photo</div></div>
@@ -1388,7 +1388,7 @@ function skipDbSetup() {
   </div>
 
   <!-- Emoji / Sticker / GIF picker -->
-  <div id="emoji-picker">
+  <div id="emoji-picker" style="display:none">
     <div class="pk-tabs">
       <div class="pk-tab on" data-tab="emoji" onclick="switchPickerTab('emoji')">😊 Emoji</div>
       <div class="pk-tab" data-tab="sticker" onclick="switchPickerTab('sticker')">🎭 Stickers</div>
@@ -1398,7 +1398,7 @@ function skipDbSetup() {
   </div>
 
   <!-- Poll creator -->
-  <div id="poll-creator">
+  <div id="poll-creator" style="display:none">
     <div class="poll-sheet">
       <h3>📊 Create Poll</h3>
       <input class="poll-inp" id="poll-q" placeholder="Ask a question…" maxlength="200"/>
@@ -1417,7 +1417,7 @@ function skipDbSetup() {
   </div>
 
   <!-- Settings modal -->
-  <div id="settings-modal">
+  <div id="settings-modal" style="display:none">
     <div class="ssheet">
       <div class="ssheet-title">
         <span>⚙️ Chat Settings</span>
@@ -1470,7 +1470,7 @@ function skipDbSetup() {
   </div>
 
   <!-- Chat lock -->
-  <div id="chat-lock">
+  <div id="chat-lock" style="display:none">
     <div class="lock-icon">🔒</div>
     <div class="lock-title" id="lock-title">Chat Locked</div>
     <div class="lock-sub" id="lock-sub-msg">Enter your PIN to continue</div>
@@ -1495,7 +1495,7 @@ function skipDbSetup() {
   </div>
 
   <!-- Media viewer -->
-  <div id="media-viewer">
+  <div id="media-viewer" style="display:none">
     <button id="mv-close" onclick="closeMediaViewer()">✕</button>
     <img id="mv-img" style="display:none"/>
     <video id="mv-video" controls style="display:none"></video>

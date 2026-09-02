@@ -1103,8 +1103,23 @@ async function initChat(key){
 
   useSupabase=!!(SB_URL&&SB_KEY);
   if(useSupabase){
-    try{sb=supabase.createClient(SB_URL,SB_KEY);await loadFromSB();subscribeSB();}
-    catch(err){console.warn('SB unavailable',err);useSupabase=false;}
+    try{
+      sb=supabase.createClient(SB_URL,SB_KEY);
+      // Test connection
+      const {error:testErr} = await sb.from('messages').select('id').limit(1);
+      if(testErr && testErr.code==='PGRST205'){
+        // Table doesn't exist — show setup prompt
+        showDbSetup();
+        useSupabase=false;
+      } else if(testErr){
+        throw testErr;
+      } else {
+        await loadFromSB();subscribeSB();
+      }
+    }catch(err){
+      console.warn('SB unavailable',err);
+      useSupabase=false;
+    }
   }
   if(!useSupabase){
     try{messages=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');}catch(e){messages=[];}
@@ -1526,7 +1541,90 @@ function updateJumpBadge(){
   const b=document.getElementById('jump-badge');
   if(unreadCount>0){b.textContent=unreadCount>9?'9+':unreadCount;b.classList.add('show');}
   else{b.classList.remove('show');}
+}/* ── DB Setup helper ── */
+const SETUP_SQL = `-- Run this in Supabase SQL Editor
+-- https://supabase.com/dashboard/project/xnkmbmhtwtnndyuzmuay/sql/new
+
+create table if not exists public.messages (
+  id               text primary key default gen_random_uuid()::text,
+  chat_id          text not null default 'dharya-surya-sadhana',
+  sender_id        text not null,
+  content          text,
+  media_url        text,
+  media_type       text,
+  media_name       text,
+  media_size       bigint,
+  media_duration   int,
+  media_waveform   int[],
+  view_once        boolean not null default false,
+  viewed_by        text[] not null default '{}',
+  reply_to         text,
+  forwarded        boolean not null default false,
+  forward_count    int not null default 0,
+  poll_question    text,
+  poll_options     jsonb,
+  poll_type        text default 'single',
+  status           text not null default 'sent',
+  delivered_at     timestamptz,
+  read_at          timestamptz,
+  edited_at        timestamptz,
+  disappears_at    timestamptz,
+  deleted_for      text[] not null default '{}',
+  deleted_for_all  boolean not null default false,
+  reactions        jsonb not null default '{}',
+  starred_by       text[] not null default '{}',
+  pinned           boolean not null default false,
+  created_at       timestamptz not null default now()
+);
+alter table public.messages enable row level security;
+create policy "allow_all" on public.messages
+  for all using (true) with check (true);
+create index if not exists messages_chat_created
+  on public.messages(chat_id, created_at asc);
+
+-- Also create chat-media storage bucket
+insert into storage.buckets(id,name,public) values('chat-media','chat-media',true)
+  on conflict do nothing;
+create policy "allow_upload" on storage.objects for insert
+  with check (bucket_id='chat-media');
+create policy "allow_read" on storage.objects for select
+  using (bucket_id='chat-media');`;
+
+function showDbSetup() {
+  const el = document.getElementById('db-setup');
+  if (!el) return;
+  document.getElementById('setup-sql').value = SETUP_SQL;
+  el.style.display = 'flex';
 }
+function copySetupSql() {
+  navigator.clipboard.writeText(SETUP_SQL).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy SQL', 2000);
+  });
+}
+async function retryDbConnect() {
+  document.getElementById('db-setup').style.display = 'none';
+  if (!sb) sb = supabase.createClient(SB_URL, SB_KEY);
+  const { error } = await sb.from('messages').select('id').limit(1);
+  if (error) { showDbSetup(); return; }
+  useSupabase = true;
+  await loadFromSB();
+  subscribeSB();
+  await markIncomingRead();
+  renderMessages();
+  scrollToBottom();
+  document.getElementById('ch-status').textContent = 'online';
+}
+function skipDbSetup() {
+  document.getElementById('db-setup').style.display = 'none';
+  useSupabase = false;
+  try { messages = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); } catch(e) { messages=[]; }
+  initBroadcastChannel();
+  renderMessages();
+  scrollToBottom();
+}
+
 </script>  <!-- Attach menu -->
   <div id="attach-menu">
     <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px;">Attach</div>
@@ -1657,6 +1755,24 @@ function updateJumpBadge(){
 
   <!-- Hidden file input -->
   <input type="file" id="file-input" style="display:none" onchange="handleFilePick(this)"/>
+
+  <!-- DB Setup modal (shown if messages table doesn't exist yet) -->
+  <div id="db-setup" style="display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.88);align-items:center;justify-content:center;backdrop-filter:blur(8px)">
+    <div style="background:#140820;border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:28px 24px;max-width:480px;width:92%;display:flex;flex-direction:column;gap:16px;max-height:90vh;overflow-y:auto">
+      <div style="font-size:1.4rem;font-weight:800;color:#fff">⚡ One-time database setup</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.55);line-height:1.7">
+        Your Supabase project is connected but the <code style="background:rgba(255,255,255,.1);padding:2px 6px;border-radius:4px">messages</code> table doesn't exist yet.<br><br>
+        <strong style="color:#fff">Go to:</strong> <a href="https://supabase.com/dashboard/project/xnkmbmhtwtnndyuzmuay/sql/new" target="_blank" style="color:#a78bfa">Supabase SQL Editor ↗</a><br>
+        Paste the SQL below and click <strong style="color:#fff">Run</strong>.
+      </div>
+      <textarea id="setup-sql" readonly style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;color:#a0f0d0;font-family:monospace;font-size:11px;resize:vertical;height:200px;outline:none;width:100%"></textarea>
+      <div style="display:flex;gap:10px">
+        <button onclick="copySetupSql()" style="flex:1;padding:12px;background:#7c3aed;border:none;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px">📋 Copy SQL</button>
+        <button onclick="retryDbConnect()" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px">🔄 Retry</button>
+      </div>
+      <button onclick="skipDbSetup()" style="padding:10px;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:13px">Continue without database (local only)</button>
+    </div>
+  </div>
 
 </body>
 </html>

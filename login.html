@@ -356,52 +356,58 @@
   .av-img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
 
   /* ════ GARDEN PAGE ════ */
-  #page-garden{
-    position:fixed;inset:0;z-index:11;
-    display:flex;flex-direction:column;
-    opacity:0;pointer-events:none;
-    transition:opacity .5s,transform .5s;
-    transform:translateY(16px);
-    background:linear-gradient(180deg,#0a1a0e 0%,#0d2b14 40%,#071a0b 100%);
-    overflow:hidden;
-  }
+  #page-garden{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .5s,transform .5s;transform:translateY(16px);overflow:hidden;background:#030712;}
   #page-garden.show{opacity:1;pointer-events:all;transform:translateY(0);}
-
-  #garden-header{
-    display:flex;align-items:center;gap:10px;
-    padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top,12px));
-    background:rgba(10,30,15,.9);
-    border-bottom:1px solid rgba(255,255,255,.06);
-    flex-shrink:0;backdrop-filter:blur(20px);z-index:2;position:relative;
-  }
-  #garden-header h2{flex:1;font-size:17px;font-weight:700;color:#a7f3d0;}
-  #garden-back{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.7);font-size:1.2rem;padding:4px 8px;}
-
-  #garden-canvas{flex:1;display:block;touch-action:none;}
-
-  #garden-controls{
-    display:flex;align-items:center;gap:8px;padding:10px 14px;
-    padding-bottom:max(10px,env(safe-area-inset-bottom,10px));
-    background:rgba(10,25,14,.92);border-top:1px solid rgba(255,255,255,.06);
-    flex-shrink:0;flex-wrap:wrap;
-  }
-  #garden-controls p{font-size:12px;color:rgba(255,255,255,.4);flex:100%;text-align:center;margin-bottom:2px;}
-  .seed-btn{
-    display:flex;flex-direction:column;align-items:center;gap:4px;
-    padding:10px 14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);
-    background:rgba(255,255,255,.05);cursor:pointer;transition:background .18s,border-color .18s;
-    color:#fff;font-size:12px;font-weight:600;letter-spacing:.02em;
-    font-family:'Inter',sans-serif;
-  }
-  .seed-btn:hover,.seed-btn.sel{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.4);}
-  .seed-btn span{font-size:1.8rem;line-height:1;}
-  #garden-hint{
-    position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-    font-size:13px;color:rgba(255,255,255,.5);background:rgba(0,0,0,.5);
-    padding:6px 16px;border-radius:20px;pointer-events:none;
-    animation:hintfade 3s ease-in-out forwards;
-  }
-  @keyframes hintfade{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
+  #g-sky{position:absolute;inset:0;z-index:0;}
+  #g-ui{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;pointer-events:none;}
+  #g-topbar{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top,12px)) 14px 10px;background:linear-gradient(to bottom,rgba(0,0,0,.5),transparent);pointer-events:all;flex-shrink:0;}
+  #g-back{background:rgba(255,255,255,.12);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;font-size:1rem;flex-shrink:0;transition:background .16s;}
+  #g-back:hover{background:rgba(255,255,255,.22);}
+  #g-title{flex:1;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.4rem;font-weight:800;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.7);}
+  #g-time-badge{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:4px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.8);backdrop-filter:blur(8px);}
+  #g-streak-bar{display:flex;align-items:center;gap:10px;margin:0 12px 8px;padding:10px 14px;background:rgba(0,0,0,.35);backdrop-filter:blur(12px);border-radius:14px;border:1px solid rgba(255,255,255,.1);pointer-events:all;flex-shrink:0;}
+  #g-streak-flame{font-size:1.3rem;flex-shrink:0;}
+  #g-streak-info{flex:1;}
+  #g-streak-num{font-size:1rem;font-weight:800;color:#fbbf24;}
+  #g-streak-lbl{font-size:11px;color:rgba(255,255,255,.45);}
+  #g-streak-msg{font-size:12px;color:rgba(255,255,255,.6);text-align:right;}
+  #g-date-pill{text-align:center;pointer-events:none;flex-shrink:0;}
+  #g-date-pill span{display:inline-block;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(8px);border-radius:18px;padding:4px 16px;font-size:11.5px;color:rgba(255,255,255,.65);font-weight:500;letter-spacing:.05em;}
+  #g-spacer{flex:1;}
+  #g-bottom{background:linear-gradient(to top,rgba(0,0,0,.65),transparent);padding:10px 14px max(18px,calc(env(safe-area-inset-bottom,18px)+8px));display:flex;flex-direction:column;gap:8px;pointer-events:all;flex-shrink:0;}
+  #g-flower-card{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 16px;backdrop-filter:blur(14px);display:flex;align-items:center;gap:12px;}
+  #g-flower-emoji{font-size:2.2rem;}
+  #g-flower-info{flex:1;}
+  #g-flower-name{font-size:14px;font-weight:700;color:#fff;}
+  #g-flower-desc{font-size:11.5px;color:rgba(255,255,255,.48);margin-top:2px;line-height:1.4;}
+  #g-flower-status{padding:5px 12px;border-radius:18px;font-size:12px;font-weight:700;letter-spacing:.05em;white-space:nowrap;}
+  .gs-growing{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.38);color:#4ade80;}
+  .gs-bloomed{background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.38);color:#fbbf24;}
+  .gs-waiting{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.5);}
+  #g-history{display:flex;align-items:center;gap:5px;overflow-x:auto;scrollbar-width:none;padding:0 2px;}
+  #g-history::-webkit-scrollbar{display:none;}
+  #g-hist-lbl{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap;flex-shrink:0;}
+  .g-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);}
+  .g-dot.has{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.18);}
+  .g-dot.today{border-color:#fbbf24;box-shadow:0 0 7px rgba(251,191,36,.4);}
+  .g-dot.miss{opacity:.3;}
+  #g-plant-btn{width:100%;padding:15px;border:none;border-radius:15px;font-size:.96rem;font-weight:700;font-family:'Inter',sans-serif;letter-spacing:.05em;cursor:pointer;background:linear-gradient(135deg,#f472b6,#c026d3,#7c3aed);color:#fff;box-shadow:0 5px 20px rgba(192,38,211,.4),inset 0 1px 0 rgba(255,255,255,.18);transition:transform .18s,box-shadow .18s,opacity .18s;position:relative;overflow:hidden;}
+  #g-plant-btn::before{content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-18deg);animation:gpbshine 3.5s ease-in-out infinite;}
+  @keyframes gpbshine{0%{left:-80%}28%,100%{left:140%;}}
+  #g-plant-btn:hover{transform:translateY(-2px);box-shadow:0 9px 28px rgba(192,38,211,.55),inset 0 1px 0 rgba(255,255,255,.18);}
+  #g-plant-btn:active{transform:scale(.97);}
+  #g-plant-btn:disabled{opacity:.48;cursor:not-allowed;}
+  #g-plant-btn:disabled::before{display:none;}
+  #g-bloom-ov{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);pointer-events:none;}
+  #g-bloom-ov.show{display:flex;pointer-events:all;}
+  #g-bloom-em{font-size:5.5rem;animation:gbspin 1.2s cubic-bezier(.175,.885,.32,1.275);}
+  @keyframes gbspin{from{transform:scale(0) rotate(-180deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+  #g-bloom-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:800;font-size:2rem;color:#fff;text-align:center;text-shadow:0 0 28px rgba(251,191,36,.8);}
+  #g-bloom-sub{font-size:.85rem;color:rgba(255,255,255,.55);text-align:center;letter-spacing:.08em;}
+  #g-bloom-close{margin-top:6px;padding:11px 28px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:22px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .16s;}
+  #g-bloom-close:hover{background:rgba(255,255,255,.22);}
+  .g-petal{position:fixed;pointer-events:none;z-index:60;animation:gpetalfall var(--pd,2s) var(--pdl,0s) linear forwards;font-size:var(--pfs,1.2rem);}
+  @keyframes gpetalfall{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1;}100%{transform:translate(var(--pdx,20px),110vh) rotate(720deg) scale(.3);opacity:0;}}
 
   </style>
 </head>
@@ -520,7 +526,7 @@
         <p id="ch-status">connecting…</p>
       </div>
       <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">🔍</button>
-      <button class="hdr-btn" id="btn-garden" onclick="window.open('garden.html','_blank')" title="Our Garden">🌸</button>
+      <button class="hdr-btn" id="btn-garden" onclick="openGarden()" title="Our Garden">🌸</button>
       <button class="hdr-btn" id="btn-settings" onclick="openSettings()" title="Settings">⋮</button>
     </div>
     <!-- Pin bar -->
@@ -1509,279 +1515,203 @@ function openSettings(){
   document.getElementById('settings-modal').classList.add('show');
 }
 
-/* ═══════════════════════════════════════
-   GARDEN PAGE
-═══════════════════════════════════════ */
-const GARDEN_KEY='dharya_garden_v1';
-let gardenFlowers=[];
-let selectedSeed='rose';
-let gardenCanvas=null, gardenCtx=null;
-let gardenAnimId=null;
-let gardenW=0, gardenH=0;
+/* GARDEN ENGINE */
+const G_STORE='dharya_garden_v3';
+const G_STREAK='dharya_streak_v2';
+const G_DAILY=[
+  {e:'🌹',n:'Red Rose',d:'Symbol of deep love'},
+  {e:'🌻',n:'Sunflower',d:'Always facing the light'},
+  {e:'🌷',n:'Tulip',d:'Perfect graceful beauty'},
+  {e:'🌼',n:'Daisy',d:'Innocent pure joy'},
+  {e:'🌸',n:'Cherry Blossom',d:'Fleeting, eternal memories'},
+  {e:'🌺',n:'Hibiscus',d:'Rare delicate strength'},
+  {e:'🪷',n:'Lotus',d:'Rising pure from water'},
+  {e:'💐',n:'Bouquet',d:'Celebrating everything beautiful'},
+  {e:'🌿',n:'Fern',d:'Quiet ancient always green'},
+  {e:'🍀',n:'Clover',d:'A little luck in love'},
+];
+let gCanvas=null,gCtx=null,gAnimId=null,gW=0,gH=0,gT=0;
+const gStars=Array.from({length:260},()=>({x:Math.random(),y:Math.random()*.6,r:Math.random()*1.5+.2,a:Math.random(),da:(Math.random()*.005+.001)*(Math.random()>.5?1:-1),base:Math.random()*.4+.05}));
+const gShoots=[];let gShootT=0;
+const gBflies=Array.from({length:3},(_,i)=>({x:Math.random()*800,y:Math.random()*250+180,vx:(Math.random()-.5)*1.1,vy:(Math.random()-.5)*.7,ph:Math.random()*Math.PI*2,col:['#f472b6','#a78bfa','#34d399'][i]}));
+const gClouds=Array.from({length:4},(_,i)=>({x:i*250+80,y:35+Math.random()*55,w:70+Math.random()*55,spd:.18+Math.random()*.18}));
+let gFlowers=[];
 
-const FLOWER_TYPES={
-  rose:{
-    petalColor:'#e11d48',petalDark:'#9f1239',centerColor:'#fbbf24',
-    petalCount:12,petalLen:22,petalW:10,
-    stemColor:'#16a34a',leafColor:'#15803d',label:'Rose'
-  },
-  sunflower:{
-    petalColor:'#fbbf24',petalDark:'#d97706',centerColor:'#78350f',
-    petalCount:16,petalLen:26,petalW:10,
-    stemColor:'#16a34a',leafColor:'#15803d',label:'Sunflower'
-  },
-  tulip:{
-    petalColor:'#e879f9',petalDark:'#a21caf',centerColor:'#fde68a',
-    petalCount:6,petalLen:30,petalW:16,
-    stemColor:'#16a34a',leafColor:'#15803d',label:'Tulip'
-  },
-  daisy:{
-    petalColor:'#f9fafb',petalDark:'#d1d5db',centerColor:'#fde047',
-    petalCount:20,petalLen:18,petalW:7,
-    stemColor:'#16a34a',leafColor:'#15803d',label:'Daisy'
-  },
-  cherry:{
-    petalColor:'#fbcfe8',petalDark:'#f9a8d4',centerColor:'#fde68a',
-    petalCount:5,petalLen:14,petalW:13,
-    stemColor:'#92400e',leafColor:'#16a34a',label:'Cherry'
-  }
-};
+function gTodayKey(){return new Date().toISOString().slice(0,10);}
+function gTodayFlower(){const d=new Date();const dy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);return G_DAILY[dy%G_DAILY.length];}
+function gLoadData(){try{return JSON.parse(localStorage.getItem(G_STORE)||'{}');}catch(e){return{};}}
+function gSaveData(d){localStorage.setItem(G_STORE,JSON.stringify(d));}
+function gLoadStreak(){try{return JSON.parse(localStorage.getItem(G_STREAK)||'{"count":0,"last":""}');}catch(e){return{count:0,last:''};}}
+function gSaveStreak(d){localStorage.setItem(G_STREAK,JSON.stringify(d));}
 
-function selectSeed(type){
-  selectedSeed=type;
-  document.querySelectorAll('.seed-btn').forEach(b=>b.classList.remove('sel'));
-  document.getElementById('seed-'+type).classList.add('sel');
-}
+function gTimeOfDay(){const h=new Date().getHours();if(h>=5&&h<7)return'dawn';if(h>=7&&h<12)return'morning';if(h>=12&&h<17)return'afternoon';if(h>=17&&h<20)return'evening';if(h>=20&&h<22)return'dusk';return'night';}
+const G_TIME_LABELS={dawn:'🌅 Dawn',morning:'☀️ Morning',afternoon:'🌤 Afternoon',evening:'🌇 Evening',dusk:'🌆 Dusk',night:'🌙 Night'};
 
 function openGarden(){
   document.getElementById('page-garden').classList.add('show');
-  setTimeout(initGarden,100);
+  setTimeout(gInit,80);
 }
 function closeGarden(){
   document.getElementById('page-garden').classList.remove('show');
-  if(gardenAnimId){cancelAnimationFrame(gardenAnimId);gardenAnimId=null;}
+  if(gAnimId){cancelAnimationFrame(gAnimId);gAnimId=null;}
+  gFlowers=[];gShoots.length=0;
 }
 
-function initGarden(){
-  gardenCanvas=document.getElementById('garden-canvas');
-  gardenCtx=gardenCanvas.getContext('2d');
-  resizeGardenCanvas();
-  window.addEventListener('resize',resizeGardenCanvas);
-
-  // Load saved flowers
-  try{gardenFlowers=JSON.parse(localStorage.getItem(GARDEN_KEY)||'[]');}catch(e){gardenFlowers=[];}
-  // Animate growth
-  gardenFlowers.forEach(f=>{ if(f.growth<1) f.growth=Math.min(1,f.growth+0.3); });
-  updateFlowerCount();
-
-  gardenCanvas.addEventListener('click',onGardenTap);
-  gardenCanvas.addEventListener('touchend',onGardenTouch,{passive:false});
-
-  renderGarden();
+function gInit(){
+  gCanvas=document.getElementById('g-sky');
+  if(!gCanvas)return;
+  gCtx=gCanvas.getContext('2d');
+  gResize();
+  window.addEventListener('resize',gResize);
+  gCanvas.addEventListener('click',function(){});
+  // load data
+  const data=gLoadData();const today=gTodayKey();
+  if(data[today]){gFlowers=[{e:data[today].e,x:gW*.5+(Math.random()-.5)*100,planted:data[today].planted-6000,growth:1}];}
+  gUpdateUI();
+  if(gAnimId)cancelAnimationFrame(gAnimId);
+  gLoop();
 }
 
-function resizeGardenCanvas(){
-  if(!gardenCanvas)return;
-  gardenW=gardenCanvas.clientWidth||gardenCanvas.parentElement.clientWidth||window.innerWidth;
-  gardenH=gardenCanvas.clientHeight||gardenCanvas.parentElement.clientHeight-200||400;
-  gardenCanvas.width=gardenW;
-  gardenCanvas.height=gardenH;
-}
+function gResize(){if(!gCanvas)return;gW=gCanvas.width=gCanvas.offsetWidth||window.innerWidth;gH=gCanvas.height=gCanvas.offsetHeight||Math.floor(window.innerHeight*.65);}
 
-function onGardenTap(e){
-  const rect=gardenCanvas.getBoundingClientRect();
-  const x=e.clientX-rect.left, y=e.clientY-rect.top;
-  plantFlower(x,y);
-}
-function onGardenTouch(e){
-  e.preventDefault();
-  const rect=gardenCanvas.getBoundingClientRect();
-  const t=e.changedTouches[0];
-  const x=t.clientX-rect.left, y=t.clientY-rect.top;
-  plantFlower(x,y);
-}
-
-function plantFlower(x,y){
-  // Don't plant too close to controls area (bottom 10%)
-  if(y>gardenH*0.9)return;
-  const flower={
-    id:Date.now(),type:selectedSeed,
-    x,y,growth:0,sway:Math.random()*Math.PI*2,
-    swaySpeed:0.4+Math.random()*0.4,
-    scale:0.8+Math.random()*0.5,
-    planted:Date.now()
-  };
-  gardenFlowers.push(flower);
-  saveGarden();
-  updateFlowerCount();
-
-  // Show hint
-  let hint=document.getElementById('garden-hint');
-  if(hint){hint.remove();}
-  const h=document.createElement('div');
-  h.id='garden-hint';h.textContent='🌱 Growing…';
-  document.getElementById('page-garden').appendChild(h);
-  setTimeout(()=>{const el=document.getElementById('garden-hint');if(el)el.remove();},3000);
-}
-
-function saveGarden(){
-  localStorage.setItem(GARDEN_KEY,JSON.stringify(gardenFlowers));
-}
-function updateFlowerCount(){
-  const el=document.getElementById('garden-flower-count');
-  if(el) el.textContent=gardenFlowers.length>0?`${gardenFlowers.length} flower${gardenFlowers.length!==1?'s':''}  planted`:'';
-}
-
-let gTime=0;
-function renderGarden(){
-  gardenAnimId=requestAnimationFrame(renderGarden);
-  gTime+=0.016;
-  const ctx=gardenCtx;
-  const W=gardenW, H=gardenH;
-  if(!W||!H)return;
-
-  // Sky gradient
-  const sky=ctx.createLinearGradient(0,0,0,H);
-  sky.addColorStop(0,'#0a1a0e');
-  sky.addColorStop(0.6,'#0d2b14');
-  sky.addColorStop(1,'#0a1f0b');
-  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-
+function gLoop(){
+  gAnimId=requestAnimationFrame(gLoop);
+  gT+=.016;
+  const ctx=gCtx;if(!gW||!gH)return;
+  const tod=gTimeOfDay();
+  // Sky
+  const sky=ctx.createLinearGradient(0,0,0,gH);
+  if(tod==='night'||tod==='dusk'){sky.addColorStop(0,'#030712');sky.addColorStop(.5,'#0f0c29');sky.addColorStop(1,'#0a1a10');}
+  else if(tod==='dawn'){sky.addColorStop(0,'#1e1b4b');sky.addColorStop(.4,'#7c2d12');sky.addColorStop(.7,'#f97316');sky.addColorStop(1,'#16a34a');}
+  else if(tod==='morning'){sky.addColorStop(0,'#0ea5e9');sky.addColorStop(.5,'#7dd3fc');sky.addColorStop(1,'#16a34a');}
+  else if(tod==='afternoon'){sky.addColorStop(0,'#0369a1');sky.addColorStop(.5,'#7dd3fc');sky.addColorStop(1,'#15803d');}
+  else{sky.addColorStop(0,'#1e1b4b');sky.addColorStop(.35,'#9333ea');sky.addColorStop(.65,'#f97316');sky.addColorStop(1,'#16a34a');}
+  ctx.fillStyle=sky;ctx.fillRect(0,0,gW,gH);
+  // Stars
+  if(tod==='night'||tod==='dusk'||tod==='dawn'){
+    const am=tod==='dawn'?.35:tod==='dusk'?.65:1;
+    gStars.forEach(s=>{s.a+=s.da;if(s.a>1||s.a<0)s.da*=-1;const a=(s.base*Math.abs(s.a)*am).toFixed(3);ctx.beginPath();ctx.arc(s.x*gW,s.y*gH,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(220,220,255,${a})`;ctx.fill();});
+  }
+  // Shooting stars (night/dusk only)
+  if(tod==='night'||tod==='dusk'){
+    gShootT++;
+    if(gShootT>=55){gSpawnShoot();if(Math.random()>.65)setTimeout(gSpawnShoot,200);gShootT=0;}
+    for(let i=gShoots.length-1;i>=0;i--){
+      const s=gShoots[i];s.x+=s.vx;s.y+=s.vy;s.life--;
+      if(s.life<=0||s.x>gW+40||s.y>gH*.7){gShoots.splice(i,1);continue;}
+      const t=1-s.life/s.maxLife;let al=t<.1?t/.1:t>.75?1-(t-.75)/.25:1;al=Math.max(0,Math.min(1,al));
+      const ang=Math.atan2(s.vy,s.vx);const tx=s.x-Math.cos(ang)*s.tail,ty=s.y-Math.sin(ang)*s.tail;
+      const gr=ctx.createLinearGradient(tx,ty,s.x,s.y);
+      gr.addColorStop(0,'rgba(200,200,255,0)');gr.addColorStop(.5,`rgba(200,200,255,${+(al*.3).toFixed(3)})`);gr.addColorStop(1,`rgba(220,220,255,${+(al*.9).toFixed(3)})`);
+      ctx.save();ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(s.x,s.y);ctx.strokeStyle=gr;ctx.lineWidth=s.w;ctx.lineCap='round';ctx.stroke();ctx.restore();
+    }
+  }
+  // Sun/Moon
+  const isNight=tod==='night'||tod==='dusk';
+  const sx=gW*(tod==='morning'?.25:tod==='afternoon'?.55:.82),sy=gH*.16;
+  if(isNight){const mg=ctx.createRadialGradient(sx,sy,0,sx,sy,32);mg.addColorStop(0,'rgba(240,240,255,.92)');mg.addColorStop(.6,'rgba(200,210,255,.65)');mg.addColorStop(1,'rgba(100,120,200,0)');ctx.fillStyle=mg;ctx.beginPath();ctx.arc(sx,sy,32,0,Math.PI*2);ctx.fill();}
+  else{const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,72);sg.addColorStop(0,'rgba(255,240,80,.88)');sg.addColorStop(.4,'rgba(255,200,40,.55)');sg.addColorStop(1,'rgba(255,100,0,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(sx,sy,72,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(255,248,100,.93)';ctx.beginPath();ctx.arc(sx,sy,24,0,Math.PI*2);ctx.fill();}
+  // Clouds (daytime)
+  if(!isNight&&tod!=='night'){gClouds.forEach(c=>{c.x=(c.x+c.spd)%(gW+200)-100;const al=tod==='morning'?.5:.35;ctx.fillStyle=`rgba(255,255,255,${al})`;[[-c.w*.3,-7,c.w*.38,20],[0,0,c.w*.55,24],[c.w*.25,-5,c.w*.35,18]].forEach(([ox,oy,rw,rh])=>{ctx.beginPath();ctx.ellipse(c.x+ox,c.y+oy,rw,rh,0,0,Math.PI*2);ctx.fill();});});}
+  // Butterflies (daytime)
+  if(!isNight){gBflies.forEach(b=>{b.x+=b.vx+Math.sin(gT*.4+b.ph)*.7;b.y+=b.vy+Math.cos(gT*.3+b.ph)*.45;if(b.x<0||b.x>gW)b.vx*=-1;if(b.y<gH*.28||b.y>gH*.78)b.vy*=-1;const wg=Math.abs(Math.sin(gT*4+b.ph))*14+3;ctx.fillStyle=b.col+'bb';ctx.save();ctx.translate(b.x,b.y);ctx.beginPath();ctx.ellipse(-wg/2,0,wg,7,-.4,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.ellipse(wg/2,0,wg,7,.4,0,Math.PI*2);ctx.fill();ctx.restore();});}
+  // Fireflies (night)
+  if(isNight){for(let i=0;i<10;i++){const fx=(i*173+Math.sin(gT*.3+i)*70)%gW;const fy=gH*.4+Math.cos(gT*.4+i*1.3)*65+i*10;const fa=Math.max(0,Math.sin(gT*2+i*.8))*.65;if(fa<.05)continue;const ff=ctx.createRadialGradient(fx,fy,0,fx,fy,7);ff.addColorStop(0,`rgba(255,255,150,${fa})`);ff.addColorStop(1,'rgba(255,255,100,0)');ctx.fillStyle=ff;ctx.beginPath();ctx.arc(fx,fy,7,0,Math.PI*2);ctx.fill();}}
   // Ground
-  const ground=ctx.createLinearGradient(0,H*0.82,0,H);
-  ground.addColorStop(0,'#1a3a1c');
-  ground.addColorStop(0.3,'#14310f');
-  ground.addColorStop(1,'#0c1f0d');
-  ctx.fillStyle=ground;
-  ctx.beginPath();
-  ctx.moveTo(0,H*0.82);
-  // Slightly wavy ground line
-  for(let x=0;x<=W;x+=20){
-    const waveY=H*0.82+Math.sin(x*0.04+gTime*0.3)*2;
-    ctx.lineTo(x,waveY);
-  }
-  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
-  ctx.fill();
-
-  // Draw ground texture dots
-  ctx.fillStyle='rgba(255,255,255,.04)';
-  for(let i=0;i<20;i++){
-    const gx=(i*137+50)%W, gy=H*0.86+(i*53)%((H-H*0.86));
-    ctx.beginPath(); ctx.arc(gx,gy,1,0,Math.PI*2); ctx.fill();
-  }
-
-  // Grow flowers over time
-  gardenFlowers.forEach(f=>{
-    if(f.growth<1) f.growth=Math.min(1,f.growth+0.008);
+  const gr2=ctx.createLinearGradient(0,gH*.82,0,gH);gr2.addColorStop(0,'#1a3a1c');gr2.addColorStop(.4,'#14310f');gr2.addColorStop(1,'#0c1f0d');ctx.fillStyle=gr2;ctx.beginPath();ctx.moveTo(0,gH*.82);for(let x=0;x<=gW;x+=16)ctx.lineTo(x,gH*.82+Math.sin(x*.025+gT*.1)*2);ctx.lineTo(gW,gH);ctx.lineTo(0,gH);ctx.closePath();ctx.fill();
+  // Grass blades
+  ctx.strokeStyle='rgba(34,197,94,.35)';ctx.lineWidth=1.4;
+  for(let i=0;i<36;i++){const gx=(i*97)%gW;const gy=gH*.82;const sw=Math.sin(gT*.8+i*.6)*3.5;ctx.beginPath();ctx.moveTo(gx,gy);ctx.bezierCurveTo(gx+sw,gy-10,gx+sw*1.5,gy-18,gx+sw*2,gy-24);ctx.stroke();}
+  // Planted flowers
+  gFlowers.forEach((f,idx)=>{
+    const age=(Date.now()-f.planted)/1000;const growth=Math.min(1,age/3.5);
+    const x=f.x,gy2=gH*.83,stemH=52*growth;
+    const sway=Math.sin(gT*.7+idx*.8)*2.8*growth;
+    ctx.save();ctx.translate(x,gy2);
+    ctx.strokeStyle='#16a34a';ctx.lineWidth=2.8*growth;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(sway*.5,-stemH*.35,sway,-stemH*.7,sway,-stemH);ctx.stroke();
+    if(growth>.4){const lg=(growth-.4)/0.6;ctx.fillStyle='#15803d';[[-stemH*.38,-.5],[- stemH*.62,.5]].forEach(([ly,rot])=>{ctx.save();ctx.translate(sway*(ly/-stemH)*0.5,ly);ctx.rotate(rot);ctx.scale(lg,lg);ctx.beginPath();ctx.ellipse(rot>0?9:-9,0,11,4.5,0,0,Math.PI*2);ctx.fill();ctx.restore();});}
+    if(growth>.28){ctx.save();ctx.translate(sway,-stemH);ctx.font=`${Math.round(20*growth*Math.min(1,(growth-.28)/.7))}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=Math.min(1,(growth-.28)/.7);ctx.fillText(f.e,0,0);ctx.restore();}
+    ctx.restore();
   });
-
-  // Sort by Y so closer flowers appear in front
-  const sorted=[...gardenFlowers].sort((a,b)=>a.y-b.y);
-
-  sorted.forEach(f=>drawFlower(ctx,f,gTime));
+  // Grow flowers
+  gFlowers.forEach(f=>{if(f.growth<1)f.growth=Math.min(1,f.growth+.005);});
 }
 
-function drawFlower(ctx,f,t){
-  const type=FLOWER_TYPES[f.type]||FLOWER_TYPES.rose;
-  const g=f.growth;
-  const sc=f.scale*g;
-  const sway=Math.sin(t*f.swaySpeed+f.sway)*3*g;
-  const groundY=f.y;
-  const stemH=60*sc;
-  const headY=groundY-stemH;
+function gSpawnShoot(){const a=(18+Math.random()*22)*Math.PI/180;const spd=5.5+Math.random()*4.5;gShoots.push({x:Math.random()*gW*.85,y:Math.random()*gH*.42,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,tail:80+Math.random()*160,life:48+Math.random()*48,maxLife:0,w:1+Math.random()*1.2});gShoots[gShoots.length-1].maxLife=gShoots[gShoots.length-1].life;}
 
-  ctx.save();
-  ctx.translate(f.x,groundY);
-
-  // Stem
-  ctx.strokeStyle=type.stemColor;
-  ctx.lineWidth=3*sc;
-  ctx.lineCap='round';
-  ctx.beginPath();
-  ctx.moveTo(0,0);
-  ctx.bezierCurveTo(sway/2,-stemH*0.3,sway,-stemH*0.7,sway,-stemH);
-  ctx.stroke();
-
-  // Leaves (only after 50% growth)
-  if(g>0.5){
-    const leafG=(g-0.5)*2;
-    ctx.fillStyle=type.leafColor;
-    // Left leaf
-    ctx.save();
-    ctx.translate(sway/3,-stemH*0.4);
-    ctx.rotate(-0.5+Math.sin(t*f.swaySpeed+f.sway)*0.1);
-    ctx.scale(leafG,leafG);
-    ctx.beginPath();
-    ctx.ellipse(-8,0,12,5,Math.PI/6,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-    // Right leaf
-    ctx.save();
-    ctx.translate(sway*0.7,-stemH*0.62);
-    ctx.rotate(0.5+Math.sin(t*f.swaySpeed+f.sway)*0.1);
-    ctx.scale(leafG,leafG);
-    ctx.beginPath();
-    ctx.ellipse(8,0,12,5,-Math.PI/6,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+function gUpdateUI(){
+  if(!document.getElementById('g-sky'))return;
+  const tod=gTimeOfDay();
+  document.getElementById('g-time-badge').textContent=G_TIME_LABELS[tod]||'🌙 Night';
+  const today=gTodayKey();const flower=gTodayFlower();const data=gLoadData();const streak=gLoadStreak();
+  document.getElementById('g-date-text').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('g-streak-num').textContent=streak.count;
+  const msgs=['Start your streak today!','Keep going! 🌱','Amazing! 🔥','Legendary! 🌟'];
+  document.getElementById('g-streak-msg').textContent=msgs[streak.count===0?0:streak.count<7?1:streak.count<30?2:3];
+  document.getElementById('g-flower-emoji').textContent=flower.e;
+  document.getElementById('g-flower-name').textContent=flower.n;
+  document.getElementById('g-flower-desc').textContent=flower.d;
+  if(data[today]){
+    document.getElementById('g-flower-status').textContent='Bloomed ✓';
+    document.getElementById('g-flower-status').className='gs-bloomed';
+    document.getElementById('g-plant-btn').textContent='🌸 Already bloomed today';
+    document.getElementById('g-plant-btn').disabled=true;
+  }else{
+    document.getElementById('g-flower-status').textContent='Waiting';
+    document.getElementById('g-flower-status').className='gs-waiting';
+    document.getElementById('g-plant-btn').textContent="🌱 Plant Today's Flower";
+    document.getElementById('g-plant-btn').disabled=false;
   }
-
-  // Flower head (only after 30% growth)
-  if(g>0.3){
-    const headG=Math.min(1,(g-0.3)/0.7);
-    ctx.translate(sway,-stemH);
-    drawFlowerHead(ctx,type,headG*sc,t,f.swaySpeed+f.sway);
-  }
-
-  ctx.restore();
+  gBuildHistory(data);
 }
 
-function drawFlowerHead(ctx,type,sc,t,phase){
-  const {petalColor,petalDark,centerColor,petalCount,petalLen,petalW}=type;
-  const angleStep=Math.PI*2/petalCount;
-
-  // Petals (two layers for depth)
-  for(let pass=0;pass<2;pass++){
-    const offset=pass===0?angleStep/2:0;
-    const col=pass===0?petalDark:petalColor;
-    for(let i=0;i<petalCount;i++){
-      const angle=i*angleStep+offset+Math.sin(t*0.5+phase)*0.04;
-      ctx.save();
-      ctx.rotate(angle);
-      ctx.translate(0,-petalLen*0.3*sc);
-      // Petal gradient
-      const pg=ctx.createLinearGradient(0,0,0,-petalLen*sc);
-      pg.addColorStop(0,col);
-      pg.addColorStop(1,col+'88');
-      ctx.fillStyle=pg;
-      ctx.beginPath();
-      ctx.ellipse(0,-petalLen*0.35*sc,petalW*0.45*sc,petalLen*0.55*sc,0,0,Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  // Center
-  const cr=petalW*0.6*sc;
-  const cg=ctx.createRadialGradient(0,0,0,0,0,cr);
-  cg.addColorStop(0,'#fff8');
-  cg.addColorStop(0.3,centerColor);
-  cg.addColorStop(1,centerColor+'cc');
-  ctx.fillStyle=cg;
-  ctx.beginPath(); ctx.arc(0,0,cr,0,Math.PI*2); ctx.fill();
-
-  // Center dots for realism
-  if(cr>4){
-    ctx.fillStyle='rgba(0,0,0,.25)';
-    for(let i=0;i<6;i++){
-      const a=i*Math.PI/3, r=cr*0.55;
-      ctx.beginPath();
-      ctx.arc(Math.cos(a)*r,Math.sin(a)*r,cr*0.18,0,Math.PI*2);
-      ctx.fill();
-    }
+function gBuildHistory(data){
+  const strip=document.getElementById('g-history');
+  strip.innerHTML='<span id="g-hist-lbl">Last 14 days</span>';
+  const today=gTodayKey();
+  for(let i=13;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    const dy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+    const fl=G_DAILY[dy%G_DAILY.length];
+    const dot=document.createElement('div');
+    dot.className='g-dot'+(data[key]?' has':'')+(key===today?' today':'')+(i>0&&!data[key]?' miss':'');
+    dot.textContent=data[key]?fl.e:'·';
+    strip.appendChild(dot);
   }
 }
 
+function gPlantToday(){
+  const today=gTodayKey();const data=gLoadData();if(data[today])return;
+  const flower=gTodayFlower();
+  data[today]={e:flower.e,n:flower.n,planted:Date.now()};gSaveData(data);
+  const streak=gLoadStreak();
+  const yest=new Date();yest.setDate(yest.getDate()-1);const yKey=yest.toISOString().slice(0,10);
+  streak.count=(streak.last===yKey)?streak.count+1:(streak.last===today?streak.count:1);
+  streak.last=today;gSaveStreak(streak);
+  gFlowers=[{e:flower.e,x:gW*.5+(Math.random()-.5)*80,planted:Date.now(),growth:0}];
+  gPetalBurst(flower.e);
+  setTimeout(()=>{
+    const ov=document.getElementById('g-bloom-ov');
+    document.getElementById('g-bloom-em').textContent=flower.e;
+    document.getElementById('g-bloom-title').textContent=flower.n+' bloomed!';
+    document.getElementById('g-bloom-sub').textContent='DAY '+gLoadStreak().count+' STREAK ✦';
+    ov.classList.add('show');
+    gUpdateUI();
+  },1200);
+}
+
+function gCloseBloom(){document.getElementById('g-bloom-ov').classList.remove('show');}
+
+function gPetalBurst(e){
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');p.className='g-petal';
+    p.textContent=e;
+    p.style.cssText=`left:${20+Math.random()*60}%;top:${25+Math.random()*25}%;--pd:${(Math.random()*1.4+.9).toFixed(2)}s;--pdl:${(Math.random()*.35).toFixed(2)}s;--pdx:${(Math.random()*90-45).toFixed(0)}px;--pfs:${(Math.random()*.7+.9).toFixed(1)}rem;`;
+    document.body.appendChild(p);setTimeout(()=>p.remove(),2800);
+  }
+}
 </script>  <!-- Attach menu -->
   <div id="attach-menu" style="display:none">
     <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px;">Attach</div>
@@ -1947,22 +1877,46 @@ function drawFlowerHead(ctx,type,sc,t,phase){
   </div>
   <!-- ══ GARDEN PAGE ══ -->
   <div id="page-garden">
-    <div id="garden-header">
-      <button id="garden-back" onclick="closeGarden()">←</button>
-      <h2>🌸 Our Garden</h2>
-      <span id="garden-flower-count" style="font-size:13px;color:rgba(255,255,255,.4);"></span>
+    <canvas id="g-sky"></canvas>
+    <div id="g-bloom-ov">
+      <div id="g-bloom-em">🌸</div>
+      <div id="g-bloom-title">Bloomed!</div>
+      <div id="g-bloom-sub">STREAK GROWS ✦</div>
+      <button id="g-bloom-close" onclick="gCloseBloom()">Continue →</button>
     </div>
-    <canvas id="garden-canvas"></canvas>
-    <div id="garden-controls">
-      <p>Tap anywhere on the garden to plant a seed 🌱</p>
-      <button class="seed-btn sel" id="seed-rose" onclick="selectSeed('rose')"><span>🌹</span>Rose</button>
-      <button class="seed-btn" id="seed-sunflower" onclick="selectSeed('sunflower')"><span>🌻</span>Sunflower</button>
-      <button class="seed-btn" id="seed-tulip" onclick="selectSeed('tulip')"><span>🌷</span>Tulip</button>
-      <button class="seed-btn" id="seed-daisy" onclick="selectSeed('daisy')"><span>🌼</span>Daisy</button>
-      <button class="seed-btn" id="seed-cherry" onclick="selectSeed('cherry')"><span>🌸</span>Cherry</button>
+    <div id="g-ui">
+      <div id="g-topbar">
+        <button id="g-back" onclick="closeGarden()">←</button>
+        <div id="g-title">🌸 Our Garden</div>
+        <div id="g-time-badge">🌙 Night</div>
+      </div>
+      <div id="g-streak-bar">
+        <div id="g-streak-flame">🔥</div>
+        <div id="g-streak-info">
+          <div id="g-streak-num">0</div>
+          <div id="g-streak-lbl">day streak</div>
+        </div>
+        <div id="g-streak-msg">Start your streak today!</div>
+      </div>
+      <div id="g-date-pill"><span id="g-date-text">Today</span></div>
+      <div id="g-spacer"></div>
+      <div id="g-bottom">
+        <div id="g-flower-card">
+          <div id="g-flower-emoji">🌱</div>
+          <div id="g-flower-info">
+            <div id="g-flower-name">No flower yet</div>
+            <div id="g-flower-desc">Plant your flower for today</div>
+          </div>
+          <div id="g-flower-status" class="gs-waiting">Waiting</div>
+        </div>
+        <div id="g-history"><span id="g-hist-lbl">Last 14 days</span></div>
+        <button id="g-plant-btn" onclick="gPlantToday()">🌱 Plant Today's Flower</button>
+      </div>
     </div>
   </div>
 
+  <input type="file" id="file-input" style="display:none" onchange="handleFilePick(this)"/>
+  <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="handleFilePick(this)"/>
 </body>
 </html>
 

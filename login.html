@@ -402,48 +402,56 @@
 
     /* ── Input bar ── */
     #ch-input-bar{
-      display:flex;align-items:flex-end;gap:10px;
-      padding:10px 14px;
-      padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-      background:rgba(14,8,24,.9);
-      border-top:1px solid rgba(255,255,255,.06);
+      display:flex;align-items:flex-end;gap:6px;
+      padding:8px 10px;
+      padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+      background:rgba(11,6,20,.95);
+      border-top:1px solid rgba(255,255,255,.05);
       flex-shrink:0;
-      backdrop-filter:blur(16px);
     }
     #ch-text{
       flex:1;
-      background:rgba(255,255,255,.065);
-      border:1.5px solid rgba(255,255,255,.09);
-      border-radius:24px;
-      padding:11px 18px;
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:26px;
+      padding:12px 18px;
       color:#fff;font-size:15px;font-family:'Inter',sans-serif;
       outline:none;resize:none;
-      max-height:130px;min-height:46px;
+      max-height:130px;min-height:48px;
       overflow-y:auto;line-height:1.45;
-      transition:border-color .28s,box-shadow .28s,background .2s;
+      transition:border-color .25s,box-shadow .25s;
     }
-    #ch-text::placeholder{color:rgba(255,255,255,.22);}
+    #ch-text::placeholder{color:rgba(255,255,255,.28);}
     #ch-text:focus{
-      background:rgba(255,255,255,.085);
-      border-color:var(--ibc,rgba(124,58,237,.6));
-      box-shadow:0 0 0 3px var(--ibs,rgba(124,58,237,.12));
+      border-color:var(--ibc,rgba(124,58,237,.45));
+      box-shadow:0 0 0 2px var(--ibs,rgba(124,58,237,.1));
     }
-    body.th-g #ch-text:focus{--ibc:rgba(0,230,118,.5);--ibs:rgba(0,230,118,.1);}
-    body.th-p #ch-text:focus{--ibc:rgba(217,70,239,.6);--ibs:rgba(217,70,239,.12);}
+    body.th-g #ch-text:focus{--ibc:rgba(0,230,118,.45);--ibs:rgba(0,230,118,.08);}
+    body.th-p #ch-text:focus{--ibc:rgba(217,70,239,.45);--ibs:rgba(217,70,239,.08);}
+    /* all icon buttons in input bar */
+    .ibar-btn{
+      width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:transparent;color:rgba(255,255,255,.45);
+      transition:background .15s,color .15s,transform .14s;
+      align-self:flex-end;
+    }
+    .ibar-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);}
+    .ibar-btn:active{transform:scale(.88);}
 
     #send-btn{
       width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
+      display:none;align-items:center;justify-content:center;
       background:linear-gradient(135deg,#7c3aed,#6d28d9);
-      box-shadow:0 4px 18px rgba(124,58,237,.45);
-      transition:transform .18s,box-shadow .18s,opacity .18s;
+      box-shadow:0 3px 14px rgba(124,58,237,.5);
+      transition:transform .15s,box-shadow .15s;
       align-self:flex-end;
     }
-    body.th-g #send-btn{background:linear-gradient(135deg,#00e676,#00bfa5);box-shadow:0 4px 18px rgba(0,230,118,.4);}
-    body.th-p #send-btn{background:linear-gradient(135deg,#d946ef,#a21caf);box-shadow:0 4px 18px rgba(217,70,239,.4);}
+    body.th-g #send-btn{background:linear-gradient(135deg,#00e676,#00bfa5);box-shadow:0 3px 14px rgba(0,230,118,.45);}
+    body.th-p #send-btn{background:linear-gradient(135deg,#d946ef,#a21caf);box-shadow:0 3px 14px rgba(217,70,239,.45);}
     #send-btn:hover{transform:scale(1.08);}
-    #send-btn:active{transform:scale(.94);}
-    #send-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    #send-btn:active{transform:scale(.93);}
+    #send-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
     /* ── Empty state ── */
     #ch-empty{
@@ -741,14 +749,16 @@
     </div>
     <!-- Input -->
     <div id="ch-input-bar">
-      <button class="ibar-btn" onclick="toggleAttach()" title="Attach">📎</button>
-      <textarea id="ch-text" rows="1" placeholder="Message…"></textarea>
-      <button class="ibar-btn" id="emoji-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
-      <button class="ibar-btn" id="fmt-toggle" onclick="toggleFmtBar()" title="Format">Aa</button>
-      <button id="send-btn" class="ibar-btn" onclick="sendMsg()" title="Send">
+      <button class="ibar-btn" onclick="toggleAttach()" title="Attach">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <textarea id="ch-text" rows="1" placeholder="Type a message"></textarea>
+      <button class="ibar-btn" id="send-btn" onclick="sendMsg()" title="Send" style="display:none">
         <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
-      <button class="ibar-btn" id="mic-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord()" ontouchend="stopVoiceRecord()" title="Hold to record">🎤</button>
+      <button class="ibar-btn" id="mic-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Hold to record">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
     </div>
     <!-- Jump to bottom -->
     <button id="jump-btn" onclick="scrollToBottom()">
@@ -1151,7 +1161,14 @@ async function initChat(key){
   window.addEventListener('beforeunload',()=>{markPresence(false);clearInterval(heartbeatId);if(realtimeCh)realtimeCh.unsubscribe();if(bc){bc.postMessage({type:'presence',user:currentUser,online:false});bc.close();}});
 }
 
-function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,130)+'px';}
+function autoResize(el){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,130)+'px';
+  // show send when text present, mic when empty
+  const hasText = el.value.trim().length > 0;
+  document.getElementById('send-btn').style.display = hasText ? 'flex' : 'none';
+  document.getElementById('mic-btn').style.display  = hasText ? 'none' : 'flex';
+}
 
 async function loadFromSB(){
   const{data,error}=await sb.from('messages').select('*').eq('chat_id',CHAT_ID).order('created_at',{ascending:true});
@@ -1396,7 +1413,7 @@ function escHtml(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,
 async function sendMsg(){
   const txt=document.getElementById('ch-text');
   const text=txt.value.trim();if(!text)return;
-  txt.value='';txt.style.height='';stopTyping();
+  txt.value='';txt.style.height='';autoResize(txt);stopTyping();
 
   const oid=`opt_${Date.now()}`;
   const opt={id:oid,sender:currentUser,content:text,time:Date.now(),status:'sending',replyTo:replyToMsg?.id||null,reactions:{},edited:false,deletedForAll:false,deletedFor:[],disappearsAt:getDisappearMs()?Date.now()+getDisappearMs():null};

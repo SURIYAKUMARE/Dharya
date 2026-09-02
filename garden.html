@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"/>
+  <title>Dharya Garden 🌸</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,700;1,800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;touch-action:none}
+
+    /* ── Canvas fills everything ── */
+    #sky{position:fixed;inset:0;z-index:0;}
+
+    /* ── Overlay UI ── */
+    #ui{
+      position:fixed;inset:0;z-index:10;
+      display:flex;flex-direction:column;
+      pointer-events:none;
+    }
+
+    /* ── Top bar ── */
+    #topbar{
+      display:flex;align-items:center;gap:12px;
+      padding:max(14px,env(safe-area-inset-top,14px)) 16px 12px;
+      background:linear-gradient(to bottom,rgba(0,0,0,.45),transparent);
+      pointer-events:all;
+    }
+    #back-btn{
+      background:rgba(255,255,255,.12);border:none;border-radius:50%;
+      width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+      color:#fff;cursor:pointer;font-size:1.1rem;flex-shrink:0;
+      transition:background .18s;
+    }
+    #back-btn:hover{background:rgba(255,255,255,.22);}
+    #garden-title{
+      flex:1;
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:1.5rem;font-weight:800;color:#fff;
+      text-shadow:0 2px 12px rgba(0,0,0,.6);
+    }
+    #time-badge{
+      background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
+      border-radius:20px;padding:5px 12px;
+      font-size:12px;font-weight:600;color:rgba(255,255,255,.85);
+      backdrop-filter:blur(8px);letter-spacing:.04em;
+    }
+
+    /* ── Streak bar ── */
+    #streak-bar{
+      display:flex;align-items:center;gap:10px;
+      padding:10px 18px;
+      background:rgba(0,0,0,.3);
+      backdrop-filter:blur(12px);
+      margin:0 12px;border-radius:16px;
+      border:1px solid rgba(255,255,255,.1);
+      pointer-events:all;
+    }
+    #streak-flame{font-size:1.4rem;}
+    #streak-info{flex:1;}
+    #streak-num{font-size:1.1rem;font-weight:800;color:#fbbf24;}
+    #streak-label{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;}
+    #streak-msg{font-size:12px;color:rgba(255,255,255,.65);text-align:right;}
+
+    /* ── Date pill ── */
+    #date-pill{
+      text-align:center;margin-top:8px;
+      pointer-events:none;
+    }
+    #date-pill span{
+      display:inline-block;
+      background:rgba(0,0,0,.3);
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter:blur(8px);
+      border-radius:20px;padding:5px 18px;
+      font-size:12px;color:rgba(255,255,255,.7);
+      font-weight:500;letter-spacing:.06em;
+    }
+
+    /* ── Spacer pushes bottom panel down ── */
+    #spacer{flex:1;}
+
+    /* ── Bottom panel ── */
+    #bottom-panel{
+      background:linear-gradient(to top,rgba(0,0,0,.6),transparent);
+      padding:12px 16px max(20px,calc(env(safe-area-inset-bottom,20px)+10px));
+      display:flex;flex-direction:column;gap:10px;
+      pointer-events:all;
+    }
+
+    /* ── Flower status card ── */
+    #flower-card{
+      background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);
+      border-radius:18px;padding:14px 18px;
+      backdrop-filter:blur(16px);
+      display:flex;align-items:center;gap:14px;
+    }
+    #flower-emoji{font-size:2.4rem;}
+    #flower-info{flex:1;}
+    #flower-name{font-size:15px;font-weight:700;color:#fff;}
+    #flower-desc{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;line-height:1.4;}
+    #flower-status{
+      padding:6px 14px;border-radius:20px;
+      font-size:12px;font-weight:700;letter-spacing:.06em;
+      white-space:nowrap;
+    }
+    .status-growing{background:rgba(34,197,94,.2);border:1px solid rgba(34,197,94,.4);color:#4ade80;}
+    .status-bloomed{background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.4);color:#fbbf24;}
+    .status-waiting{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);}
+
+    /* ── History dots ── */
+    #history-strip{
+      display:flex;align-items:center;gap:6px;
+      padding:0 2px;
+      overflow-x:auto;scrollbar-width:none;
+    }
+    #history-strip::-webkit-scrollbar{display:none;}
+    #history-label{font-size:11px;color:rgba(255,255,255,.4);white-space:nowrap;flex-shrink:0;}
+    .hist-dot{
+      width:28px;height:28px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;flex-shrink:0;
+      background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.1);
+      transition:transform .18s;cursor:default;
+    }
+    .hist-dot.has-flower{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);}
+    .hist-dot.today{border-color:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,.4);}
+    .hist-dot.missed{opacity:.35;}
+
+    /* ── Plant button ── */
+    #plant-btn{
+      width:100%;padding:16px;border:none;border-radius:16px;
+      font-size:1rem;font-weight:700;font-family:'Inter',sans-serif;
+      letter-spacing:.05em;cursor:pointer;
+      background:linear-gradient(135deg,#f472b6,#c026d3,#7c3aed);
+      color:#fff;
+      box-shadow:0 6px 24px rgba(192,38,211,.45),inset 0 1px 0 rgba(255,255,255,.2);
+      transition:transform .18s,box-shadow .18s,opacity .18s;
+      position:relative;overflow:hidden;
+    }
+    #plant-btn::before{
+      content:'';position:absolute;top:0;left:-80%;width:50%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+      transform:skewX(-18deg);animation:btnshine 3.5s ease-in-out infinite;
+    }
+    @keyframes btnshine{0%{left:-80%}30%,100%{left:140%;}}
+    #plant-btn:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(192,38,211,.6),inset 0 1px 0 rgba(255,255,255,.2);}
+    #plant-btn:active{transform:scale(.97);}
+    #plant-btn:disabled{opacity:.5;cursor:not-allowed;animation:none;}
+    #plant-btn:disabled::before{display:none;}
+
+    /* ── Bloom overlay ── */
+    #bloom-overlay{
+      position:fixed;inset:0;z-index:50;
+      display:none;align-items:center;justify-content:center;
+      flex-direction:column;gap:16px;
+      background:rgba(0,0,0,.55);backdrop-filter:blur(12px);
+      pointer-events:none;
+    }
+    #bloom-overlay.show{display:flex;pointer-events:all;}
+    #bloom-emoji{font-size:6rem;animation:bloomspin 1.2s cubic-bezier(.175,.885,.32,1.275);}
+    @keyframes bloomspin{from{transform:scale(0) rotate(-180deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+    #bloom-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:800;font-size:2.2rem;color:#fff;text-align:center;text-shadow:0 0 30px rgba(251,191,36,.8);}
+    #bloom-sub{font-size:.9rem;color:rgba(255,255,255,.6);text-align:center;letter-spacing:.08em;}
+    #bloom-close{margin-top:8px;padding:12px 30px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:24px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .18s;}
+    #bloom-close:hover{background:rgba(255,255,255,.22);}
+
+    /* ── Confetti ── */
+    .petal{
+      position:fixed;pointer-events:none;z-index:60;
+      animation:petalfall var(--pd,2s) var(--pdl,0s) linear forwards;
+      font-size:var(--pfs,1.2rem);
+    }
+    @keyframes petalfall{
+      0%{transform:translate(var(--px,0),0) rotate(0deg) scale(1);opacity:1;}
+      100%{transform:translate(calc(var(--px,0) + var(--pdx,20px)),110vh) rotate(720deg) scale(.3);opacity:0;}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sky/Garden canvas -->
+  <canvas id="sky"></canvas>
+
+  <!-- Bloom overlay -->
+  <div id="bloom-overlay">
+    <div id="bloom-emoji">🌸</div>
+    <div id="bloom-title">Today's flower bloomed!</div>
+    <div id="bloom-sub">YOUR STREAK GROWS ✦</div>
+    <button id="bloom-close" onclick="closeBloom()">Continue →</button>
+  </div>
+
+  <!-- Main UI overlay -->
+  <div id="ui">
+    <!-- Top bar -->
+    <div id="topbar">
+      <button id="back-btn" onclick="goBack()">←</button>
+      <div id="garden-title">Our Garden</div>
+      <div id="time-badge">🌙 Night</div>
+    </div>
+
+    <!-- Streak -->
+    <div id="streak-bar">
+      <div id="streak-flame">🔥</div>
+      <div id="streak-info">
+        <div id="streak-num">0</div>
+        <div id="streak-label">day streak</div>
+      </div>
+      <div id="streak-msg">Start your streak today!</div>
+    </div>
+
+    <!-- Date -->
+    <div id="date-pill"><span id="date-text">Today</span></div>
+
+    <div id="spacer"></div>
+
+    <!-- Bottom -->
+    <div id="bottom-panel">
+      <!-- Flower card -->
+      <div id="flower-card">
+        <div id="flower-emoji">🌱</div>
+        <div id="flower-info">
+          <div id="flower-name">No flower yet</div>
+          <div id="flower-desc">Plant your flower for today</div>
+        </div>
+        <div id="flower-status" class="status-waiting">Waiting</div>
+      </div>
+
+      <!-- History -->
+      <div id="history-strip">
+        <span id="history-label">Last 14 days</span>
+      </div>
+
+      <!-- Plant button -->
+      <button id="plant-btn" onclick="plantToday()">🌱 Plant Today's Flower</button>
+    </div>
+  </div>
+
+<script>
+/* ══════════════════════════════
+   CONSTANTS & STATE
+══════════════════════════════ */
+const GARDEN_STORE = 'dharya_garden_v2';
+const STREAK_STORE = 'dharya_streak_v1';
+
+// One flower per day of the year
+const DAILY_FLOWERS = [
+  {emoji:'🌹',name:'Red Rose',desc:'Symbol of deep love and passion'},
+  {emoji:'🌻',name:'Sunflower',desc:'Turning towards the light, like you'},
+  {emoji:'🌷',name:'Tulip',desc:'Perfect and graceful beauty'},
+  {emoji:'🌼',name:'Daisy',desc:'Innocence and pure joy'},
+  {emoji:'🌸',name:'Cherry Blossom',desc:'Fleeting moments, eternal memories'},
+  {emoji:'💐',name:'Bouquet',desc:'A celebration of everything beautiful'},
+  {emoji:'🌺',name:'Hibiscus',desc:'Rare beauty and delicate strength'},
+  {emoji:'🪷',name:'Lotus',desc:'Rising from water, pure and untouched'},
+  {emoji:'🌱',name:'Sprout',desc:'New beginnings and fresh hope'},
+  {emoji:'🍀',name:'Clover',desc:'A little luck woven into love'},
+  {emoji:'🌿',name:'Fern',desc:'Quiet, ancient, always green'},
+  {emoji:'🎋',name:'Bamboo',desc:'Strong, flexible, enduring'},
+  {emoji:'🌾',name:'Wheat',desc:'Abundance and golden days ahead'},
+];
+
+function getTodayFlower(){
+  const d = new Date();
+  const dayOfYear = Math.floor((d - new Date(d.getFullYear(),0,0)) / 86400000);
+  return DAILY_FLOWERS[dayOfYear % DAILY_FLOWERS.length];
+}
+function todayKey(){ return new Date().toISOString().slice(0,10); } // YYYY-MM-DD
+
+function loadGarden(){
+  try{ return JSON.parse(localStorage.getItem(GARDEN_STORE)||'{}'); }catch(e){ return {}; }
+}
+function saveGarden(data){ localStorage.setItem(GARDEN_STORE, JSON.stringify(data)); }
+
+function loadStreak(){
+  try{ return JSON.parse(localStorage.getItem(STREAK_STORE)||'{"count":0,"lastDate":""}'); }
+  catch(e){ return {count:0,lastDate:''}; }
+}
+function saveStreak(data){ localStorage.setItem(STREAK_STORE, JSON.stringify(data)); }
+
+/* ══════════════════════════════
+   TIME OF DAY
+══════════════════════════════ */
+function getTimeOfDay(){
+  const h = new Date().getHours();
+  if(h >= 5 && h < 7)  return 'dawn';
+  if(h >= 7 && h < 12) return 'morning';
+  if(h >= 12 && h < 17)return 'afternoon';
+  if(h >= 17 && h < 20)return 'evening';
+  if(h >= 20 && h < 22)return 'dusk';
+  return 'night';
+}
+
+const TIME_LABELS = {
+  dawn:'🌅 Dawn', morning:'☀️ Morning', afternoon:'🌤 Afternoon',
+  evening:'🌇 Evening', dusk:'🌆 Dusk', night:'🌙 Night'
+};
+
+/* ══════════════════════════════
+   CANVAS — SKY + GARDEN
+══════════════════════════════ */
+const canvas = document.getElementById('sky');
+const ctx    = canvas.getContext('2d');
+let W=0, H=0, skyTime='night', animT=0;
+
+// Stars (for night)
+const STARS = Array.from({length:280},()=>({
+  x:Math.random(), y:Math.random()*.65,
+  r:Math.random()*1.6+.2,
+  a:Math.random(), da:(Math.random()*.006+.001)*(Math.random()>.5?1:-1),
+  base:Math.random()*.4+.05
+}));
+
+// Shooting stars pool
+const SHOOTS=[];let shootT=0;
+function spawnShoot(){
+  const angle=(18+Math.random()*24)*Math.PI/180;
+  const spd=6+Math.random()*5;
+  SHOOTS.push({
+    x:Math.random()*W*.85, y:Math.random()*H*.45,
+    vx:Math.cos(angle)*spd, vy:Math.sin(angle)*spd,
+    tail:90+Math.random()*170, life:50+Math.random()*50,
+    maxLife:0, r:200, g:200, b:255, w:1+Math.random()*1.2
+  });
+  SHOOTS[SHOOTS.length-1].maxLife=SHOOTS[SHOOTS.length-1].life;
+}
+
+// Flowers array (planted)
+let gardenFlowers=[];
+// Butterflies
+const BUTTERFLIES=Array.from({length:3},(_,i)=>({
+  x:Math.random()*800, y:Math.random()*300+200,
+  vx:(Math.random()-.5)*1.2, vy:(Math.random()-.5)*.8,
+  phase:Math.random()*Math.PI*2, col:['#f472b6','#a78bfa','#34d399'][i]
+}));
+// Clouds
+const CLOUDS=Array.from({length:4},(_,i)=>({
+  x:i*250+100, y:40+Math.random()*60, w:80+Math.random()*60, spd:.2+Math.random()*.2
+}));
+
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+}
+window.addEventListener('resize',resize);
+resize();
+
+function skyGradient(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  const t=skyTime;
+  if(t==='night'||t==='dusk'){
+    g.addColorStop(0,'#030712');g.addColorStop(.5,'#0f0c29');g.addColorStop(1,'#0a1a10');
+  } else if(t==='dawn'){
+    g.addColorStop(0,'#1e1b4b');g.addColorStop(.35,'#7c2d12');g.addColorStop(.65,'#f97316');g.addColorStop(1,'#16a34a');
+  } else if(t==='morning'){
+    g.addColorStop(0,'#0ea5e9');g.addColorStop(.4,'#38bdf8');g.addColorStop(.7,'#7dd3fc');g.addColorStop(1,'#16a34a');
+  } else if(t==='afternoon'){
+    g.addColorStop(0,'#0369a1');g.addColorStop(.5,'#7dd3fc');g.addColorStop(1,'#15803d');
+  } else { // evening
+    g.addColorStop(0,'#1e1b4b');g.addColorStop(.3,'#9333ea');g.addColorStop(.6,'#f97316');g.addColorStop(1,'#16a34a');
+  }
+  return g;
+}
+
+function drawSun(t){
+  // Sun visible in morning/afternoon/evening
+  const progress = t==='morning'?.25 : t==='afternoon'?.55 : .85;
+  const sx = W*progress, sy = H*.18;
+  const isNight = t==='night'||t==='dusk';
+  if(isNight){
+    // Moon
+    const mg=ctx.createRadialGradient(sx,sy,0,sx,sy,36);
+    mg.addColorStop(0,'rgba(240,240,255,.95)');mg.addColorStop(.6,'rgba(200,210,255,.7)');mg.addColorStop(1,'rgba(100,120,200,0)');
+    ctx.fillStyle=mg;ctx.beginPath();ctx.arc(sx,sy,36,0,Math.PI*2);ctx.fill();
+    // Crater details
+    ctx.fillStyle='rgba(180,190,220,.2)';
+    [[sx-12,sy-8,5],[sx+8,sy+10,3],[sx-5,sy+14,4]].forEach(([cx,cy,cr])=>{ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();});
+  } else {
+    // Sun glow
+    const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,80);
+    sg.addColorStop(0,'rgba(255,240,80,.9)');sg.addColorStop(.3,'rgba(255,200,40,.6)');sg.addColorStop(.7,'rgba(255,150,30,.25)');sg.addColorStop(1,'rgba(255,100,0,0)');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(sx,sy,80,0,Math.PI*2);ctx.fill();
+    // Sun disk
+    ctx.fillStyle='rgba(255,245,100,.95)';ctx.beginPath();ctx.arc(sx,sy,28,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawClouds(t){
+  if(t==='night') return;
+  CLOUDS.forEach(c=>{
+    c.x=(c.x+c.spd)%(W+200)-100;
+    const alpha = t==='morning'?.55 : t==='afternoon'?.4 : .3;
+    ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+    [[-c.w*.3,-8,c.w*.4,22],[0,0,c.w*.6,26],[c.w*.25,-6,c.w*.38,20]].forEach(([ox,oy,rw,rh])=>{
+      ctx.beginPath();ctx.ellipse(c.x+ox,c.y+oy,rw,rh,0,0,Math.PI*2);ctx.fill();
+    });
+  });
+}
+
+function drawGround(){
+  // Ground layers
+  const hills=[{y:.72,c1:'#1a4a20',c2:'#14391a'},{y:.78,c1:'#15361b',c2:'#0f2612'},{y:.84,c1:'#0f2612',c2:'#0a1a0b'}];
+  hills.forEach(h=>{
+    const g=ctx.createLinearGradient(0,H*h.y,0,H);
+    g.addColorStop(0,h.c1);g.addColorStop(1,h.c2);
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.moveTo(0,H*h.y);
+    for(let x=0;x<=W;x+=18) ctx.lineTo(x,H*h.y+Math.sin(x*.025+animT*.12)*4);
+    ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();ctx.fill();
+  });
+  // Grass blades
+  ctx.strokeStyle='rgba(34,197,94,.4)';ctx.lineWidth=1.5;
+  for(let i=0;i<40;i++){
+    const gx=(i*97)%W, gy=H*.84;
+    const sway=Math.sin(animT*.8+i*.6)*4;
+    ctx.beginPath();ctx.moveTo(gx,gy);ctx.bezierCurveTo(gx+sway,gy-12,gx+sway*1.5,gy-20,gx+sway*2,gy-26);ctx.stroke();
+  }
+}
+
+function drawButterflies(t){
+  if(t==='night') return;
+  BUTTERFLIES.forEach(b=>{
+    b.x+=b.vx+Math.sin(animT*.4+b.phase)*.8;
+    b.y+=b.vy+Math.cos(animT*.3+b.phase)*.5;
+    if(b.x<0||b.x>W) b.vx*=-1;
+    if(b.y<H*.3||b.y>H*.82) b.vy*=-1;
+    const wing=Math.abs(Math.sin(animT*4+b.phase))*16+4;
+    ctx.fillStyle=b.col+'cc';
+    ctx.save();ctx.translate(b.x,b.y);
+    ctx.beginPath();ctx.ellipse(-wing/2,0,wing,8,-.4,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(wing/2,0,wing,8,.4,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawFireflies(t){
+  if(t!=='night'&&t!=='dusk') return;
+  for(let i=0;i<12;i++){
+    const fx=(i*173+Math.sin(animT*.3+i)*80)%W;
+    const fy=H*.4+Math.cos(animT*.4+i*1.3)*80+i*12;
+    const alpha=Math.max(0,Math.sin(animT*2+i*0.8))*.7;
+    if(alpha<.05) continue;
+    const ff=ctx.createRadialGradient(fx,fy,0,fx,fy,8);
+    ff.addColorStop(0,`rgba(255,255,150,${alpha})`);ff.addColorStop(1,'rgba(255,255,100,0)');
+    ctx.fillStyle=ff;ctx.beginPath();ctx.arc(fx,fy,8,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawPlantedFlowers(){
+  gardenFlowers.forEach((f,idx)=>{
+    const age=(Date.now()-f.planted)/1000; // seconds old
+    const growth=Math.min(1,age/4); // fully grown in 4 seconds
+    const x=f.x, groundY=H*.84;
+    const stemH=55*growth;
+    const sway=Math.sin(animT*.7+idx*.8)*3*growth;
+    ctx.save();ctx.translate(x,groundY);
+    // Stem
+    ctx.strokeStyle='#16a34a';ctx.lineWidth=3*growth;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(sway*.5,-stemH*.35,sway,-stemH*.7,sway,-stemH);ctx.stroke();
+    // Leaves
+    if(growth>.4){
+      const lg=(growth-.4)/0.6;
+      ctx.fillStyle='#15803d';
+      [[sway*.35,-stemH*.38,-0.5],[sway*.6,-stemH*.6,0.5]].forEach(([lx,ly,rot])=>{
+        ctx.save();ctx.translate(lx,ly);ctx.rotate(rot);ctx.scale(lg,lg);
+        ctx.beginPath();ctx.ellipse(0,0,10,5,0,0,Math.PI*2);ctx.fill();ctx.restore();
+      });
+    }
+    // Flower head
+    if(growth>.3){
+      const hg=Math.min(1,(growth-.3)/.7)*growth;
+      ctx.translate(sway,-stemH);
+      drawFlowerHead(ctx,f.emoji,hg);
+    }
+    ctx.restore();
+  });
+}
+
+function drawFlowerHead(ctx,emoji,scale){
+  ctx.save();
+  ctx.scale(scale,scale);
+  ctx.font=`${24*scale}px serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(emoji,0,0);
+  ctx.restore();
+}
+
+function drawShootingStars(){
+  if(skyTime!=='night'&&skyTime!=='dusk') return;
+  shootT++;
+  if(shootT>=60){spawnShoot();if(Math.random()>.65)setTimeout(spawnShoot,250);shootT=0;}
+  for(let i=SHOOTS.length-1;i>=0;i--){
+    const s=SHOOTS[i];s.x+=s.vx;s.y+=s.vy;s.life--;
+    if(s.life<=0||s.x>W+40||s.y>H*.7){SHOOTS.splice(i,1);continue;}
+    const t=1-s.life/s.maxLife;
+    let al=t<.1?t/.1:t>.75?1-(t-.75)/.25:1;
+    al=Math.max(0,Math.min(1,al));
+    const ang=Math.atan2(s.vy,s.vx);
+    const tx=s.x-Math.cos(ang)*s.tail, ty=s.y-Math.sin(ang)*s.tail;
+    const gr=ctx.createLinearGradient(tx,ty,s.x,s.y);
+    gr.addColorStop(0,`rgba(${s.r},${s.g},${s.b},0)`);
+    gr.addColorStop(.5,`rgba(${s.r},${s.g},${s.b},${+(al*.3).toFixed(3)})`);
+    gr.addColorStop(1,`rgba(${s.r},${s.g},${s.b},${+(al*.9).toFixed(3)})`);
+    ctx.save();ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(s.x,s.y);
+    ctx.strokeStyle=gr;ctx.lineWidth=s.w;ctx.lineCap='round';ctx.stroke();ctx.restore();
+    const cr=s.w*2+1;
+    const cg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,cr*5);
+    cg.addColorStop(0,`rgba(${s.r},${s.g},${s.b},${+al.toFixed(3)})`);
+    cg.addColorStop(1,`rgba(${s.r},${s.g},${s.b},0)`);
+    ctx.beginPath();ctx.arc(s.x,s.y,cr*5,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();
+  }
+}
+
+function drawStars(){
+  if(skyTime!=='night'&&skyTime!=='dusk'&&skyTime!=='dawn') return;
+  const alphaMod = skyTime==='dawn'?.4 : skyTime==='dusk'?.7 : 1;
+  STARS.forEach(s=>{
+    s.a+=s.da; if(s.a>1||s.a<0)s.da*=-1;
+    const a=(s.base*Math.abs(s.a)*alphaMod).toFixed(3);
+    ctx.beginPath();ctx.arc(s.x*W,s.y*H*.65,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(220,220,255,${a})`;ctx.fill();
+  });
+}
+
+function renderFrame(){
+  animT+=0.016;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=skyGradient();ctx.fillRect(0,0,W,H);
+  drawStars();
+  drawShootingStars();
+  drawSun(skyTime);
+  drawClouds(skyTime);
+  drawButterflies(skyTime);
+  drawGround();
+  drawFireflies(skyTime);
+  drawPlantedFlowers();
+  requestAnimationFrame(renderFrame);
+}
+
+/* ══════════════════════════════
+   GARDEN LOGIC
+══════════════════════════════ */
+function updateUI(){
+  const tod=getTimeOfDay();
+  skyTime=tod;
+  document.getElementById('time-badge').textContent=TIME_LABELS[tod]||'🌙 Night';
+
+  const today=todayKey();
+  const flower=getTodayFlower();
+  const garden=loadGarden();
+  const streak=loadStreak();
+
+  // Date display
+  document.getElementById('date-text').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  // Streak display
+  document.getElementById('streak-num').textContent=streak.count;
+  document.getElementById('streak-label').textContent=`day streak`;
+  if(streak.count===0) document.getElementById('streak-msg').textContent='Start your streak today!';
+  else if(streak.count<7) document.getElementById('streak-msg').textContent='Keep going! 🌱';
+  else if(streak.count<30) document.getElementById('streak-msg').textContent='Amazing dedication! 🔥';
+  else document.getElementById('streak-msg').textContent='Legendary gardener! 🌟';
+
+  // Flower card
+  document.getElementById('flower-emoji').textContent=flower.emoji;
+  document.getElementById('flower-name').textContent=flower.name;
+  document.getElementById('flower-desc').textContent=flower.desc;
+
+  const alreadyPlanted=garden[today];
+  if(alreadyPlanted){
+    document.getElementById('flower-status').textContent='Bloomed ✓';
+    document.getElementById('flower-status').className='flower-status status-bloomed';
+    document.getElementById('plant-btn').textContent='🌸 Already bloomed today';
+    document.getElementById('plant-btn').disabled=true;
+    // Add to canvas flowers if not already
+    if(!gardenFlowers.find(f=>f.dateKey===today)){
+      gardenFlowers.push({
+        emoji:flower.emoji, x:80+Math.random()*(W-160),
+        planted:Date.now()-5000, // already grown
+        dateKey:today
+      });
+    }
+  } else {
+    document.getElementById('flower-status').textContent='Waiting';
+    document.getElementById('flower-status').className='flower-status status-waiting';
+    document.getElementById('plant-btn').textContent='🌱 Plant Today\'s Flower';
+    document.getElementById('plant-btn').disabled=false;
+  }
+
+  // History strip
+  buildHistoryStrip(garden);
+}
+
+function buildHistoryStrip(garden){
+  const strip=document.getElementById('history-strip');
+  strip.innerHTML='<span id="history-label">Last 14 days</span>';
+  const today=todayKey();
+  for(let i=13;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const key=d.toISOString().slice(0,10);
+    const f=DAILY_FLOWERS[(Math.floor((d-new Date(d.getFullYear(),0,0))/86400000))%DAILY_FLOWERS.length];
+    const dot=document.createElement('div');
+    dot.className='hist-dot'+(garden[key]?' has-flower':'')+(key===today?' today':'')+(i>0&&!garden[key]?' missed':'');
+    dot.title=d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+(garden[key]?' — '+f.name:'');
+    dot.textContent=garden[key]?f.emoji:'·';
+    strip.appendChild(dot);
+  }
+}
+
+function plantToday(){
+  const today=todayKey();
+  const garden=loadGarden();
+  if(garden[today]) return;
+
+  const flower=getTodayFlower();
+  // Save to garden
+  garden[today]={emoji:flower.emoji,name:flower.name,planted:Date.now()};
+  saveGarden(garden);
+
+  // Update streak
+  const streak=loadStreak();
+  const yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yKey=yesterday.toISOString().slice(0,10);
+  if(streak.lastDate===yKey){
+    streak.count++;
+  } else if(streak.lastDate!==today){
+    streak.count=1;
+  }
+  streak.lastDate=today;
+  saveStreak(streak);
+
+  // Add to canvas
+  gardenFlowers.push({
+    emoji:flower.emoji, x:80+Math.random()*(W-160),
+    planted:Date.now(), dateKey:today
+  });
+
+  // Confetti burst
+  petalBurst(flower.emoji);
+
+  // Show bloom overlay
+  setTimeout(()=>{
+    document.getElementById('bloom-emoji').textContent=flower.emoji;
+    document.getElementById('bloom-title').textContent=flower.name+' bloomed!';
+    document.getElementById('bloom-sub').textContent=`DAY ${loadStreak().count} STREAK ✦`;
+    document.getElementById('bloom-overlay').classList.add('show');
+    updateUI();
+  }, 1200);
+}
+
+function closeBloom(){
+  document.getElementById('bloom-overlay').classList.remove('show');
+}
+
+function petalBurst(emoji){
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');
+    p.className='petal';
+    p.textContent=emoji;
+    p.style.cssText=`
+      left:${20+Math.random()*60}%;
+      top:${30+Math.random()*20}%;
+      --pd:${(Math.random()*1.5+1).toFixed(2)}s;
+      --pdl:${(Math.random()*.4).toFixed(2)}s;
+      --px:${(Math.random()*80-40).toFixed(0)}px;
+      --pdx:${(Math.random()*100-50).toFixed(0)}px;
+      --pfs:${(Math.random()*.8+1).toFixed(1)}rem;
+    `;
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),3000);
+  }
+}
+
+function goBack(){
+  window.location.href='index.html';
+}
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+// Load existing flowers
+(function(){
+  const garden=loadGarden();
+  const today=todayKey();
+  if(garden[today]){
+    gardenFlowers.push({
+      emoji:garden[today].emoji,
+      x:80+Math.random()*(Math.max(window.innerWidth-160,200)),
+      planted:garden[today].planted-5000,
+      dateKey:today
+    });
+  }
+})();
+
+updateUI();
+renderFrame();
+// Refresh UI every minute (time of day can change)
+setInterval(updateUI, 60000);
+</script>
+</body>
+</html>

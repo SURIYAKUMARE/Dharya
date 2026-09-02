@@ -1496,11 +1496,6 @@ document.getElementById('ctx-react').onclick=()=>{const el=document.querySelecto
 document.getElementById('ctx-forward').onclick=()=>forwardMessage(ctxTargetId);
 document.getElementById('ctx-star').onclick=()=>starMessage(ctxTargetId);
 document.getElementById('ctx-pin').onclick=()=>pinMessage(ctxTargetId);
-  const m=messages.find(x=>x.id===ctxTargetId);if(!m)return;
-  const el=document.querySelector(`.bub[data-id="${ctxTargetId}"]`);
-  if(el)showReactPicker(ctxTargetId,el);
-  document.getElementById('ctxmenu').classList.remove('show');
-};
 document.getElementById('ctx-edit').onclick=async()=>{
   const m=messages.find(x=>x.id===ctxTargetId);if(!m)return;
   const val=window.prompt('Edit message:',m.content);

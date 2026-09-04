@@ -286,7 +286,18 @@
     .ctx-item.danger{color:#f87171;}
     .ctx-sep{height:1px;background:rgba(255,255,255,.07);margin:3px 6px;}
     /* Jump btn */
-    #jump-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);right:14px;
+    /* Bottom Nav Bar */
+    #bottom-nav{display:flex;align-items:stretch;background:rgba(10,6,20,.97);border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);position:relative;z-index:15;}
+    .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:10.5px;font-weight:600;letter-spacing:.04em;font-family:'Inter',sans-serif;transition:color .22s,background .18s;position:relative;}
+    .nav-tab:hover{background:rgba(255,255,255,.04);}
+    .nav-tab.active{color:#a78bfa;}
+    .nav-tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;}
+    .nav-tab.active svg{transform:scale(1.1);}
+    .nav-tab.active::after{content:'';position:absolute;top:0;left:22%;right:22%;height:2.5px;background:linear-gradient(90deg,#7c3aed,#db2777);border-radius:0 0 3px 3px;}
+    #nav-streak-badge{position:absolute;top:5px;right:calc(50% - 20px);background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+    #nav-streak-badge.show{display:flex;}
+
+    #jump-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 68px);right:14px;
       width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
       background:rgba(124,58,237,.85);color:#fff;display:none;align-items:center;justify-content:center;
       box-shadow:0 4px 16px rgba(124,58,237,.5);z-index:5;transition:transform .16s;
@@ -604,7 +615,6 @@
         <p id="ch-status">connecting…</p>
       </div>
       <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">🔍</button>
-      <button class="hdr-btn" id="btn-garden" onclick="openGarden()" title="Our Garden">🌸</button>
       <button class="hdr-btn" id="btn-settings" onclick="openSettings()" title="Settings">⋮</button>
     </div>
     <!-- Pin bar -->
@@ -654,6 +664,19 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
       <span id="jump-badge"></span>
     </button>
+
+    <!-- Bottom Nav Bar -->
+    <div id="bottom-nav">
+      <button class="nav-tab active" id="nav-chat" onclick="switchNavTab('chat')">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Chat
+      </button>
+      <button class="nav-tab" id="nav-garden" onclick="switchNavTab('garden')">
+        <svg viewBox="0 0 24 24"><path d="M12 22V12"/><path d="M12 12C12 12 8 9 8 6a4 4 0 018 0c0 3-4 6-4 6z"/><path d="M12 12C12 12 16 9 16 6"/><path d="M5 22c0-3.5 2-6 7-6s7 2.5 7 6"/></svg>
+        <span>Garden</span>
+        <span id="nav-streak-badge"></span>
+      </button>
+    </div>
   </div>
 
 <script>
@@ -848,7 +871,14 @@ function enterChat(key){
 function goBack(){
   if(realtimeCh){realtimeCh.unsubscribe();realtimeCh=null;}
   markPresence(false);
+  // Close garden if open
+  if(document.getElementById('page-garden').classList.contains('show')){
+    closeGarden();
+  }
   document.getElementById('page-chat').classList.remove('show');
+  // Reset nav tabs
+  document.getElementById('nav-chat').classList.add('active');
+  document.getElementById('nav-garden').classList.remove('active');
   setTimeout(()=>{
     document.getElementById('page-login').classList.remove('hide');
     const btn=document.getElementById('lbtn');
@@ -1055,6 +1085,8 @@ async function initChat(key){
   disappearMode=getSetting('disappearMode','off');
   const savedPin=getSetting('pinnedMsgId_'+key,null);
   if(savedPin){const pm=messages.find(m=>m.id===savedPin);if(pm)setPinned(savedPin);}
+  // Update garden streak badge in nav
+  updateNavStreak();
   window.addEventListener('beforeunload',()=>{markPresence(false);clearInterval(heartbeatId);if(realtimeCh)realtimeCh.unsubscribe();if(bc){bc.postMessage({type:'presence',user:currentUser,online:false});bc.close();}});
 }
 
@@ -1659,6 +1691,43 @@ function closeGarden(){
   document.getElementById('page-garden').classList.remove('show');
   if(gAnimId){cancelAnimationFrame(gAnimId);gAnimId=null;}
   gFlowers=[];gShoots.length=0;
+  // Switch nav back to chat
+  document.getElementById('nav-chat').classList.add('active');
+  document.getElementById('nav-garden').classList.remove('active');
+}
+
+/* ── Bottom nav tab switcher ── */
+function switchNavTab(tab){
+  if(tab==='chat'){
+    // Show chat, hide garden
+    closeGarden();
+    document.getElementById('nav-chat').classList.add('active');
+    document.getElementById('nav-garden').classList.remove('active');
+  } else {
+    // Show garden
+    document.getElementById('nav-chat').classList.remove('active');
+    document.getElementById('nav-garden').classList.add('active');
+    openGarden();
+  }
+}
+
+/* Update streak badge on garden nav tab */
+function updateNavStreak(){
+  const streak=gLoadStreak();
+  const badge=document.getElementById('nav-streak-badge');
+  if(!badge)return;
+  if(streak.count>0){
+    badge.textContent=streak.count>99?'99+':streak.count;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+  // Also show 🔥 if streak active
+  const navGarden=document.getElementById('nav-garden');
+  if(navGarden){
+    const label=navGarden.querySelector('span:not(#nav-streak-badge)');
+    if(label) label.textContent= streak.count>=3 ? 'Garden 🔥' : 'Garden';
+  }
 }
 
 function gInit(){
@@ -2009,6 +2078,8 @@ function gPlantToday(){
   const yest=new Date();yest.setDate(yest.getDate()-1);const yKey=yest.toISOString().slice(0,10);
   streak.count=(streak.last===yKey)?streak.count+1:(streak.last===today?streak.count:1);
   streak.last=today;gSaveStreak(streak);
+  // Update nav streak badge
+  updateNavStreak();
   // Plant in center
   gFlowers=[{e:flower.e,x:gW*.5+(Math.random()-.5)*60,planted:Date.now(),growth:0}];
   gPetalBurst(flower.e);

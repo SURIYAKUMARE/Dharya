@@ -166,7 +166,9 @@
 
     /* ════════════════════════
     /* ════ CHAT PAGE — DHARYA THEME ════ */
-    #page-chat{background:#0c0918;padding-bottom:env(safe-area-inset-bottom,0);}
+    #page-chat{background:#0c0918;padding-bottom:calc(58px + env(safe-area-inset-bottom,0));}
+    /* Chat needs bottom padding for nav bar */
+    #page-chat #ch-input-bar{padding-bottom:8px;}
     #chat-wallpaper{position:fixed;inset:0;z-index:0;pointer-events:none;
       background-color:#0c0918;
       background-image:
@@ -286,8 +288,19 @@
     .ctx-item.danger{color:#f87171;}
     .ctx-sep{height:1px;background:rgba(255,255,255,.07);margin:3px 6px;}
     /* Jump btn */
-    /* Bottom Nav Bar */
-    #bottom-nav{display:flex;align-items:stretch;background:rgba(10,6,20,.97);border-top:1px solid rgba(255,255,255,.07);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0);position:relative;z-index:15;}
+    /* Bottom Nav Bar — fixed above all pages */
+    #bottom-nav{
+      display:none; /* hidden until chat/garden is active */
+      position:fixed;bottom:0;left:0;right:0;z-index:20;
+      align-items:stretch;
+      background:rgba(10,6,20,.97);
+      border-top:1px solid rgba(255,255,255,.07);
+      padding-bottom:env(safe-area-inset-bottom,0);
+    }
+    #bottom-nav.visible{display:flex;}
+    /* Shrink chat + garden bottom padding to not be hidden behind nav */
+    #page-chat.show{padding-bottom:58px;}
+    #page-garden.show .g-bottom-wrap,#page-garden.show #g-bottom{padding-bottom:calc(58px + env(safe-area-inset-bottom,0))!important;}
     .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:10.5px;font-weight:600;letter-spacing:.04em;font-family:'Inter',sans-serif;transition:color .22s,background .18s;position:relative;}
     .nav-tab:hover{background:rgba(255,255,255,.04);}
     .nav-tab.active{color:#a78bfa;}
@@ -297,7 +310,7 @@
     #nav-streak-badge{position:absolute;top:5px;right:calc(50% - 20px);background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(0,0,0,.4);}
     #nav-streak-badge.show{display:flex;}
 
-    #jump-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 68px);right:14px;
+    #jump-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);right:14px;
       width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
       background:rgba(124,58,237,.85);color:#fff;display:none;align-items:center;justify-content:center;
       box-shadow:0 4px 16px rgba(124,58,237,.5);z-index:5;transition:transform .16s;
@@ -442,7 +455,7 @@
     }
     .av-img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
   /* ════ GARDEN PAGE ════ */
-  #page-garden{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .55s,transform .55s;transform:translateY(18px);overflow:hidden;background:#030712;}
+  #page-garden{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .55s,transform .55s;transform:translateY(18px);overflow:hidden;background:#030712;padding-bottom:calc(58px + env(safe-area-inset-bottom,0));}
   #page-garden.show{opacity:1;pointer-events:all;transform:translateY(0);}
   #g-sky{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;}
   #g-ui{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;pointer-events:none;overflow:hidden;}
@@ -665,18 +678,6 @@
       <span id="jump-badge"></span>
     </button>
 
-    <!-- Bottom Nav Bar -->
-    <div id="bottom-nav">
-      <button class="nav-tab active" id="nav-chat" onclick="switchNavTab('chat')">
-        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        Chat
-      </button>
-      <button class="nav-tab" id="nav-garden" onclick="switchNavTab('garden')">
-        <svg viewBox="0 0 24 24"><path d="M12 22V12"/><path d="M12 12C12 12 8 9 8 6a4 4 0 018 0c0 3-4 6-4 6z"/><path d="M12 12C12 12 16 9 16 6"/><path d="M5 22c0-3.5 2-6 7-6s7 2.5 7 6"/></svg>
-        <span>Garden</span>
-        <span id="nav-streak-badge"></span>
-      </button>
-    </div>
   </div>
 
 <script>
@@ -866,7 +867,14 @@ addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement.id!=='
 /* ══ TRANSITION ══ */
 function enterChat(key){
   document.getElementById('page-login').classList.add('hide');
-  setTimeout(()=>{document.getElementById('page-chat').classList.add('show');initChat(key);},500);
+  setTimeout(()=>{
+    document.getElementById('page-chat').classList.add('show');
+    // Show nav bar when entering chat
+    document.getElementById('bottom-nav').classList.add('visible');
+    document.getElementById('nav-chat').classList.add('active');
+    document.getElementById('nav-garden').classList.remove('active');
+    initChat(key);
+  },500);
 }
 function goBack(){
   if(realtimeCh){realtimeCh.unsubscribe();realtimeCh=null;}
@@ -876,6 +884,8 @@ function goBack(){
     closeGarden();
   }
   document.getElementById('page-chat').classList.remove('show');
+  // Hide nav bar when leaving chat
+  document.getElementById('bottom-nav').classList.remove('visible');
   // Reset nav tabs
   document.getElementById('nav-chat').classList.add('active');
   document.getElementById('nav-garden').classList.remove('active');
@@ -2289,6 +2299,19 @@ function gPetalBurst(e){
 
   <input type="file" id="file-input" style="display:none" onchange="handleFilePick(this)"/>
   <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="handleFilePick(this)"/>
+
+  <!-- ══ BOTTOM NAV — fixed, above everything ══ -->
+  <div id="bottom-nav">
+    <button class="nav-tab active" id="nav-chat" onclick="switchNavTab('chat')">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span>Chat</span>
+    </button>
+    <button class="nav-tab" id="nav-garden" onclick="switchNavTab('garden')">
+      <svg viewBox="0 0 24 24"><path d="M12 22V12"/><path d="M12 12C12 12 8 9 8 6a4 4 0 018 0c0 3-4 6-4 6z"/><path d="M12 12C12 12 16 9 16 6"/><path d="M5 22c0-3.5 2-6 7-6s7 2.5 7 6"/></svg>
+      <span>Garden</span>
+      <span id="nav-streak-badge"></span>
+    </button>
+  </div>
 </body>
 </html>
 

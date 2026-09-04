@@ -299,7 +299,7 @@
     }
     #bottom-nav.visible{display:flex;}
     /* Shrink chat + garden bottom padding to not be hidden behind nav */
-    #page-chat.show{padding-bottom:58px;}
+    #page-chat.show{padding-bottom:calc(58px + env(safe-area-inset-bottom,0px));}
     #page-garden.show .g-bottom-wrap,#page-garden.show #g-bottom{padding-bottom:calc(58px + env(safe-area-inset-bottom,0))!important;}
     .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 6px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);font-size:10.5px;font-weight:600;letter-spacing:.04em;font-family:'Inter',sans-serif;transition:color .22s,background .18s;position:relative;}
     .nav-tab:hover{background:rgba(255,255,255,.04);}
@@ -511,6 +511,216 @@
 
 
 
+
+    /* ══════════════════════════════════════════
+       FORMAT TEXT SPANS
+    ══════════════════════════════════════════ */
+    .fmt-b{font-weight:700;}
+    .fmt-i{font-style:italic;}
+    .fmt-s{text-decoration:line-through;opacity:.7;}
+    .fmt-m{font-family:'Courier New',monospace;background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px;font-size:.88em;letter-spacing:0;}
+    .fmt-mention{color:#a78bfa;font-weight:600;}
+
+    /* ══════════════════════════════════════════
+       ATTACH MENU
+    ══════════════════════════════════════════ */
+    #attach-menu{
+      position:absolute;bottom:62px;left:8px;z-index:50;
+      background:rgba(18,10,34,.97);border:1px solid rgba(255,255,255,.09);
+      border-radius:20px;padding:16px;min-width:230px;
+      box-shadow:0 12px 44px rgba(0,0,0,.7);
+      backdrop-filter:blur(24px);
+      display:none;flex-direction:column;gap:10px;
+    }
+    #attach-menu.show{display:flex;}
+    .attach-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+    .att-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;border-radius:13px;padding:7px 4px;transition:background .15s;}
+    .att-item:hover{background:rgba(255,255,255,.07);}
+    .att-icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;}
+    .att-label{font-size:11px;color:rgba(255,255,255,.55);font-weight:500;}
+
+    /* ══════════════════════════════════════════
+       EMOJI / STICKER / GIF PICKER
+    ══════════════════════════════════════════ */
+    #emoji-picker{
+      position:absolute;bottom:62px;left:8px;z-index:50;
+      background:rgba(18,10,34,.97);border:1px solid rgba(255,255,255,.09);
+      border-radius:20px;padding:0;width:300px;max-height:320px;
+      box-shadow:0 12px 44px rgba(0,0,0,.7);backdrop-filter:blur(24px);
+      display:none;flex-direction:column;overflow:hidden;
+    }
+    #emoji-picker.show{display:flex;}
+    .pk-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+    .pk-tab{flex:1;padding:11px 6px;text-align:center;font-size:12px;font-weight:600;
+      color:rgba(255,255,255,.38);cursor:pointer;transition:color .15s,background .15s;border-radius:0;}
+    .pk-tab:hover{background:rgba(255,255,255,.04);}
+    .pk-tab.on{color:#a78bfa;border-bottom:2px solid #7c3aed;}
+    .pk-body{display:flex;flex-wrap:wrap;gap:4px;padding:10px;overflow-y:auto;flex:1;}
+    .pk-em{font-size:1.45rem;cursor:pointer;border-radius:8px;padding:4px;transition:background .12s,transform .1s;line-height:1;}
+    .pk-em:hover{background:rgba(255,255,255,.09);transform:scale(1.15);}
+    .pk-st{font-size:1.9rem;cursor:pointer;border-radius:10px;padding:5px;transition:background .12s,transform .1s;line-height:1;}
+    .pk-st:hover{background:rgba(255,255,255,.09);transform:scale(1.15);}
+
+    /* ══════════════════════════════════════════
+       POLL CREATOR
+    ══════════════════════════════════════════ */
+    #poll-creator{
+      position:fixed;inset:0;z-index:100;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(10px);
+      display:none;align-items:flex-end;justify-content:center;
+    }
+    #poll-creator.show{display:flex;}
+    .poll-sheet{
+      background:#140820;border:1px solid rgba(255,255,255,.1);
+      border-radius:24px 24px 0 0;padding:24px 20px 32px;
+      width:100%;max-width:480px;display:flex;flex-direction:column;gap:14px;
+      max-height:85vh;overflow-y:auto;
+    }
+    .poll-sheet h3{font-size:1.1rem;font-weight:800;color:#fff;margin:0;}
+    .poll-inp{width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);
+      border-radius:12px;padding:12px 14px;color:#fff;font-size:14px;font-family:'Inter',sans-serif;
+      outline:none;transition:border-color .2s;}
+    .poll-inp:focus{border-color:rgba(124,58,237,.6);background:rgba(255,255,255,.1);}
+    .poll-opt-row{display:flex;gap:8px;align-items:center;}
+    .poll-opt-del{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.2);
+      border-radius:8px;color:#f87171;font-size:14px;padding:6px 10px;cursor:pointer;}
+    .poll-add{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);
+      border-radius:12px;color:#a78bfa;font-size:14px;font-weight:600;padding:10px;
+      cursor:pointer;width:100%;transition:background .15s;}
+    .poll-add:hover{background:rgba(124,58,237,.25);}
+    .poll-sub{background:linear-gradient(90deg,#7c3aed,#db2777);border:none;
+      border-radius:13px;color:#fff;font-size:15px;font-weight:700;padding:13px;
+      cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;}
+    .poll-sub:hover{opacity:.88;}
+
+    /* ══════════════════════════════════════════
+       SETTINGS MODAL
+    ══════════════════════════════════════════ */
+    #settings-modal{
+      position:fixed;inset:0;z-index:100;
+      background:rgba(0,0,0,.7);backdrop-filter:blur(10px);
+      display:none;align-items:flex-end;justify-content:center;
+    }
+    #settings-modal.show,#settings-modal[style*="block"]{display:flex!important;}
+    .ssheet{
+      background:#100818;border:1px solid rgba(255,255,255,.09);
+      border-radius:24px 24px 0 0;padding:0 0 32px;
+      width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+      display:flex;flex-direction:column;
+    }
+    .ssheet-title{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07);
+      font-size:1rem;font-weight:800;color:#fff;flex-shrink:0;position:sticky;top:0;
+      background:#100818;z-index:2;
+    }
+    .ssect{padding:14px 20px 4px;flex-shrink:0;}
+    .ssect-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.35);}
+    .ssep{height:1px;background:rgba(255,255,255,.06);margin:8px 0;}
+    .srow{
+      display:flex;align-items:center;gap:14px;padding:13px 20px;
+      cursor:pointer;transition:background .14s;
+    }
+    .srow:hover{background:rgba(255,255,255,.04);}
+    .srow-icon{font-size:1.2rem;width:28px;text-align:center;flex-shrink:0;}
+    .srow-info{flex:1;min-width:0;}
+    .srow-label{font-size:14.5px;color:#ede8ff;font-weight:500;}
+    .srow-sub{font-size:12px;color:rgba(255,255,255,.38);margin-top:2px;}
+    .toggle{
+      width:44px;height:25px;border-radius:13px;border:none;cursor:pointer;
+      background:rgba(255,255,255,.12);position:relative;flex-shrink:0;
+      transition:background .25s;padding:0;
+    }
+    .toggle::after{
+      content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;
+      border-radius:50%;background:#fff;transition:transform .22s,box-shadow .22s;
+      box-shadow:0 2px 6px rgba(0,0,0,.4);
+    }
+    .toggle.on{background:#7c3aed;}
+    .toggle.on::after{transform:translateX(19px);box-shadow:0 2px 8px rgba(124,58,237,.5);}
+    .av-img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+    /* ══════════════════════════════════════════
+       CHAT LOCK / PIN PAD
+    ══════════════════════════════════════════ */
+    #chat-lock{
+      position:fixed;inset:0;z-index:200;
+      background:rgba(5,2,14,.96);backdrop-filter:blur(24px);
+      display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+      padding:32px 24px;
+    }
+    #chat-lock.show{display:flex;}
+    .lock-icon{font-size:2.8rem;margin-bottom:4px;}
+    .lock-title{font-size:1.3rem;font-weight:800;color:#fff;text-align:center;}
+    .lock-sub{font-size:.88rem;color:rgba(255,255,255,.44);text-align:center;margin-top:-8px;}
+    .lock-dots{display:flex;gap:16px;justify-content:center;margin:8px 0;}
+    .lock-dot{
+      width:14px;height:14px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.25);background:transparent;
+      transition:background .18s,border-color .18s,transform .12s;
+    }
+    .lock-dot.on{background:#a78bfa;border-color:#7c3aed;transform:scale(1.15);}
+    .numpad{
+      display:grid;grid-template-columns:repeat(3,72px);gap:12px;
+      justify-content:center;
+    }
+    .nkey{
+      width:72px;height:72px;border-radius:50%;border:none;cursor:pointer;
+      background:rgba(255,255,255,.07);color:#fff;font-size:1.3rem;font-weight:600;
+      font-family:'Inter',sans-serif;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:1px;
+      transition:background .14s,transform .1s;
+    }
+    .nkey:hover{background:rgba(255,255,255,.13);}
+    .nkey:active{background:rgba(124,58,237,.35);transform:scale(.93);}
+    .nkey-sub{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.35);line-height:1;}
+    .nkey.zero{grid-column:2;}
+    .nkey.del{background:transparent;font-size:1.4rem;}
+    .nkey.del:hover{background:rgba(255,80,80,.12);}
+    .lock-err{font-size:.82rem;color:#f87171;text-align:center;min-height:1.2em;font-weight:500;}
+
+    /* ══════════════════════════════════════════
+       MEDIA VIEWER
+    ══════════════════════════════════════════ */
+    #media-viewer{
+      position:fixed;inset:0;z-index:300;
+      background:rgba(0,0,0,.96);
+      display:none;align-items:center;justify-content:center;
+    }
+    #media-viewer.show,#media-viewer[style*="block"]{display:flex!important;}
+    #mv-close{
+      position:absolute;top:18px;right:18px;
+      background:rgba(255,255,255,.12);border:none;border-radius:50%;
+      width:40px;height:40px;cursor:pointer;color:#fff;font-size:18px;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .14s;z-index:2;
+    }
+    #mv-close:hover{background:rgba(255,255,255,.22);}
+    #mv-img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;}
+    #mv-video{max-width:95vw;max-height:90vh;border-radius:8px;outline:none;}
+
+    /* ══════════════════════════════════════════
+       DB SETUP MODAL (fix show state)
+    ══════════════════════════════════════════ */
+    #db-setup.show{display:flex!important;}
+
+    /* ══════════════════════════════════════════
+       EMPTY CHAT STATE
+    ══════════════════════════════════════════ */
+    #ch-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+      flex:1;gap:10px;padding:40px 20px;color:rgba(255,255,255,.2);text-align:center;}
+    .em-icon{font-size:2.2rem;opacity:.35;}
+    #ch-empty p{font-size:.9rem;line-height:1.6;font-style:italic;}
+
+    /* ══════════════════════════════════════════
+       FORMAT BAR TOGGLE BUTTON
+    ══════════════════════════════════════════ */
+    .fmt-toggle-btn{
+      width:36px!important;height:36px!important;background:rgba(255,255,255,.06)!important;
+      border-radius:10px!important;border:1px solid rgba(255,255,255,.08)!important;
+      flex-shrink:0;
+    }
+    .fmt-toggle-btn:hover{background:rgba(124,58,237,.2)!important;color:#a78bfa!important;}
   </style>
 </head>
 <body>
@@ -664,6 +874,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
       </div>
+      <button class="ibar-btn fmt-toggle-btn" onclick="toggleFmtBar()" title="Format text" style="color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:-.5px;">Aa</button>
       <textarea id="ch-text" rows="1" placeholder="Type a message"></textarea>
       <button id="send-btn" onclick="sendMsg()" title="Send">
         <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -919,7 +1130,7 @@ function getDisappearMs(){return{off:0,'24h':86400000,'7d':604800000,'90d':77760
 
 /* ── Search ── */
 let searchResults=[],searchIdx=0;
-function toggleSearch(){const b=document.getElementById('search-bar');const was=b.classList.contains('show');b.classList.toggle('show');if(!was)document.getElementById('search-inp').focus();else{document.getElementById('search-inp').value='';clearSearchHL();searchResults=[];}}
+function toggleSearch(){const b=document.getElementById('search-bar');const was=b.classList.contains('show');b.classList.toggle('show');if(!was)document.getElementById('search-inp').focus();else{document.getElementById('search-inp').value='';clearSearchHL();document.getElementById('search-count').textContent='';searchResults=[];searchIdx=0;}}
 function doSearch(q){clearSearchHL();searchResults=[];searchIdx=0;if(!q.trim()){document.getElementById('search-count').textContent='';return;}const lq=q.toLowerCase();document.querySelectorAll('.bub-text').forEach(el=>{if(el.textContent.toLowerCase().includes(lq)){const row=el.closest('.mrow');if(row)searchResults.push(row);}});document.getElementById('search-count').textContent=searchResults.length?`1/${searchResults.length}`:'0';if(searchResults.length)highlightSearch(0);}
 function navSearch(dir){if(!searchResults.length)return;searchIdx=(searchIdx+dir+searchResults.length)%searchResults.length;document.getElementById('search-count').textContent=`${searchIdx+1}/${searchResults.length}`;highlightSearch(searchIdx);}
 function highlightSearch(i){clearSearchHL();const el=searchResults[i];if(!el)return;el.style.outline='2px solid rgba(124,58,237,.7)';el.scrollIntoView({block:'center',behavior:'smooth'});}
@@ -1033,7 +1244,15 @@ function openMediaViewer(url,type){const v=document.getElementById('media-viewer
 function closeMediaViewer(){document.getElementById('media-viewer').classList.remove('show');document.getElementById('mv-video').src='';}
 
 /* ── Close all overlays ── */
-function closeAllMenus(){document.getElementById('ctxmenu').classList.remove('show');document.getElementById('rpicker').classList.remove('show');document.getElementById('attach-menu').classList.remove('show');document.getElementById('emoji-picker').classList.remove('show');}
+function closeAllMenus(){
+  ['ctxmenu','rpicker','attach-menu','emoji-picker'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.remove('show');
+  });
+  // Also close overlays that use display style
+  ['poll-creator','settings-modal','media-viewer'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+}
 
 /* ── Disappear check ── */
 function checkDisappeared(){const now=Date.now();const before=messages.length;messages=messages.filter(m=>!m.disappearsAt||m.disappearsAt>now);if(messages.length!==before)renderMessages();}
@@ -1601,7 +1820,7 @@ function skipDbSetup() {
   document.getElementById('db-setup').style.display = 'none';
   useSupabase = false;
   try { messages = JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); } catch(e) { messages=[]; }
-  initBroadcastChannel();
+  initBC();
   renderMessages();
   scrollToBottom();
 }
@@ -1784,9 +2003,12 @@ function gTapPlant(tx,ty){
   });
 }
 
-function gLoop(){
+let _gLastT=0;
+function gLoop(ts){
   gAnimId=requestAnimationFrame(gLoop);
-  gT+=0.016;
+  const dt=_gLastT?Math.min((ts-_gLastT)/1000,.05):0.016;
+  _gLastT=ts;
+  gT+=dt;
   const ctx=gCtx;
   if(!gW||!gH||gW<10||gH<10)return;
 
@@ -2095,7 +2317,7 @@ function gPetalBurst(e){
   }
 }
 </script>  <!-- Attach menu -->
-  <div id="attach-menu" style="display:none">
+  <div id="attach-menu">
     <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px;">Attach</div>
     <div class="attach-grid">
       <div class="att-item" onclick="pickFile('image')"><div class="att-icon" style="background:rgba(251,146,60,.2);">🖼️</div><div class="att-label">Photo</div></div>
@@ -2109,7 +2331,7 @@ function gPetalBurst(e){
   </div>
 
   <!-- Emoji / Sticker / GIF picker -->
-  <div id="emoji-picker" style="display:none">
+  <div id="emoji-picker">
     <div class="pk-tabs">
       <div class="pk-tab on" data-tab="emoji" onclick="switchPickerTab('emoji')">😊 Emoji</div>
       <div class="pk-tab" data-tab="sticker" onclick="switchPickerTab('sticker')">🎭 Stickers</div>
@@ -2119,7 +2341,7 @@ function gPetalBurst(e){
   </div>
 
   <!-- Poll creator -->
-  <div id="poll-creator" style="display:none">
+  <div id="poll-creator">
     <div class="poll-sheet">
       <h3>📊 Create Poll</h3>
       <input class="poll-inp" id="poll-q" placeholder="Ask a question…" maxlength="200"/>
@@ -2138,7 +2360,7 @@ function gPetalBurst(e){
   </div>
 
   <!-- Settings modal -->
-  <div id="settings-modal" style="display:none">
+  <div id="settings-modal">
     <div class="ssheet">
       <div class="ssheet-title">
         <span>⚙️ Chat Settings</span>
@@ -2204,7 +2426,7 @@ function gPetalBurst(e){
   </div>
 
   <!-- Chat lock -->
-  <div id="chat-lock" style="display:none">
+  <div id="chat-lock">
     <div class="lock-icon">🔒</div>
     <div class="lock-title" id="lock-title">Chat Locked</div>
     <div class="lock-sub" id="lock-sub-msg">Enter your PIN to continue</div>
@@ -2229,7 +2451,7 @@ function gPetalBurst(e){
   </div>
 
   <!-- Media viewer -->
-  <div id="media-viewer" style="display:none">
+  <div id="media-viewer">
     <button id="mv-close" onclick="closeMediaViewer()">✕</button>
     <img id="mv-img" style="display:none"/>
     <video id="mv-video" controls style="display:none"></video>
@@ -2297,8 +2519,6 @@ function gPetalBurst(e){
     </div>
   </div>
 
-  <input type="file" id="file-input" style="display:none" onchange="handleFilePick(this)"/>
-  <input type="file" id="pic-input" accept="image/*" style="display:none" onchange="handleFilePick(this)"/>
 
   <!-- ══ BOTTOM NAV — fixed, above everything ══ -->
   <div id="bottom-nav">

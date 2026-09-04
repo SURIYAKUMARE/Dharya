@@ -939,7 +939,32 @@ async function sendSticker(emoji){const oid=`opt_${Date.now()}`;const opt={id:oi
 function toggleAttach(){const m=document.getElementById('attach-menu');const was=m.classList.contains('show');closeAllMenus();if(!was)m.classList.add('show');}
 let filePickType='image';
 function pickFile(type){filePickType=type;closeAllMenus();const inp=document.getElementById('file-input');inp.accept=type==='image'?'image/*':type==='video'?'video/*':type==='audio'?'audio/*':'*/*';inp.click();}
-async function handleFilePick(input){const file=input.files[0];if(!file)return;input.value='';const MAX=50*1024*1024;if(file.size>MAX){alert('File too large. Max 50 MB.');return;}const oid=`opt_${Date.now()}`;const localUrl=URL.createObjectURL(file);const mtype=filePickType==='image'?'image':filePickType==='video'?'video':filePickType==='audio'?'audio':'document';const opt={id:oid,sender:currentUser,content:null,mediaType:mtype,mediaUrl:localUrl,mediaName:file.name,mediaSize:file.size,time:Date.now(),status:'sending',replyTo:replyToMsg?.id||null,reactions:{},edited:false,deletedForAll:false,deletedFor:[],viewOnce:false};messages.push(opt);clearReply();renderMessages();scrollToBottom();let uploadedUrl=localUrl;if(useSupabase){try{const path=`${currentUser}/${Date.now()}_${file.name}`;const{error:upErr}=await sb.storage.from('chat-media').upload(path,file,{contentType:file.type});if(!upErr){const{data:ud}=sb.storage.from('chat-media').getPublicUrl(path);uploadedUrl=ud.publicUrl;}const{data,error}=await sb.from('messages').insert({chat_id:CHAT_ID,sender_id:currentUser,status:'sent',media_url:uploadedUrl,media_type:mtype,media_name:file.name,media_size:file.size,reply_to:replyToMsg?.id||null,reactions:{},deleted_for:[],deleted_for_all:false}).select().single();if(!error)messages=messages.map(m=>m.id===oid?dbToMsg(data):m);else messages=messages.map(m=>m.id===oid?{...m,status:'sent',mediaUrl:uploadedUrl}:m);}catch(e){messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);}}else{messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);saveLocal(true);}renderMessages();}
+async function handleFilePick(input){
+  if(picTargetKey){
+    const file=input.files[0]; if(!file)return;
+    input.value='';
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const dataUrl=e.target.result;
+      localStorage.setItem('profile_pic_'+picTargetKey,dataUrl);
+      const prev=document.getElementById('pic-'+picTargetKey+'-preview');
+      if(prev) prev.innerHTML=`<img style='width:100%;height:100%;object-fit:cover;border-radius:50%;' src='${dataUrl}'/>`;
+      const sub=document.getElementById('pic-'+picTargetKey+'-sub');
+      if(sub) sub.textContent='Photo set ✓';
+      if(currentUser){
+        const partnerKey=currentUser==='dharya'?'sadhana':'dharya';
+        if(picTargetKey===partnerKey){
+          const av=document.getElementById('ch-avatar');
+          av.innerHTML=`<img class='av-img' src='${dataUrl}'/>`;
+          av.style.background='transparent';
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    picTargetKey=null;
+    return;
+  }
+  const file=input.files[0];if(!file)return;input.value='';const MAX=50*1024*1024;if(file.size>MAX){alert('File too large. Max 50 MB.');return;}const oid=`opt_${Date.now()}`;const localUrl=URL.createObjectURL(file);const mtype=filePickType==='image'?'image':filePickType==='video'?'video':filePickType==='audio'?'audio':'document';const opt={id:oid,sender:currentUser,content:null,mediaType:mtype,mediaUrl:localUrl,mediaName:file.name,mediaSize:file.size,time:Date.now(),status:'sending',replyTo:replyToMsg?.id||null,reactions:{},edited:false,deletedForAll:false,deletedFor:[],viewOnce:false};messages.push(opt);clearReply();renderMessages();scrollToBottom();let uploadedUrl=localUrl;if(useSupabase){try{const path=`${currentUser}/${Date.now()}_${file.name}`;const{error:upErr}=await sb.storage.from('chat-media').upload(path,file,{contentType:file.type});if(!upErr){const{data:ud}=sb.storage.from('chat-media').getPublicUrl(path);uploadedUrl=ud.publicUrl;}const{data,error}=await sb.from('messages').insert({chat_id:CHAT_ID,sender_id:currentUser,status:'sent',media_url:uploadedUrl,media_type:mtype,media_name:file.name,media_size:file.size,reply_to:replyToMsg?.id||null,reactions:{},deleted_for:[],deleted_for_all:false}).select().single();if(!error)messages=messages.map(m=>m.id===oid?dbToMsg(data):m);else messages=messages.map(m=>m.id===oid?{...m,status:'sent',mediaUrl:uploadedUrl}:m);}catch(e){messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);}}else{messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);saveLocal(true);}renderMessages();}
 
 /* ── Voice recording ── */
 let mediaRec=null,recChunks=[],recTimer=null,recSecs=0;
@@ -968,7 +993,17 @@ async function pinMessage(id){const m=messages.find(x=>x.id===id);if(!m)return;m
 async function forwardMessage(id){const m=messages.find(x=>x.id===id);if(!m)return;const oid=`opt_${Date.now()}`;const fwd={...m,id:oid,forwarded:true,forwardCount:(m.forwardCount||0)+1,time:Date.now(),status:'sending',replyTo:null};messages.push(fwd);if(useSupabase){try{const{data}=await sb.from('messages').insert({chat_id:CHAT_ID,sender_id:currentUser,content:m.content,media_url:m.mediaUrl||m.media_url,media_type:m.mediaType||m.media_type,status:'sent',forwarded:true,forward_count:(m.forwardCount||0)+1,reactions:{},deleted_for:[],deleted_for_all:false}).select().single();if(data)messages=messages.map(x=>x.id===oid?dbToMsg(data):x);}catch(e){messages=messages.map(x=>x.id===oid?{...x,status:'sent'}:x);}}else{messages=messages.map(x=>x.id===oid?{...x,status:'sent'}:x);saveLocal(true);}renderMessages();scrollToBottom();document.getElementById('ctxmenu').classList.remove('show');}
 
 /* ── Settings ── */
-function openSettings(){closeAllMenus();['readReceipts','lastSeen'].forEach(k=>{const t=document.getElementById('tog-'+k);if(t){if(getSetting(k,true))t.classList.add('on');else t.classList.remove('on');}});const dm=getSetting('disappearMode','off');setDisappear(dm);const lh=getSetting('chatLockHash_'+currentUser,'');document.getElementById('lock-sub').textContent=lh?'Change or remove PIN':'Set a PIN to lock this chat';document.getElementById('settings-modal').classList.add('show');}
+function openSettings(){closeAllMenus();['readReceipts','lastSeen'].forEach(k=>{const t=document.getElementById('tog-'+k);if(t){if(getSetting(k,true))t.classList.add('on');else t.classList.remove('on');}});const dm=getSetting('disappearMode','off');setDisappear(dm);const lh=getSetting('chatLockHash_'+currentUser,'');document.getElementById('lock-sub').textContent=lh?'Change or remove PIN':'Set a PIN to lock this chat';  // Load profile picture previews
+  ['dharya','sadhana'].forEach(k=>{
+    const pic=localStorage.getItem('profile_pic_'+k);
+    const prev=document.getElementById('pic-'+k+'-preview');
+    const sub=document.getElementById('pic-'+k+'-sub');
+    if(pic&&prev){
+      prev.innerHTML=`<img style='width:100%;height:100%;object-fit:cover;border-radius:50%;' src='${pic}'/>`;
+      if(sub) sub.textContent='Photo set ✓';
+    }
+  });
+  document.getElementById('settings-modal').classList.add('show');}
 function closeSettings(){document.getElementById('settings-modal').classList.remove('show');}
 
 /* ── Chat lock ── */
@@ -1134,11 +1169,6 @@ function subscribeSB(){
     });
 }
 
-function dbToMsg(row){
-  return{id:row.id,sender:row.sender_id,content:row.content,time:new Date(row.created_at).getTime(),
-    status:row.status||'sent',replyTo:row.reply_to||null,reactions:row.reactions||{},
-    edited:!!row.edited_at,deletedForAll:row.deleted_for_all||false,deletedFor:row.deleted_for||[]};
-}
 
 function initBC(){
   try{
@@ -1576,55 +1606,6 @@ function changePic(key){
   inp.click();
 }
 // Override handleFilePick for profile pics
-const _origHandleFilePick=handleFilePick;
-function handleFilePick(input){
-  if(picTargetKey){
-    const file=input.files[0]; if(!file)return;
-    input.value='';
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const dataUrl=e.target.result;
-      localStorage.setItem('profile_pic_'+picTargetKey,dataUrl);
-      // Update preview
-      const prev=document.getElementById('pic-'+picTargetKey+'-preview');
-      if(prev) prev.innerHTML=`<img style="width:100%;height:100%;object-fit:cover;border-radius:50%;" src="${dataUrl}"/>`;
-      document.getElementById('pic-'+picTargetKey+'-sub').textContent='Photo set ✓';
-      // Update live avatar if this is the current partner
-      if(currentUser){
-        const partnerKey=currentUser==='dharya'?'sadhana':'dharya';
-        if(picTargetKey===partnerKey){
-          const av=document.getElementById('ch-avatar');
-          av.innerHTML=`<img class="av-img" src="${dataUrl}"/>`;
-          av.style.background='transparent';
-        }
-      }
-    };
-    reader.readAsDataURL(file);
-    picTargetKey=null;
-    return;
-  }
-  _origHandleFilePick(input);
-}
-
-function openSettings(){
-  closeAllMenus();
-  ['readReceipts','lastSeen'].forEach(k=>{const t=document.getElementById('tog-'+k);if(t){if(getSetting(k,true))t.classList.add('on');else t.classList.remove('on');}});
-  const dm=getSetting('disappearMode','off'); setDisappear(dm);
-  const lh=getSetting('chatLockHash_'+currentUser,'');
-  document.getElementById('lock-sub').textContent=lh?'Change or remove PIN':'Set a PIN to lock this chat';
-  // Load profile picture previews
-  ['dharya','sadhana'].forEach(k=>{
-    const pic=localStorage.getItem('profile_pic_'+k);
-    const prev=document.getElementById('pic-'+k+'-preview');
-    const sub=document.getElementById('pic-'+k+'-sub');
-    if(pic&&prev){
-      prev.innerHTML=`<img style="width:100%;height:100%;object-fit:cover;border-radius:50%;" src="${pic}"/>`;
-      if(sub) sub.textContent='Photo set ✓';
-    }
-  });
-  document.getElementById('settings-modal').classList.add('show');
-}
-
 /* GARDEN ENGINE */
 const G_STORE='dharya_garden_v3';
 const G_STREAK='dharya_streak_v2';

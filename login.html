@@ -175,7 +175,7 @@
 
     /* ════════════════════════
     /* ════ CHAT PAGE — DHARYA THEME ════ */
-    #page-chat{background:#0c0918;padding-bottom:calc(58px + env(safe-area-inset-bottom,0));}
+    #page-chat{background:#0c0918;}
     /* Chat needs bottom padding for nav bar */
     #page-chat #ch-input-bar{padding-bottom:8px;}
     #chat-wallpaper{position:fixed;inset:0;z-index:0;pointer-events:none;
@@ -324,7 +324,7 @@
     #bottom-nav.visible{display:flex;}
     /* Shrink chat + garden bottom padding to not be hidden behind nav */
     #page-chat.show{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px));}
-    #page-garden.show .g-bottom-wrap,#page-garden.show #g-bottom{padding-bottom:calc(58px + env(safe-area-inset-bottom,0))!important;}
+    /* garden padding handled internally */
     .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px 10px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.3);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-family:'Inter',sans-serif;transition:color .2s,background .16s;position:relative;}
     .nav-tab:hover{background:rgba(255,255,255,.03);}
     .nav-tab.active{color:#c4b5fd;}
@@ -482,59 +482,247 @@
     }
     .av-img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;}
   /* ════ GARDEN PAGE ════ */
-  #page-garden{position:fixed;inset:0;z-index:11;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .55s,transform .55s;transform:translateY(18px);overflow:hidden;background:#030712;padding-bottom:calc(58px + env(safe-area-inset-bottom,0));}
+  #page-garden{position:fixed;inset:0;z-index:11;opacity:0;pointer-events:none;
+    transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);
+    transform:translateY(20px);overflow:hidden;background:#020a1a;}
   #page-garden.show{opacity:1;pointer-events:all;transform:translateY(0);}
-  #g-sky{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;}
-  #g-ui{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;pointer-events:none;overflow:hidden;}
-  #g-topbar{display:flex;align-items:center;gap:10px;padding:max(14px,env(safe-area-inset-top,14px)) 16px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.55),rgba(0,0,0,.1),transparent);pointer-events:all;flex-shrink:0;}
-  #g-back{background:rgba(255,255,255,.13);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;font-size:1rem;flex-shrink:0;transition:background .16s,transform .14s;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-  #g-back:hover{background:rgba(255,255,255,.22);transform:scale(1.05);}
-  #g-title{flex:1;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.5rem;font-weight:800;color:#fff;text-shadow:0 2px 20px rgba(0,0,0,.9),0 0 40px rgba(244,114,182,.25);}
-  #g-time-badge{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;color:rgba(255,255,255,.85);backdrop-filter:blur(10px);letter-spacing:.04em;}
-  #g-streak-bar{display:flex;align-items:center;gap:12px;margin:0 14px 10px;padding:13px 16px;background:rgba(0,0,0,.45);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;border:1px solid rgba(255,255,255,.09);pointer-events:all;flex-shrink:0;box-shadow:0 6px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07);}
-  #g-streak-flame{font-size:1.5rem;flex-shrink:0;}
-  #g-streak-info{flex:1;}
-  #g-streak-num{font-size:1.2rem;font-weight:900;color:#fbbf24;text-shadow:0 0 12px rgba(251,191,36,.5);}
-  #g-streak-lbl{font-size:11px;color:rgba(255,255,255,.42);margin-top:1px;}
-  #g-streak-msg{font-size:12px;color:rgba(255,255,255,.6);text-align:right;max-width:120px;line-height:1.4;}
-  #g-date-pill{text-align:center;pointer-events:none;flex-shrink:0;margin-bottom:4px;}
-  #g-date-pill span{display:inline-block;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);border-radius:20px;padding:5px 18px;font-size:12px;color:rgba(255,255,255,.7);font-weight:500;letter-spacing:.05em;}
-  #g-spacer{flex:1;}
-  #g-bottom{background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.4) 60%,transparent 100%);padding:14px 16px max(22px,calc(env(safe-area-inset-bottom,22px)+10px));display:flex;flex-direction:column;gap:10px;pointer-events:all;flex-shrink:0;}
-  #g-flower-card{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:14px 18px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);display:flex;align-items:center;gap:14px;box-shadow:0 6px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06),inset 0 -1px 0 rgba(0,0,0,.3);}
-  #g-flower-emoji{font-size:2.5rem;flex-shrink:0;}
-  #g-flower-info{flex:1;min-width:0;}
-  #g-flower-name{font-size:15px;font-weight:700;color:#fff;letter-spacing:.01em;}
-  #g-flower-desc{font-size:12px;color:rgba(255,255,255,.5);margin-top:3px;line-height:1.4;}
-  #g-flower-status{padding:6px 13px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.06em;white-space:nowrap;flex-shrink:0;}
-  .gs-growing{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.4);color:#4ade80;}
-  .gs-bloomed{background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.4);color:#fbbf24;box-shadow:0 0 12px rgba(251,191,36,.2);}
-  .gs-waiting{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.45);}
-  #g-history{display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;}
+  #g-sky{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;
+    touch-action:none;}
+
+  /* ── UI LAYER (floats above canvas) ── */
+  #g-ui{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+    pointer-events:none;overflow:hidden;}
+
+  /* ── TOP BAR ── */
+  #g-topbar{
+    display:flex;align-items:center;gap:12px;
+    padding:max(16px,env(safe-area-inset-top,16px)) 16px 14px;
+    background:linear-gradient(to bottom,rgba(0,0,0,.6) 0%,rgba(0,0,0,.15) 70%,transparent 100%);
+    pointer-events:all;flex-shrink:0;
+  }
+  #g-back{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.1);
+    border-radius:50%;width:40px;height:40px;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;cursor:pointer;font-size:1.1rem;flex-shrink:0;
+    transition:background .16s,transform .14s;
+    box-shadow:0 2px 10px rgba(0,0,0,.35);
+    backdrop-filter:blur(10px);
+  }
+  #g-back:hover{background:rgba(255,255,255,.2);transform:scale(1.06);}
+  #g-back:active{transform:scale(.93);}
+  #g-title{
+    flex:1;
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:1.55rem;font-weight:800;color:#fff;
+    text-shadow:0 2px 16px rgba(0,0,0,.8),0 0 32px rgba(244,114,182,.3);
+    letter-spacing:.01em;
+  }
+  #g-time-badge{
+    background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);
+    border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;
+    color:rgba(255,255,255,.88);backdrop-filter:blur(12px);
+    letter-spacing:.04em;white-space:nowrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+
+  /* ── STREAK BAR ── */
+  #g-streak-bar{
+    display:flex;align-items:center;gap:12px;
+    margin:0 14px 0;padding:12px 16px;
+    background:rgba(0,0,0,.42);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-radius:18px;border:1px solid rgba(255,255,255,.09);
+    pointer-events:all;flex-shrink:0;
+    box-shadow:0 4px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  #g-streak-flame{font-size:1.6rem;flex-shrink:0;line-height:1;}
+  #g-streak-info{flex:1;min-width:0;}
+  #g-streak-count{display:flex;align-items:baseline;gap:5px;}
+  #g-streak-num{font-size:1.6rem;font-weight:900;color:#fbbf24;
+    text-shadow:0 0 16px rgba(251,191,36,.6);line-height:1;}
+  #g-streak-lbl{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;}
+  #g-streak-msg{font-size:12px;color:rgba(255,255,255,.55);
+    text-align:right;max-width:130px;line-height:1.4;flex-shrink:0;}
+
+  /* ── DATE PILL ── */
+  #g-date-pill{
+    text-align:center;pointer-events:none;
+    flex-shrink:0;padding:10px 0 6px;
+  }
+  #g-date-text{
+    display:inline-block;
+    background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);
+    backdrop-filter:blur(10px);border-radius:20px;
+    padding:5px 18px;font-size:12px;color:rgba(255,255,255,.72);
+    font-weight:600;letter-spacing:.05em;
+  }
+
+  /* ── SPACER (canvas shows through here) ── */
+  #g-spacer{flex:1;min-height:0;}
+
+  /* ── BOTTOM PANEL ── */
+  #g-bottom{
+    flex-shrink:0;pointer-events:all;
+    background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.6) 55%,transparent 100%);
+    padding:20px 16px calc(16px + env(safe-area-inset-bottom,0px));
+    display:flex;flex-direction:column;gap:12px;
+  }
+
+  /* History strip */
+  #g-history{
+    display:flex;align-items:center;gap:7px;
+    overflow-x:auto;scrollbar-width:none;
+    padding:2px 0;
+  }
   #g-history::-webkit-scrollbar{display:none;}
-  #g-hist-lbl{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap;flex-shrink:0;margin-right:4px;}
-  .g-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);}
-  .g-dot.has{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);}
-  .g-dot.today{border-color:#fbbf24;box-shadow:0 0 10px rgba(251,191,36,.45);animation:todaypulse 2s ease-in-out infinite alternate;}
-  @keyframes todaypulse{from{box-shadow:0 0 6px rgba(251,191,36,.3);}to{box-shadow:0 0 14px rgba(251,191,36,.6);}}
-  .g-dot.miss{opacity:.28;}
-  #g-plant-btn{width:100%;padding:17px;border:none;border-radius:20px;font-size:1rem;font-weight:700;font-family:'Inter',sans-serif;letter-spacing:.07em;cursor:pointer;background:linear-gradient(135deg,#f472b6 0%,#c026d3 40%,#7c3aed 100%);color:#fff;box-shadow:0 8px 28px rgba(192,38,211,.5),0 2px 8px rgba(0,0,0,.3),inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(0,0,0,.2);transition:transform .18s,box-shadow .22s,opacity .18s;position:relative;overflow:hidden;}
-  #g-plant-btn::before{content:'';position:absolute;top:0;left:-85%;width:52%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-18deg);animation:gpbshine 3.5s ease-in-out infinite;}
-  @keyframes gpbshine{0%{left:-85%}26%,100%{left:145%;}}
-  #g-plant-btn:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(192,38,211,.6),inset 0 1px 0 rgba(255,255,255,.2);}
+  #g-hist-lbl{
+    font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap;
+    flex-shrink:0;margin-right:2px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .g-dot{
+    width:32px;height:32px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;flex-shrink:0;
+    background:rgba(255,255,255,.06);
+    border:1.5px solid rgba(255,255,255,.09);
+    transition:transform .14s,border-color .2s;
+  }
+  .g-dot.has{
+    background:rgba(255,255,255,.08);
+    border-color:rgba(255,255,255,.18);
+  }
+  .g-dot.today{
+    border-color:#fbbf24;border-width:2px;
+    box-shadow:0 0 12px rgba(251,191,36,.5);
+    animation:todaypulse 2.2s ease-in-out infinite alternate;
+  }
+  @keyframes todaypulse{
+    from{box-shadow:0 0 6px rgba(251,191,36,.3);}
+    to{box-shadow:0 0 18px rgba(251,191,36,.7);}
+  }
+  .g-dot.miss{opacity:.22;}
+  @keyframes flamepulse{from{filter:drop-shadow(0 0 4px rgba(251,191,36,.3));}to{filter:drop-shadow(0 0 14px rgba(251,191,36,.8));transform:scale(1.1);}}
+
+
+  /* Flower info card */
+  #g-flower-card{
+    display:flex;align-items:center;gap:14px;
+    background:rgba(0,0,0,.52);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:20px;padding:13px 16px;
+    backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+    box-shadow:0 6px 28px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  #g-flower-emoji{font-size:2.6rem;flex-shrink:0;line-height:1;}
+  #g-flower-info{flex:1;min-width:0;}
+  #g-flower-name{font-size:15.5px;font-weight:700;color:#fff;letter-spacing:.01em;}
+  #g-flower-desc{font-size:12px;color:rgba(255,255,255,.48);margin-top:3px;line-height:1.4;}
+  #g-flower-status{
+    padding:7px 14px;border-radius:20px;
+    font-size:11px;font-weight:800;
+    letter-spacing:.07em;white-space:nowrap;flex-shrink:0;
+    text-transform:uppercase;
+  }
+  .gs-growing{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#4ade80;}
+  .gs-bloomed{
+    background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(251,146,60,.15));
+    border:1px solid rgba(251,191,36,.4);color:#fbbf24;
+    box-shadow:0 0 14px rgba(251,191,36,.22);
+  }
+  .gs-waiting{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+  /* Plant button */
+  #g-plant-btn{
+    width:100%;padding:17px;border:none;border-radius:18px;
+    font-size:1rem;font-weight:800;font-family:'Inter',sans-serif;
+    letter-spacing:.07em;cursor:pointer;
+    background:linear-gradient(135deg,#f472b6 0%,#c026d3 45%,#7c3aed 100%);
+    color:#fff;
+    box-shadow:0 8px 28px rgba(192,38,211,.5),
+      inset 0 1.5px 0 rgba(255,255,255,.22),
+      inset 0 -1px 0 rgba(0,0,0,.2);
+    transition:transform .18s,box-shadow .22s,opacity .18s;
+    position:relative;overflow:hidden;
+  }
+  #g-plant-btn::before{
+    content:'';position:absolute;top:0;left:-85%;
+    width:52%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+    transform:skewX(-18deg);
+    animation:gpbshine 3.5s ease-in-out infinite;
+  }
+  @keyframes gpbshine{0%{left:-85%}28%,100%{left:145%;}}
+  #g-plant-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 36px rgba(192,38,211,.65),
+      inset 0 1px 0 rgba(255,255,255,.22);
+  }
   #g-plant-btn:active{transform:scale(.97);}
-  #g-plant-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  #g-plant-btn:disabled{
+    background:rgba(255,255,255,.1);
+    color:rgba(255,255,255,.4);
+    box-shadow:none;opacity:1;cursor:default;transform:none;
+  }
   #g-plant-btn:disabled::before{display:none;}
-  #g-bloom-ov{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:rgba(0,0,0,.65);backdrop-filter:blur(16px);pointer-events:none;}
+
+  /* Bloom overlay */
+  #g-bloom-ov{
+    position:absolute;inset:0;z-index:20;
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:18px;
+    background:rgba(0,0,0,.7);backdrop-filter:blur(18px);
+    pointer-events:none;
+  }
   #g-bloom-ov.show{display:flex;pointer-events:all;}
-  #g-bloom-em{font-size:6rem;animation:gbspin 1.3s cubic-bezier(.175,.885,.32,1.275);}
-  @keyframes gbspin{from{transform:scale(0) rotate(-160deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
-  #g-bloom-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:800;font-size:2.4rem;color:#fff;text-align:center;text-shadow:0 0 40px rgba(251,191,36,.9),0 0 80px rgba(251,191,36,.3);}
-  #g-bloom-sub{font-size:.85rem;color:rgba(255,255,255,.6);text-align:center;letter-spacing:.12em;text-transform:uppercase;}
-  #g-bloom-close{margin-top:8px;padding:13px 32px;background:linear-gradient(135deg,rgba(124,58,237,.4),rgba(219,39,119,.4));border:1px solid rgba(255,255,255,.2);border-radius:24px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:background .16s,transform .14s;backdrop-filter:blur(8px);}
-  #g-bloom-close:hover{background:linear-gradient(135deg,rgba(124,58,237,.6),rgba(219,39,119,.6));transform:scale(1.03);}
-  .g-petal{position:fixed;pointer-events:none;z-index:60;animation:gpetalfall var(--pd,2s) var(--pdl,0s) linear forwards;font-size:var(--pfs,1.2rem);}
-  @keyframes gpetalfall{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1;}100%{transform:translate(var(--pdx,20px),110vh) rotate(720deg) scale(.25);opacity:0;}}
+  #g-bloom-em{
+    font-size:7rem;
+    animation:gbspin 1.4s cubic-bezier(.175,.885,.32,1.275) both;
+    filter:drop-shadow(0 0 24px rgba(251,191,36,.5));
+  }
+  @keyframes gbspin{
+    from{transform:scale(0) rotate(-180deg);opacity:0;}
+    to{transform:scale(1) rotate(0);opacity:1;}
+  }
+  #g-bloom-title{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-weight:800;font-size:2.5rem;color:#fff;text-align:center;
+    text-shadow:0 0 40px rgba(251,191,36,.9),0 0 80px rgba(251,191,36,.3);
+    animation:bloomtitlein .6s .4s cubic-bezier(.175,.885,.32,1.275) both;
+  }
+  @keyframes bloomtitlein{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+  #g-bloom-sub{
+    font-size:.88rem;color:rgba(255,255,255,.65);
+    text-align:center;letter-spacing:.16em;text-transform:uppercase;
+    animation:bloomtitlein .6s .6s both;
+  }
+  #g-bloom-close{
+    margin-top:6px;padding:14px 36px;
+    background:linear-gradient(135deg,rgba(124,58,237,.5),rgba(219,39,119,.45));
+    border:1px solid rgba(255,255,255,.22);border-radius:28px;
+    color:#fff;font-size:14px;font-weight:700;
+    cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .16s,transform .14s;
+    backdrop-filter:blur(8px);
+    animation:bloomtitlein .5s .8s both;
+    box-shadow:0 6px 20px rgba(124,58,237,.4);
+  }
+  #g-bloom-close:hover{
+    background:linear-gradient(135deg,rgba(124,58,237,.7),rgba(219,39,119,.65));
+    transform:scale(1.04);
+  }
+
+  /* Falling petals */
+  .g-petal{
+    position:fixed;pointer-events:none;z-index:60;
+    animation:gpetalfall var(--pd,2s) var(--pdl,0s) cubic-bezier(.4,0,.6,1) forwards;
+    font-size:var(--pfs,1.2rem);
+  }
+  @keyframes gpetalfall{
+    0%{transform:translate(0,0) rotate(0deg) scale(1.2);opacity:1;}
+    100%{transform:translate(var(--pdx,20px),110vh) rotate(760deg) scale(.15);opacity:0;}
+  }
 
 
 
@@ -2148,15 +2336,12 @@ function gInit(){
 
 function gResize(){
   if(!gCanvas)return;
-  // Use parent element dimensions or window
-  const pg=document.getElementById('page-garden');
-  gW=gCanvas.width=pg?pg.clientWidth:window.innerWidth;
-  gH=gCanvas.height=pg?pg.clientHeight:window.innerHeight;
-  gGroundY=Math.floor(gH*0.72); // ground line is 72% from top
-  // Re-position existing flowers to valid x range
-  gFlowers.forEach(f=>{
-    f.x=Math.max(60,Math.min(gW-60,f.x));
-  });
+  // Always use window dimensions so canvas fills entire screen
+  gW=gCanvas.width=window.innerWidth;
+  gH=gCanvas.height=window.innerHeight;
+  // Ground at 68% from top — keeps flowers clearly visible above bottom panel
+  gGroundY=Math.floor(gH*0.68);
+  gFlowers.forEach(f=>{f.x=Math.max(60,Math.min(gW-60,f.x));});
 }
 
 
@@ -2231,26 +2416,43 @@ function gLoop(ts){
   const sunProg=tod==='morning'?.2:tod==='afternoon'?.5:tod==='evening'?.78:.88;
   const sx=gW*sunProg, sy=gGroundY*.18;
   if(isNight){
-    // Moon with subtle glow
-    const mg=ctx.createRadialGradient(sx,sy,0,sx,sy,38);
-    mg.addColorStop(0,'rgba(240,245,255,.95)');mg.addColorStop(.5,'rgba(210,220,255,.7)');mg.addColorStop(1,'rgba(150,170,220,0)');
-    ctx.fillStyle=mg;ctx.beginPath();ctx.arc(sx,sy,38,0,Math.PI*2);ctx.fill();
+    // Moon — solid crescent with glow
+    // Glow halo
+    const mh=ctx.createRadialGradient(sx,sy,16,sx,sy,42);
+    mh.addColorStop(0,'rgba(200,210,255,.1)');mh.addColorStop(1,'rgba(160,180,220,0)');
+    ctx.fillStyle=mh;ctx.beginPath();ctx.arc(sx,sy,42,0,Math.PI*2);ctx.fill();
+    // Moon disc
+    const mgrad=ctx.createRadialGradient(sx-5,sy-5,0,sx,sy,18);
+    mgrad.addColorStop(0,'rgba(255,255,255,.98)');mgrad.addColorStop(.6,'rgba(220,228,255,.95)');mgrad.addColorStop(1,'rgba(180,195,240,.88)');
+    ctx.fillStyle=mgrad;ctx.beginPath();ctx.arc(sx,sy,18,0,Math.PI*2);ctx.fill();
+    // Shadow bite (crescent)
+    ctx.fillStyle='rgba(5,10,28,.92)';
+    ctx.beginPath();ctx.arc(sx+10,sy-4,15,0,Math.PI*2);ctx.fill();
     // Craters
-    ctx.fillStyle='rgba(180,190,220,.18)';
-    [[sx-10,sy-7,4],[sx+8,sy+9,3],[sx-4,sy+13,3.5]].forEach(([cx,cy,cr])=>{
+    ctx.fillStyle='rgba(160,175,210,.22)';
+    [[sx-5,sy+3,2.5],[sx-10,sy-4,1.8],[sx-3,sy+9,1.5]].forEach(([cx,cy,cr])=>{
       ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();
     });
   } else {
-    // Sun with rays
-    const sg=ctx.createRadialGradient(sx,sy,0,sx,sy,85);
-    sg.addColorStop(0,'rgba(255,245,100,.9)');sg.addColorStop(.35,'rgba(255,210,50,.5)');sg.addColorStop(.7,'rgba(255,160,30,.2)');sg.addColorStop(1,'rgba(255,120,0,0)');
-    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(sx,sy,85,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='rgba(255,252,120,.95)';ctx.beginPath();ctx.arc(sx,sy,26,0,Math.PI*2);ctx.fill();
+    // Sun — crisp disc + soft halo (not blurry blob)
+    // Soft halo
+    const sh=ctx.createRadialGradient(sx,sy,18,sx,sy,58);
+    sh.addColorStop(0,'rgba(255,240,80,.22)');sh.addColorStop(.5,'rgba(255,200,40,.08)');sh.addColorStop(1,'rgba(255,160,20,0)');
+    ctx.fillStyle=sh;ctx.beginPath();ctx.arc(sx,sy,58,0,Math.PI*2);ctx.fill();
+    // Crisp sun disc
+    const sg=ctx.createRadialGradient(sx-4,sy-4,0,sx,sy,20);
+    sg.addColorStop(0,'rgba(255,255,200,1)');sg.addColorStop(.5,'rgba(255,240,100,.97)');sg.addColorStop(1,'rgba(255,200,40,.88)');
+    ctx.fillStyle=sg;ctx.beginPath();ctx.arc(sx,sy,20,0,Math.PI*2);ctx.fill();
+    // Limb darkening ring
+    ctx.strokeStyle='rgba(255,160,20,.3)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(sx,sy,20,0,Math.PI*2);ctx.stroke();
     // Sun rays
-    ctx.strokeStyle='rgba(255,240,100,.3)';ctx.lineWidth=1.5;
+    ctx.strokeStyle='rgba(255,230,80,.28)';ctx.lineWidth=1.5;ctx.lineCap='round';
     for(let r=0;r<8;r++){
-      const ra=r*Math.PI/4+gT*.1;
-      ctx.beginPath();ctx.moveTo(sx+Math.cos(ra)*32,sy+Math.sin(ra)*32);ctx.lineTo(sx+Math.cos(ra)*52,sy+Math.sin(ra)*52);ctx.stroke();
+      const ra=r*Math.PI/4+gT*.08;
+      const d1=26+Math.sin(gT*1.2+r)*.8,d2=38+Math.sin(gT*.8+r)*1.2;
+      ctx.beginPath();ctx.moveTo(sx+Math.cos(ra)*d1,sy+Math.sin(ra)*d1);
+      ctx.lineTo(sx+Math.cos(ra)*d2,sy+Math.sin(ra)*d2);ctx.stroke();
     }
   }
 
@@ -2627,6 +2829,11 @@ function gUpdateUI(){
   const data=gLoadData();const streak=gLoadStreak();
   document.getElementById('g-date-text').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   document.getElementById('g-streak-num').textContent=streak.count;
+  // streak flame animation
+  const flame=document.getElementById('g-streak-flame');
+  if(flame){
+    flame.style.animation=streak.count>0?'flamepulse 1.4s ease-in-out infinite alternate':'none';
+  }
   const msgs=['Start your streak! 🌱','Keep going! 🔥','Amazing dedication! ⭐','Legendary gardener! 🌟'];
   document.getElementById('g-streak-msg').textContent=msgs[streak.count===0?0:streak.count<7?1:streak.count<30?2:3];
   document.getElementById('g-flower-emoji').textContent=flower.e;
@@ -2865,29 +3072,41 @@ function gPetalBurst(e){
   <!-- ══ GARDEN PAGE ══ -->
   <div id="page-garden">
     <canvas id="g-sky"></canvas>
+    <!-- Bloom celebration overlay -->
     <div id="g-bloom-ov">
       <div id="g-bloom-em">🌸</div>
       <div id="g-bloom-title">Bloomed!</div>
       <div id="g-bloom-sub">STREAK GROWS ✦</div>
-      <button id="g-bloom-close" onclick="gCloseBloom()">Continue →</button>
+      <button id="g-bloom-close" onclick="gCloseBloom()">Beautiful ✦</button>
     </div>
+    <!-- UI layer -->
     <div id="g-ui">
+      <!-- Top bar -->
       <div id="g-topbar">
-        <button id="g-back" onclick="closeGarden()">←</button>
+        <button id="g-back" onclick="closeGarden()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+        </button>
         <div id="g-title">🌸 Our Garden</div>
         <div id="g-time-badge">🌙 Night</div>
       </div>
+      <!-- Streak bar -->
       <div id="g-streak-bar">
         <div id="g-streak-flame">🔥</div>
         <div id="g-streak-info">
-          <div id="g-streak-num">0</div>
-          <div id="g-streak-lbl">day streak</div>
+          <div id="g-streak-count">
+            <div id="g-streak-num">0</div>
+            <div id="g-streak-lbl">day streak</div>
+          </div>
         </div>
-        <div id="g-streak-msg">Start your streak today!</div>
+        <div id="g-streak-msg">Start your streak! 🌱</div>
       </div>
+      <!-- Date -->
       <div id="g-date-pill"><span id="g-date-text">Today</span></div>
+      <!-- Canvas shows through here -->
       <div id="g-spacer"></div>
+      <!-- Bottom panel -->
       <div id="g-bottom">
+        <!-- Today's flower info -->
         <div id="g-flower-card">
           <div id="g-flower-emoji">🌱</div>
           <div id="g-flower-info">
@@ -2896,7 +3115,11 @@ function gPetalBurst(e){
           </div>
           <div id="g-flower-status" class="gs-waiting">Waiting</div>
         </div>
-        <div id="g-history"><span id="g-hist-lbl">Last 14 days</span></div>
+        <!-- 14-day history -->
+        <div id="g-history">
+          <span id="g-hist-lbl">Last 14 days</span>
+        </div>
+        <!-- Plant button -->
         <button id="g-plant-btn" onclick="gPlantToday()">🌱 Plant Today's Flower</button>
       </div>
     </div>

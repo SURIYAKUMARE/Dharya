@@ -746,14 +746,15 @@
 
   /* Plant button */
   #g-plant-btn{
-    width:100%;padding:17px;border:none;border-radius:18px;
-    font-size:1rem;font-weight:800;font-family:'Inter',sans-serif;
-    letter-spacing:.07em;cursor:pointer;
+    width:100%;padding:18px;border:none;border-radius:20px;
+    font-size:1.05rem;font-weight:800;font-family:'Inter',sans-serif;
+    letter-spacing:.08em;cursor:pointer;
     background:linear-gradient(135deg,#f472b6 0%,#c026d3 45%,#7c3aed 100%);
     color:#fff;
-    box-shadow:0 8px 28px rgba(192,38,211,.5),
-      inset 0 1.5px 0 rgba(255,255,255,.22),
-      inset 0 -1px 0 rgba(0,0,0,.2);
+    box-shadow:0 10px 32px rgba(192,38,211,.55),
+      0 4px 12px rgba(0,0,0,.3),
+      inset 0 2px 0 rgba(255,255,255,.25),
+      inset 0 -2px 0 rgba(0,0,0,.2);
     transition:transform .18s,box-shadow .22s,opacity .18s;
     position:relative;overflow:hidden;
   }
@@ -2037,7 +2038,35 @@ function closeAllMenus(){
 function checkDisappeared(){const now=Date.now();const before=messages.length;messages=messages.filter(m=>!m.disappearsAt||m.disappearsAt>now);if(messages.length!==before)renderMessages();}
 
 /* ── Extended dbToMsg ── */
-function dbToMsg(row){return{id:row.id,sender:row.sender_id,content:row.content,time:new Date(row.created_at).getTime(),status:row.status||'sent',replyTo:row.reply_to||null,reactions:row.reactions||{},edited:!!row.edited_at,deletedForAll:row.deleted_for_all||false,deletedFor:row.deleted_for||[],mediaUrl:row.media_url||null,mediaType:row.media_type||null,mediaName:row.media_name||null,mediaSize:row.media_size||null,mediaDuration:row.media_duration||null,mediaWaveform:row.media_waveform||null,viewOnce:row.view_once||false,viewedBy:row.viewed_by||[],forwarded:row.forwarded||false,forwardCount:row.forward_count||0,starred:(row.starred_by||[]).includes(currentUser),pinned:row.pinned||false,disappearsAt:row.disappears_at?new Date(row.disappears_at).getTime():null,poll:row.poll_question?{question:row.poll_question,options:row.poll_options||[],type:row.poll_type||'single'}:null};}
+function dbToMsg(row){
+  if(!row)return null;
+  return{
+    id:row.id,
+    sender:row.sender_id||row.sender||'unknown',
+    content:row.content||null,
+    time:row.created_at?new Date(row.created_at).getTime():Date.now(),
+    status:row.status||'sent',
+    replyTo:row.reply_to||null,
+    reactions:row.reactions||{},
+    edited:!!(row.edited_at),
+    deletedForAll:row.deleted_for_all||false,
+    deletedFor:row.deleted_for||[],
+    mediaUrl:row.media_url||null,
+    mediaType:row.media_type||null,
+    mediaName:row.media_name||null,
+    mediaSize:row.media_size||null,
+    mediaDuration:row.media_duration||null,
+    mediaWaveform:row.media_waveform||null,
+    viewOnce:row.view_once||false,
+    viewedBy:row.viewed_by||[],
+    forwarded:row.forwarded||false,
+    forwardCount:row.forward_count||0,
+    starred:(row.starred_by||[]).includes(currentUser||''),
+    pinned:row.pinned||false,
+    disappearsAt:row.disappears_at?new Date(row.disappears_at).getTime():null,
+    poll:row.poll_question?{question:row.poll_question,options:row.poll_options||[],type:row.poll_type||'single'}:null,
+  };
+}
 
 /* ══ STATUS ICON SVGs ══ */
 function statusSVG(status){
@@ -2099,11 +2128,14 @@ async function initChat(key){
     }catch(err){
       console.warn('SB unavailable',err);
       useSupabase=false;
+      console.warn('Using local storage mode');
     }
   }
   if(!useSupabase){
     try{messages=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]');}catch(e){messages=[];}
     initBC();
+    // Show local mode indicator
+    document.getElementById('ch-status').textContent='local mode (offline)';
   }
 
   markPresence(true);updateStatus();
@@ -2126,6 +2158,7 @@ async function initChat(key){
   setInterval(checkDisappeared,10000);
   checkChatLockOnEnter();
   disappearMode=getSetting('disappearMode','off');
+  autoResize(txt); // init send/mic button state
   const savedPin=getSetting('pinnedMsgId_'+key,null);
   if(savedPin){const pm=messages.find(m=>m.id===savedPin);if(pm)setPinned(savedPin);}
   // Update garden streak badge in nav
@@ -2134,18 +2167,26 @@ async function initChat(key){
 }
 
 function autoResize(el){
+  if(!el){
+    el=document.getElementById('ch-text');
+    if(!el)return;
+  }
   el.style.height='auto';
   el.style.height=Math.min(el.scrollHeight,130)+'px';
-  // show send when text present, mic when empty
-  const hasText = el.value.trim().length > 0;
-  document.getElementById('send-btn').style.display = hasText ? 'flex' : 'none';
-  document.getElementById('mic-btn').style.display  = hasText ? 'none' : 'flex';
+  const hasText=el.value.trim().length>0;
+  const sendBtn=document.getElementById('send-btn');
+  const micBtn=document.getElementById('mic-btn');
+  if(sendBtn)sendBtn.style.display=hasText?'flex':'none';
+  if(micBtn)micBtn.style.display=hasText?'none':'flex';
 }
 
 async function loadFromSB(){
-  const{data,error}=await sb.from('messages').select('*').eq('chat_id',CHAT_ID).order('created_at',{ascending:true});
+  const{data,error}=await sb.from('messages').select('*').eq('chat_id',CHAT_ID).order('created_at',{ascending:true}).limit(200);
   if(error)throw error;
-  messages=(data||[]).filter(r=>!(r.deleted_for||[]).includes(currentUser)).map(dbToMsg);
+  messages=(data||[]).filter(r=>{
+    const df=r.deleted_for||r.deleted_for_arr||[];
+    return !df.includes(currentUser);
+  }).map(dbToMsg);
 }
 
 function subscribeSB(){
@@ -2167,7 +2208,7 @@ function subscribeSB(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'messages',filter:`chat_id=eq.${CHAT_ID}`},(payload)=>{
       const row=payload.new;
       if((row.deleted_for||[]).includes(currentUser))messages=messages.filter(m=>m.id!==row.id);
-      else{const msg=dbToMsg(row);messages=messages.map(m=>m.id===row.id?msg:m);if(!messages.find(m=>m.id===row.id))messages.push(msg);}
+      else{const msg=dbToMsg(row);const exists=messages.find(m=>m.id===row.id);if(exists)messages=messages.map(m=>m.id===row.id?msg:m);else messages.push(msg);}
       renderMessages();
     })
     .subscribe(s=>{
@@ -2390,16 +2431,34 @@ async function sendMsg(){
 
   if(useSupabase){
     try{
-      const{data,error}=await sb.from('messages').insert({
-        chat_id:CHAT_ID,sender_id:currentUser,content:text,status:'sent',
-        reply_to:replyToMsg?.id||null,reactions:{},deleted_for:[],deleted_for_all:false,
-        disappears_at:getDisappearMs()?new Date(Date.now()+getDisappearMs()).toISOString():null,
-      }).select().single();
+      // Try with all fields first
+      let insertPayload={
+        chat_id:CHAT_ID,
+        sender_id:currentUser,
+        content:text,
+        status:'sent',
+        reply_to:replyToMsg?.id||null,
+        reactions:{},
+        deleted_for:[],
+        deleted_for_all:false,
+      };
+      if(getDisappearMs())insertPayload.disappears_at=new Date(Date.now()+getDisappearMs()).toISOString();
+      let {data,error}=await sb.from('messages').insert(insertPayload).select().single();
+      if(error&&(error.code==='42703'||error.message?.includes('column'))){
+        // Column doesn't exist — try minimal payload
+        const minimal={chat_id:CHAT_ID,sender_id:currentUser,content:text};
+        const r2=await sb.from('messages').insert(minimal).select().single();
+        data=r2.data;error=r2.error;
+      }
       if(error)throw error;
-      messages=messages.map(m=>m.id===oid?dbToMsg(data):m);renderMessages();
+      if(data)messages=messages.map(m=>m.id===oid?dbToMsg(data):m);
+      else messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);
+      renderMessages();
     }catch(err){
       console.error('Send failed:',err);
-      messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);renderMessages();
+      // Keep message visible as local even if DB failed
+      messages=messages.map(m=>m.id===oid?{...m,status:'sent'}:m);
+      saveLocal(true);renderMessages();
     }
   }else{
     messages=messages.map(m=>m.id===oid?{...m,status:isPartnerOnline()?'delivered':'sent'}:m);
@@ -2729,22 +2788,29 @@ function gInit(){
   gCtx=gCanvas.getContext('2d');
   gResize();
   const resizeObs=new ResizeObserver(()=>gResize());
-  resizeObs.observe(gCanvas.parentElement||document.body);
-  const data=gLoadData();const today=gTodayKey();
-  if(data[today]){
-    const d=new Date();
-    const dy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
-    gFlowers=[{
-      e:data[today].e,
-      x:80+Math.random()*(Math.max(gW-160,100)),
-      planted:data[today].planted-8000,
-      growth:1,
-      style:data[today].style!==undefined?data[today].style:dy%8
-    }];
-  }
+  resizeObs.observe(document.body);
   gUpdateUI();
   if(gAnimId)cancelAnimationFrame(gAnimId);
+  _gLastT=0;
   gLoop();
+  // Place flower AFTER first resize gives valid gW
+  requestAnimationFrame(()=>{
+    gResize();
+    const data=gLoadData();const today=gTodayKey();
+    if(data[today]){
+      const d=new Date();
+      const dy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+      const cx=gW>0?gW*.5+(Math.random()-.5)*80:200;
+      gFlowers=[{
+        e:data[today].e,
+        x:Math.max(80,Math.min(gW-80,cx)),
+        planted:data[today].planted-12000,
+        growth:1,
+        style:data[today].style!==undefined?data[today].style:dy%8
+      }];
+    }
+    gUpdateUI();
+  });
 }
 
 function gResize(){
@@ -3004,7 +3070,7 @@ function gLoop(ts){
     if(f.growth===undefined) f.growth=Math.min(1,age/6);
     if(f.growth<1) f.growth=Math.min(1,f.growth+0.004);
     const g=f.growth;
-    const stemH=Math.floor(80*g);
+    const stemH=Math.floor(110*g);  // taller stem
     const sway=Math.sin(gT*.55+idx*1.3)*5*g;
     const baseX=Math.max(52,Math.min(gW-52,f.x));
     const baseY=gGroundY;
@@ -3043,10 +3109,11 @@ function gLoop(ts){
     }
 
     /* ── FLOWER HEAD ── */
-    if(g>.2){
-      const hg=Math.min(1,(g-.2)/.8);
+    if(g>.15){
+      const hg=Math.min(1,(g-.15)/.85);
       ctx.save();ctx.translate(sway,-stemH);ctx.globalAlpha=hg;
-      ctx.rotate(Math.sin(gT*.48+idx*.9)*0.08*g);
+      ctx.scale(1.5,1.5);  /* bigger flower head */
+      ctx.rotate(Math.sin(gT*.48+idx*.9)*0.07*g);
 
       if(style===0){
         /* ── ROSE ── rich layered petals */
@@ -3347,7 +3414,12 @@ function gPlantToday(){
   streak.last=today;gSaveStreak(streak);
   updateNavStreak();
   // Plant in center
-  gFlowers=[{e:flower.e,x:gW*.5+(Math.random()-.5)*60,planted:Date.now(),growth:0,style:styleIdx}];
+  // Use window width as fallback if canvas not yet sized
+  const plantW=gW>100?gW:window.innerWidth;
+  const plantX=plantW*.5+(Math.random()-.5)*80;
+  gFlowers=[{e:flower.e,x:Math.max(80,Math.min(plantW-80,plantX)),planted:Date.now(),growth:0,style:styleIdx}];
+  // Ensure canvas is sized
+  gResize();
   gPetalBurst(flower.e);
   setTimeout(()=>{
     const ov=document.getElementById('g-bloom-ov');

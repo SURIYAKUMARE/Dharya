@@ -181,20 +181,27 @@
     @media(max-width:420px){.card{width:95vw;padding:34px 20px 26px;}}
 
     /* ════ CHAT PAGE ════ */
-    #page-chat{background:#080614;}
+    #page-chat{
+      background:#080614;
+      display:flex;flex-direction:column;
+    }
     /* Chat needs bottom padding for nav bar */
     #page-chat #ch-input-bar{padding-bottom:8px;}
-    #chat-wallpaper{position:fixed;inset:0;z-index:0;pointer-events:none;}
+    #chat-wallpaper{
+      position:fixed;inset:0;z-index:0;pointer-events:none;
+    }
     /* ── Header ── */
     #ch-header{
       display:flex;align-items:center;gap:10px;
-      padding:0 14px 0 10px;height:64px;
+      padding:0 14px 0 10px;
+      height:64px;
       padding-top:env(safe-area-inset-top,0);
       background:linear-gradient(180deg,rgba(8,4,18,.97) 0%,rgba(10,6,22,.95) 100%);
       flex-shrink:0;position:relative;z-index:10;
       box-shadow:0 1px 0 rgba(167,139,250,.08),0 6px 28px rgba(0,0,0,.7);
       backdrop-filter:blur(32px) saturate(1.6);
       -webkit-backdrop-filter:blur(32px) saturate(1.6);
+      order:0;
     }
     #ch-header::before{
       content:'';position:absolute;inset:0;
@@ -205,6 +212,68 @@
       content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
       background:linear-gradient(90deg,transparent 0%,rgba(167,139,250,.22) 25%,rgba(244,114,182,.2) 75%,transparent 100%);
     }
+    /* Messages area — flex:1 fills remaining space */
+    #ch-msgs{
+      flex:1;overflow-y:auto;padding:8px 8px 6px;
+      display:flex;flex-direction:column;
+      position:relative;z-index:1;
+      scrollbar-width:thin;scrollbar-color:rgba(167,139,250,.12) transparent;
+      order:1;
+    }
+    #ch-msgs::-webkit-scrollbar{width:3px;}
+    #ch-msgs::-webkit-scrollbar-thumb{background:rgba(167,139,250,.15);border-radius:2px;}
+    /* Typing sits just above input */
+    #ch-typing{display:none;padding:4px 10px 0;order:2;flex-shrink:0;}
+    #ch-typing.show{display:flex;}
+    /* Reply / format / rec — stack above input, shown when needed */
+    #rep-bar{
+      display:none;align-items:center;gap:10px;padding:10px 16px;
+      background:rgba(12,6,26,.96);
+      border-top:1px solid rgba(167,139,250,.08);
+      border-left:3px solid #a78bfa;
+      flex-shrink:0;order:3;
+    }
+    #rep-bar.show{display:flex;}
+    #fmt-bar{
+      display:none;flex-shrink:0;align-items:center;gap:2px;padding:6px 14px;
+      background:rgba(8,4,18,.96);
+      border-top:1px solid rgba(255,255,255,.06);
+      order:4;
+    }
+    #fmt-bar.show{display:flex;}
+    #rec-bar{
+      display:none;align-items:center;gap:12px;padding:10px 16px;
+      background:rgba(8,4,18,.96);
+      border-top:1px solid rgba(255,255,255,.05);
+      flex-shrink:0;order:5;
+    }
+    #rec-bar.show{display:flex;}
+    /* Input bar — always at bottom */
+    #ch-input-bar{
+      display:flex;align-items:flex-end;gap:8px;padding:10px 12px;
+      padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
+      background:linear-gradient(180deg,rgba(6,3,14,.94) 0%,rgba(8,4,18,.98) 100%);
+      flex-shrink:0;position:relative;z-index:1;
+      border-top:1px solid rgba(167,139,250,.08);
+      box-shadow:0 -6px 32px rgba(0,0,0,.5),0 -1px 0 rgba(167,139,250,.06);
+      backdrop-filter:blur(20px);
+      order:6;
+    }
+    /* Search + pin bars below header */
+    #pin-bar{
+      display:none;align-items:center;gap:10px;padding:7px 14px;
+      background:rgba(124,58,237,.1);
+      border-bottom:1px solid rgba(124,58,237,.2);
+      cursor:pointer;flex-shrink:0;order:0;
+    }
+    #pin-bar.show{display:flex;}
+    #search-bar{
+      display:none;align-items:center;gap:8px;padding:8px 12px;
+      background:rgba(8,5,18,.96);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      flex-shrink:0;order:0;
+    }
+    #search-bar.show{display:flex;}
     #ch-back{background:none;border:none;cursor:pointer;width:40px;height:40px;border-radius:12px;
       display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.65);
       transition:background .16s,color .16s,transform .14s;flex-shrink:0;}
@@ -256,8 +325,7 @@
       white-space:nowrap;flex-shrink:0;
     }
     /* Typing */
-    #ch-typing{display:none;padding:4px 10px 0;}
-    #ch-typing.show{display:flex;}
+
     #ch-typing-wrap{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.07);
       border-radius:18px;border-bottom-left-radius:4px;padding:10px 14px;
       border:1px solid rgba(255,255,255,.08);}
@@ -360,7 +428,7 @@
     }
     #bottom-nav.visible{display:flex;}
     /* Shrink chat + garden bottom padding to not be hidden behind nav */
-    #page-chat.show{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px));}
+    #page-chat.show{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px));} /* nav bar clearance */
     /* garden padding handled internally */
     .nav-tab{
       flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -406,47 +474,28 @@
       display:none;align-items:center;justify-content:center;padding:0 4px;}
     #jump-badge.show{display:flex;}
     /* Reply bar */
-    #rep-bar{
-      display:none;align-items:center;gap:10px;padding:10px 16px;
-      background:rgba(12,6,26,.96);
-      border-top:1px solid rgba(167,139,250,.08);
-      border-left:3px solid;
-      border-image:linear-gradient(to bottom,#a78bfa,#f472b6) 1;
-      flex-shrink:0;
-    }
+
     #rep-bar.show{display:flex;}
     #rep-text{flex:1;font-size:13px;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     #rep-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);
       font-size:20px;padding:0;line-height:1;transition:color .14s;}
     #rep-close:hover{color:#fff;}
     /* Format bar */
-    #fmt-bar{display:none;flex-shrink:0;align-items:center;gap:2px;padding:4px 12px;
-      background:rgba(15,9,28,.95);border-top:1px solid rgba(255,255,255,.05);}
-    #fmt-bar.show{display:flex;}
+
     .fmt-btn{background:none;border:none;cursor:pointer;width:30px;height:26px;border-radius:7px;
       color:rgba(255,255,255,.42);font-size:13px;display:flex;align-items:center;justify-content:center;
       transition:background .12s,color .12s;}
     .fmt-btn:hover,.fmt-btn.on{background:rgba(124,58,237,.2);color:#a78bfa;}
     .fmt-sep{width:1px;height:18px;background:rgba(255,255,255,.1);margin:0 3px;}
     /* Recording bar */
-    #rec-bar{display:none;align-items:center;gap:12px;padding:10px 16px;
-      background:rgba(15,9,28,.95);border-top:1px solid rgba(255,255,255,.05);flex-shrink:0;}
-    #rec-bar.show{display:flex;}
+
     .rec-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;
       animation:recpulse 1s ease-in-out infinite alternate;}
     @keyframes recpulse{from{opacity:.4;transform:scale(1);}to{opacity:1;transform:scale(1.3);}}
     #rec-time{font-size:14px;color:#f87171;font-weight:600;flex:1;}
     #rec-cancel{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.45);font-size:13px;}
     /* Input bar */
-    #ch-input-bar{
-      display:flex;align-items:flex-end;gap:8px;padding:10px 12px;
-      padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-      background:linear-gradient(180deg,rgba(6,3,14,.94) 0%,rgba(8,4,18,.98) 100%);
-      flex-shrink:0;position:relative;z-index:1;
-      border-top:1px solid rgba(167,139,250,.08);
-      box-shadow:0 -6px 32px rgba(0,0,0,.5),0 -1px 0 rgba(167,139,250,.06);
-      backdrop-filter:blur(20px);
-    }
+
     #ch-text{
       flex:1;background:rgba(255,255,255,.07);
       border:1.5px solid rgba(255,255,255,.09);
@@ -491,9 +540,7 @@
     #ch-empty .em-icon{font-size:3.5rem;}
     #ch-empty p{font-size:14px;color:rgba(255,255,255,.7);text-align:center;line-height:1.7;}
     /* Search */
-    #search-bar{display:none;align-items:center;gap:8px;padding:7px 12px;
-      background:rgba(15,9,28,.95);border-bottom:1px solid rgba(255,255,255,.05);flex-shrink:0;}
-    #search-bar.show{display:flex;}
+
     #search-inp{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
       border-radius:20px;padding:8px 14px;color:#f0ebff;font-size:14px;outline:none;font-family:'Inter',sans-serif;}
     #search-inp::placeholder{color:rgba(255,255,255,.28);}
@@ -503,10 +550,7 @@
       transition:background .12s;font-size:14px;}
     .snav-btn:hover{background:rgba(255,255,255,.07);color:#fff;}
     /* Pin bar */
-    #pin-bar{display:none;align-items:center;gap:10px;padding:7px 14px;
-      background:rgba(124,58,237,.1);border-bottom:1px solid rgba(124,58,237,.2);
-      cursor:pointer;flex-shrink:0;}
-    #pin-bar.show{display:flex;}
+
     #pin-txt{font-size:13px;color:rgba(255,255,255,.6);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     /* Voice note */
     .voice-note{display:flex;align-items:center;gap:9px;min-width:190px;max-width:250px;}
@@ -1103,12 +1147,7 @@
     #mic-btn:hover{background:rgba(255,255,255,.1)!important;color:rgba(255,255,255,.85)!important;}
     #mic-btn:active{background:rgba(219,39,119,.25)!important;transform:scale(.94)!important;}
 
-    /* Pin bar */
-    #pin-bar{
-      background:rgba(251,191,36,.08);
-      border-bottom:1px solid rgba(251,191,36,.14);
-      backdrop-filter:blur(12px);
-    }
+
 
     /* Context menu items */
     .ctx-item{border-radius:10px;font-size:14px;}
@@ -1119,16 +1158,11 @@
     #rpicker button{font-size:23px;border-radius:12px;}
 
     /* Reply bar */
-    #rep-bar{background:rgba(10,6,20,.96);border-left:3px solid #a78bfa;}
+
     #rep-bar .rep-pname{color:#c4b5fd;}
 
     /* Search bar */
-    #search-bar{
-      background:rgba(8,5,18,.96);
-      border-bottom:1px solid rgba(255,255,255,.06);
-      padding:8px 12px;
-      gap:8px;
-    }
+
     #search-inp{
       background:rgba(255,255,255,.07);
       border:1.5px solid rgba(255,255,255,.08);
@@ -1149,7 +1183,7 @@
     .wv-bar.played{background:#a78bfa;}
 
     /* Format bar */
-    #fmt-bar{background:rgba(8,5,18,.96);border-top:1px solid rgba(255,255,255,.06);padding:6px 14px;gap:3px;}
+
 
     /* Attach menu title */
     #attach-menu > div:first-child{
@@ -1270,7 +1304,7 @@
     .ctx-item:hover{background:rgba(124,58,237,.18)!important;}
 
     /* Reply bar — accent color */
-    #rep-bar{border-left:3px solid #a78bfa!important;background:rgba(8,4,18,.97)!important;}
+
     .rep-pname{color:#c4b5fd!important;}
 
     /* Emoji picker — rounded */
@@ -1577,28 +1611,8 @@
   <!-- ══ CHAT PAGE ══ -->
   <div id="page-chat">
     <div id="chat-wallpaper"></div>
-    <!-- Reply bar -->
-    <div id="rep-bar">
-      <span id="rep-text"></span>
-      <button id="rep-close" onclick="clearReply()">✕</button>
-    </div>
-    <!-- Formatting bar -->
-    <div id="fmt-bar">
-      <button class="fmt-btn" id="fmt-b" onclick="applyFmt('bold')" title="Bold"><b>B</b></button>
-      <button class="fmt-btn" id="fmt-i" onclick="applyFmt('italic')" title="Italic"><i>I</i></button>
-      <button class="fmt-btn" id="fmt-s" onclick="applyFmt('strike')" title="Strikethrough"><s>S</s></button>
-      <button class="fmt-btn" id="fmt-m" onclick="applyFmt('mono')" title="Monospace" style="font-family:monospace">⌥</button>
-      <div class="fmt-sep"></div>
-      <button class="fmt-btn" onclick="insertMention()" title="Mention">@</button>
-      <button class="fmt-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
-    </div>
-    <!-- Recording bar -->
-    <div id="rec-bar">
-      <div class="rec-dot"></div>
-      <span id="rec-time">0:00</span>
-      <button id="rec-cancel" onclick="cancelRecording()">Cancel</button>
-    </div>
-    <!-- Header -->
+
+    <!-- ── HEADER (always on top) ── -->
     <div id="ch-header">
       <div id="dharya-logo" aria-hidden="true"><div id="dharya-logo-mark">D</div><div id="dharya-logo-text">Dharya</div></div>
       <button id="ch-back" onclick="goBack()">
@@ -1612,14 +1626,20 @@
         </div>
         <p id="ch-status">connecting…</p>
       </div>
-      <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">🔍</button>
-      <button class="hdr-btn" id="btn-settings" onclick="openSettings()" title="Settings">⋮</button>
+      <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="hdr-btn" id="btn-settings" onclick="openSettings()" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
     </div>
-    <!-- Pin bar -->
+
+    <!-- ── PIN BAR (below header) ── -->
     <div id="pin-bar" onclick="scrollToPinned()">
       <span>📌</span><span id="pin-txt"></span><span style="font-size:11px;color:rgba(255,255,255,.35)">tap to view</span>
     </div>
-    <!-- Search bar -->
+
+    <!-- ── SEARCH BAR ── -->
     <div id="search-bar">
       <input id="search-inp" placeholder="Search messages…" oninput="doSearch(this.value)"/>
       <div id="search-nav">
@@ -1629,36 +1649,64 @@
       </div>
       <button class="snav-btn" onclick="toggleSearch()">✕</button>
     </div>
-    <!-- Messages -->
+
+    <!-- ── MESSAGES (scrollable, takes all remaining space) ── -->
     <div id="ch-msgs">
       <div id="ch-empty">
         <div class="em-icon">✦</div>
         <p>Your private space.<br><strong>Just the two of you.</strong><br><span style="font-size:.85em;">Say something beautiful.</span></p>
       </div>
     </div>
-    <!-- Typing -->
+
+    <!-- ── TYPING INDICATOR ── -->
     <div id="ch-typing">
       <div id="ch-typing-wrap">
         <div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>
       </div>
     </div>
-    <!-- Input -->
+
+    <!-- ── REPLY BAR (above input) ── -->
+    <div id="rep-bar">
+      <span id="rep-text"></span>
+      <button id="rep-close" onclick="clearReply()">✕</button>
+    </div>
+
+    <!-- ── FORMAT BAR ── -->
+    <div id="fmt-bar">
+      <button class="fmt-btn" id="fmt-b" onclick="applyFmt('bold')" title="Bold"><b>B</b></button>
+      <button class="fmt-btn" id="fmt-i" onclick="applyFmt('italic')" title="Italic"><i>I</i></button>
+      <button class="fmt-btn" id="fmt-s" onclick="applyFmt('strike')" title="Strikethrough"><s>S</s></button>
+      <button class="fmt-btn" id="fmt-m" onclick="applyFmt('mono')" title="Monospace" style="font-family:monospace">⌥</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" onclick="insertMention()" title="Mention">@</button>
+      <button class="fmt-btn" onclick="toggleEmojiPicker()" title="Emoji">😊</button>
+    </div>
+
+    <!-- ── RECORDING BAR ── -->
+    <div id="rec-bar">
+      <div class="rec-dot"></div>
+      <span id="rec-time">0:00</span>
+      <button id="rec-cancel" onclick="cancelRecording()">Cancel</button>
+    </div>
+
+    <!-- ── INPUT BAR ── -->
     <div id="ch-input-bar" style="position:relative;">
       <div id="attach-btn-wrap">
         <button class="ibar-btn" onclick="toggleAttach()" title="Attach" style="color:rgba(233,237,239,.55);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
       </div>
-      <button class="ibar-btn fmt-toggle-btn" onclick="toggleFmtBar()" title="Format text" style="color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:-.5px;">Aa</button>
-      <textarea id="ch-text" rows="1" placeholder="Type a message"></textarea>
+      <button class="ibar-btn fmt-toggle-btn" onclick="toggleFmtBar()" title="Format" style="color:rgba(255,255,255,.4);font-size:13px;font-weight:700;">Aa</button>
+      <textarea id="ch-text" rows="1" placeholder="Type a message…"></textarea>
       <button id="send-btn" onclick="sendMsg()" title="Send">
-        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="currentColor" stroke="none"/></svg>
       </button>
       <button id="mic-btn" onmousedown="startVoiceRecord()" onmouseup="stopVoiceRecord()" ontouchstart="startVoiceRecord(event)" ontouchend="stopVoiceRecord()" title="Hold to record">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
       </button>
     </div>
-    <!-- Jump to bottom -->
+
+    <!-- ── JUMP TO BOTTOM ── -->
     <button id="jump-btn" onclick="scrollToBottom()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
       <span id="jump-badge"></span>

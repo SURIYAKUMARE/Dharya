@@ -37,8 +37,8 @@
     #page-chat.show{opacity:1;pointer-events:all;transform:translateY(0);}
 
     /* ── SHARED BACKGROUND ── */
-    body.th-g{background:#020c05;}
-    body.th-p{background:#0c0212;}
+    body.th-g{background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(0,200,83,.06) 0%,#020c05 55%);}
+    body.th-p{background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(192,38,211,.08) 0%,#0c0212 55%);}
     #cv{position:fixed;inset:0;z-index:0;pointer-events:none;}
     .orb{
       position:fixed;border-radius:50%;pointer-events:none;z-index:0;filter:blur(100px);
@@ -68,13 +68,19 @@
     .scene{position:relative;z-index:10;perspective:1400px;}
     .card{
       width:380px;
-      background:linear-gradient(158deg,rgba(255,255,255,.085) 0%,rgba(255,255,255,.028) 50%,rgba(0,0,0,.32) 100%);
+      background:linear-gradient(158deg,rgba(255,255,255,.09) 0%,rgba(255,255,255,.03) 50%,rgba(0,0,0,.35) 100%);
       border:1px solid rgba(255,255,255,.1);border-radius:38px;
-      backdrop-filter:blur(40px) saturate(1.5);-webkit-backdrop-filter:blur(40px) saturate(1.5);
-      padding:42px 36px 30px;display:flex;flex-direction:column;align-items:center;
+      backdrop-filter:blur(48px) saturate(1.6);-webkit-backdrop-filter:blur(48px) saturate(1.6);
+      padding:44px 38px 32px;display:flex;flex-direction:column;align-items:center;
       position:relative;overflow:hidden;
-      box-shadow:0 0 0 1px rgba(255,255,255,.042),0 55px 130px rgba(0,0,0,.92),0 0 100px var(--cg,rgba(150,40,255,.1)),inset 0 1.5px 0 rgba(255,255,255,.12),inset 0 -1px 0 rgba(0,0,0,.55);
-      animation:cardfloat 7s ease-in-out infinite;transition:box-shadow 1.3s,border-color 1.3s;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.05),
+        0 60px 140px rgba(0,0,0,.95),
+        0 0 120px var(--cg,rgba(150,40,255,.12)),
+        inset 0 2px 0 rgba(255,255,255,.13),
+        inset 0 -1px 0 rgba(0,0,0,.6);
+      animation:cardfloat 7s ease-in-out infinite;
+      transition:box-shadow 1.4s,border-color 1.4s;
     }
     body.th-g .card{--cg:rgba(0,230,118,.1);border-color:rgba(0,230,118,.15);}
     body.th-p .card{--cg:rgba(255,50,180,.12);border-color:rgba(255,50,180,.17);}
@@ -178,12 +184,7 @@
     #page-chat{background:#080614;}
     /* Chat needs bottom padding for nav bar */
     #page-chat #ch-input-bar{padding-bottom:8px;}
-    #chat-wallpaper{position:fixed;inset:0;z-index:0;pointer-events:none;
-      background-color:#0c0918;
-      background-image:
-        radial-gradient(ellipse 60% 40% at 20% 20%,rgba(124,58,237,.12) 0%,transparent 60%),
-        radial-gradient(ellipse 50% 35% at 80% 80%,rgba(219,39,119,.1) 0%,transparent 55%),
-        radial-gradient(ellipse 40% 30% at 50% 50%,rgba(79,70,229,.06) 0%,transparent 50%);}
+    #chat-wallpaper{position:fixed;inset:0;z-index:0;pointer-events:none;}
     /* ── Header ── */
     #ch-header{
       display:flex;align-items:center;gap:10px;
@@ -389,20 +390,30 @@
     #nav-streak-badge{position:absolute;top:5px;right:calc(50% - 20px);background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:9px;font-weight:800;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(0,0,0,.4);}
     #nav-streak-badge.show{display:flex;}
 
-    #jump-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);right:14px;
-      width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
-      background:rgba(124,58,237,.85);color:#fff;display:none;align-items:center;justify-content:center;
-      box-shadow:0 4px 16px rgba(124,58,237,.5);z-index:5;transition:transform .16s;
-      backdrop-filter:blur(8px);}
-    #jump-btn.show{display:flex;}#jump-btn:hover{transform:scale(1.08);}
+    #jump-btn{
+      position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);right:14px;
+      width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+      background:linear-gradient(135deg,#7c3aed,#a855f7);
+      color:#fff;display:none;align-items:center;justify-content:center;
+      box-shadow:0 4px 20px rgba(124,58,237,.6),0 0 0 1px rgba(167,139,250,.2);
+      z-index:5;transition:transform .18s,box-shadow .18s;
+      backdrop-filter:blur(12px);
+    }
+    #jump-btn.show{display:flex;}
+    #jump-btn:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(124,58,237,.75);}
     #jump-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;
       background:#ec4899;color:#fff;font-size:10px;font-weight:700;
       display:none;align-items:center;justify-content:center;padding:0 4px;}
     #jump-badge.show{display:flex;}
     /* Reply bar */
-    #rep-bar{display:none;align-items:center;gap:10px;padding:9px 16px;
-      background:rgba(15,9,28,.95);border-top:1px solid rgba(255,255,255,.05);
-      border-left:4px solid #7c3aed;flex-shrink:0;}
+    #rep-bar{
+      display:none;align-items:center;gap:10px;padding:10px 16px;
+      background:rgba(12,6,26,.96);
+      border-top:1px solid rgba(167,139,250,.08);
+      border-left:3px solid;
+      border-image:linear-gradient(to bottom,#a78bfa,#f472b6) 1;
+      flex-shrink:0;
+    }
     #rep-bar.show{display:flex;}
     #rep-text{flex:1;font-size:13px;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     #rep-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);
@@ -1282,11 +1293,201 @@
       #ch-header{height:58px;}
       #ch-text{min-height:46px;font-size:15px;}
     }
+
+    /* ══ EXTRA POLISH ══ */
+
+    /* Login page — glowing orbs behind card */
+    .orb-1{
+      position:fixed;width:500px;height:500px;border-radius:50%;
+      background:radial-gradient(circle,rgba(124,58,237,.14) 0%,transparent 70%);
+      top:-100px;right:-120px;pointer-events:none;z-index:0;
+      animation:orb1move 14s ease-in-out infinite alternate;
+    }
+    .orb-2{
+      position:fixed;width:400px;height:400px;border-radius:50%;
+      background:radial-gradient(circle,rgba(219,39,119,.11) 0%,transparent 70%);
+      bottom:-80px;left:-80px;pointer-events:none;z-index:0;
+      animation:orb2move 18s ease-in-out infinite alternate;
+    }
+    .orb-3{
+      position:fixed;width:300px;height:300px;border-radius:50%;
+      background:radial-gradient(circle,rgba(244,114,182,.08) 0%,transparent 70%);
+      top:40%;left:60%;pointer-events:none;z-index:0;
+      animation:orb3move 22s ease-in-out infinite alternate;
+    }
+    @keyframes orb1move{
+      0%{transform:translate(0,0) scale(1);}
+      50%{transform:translate(-40px,30px) scale(1.1);}
+      100%{transform:translate(-70px,-20px) scale(.92);}
+    }
+    @keyframes orb2move{
+      0%{transform:translate(0,0) scale(1);}
+      60%{transform:translate(50px,-40px) scale(1.08);}
+      100%{transform:translate(30px,60px) scale(.95);}
+    }
+    @keyframes orb3move{
+      0%{transform:translate(0,0);}
+      100%{transform:translate(-80px,-60px);}
+    }
+    body.th-g .orb-1{background:radial-gradient(circle,rgba(0,230,118,.1) 0%,transparent 70%);}
+    body.th-g .orb-2{background:radial-gradient(circle,rgba(0,191,165,.08) 0%,transparent 70%);}
+    body.th-p .orb-1{background:radial-gradient(circle,rgba(124,58,237,.14) 0%,transparent 70%);}
+    body.th-p .orb-2{background:radial-gradient(circle,rgba(219,39,119,.11) 0%,transparent 70%);}
+
+    /* Login card — glass noise texture overlay */
+    .card::before{
+      background:radial-gradient(circle,var(--ig,rgba(160,50,255,.14)) 0%,transparent 65%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    /* Chat header — online pulse dot */
+    #online-dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#4ade80;
+      box-shadow:0 0 6px rgba(74,222,128,.8);
+      display:none;flex-shrink:0;
+      animation:onlinepulse 2s ease-in-out infinite alternate;
+    }
+    #online-dot.show{display:block;}
+    @keyframes onlinepulse{
+      from{box-shadow:0 0 4px rgba(74,222,128,.5);transform:scale(1);}
+      to{box-shadow:0 0 12px rgba(74,222,128,.9);transform:scale(1.15);}
+    }
+
+    /* Dharya logo in header — center positioned */
+    #dharya-logo{
+      position:absolute;
+      left:50%;transform:translateX(-50%);
+      display:flex;align-items:center;gap:6px;
+      pointer-events:none;z-index:1;
+    }
+    #dharya-logo-mark{
+      width:24px;height:24px;border-radius:7px;
+      background:linear-gradient(135deg,#9333ea,#db2777);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:15px;font-weight:900;color:#fff;
+      box-shadow:0 2px 8px rgba(124,58,237,.5),inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    #dharya-logo-text{
+      font-family:'Cormorant Garamond',serif;font-style:italic;
+      font-size:1.1rem;font-weight:800;letter-spacing:.02em;
+      background:linear-gradient(90deg,#c4b5fd 0%,#f0abfc 50%,#c4b5fd 100%);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+
+    /* Chat empty state — more beautiful */
+    #ch-empty{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px;padding:40px 32px;pointer-events:none;
+      animation:fadeInUp .6s cubic-bezier(.175,.885,.32,1.275) both;
+    }
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:none;}}
+    .em-icon{
+      width:72px;height:72px;border-radius:22px;
+      background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(219,39,119,.15));
+      border:1px solid rgba(167,139,250,.15);
+      display:flex;align-items:center;justify-content:center;
+      font-size:2.2rem;
+      box-shadow:0 8px 32px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.04),
+        inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    #ch-empty p{
+      font-size:.9rem;line-height:1.7;font-style:italic;
+      color:rgba(255,255,255,.25);text-align:center;max-width:240px;
+    }
+    #ch-empty p strong{color:rgba(255,255,255,.4);font-style:normal;font-weight:600;}
+
+    /* Improved bubble hover */
+    .mine .bub:hover{
+      box-shadow:0 6px 28px rgba(109,40,217,.55),0 2px 8px rgba(0,0,0,.4),
+        inset 0 1px 0 rgba(255,255,255,.16)!important;
+    }
+    .theirs .bub:hover{
+      background:rgba(255,255,255,.1)!important;
+      border-color:rgba(255,255,255,.14)!important;
+    }
+
+    /* Input bar — Aa button */
+    .fmt-toggle-btn{
+      width:36px!important;height:36px!important;
+      background:rgba(255,255,255,.06)!important;
+      border:1px solid rgba(255,255,255,.08)!important;
+      border-radius:11px!important;
+      font-size:12px!important;font-weight:700!important;
+      color:rgba(255,255,255,.4)!important;
+      flex-shrink:0;
+    }
+    .fmt-toggle-btn:hover{
+      background:rgba(124,58,237,.18)!important;
+      color:#a78bfa!important;
+    }
+
+    /* Garden — date pill glow on today */
+    #g-date-text{
+      position:relative;
+    }
+    #g-date-text::after{
+      content:'';position:absolute;inset:-4px;border-radius:24px;
+      background:radial-gradient(ellipse,rgba(167,139,250,.08),transparent 70%);
+      pointer-events:none;
+    }
+
+    /* Garden top bar title — shimmer */
+    #g-title{
+      background:linear-gradient(90deg,#fff 0%,#f0abfc 30%,#c4b5fd 50%,#f0abfc 70%,#fff 100%);
+      background-size:200% auto;
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+      animation:gtitleshine 5s linear infinite;
+    }
+    @keyframes gtitleshine{
+      0%{background-position:200% center;}
+      100%{background-position:-200% center;}
+    }
+
+    /* Back button in garden — bigger, more visible */
+    #g-back svg{stroke-width:2.5;}
+    #g-back:hover svg{stroke:#fff;}
+
+    /* Streak bar — gradient border */
+    #g-streak-bar{
+      background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)) padding-box,
+        linear-gradient(135deg,rgba(251,191,36,.2),rgba(234,88,12,.12),rgba(251,191,36,.2)) border-box!important;
+      border:1px solid transparent!important;
+    }
+
+    /* Plant button — animated gradient */
+    #g-plant-btn{
+      background:linear-gradient(135deg,#f472b6 0%,#e879f9 25%,#a855f7 50%,#7c3aed 75%,#6d28d9 100%)!important;
+      background-size:200% auto!important;
+      animation:plantbtnshift 4s linear infinite!important;
+    }
+    #g-plant-btn:not(:disabled):hover{
+      background-position:right center!important;
+    }
+    @keyframes plantbtnshift{
+      0%{background-position:0% center;}
+      100%{background-position:200% center;}
+    }
+
+    /* Bloom overlay — starfield effect */
+    #g-bloom-ov::before{
+      content:'✦ ✧ ✦ ✧ ✦ ✧ ✦ ✧ ✦';
+      position:absolute;top:20%;left:50%;transform:translateX(-50%);
+      font-size:14px;color:rgba(251,191,36,.3);letter-spacing:18px;
+      pointer-events:none;animation:starstw 3s ease-in-out infinite alternate;
+      white-space:nowrap;
+    }
+    @keyframes starstw{from{opacity:.2;transform:translateX(-50%) scale(.95);}to{opacity:.7;transform:translateX(-50%) scale(1.05);}}
   </style>
 </head>
 <body>
 
-  <canvas id="cv"></canvas>
+  <div class="orb-1" aria-hidden="true"></div>
+<div class="orb-2" aria-hidden="true"></div>
+<div class="orb-3" aria-hidden="true"></div>
+<canvas id="cv"></canvas>
   <div class="orb" id="ob1" style="width:460px;height:460px;top:-100px;left:-150px;background:#24064a;opacity:.16;--of:22s;--od:0s;--ox:44px;--oy:-32px;"></div>
   <div class="orb" id="ob2" style="width:360px;height:360px;bottom:-70px;right:-110px;background:#0e0436;opacity:.13;--of:18s;--od:5s;--ox:-36px;--oy:26px;"></div>
   <div class="orb" id="ob3" style="width:200px;height:200px;top:46%;left:68%;background:#180432;opacity:.09;--of:12s;--od:9s;--ox:28px;--oy:40px;"></div>
@@ -1404,7 +1605,10 @@
       </button>
       <div id="ch-avatar"></div>
       <div id="ch-info">
-        <p id="ch-name">…</p>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <p id="ch-name">…</p>
+          <div id="online-dot"></div>
+        </div>
         <p id="ch-status">connecting…</p>
       </div>
       <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">🔍</button>
@@ -1428,7 +1632,7 @@
     <div id="ch-msgs">
       <div id="ch-empty">
         <div class="em-icon">✦</div>
-        <p>Your private space.<br><span style="opacity:.6;font-size:.88em;">Say something beautiful.</span></p>
+        <p>Your private space.<br><strong>Just the two of you.</strong><br><span style="font-size:.85em;">Say something beautiful.</span></p>
       </div>
     </div>
     <!-- Typing -->
@@ -2003,6 +2207,8 @@ function updateStatus(){
   const el=document.getElementById('ch-status');
   el.textContent=on?'online':'last seen recently';
   if(on)el.classList.add('online');else el.classList.remove('online');
+  const dot=document.getElementById('online-dot');
+  if(dot){if(on)dot.classList.add('show');else dot.classList.remove('show');}
 }
 
 function saveLocal(broadcast=true){localStorage.setItem(CHAT_KEY,JSON.stringify(messages));if(broadcast&&bc)bc.postMessage({type:'msg'});}

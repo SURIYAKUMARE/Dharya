@@ -60,3 +60,40 @@ export interface InviteCode {
   created_at: string;
   expires_at: string;
 }
+
+// ─── Notification system ──────────────────────────────────────────────────────
+
+export type NotificationType =
+  | 'message'
+  | 'assessment'
+  | 'study_material'
+  | 'assignment'
+  | 'announcement'
+  | 'general';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  sender?: string;
+  timestamp: string;       // ISO string
+  read: boolean;
+  actionLabel?: string;
+  actionRoute?: string;    // expo-router href e.g. '/chat'
+}
+
+// ─── Chat Contacts & Roles ───────────────────────────────────────────────────
+
+export type UserRole = 'Student' | 'Teacher' | 'Admin' | 'Other Student';
+
+export interface ChatContact {
+  id: string;
+  name: string;
+  role: UserRole;
+  avatarText: string;
+  status: string;
+  online: boolean;
+  avatarColor: string;
+}
+

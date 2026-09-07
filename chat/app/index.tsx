@@ -10,7 +10,8 @@ export default function Index() {
     // Small delay so the store hydrates before redirecting
     const t = setTimeout(() => {
       if (session === null) {
-        router.replace('/auth');
+        // Flow: Engineering Study Books → Subject Topics → Next → Login → Chat
+        router.replace('/study');
       } else if (session && !chatId) {
         router.replace('/pair');
       } else if (session && chatId) {

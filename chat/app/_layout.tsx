@@ -35,9 +35,12 @@ export default function RootLayout() {
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="study" />
+        <Stack.Screen name="login" />
         <Stack.Screen name="auth" />
         <Stack.Screen name="pair" />
         <Stack.Screen name="chat" />
+        <Stack.Screen name="notifications" />
         <Stack.Screen name="media-gallery" />
       </Stack>
     </GestureHandlerRootView>

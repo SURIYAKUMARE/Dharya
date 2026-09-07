@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -22,12 +22,37 @@
 
 
     /* ── PAGE TRANSITIONS ── */
+    #page-study{
+      position:fixed;inset:0;z-index:10;
+      display:flex;flex-direction:column;
+      overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+      opacity:1;pointer-events:all;
+      transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+      transform:translateY(0);
+      background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(99,102,241,.14) 0%,#07020f 65%);
+    }
+    #page-study.hide{opacity:0;transform:scale(.95) translateY(-10px);pointer-events:none;display:none;}
+
+    #page-topics{
+      position:fixed;inset:0;z-index:10;
+      display:none;flex-direction:column;
+      overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+      opacity:0;pointer-events:none;
+      transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+      transform:translateY(14px);
+      background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(168,85,247,.14) 0%,#07020f 65%);
+    }
+    #page-topics.show{display:flex;opacity:1;pointer-events:all;transform:translateY(0);}
+
     #page-login{
       position:fixed;inset:0;z-index:10;
-      display:flex;align-items:center;justify-content:center;
+      display:none;align-items:center;justify-content:center;
       transition:opacity .5s cubic-bezier(.4,0,.2,1),transform .5s cubic-bezier(.4,0,.2,1);
+      opacity:0;pointer-events:none;transform:scale(.95) translateY(10px);
     }
-    #page-login.hide{opacity:0;transform:scale(.94) translateY(-12px);pointer-events:none;}
+    #page-login.show{display:flex;opacity:1;pointer-events:all;transform:scale(1) translateY(0);}
+    #page-login.hide{opacity:0;transform:scale(.94) translateY(-12px);pointer-events:none;display:none;}
+
     #page-chat{
       position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;
       opacity:0;pointer-events:none;
@@ -35,6 +60,290 @@
       transform:translateY(16px);
     }
     #page-chat.show{opacity:1;pointer-events:all;transform:translateY(0);}
+
+    /* ── STUDY LIBRARY & TOPICS STYLES ── */
+    .study-navbar{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 28px;
+      border-bottom:1px solid rgba(255,255,255,.07);
+      background:rgba(15,10,26,.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      position:sticky;top:0;z-index:20;
+    }
+    .study-brand{display:flex;align-items:center;gap:12px;}
+    .study-logo-icon{
+      width:38px;height:38px;border-radius:10px;
+      background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.3);
+      display:flex;align-items:center;justify-content:center;font-size:20px;
+    }
+    .study-brand-title{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:.2px;}
+    .study-pro-tag{font-size:10px;font-weight:800;letter-spacing:1px;background:rgba(192,38,211,.25);color:#ff4d8b;padding:2px 7px;border-radius:6px;}
+    .study-brand-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;}
+    .study-skip-btn{
+      padding:8px 16px;border-radius:10px;background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.4);
+      color:#ff8cf8;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;
+      transition:all .2s;
+    }
+    .study-skip-btn:hover{background:rgba(192,38,211,.3);transform:translateY(-1px);color:#fff;}
+    
+    .study-container{max-width:1200px;margin:0 auto;padding:28px 24px 60px;width:100%;box-sizing:border-box;}
+    .study-hero{text-align:center;margin-bottom:34px;display:flex;flex-direction:column;align-items:center;}
+    .study-hero-badge{
+      font-size:11px;font-weight:800;letter-spacing:1.4px;color:#c026d3;
+      background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.3);
+      padding:4px 14px;border-radius:20px;margin-bottom:12px;
+    }
+    .study-hero-title{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;font-style:italic;color:#fff;letter-spacing:.3px;line-height:1.15;}
+    .study-hero-sub{font-size:15px;color:rgba(255,255,255,.65);margin-top:8px;max-width:580px;line-height:1.5;}
+    
+    .study-search-wrap{
+      margin-top:22px;width:100%;max-width:540px;position:relative;
+    }
+    .study-search-inp{
+      width:100%;padding:12px 16px 12px 42px;border-radius:14px;
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+      color:#fff;font-size:14px;font-family:'Inter',sans-serif;outline:none;
+      transition:border-color .2s,box-shadow .2s;box-sizing:border-box;
+    }
+    .study-search-inp:focus{border-color:#c026d3;box-shadow:0 0 16px rgba(192,38,211,.25);}
+    .study-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:rgba(255,255,255,.4);pointer-events:none;}
+
+    .study-section-header{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;
+    }
+    .study-section-title{font-size:11px;font-weight:800;letter-spacing:1.2px;color:rgba(255,255,255,.45);text-transform:uppercase;}
+    .study-section-hint{font-size:12px;color:rgba(255,255,255,.4);}
+
+    /* ── Book Grid ── */
+    .study-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;
+    }
+    .book-card{
+      display:flex;border-radius:20px;overflow:hidden;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+      cursor:pointer;position:relative;
+    }
+    .book-card:hover{
+      transform:translateY(-5px);
+      border-color:var(--b-color,#c026d3);
+      box-shadow:0 14px 40px rgba(0,0,0,.6),0 0 24px var(--b-glow,rgba(192,38,211,.2));
+    }
+    .book-spine{
+      width:26px;position:relative;background:var(--b-color,#6366f1);
+      display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+    }
+    .book-spine::before{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:rgba(255,255,255,.3);
+    }
+    .book-spine::after{
+      content:'';position:absolute;right:0;top:0;bottom:0;width:5px;background:rgba(0,0,0,.25);
+    }
+    .book-spine-txt{
+      color:#fff;font-size:8px;font-weight:900;letter-spacing:2px;
+      transform:rotate(-90deg);white-space:nowrap;opacity:.85;text-transform:uppercase;
+    }
+    .book-body{padding:18px;flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:12px;}
+    .book-top-row{display:flex;align-items:center;justify-content:space-between;}
+    .book-icon-badge{
+      width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:18px;background:var(--b-bg,rgba(99,102,241,.15));
+      color:var(--b-color,#6366f1);border:1px solid var(--b-color,#6366f1);
+    }
+    .book-chapters{
+      font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;
+      background:var(--b-bg,rgba(99,102,241,.15));color:var(--b-color,#6366f1);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .book-title{font-size:16px;font-weight:800;color:#fff;line-height:1.3;margin-top:2px;}
+    .book-desc{font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.45;}
+    .book-footer{
+      display:flex;align-items:center;justify-content:space-between;
+      border-top:1px solid rgba(255,255,255,.06);padding-top:10px;margin-top:2px;
+    }
+    .book-topics-hint{font-size:11px;color:rgba(255,255,255,.4);font-weight:600;}
+    .book-open-btn{
+      padding:7px 14px;border-radius:10px;background:var(--b-color,#6366f1);
+      color:#fff;font-size:12px;font-weight:700;cursor:pointer;border:none;
+      display:flex;align-items:center;gap:5px;transition:opacity .15s;
+    }
+    .book-open-btn:hover{opacity:.9;}
+
+    /* ── Subject Topics Page ── */
+    .topics-topbar{
+      display:flex;align-items:center;justify-content:space-between;padding:14px 24px;
+      border-bottom:1px solid rgba(255,255,255,.07);background:rgba(15,10,26,.8);
+      backdrop-filter:blur(24px);position:sticky;top:0;z-index:20;
+    }
+    .topics-back-btn{
+      background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;
+      font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;
+    }
+    .topics-back-btn:hover{color:#fff;}
+    .topics-top-title{font-size:16px;font-weight:800;color:#fff;}
+    .topics-quick-next{
+      padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;
+      background:rgba(192,38,211,.2);border:1px solid rgba(192,38,211,.4);
+      color:#ff8cf8;cursor:pointer;
+    }
+
+    .topics-hero-card{
+      border-radius:20px;padding:24px;margin-bottom:20px;border:1px solid rgba(255,255,255,.1);
+      display:flex;align-items:center;gap:20px;background:rgba(255,255,255,.03);
+    }
+    .topics-hero-icon{
+      width:68px;height:68px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+      font-size:28px;font-weight:900;flex-shrink:0;
+    }
+    .topics-hero-info{flex:1;}
+    .topics-hero-badge{
+      display:inline-block;padding:3px 8px;border-radius:6px;font-size:9px;font-weight:900;
+      color:#fff;letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;
+    }
+    .topics-hero-title{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.2px;}
+    .topics-hero-desc{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;line-height:1.45;}
+    .topics-diff-chips{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+    .diff-chip{padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700;}
+
+    /* Progress */
+    .study-progress-card{
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;padding:16px;margin-bottom:24px;
+    }
+    .progress-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .progress-label{font-size:13px;font-weight:700;color:#fff;}
+    .progress-percent{font-size:13px;font-weight:800;}
+    .progress-bar-bg{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;}
+    .progress-bar-fill{height:100%;border-radius:4px;transition:width .4s ease;}
+
+    /* Topic items */
+    .topics-list{display:flex;flex-direction:column;gap:12px;}
+    .topic-item-card{
+      display:flex;align-items:center;gap:16px;padding:16px;border-radius:16px;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+      transition:border-color .2s,transform .15s;
+    }
+    .topic-item-card:hover{border-color:rgba(255,255,255,.2);transform:translateY(-1px);}
+    .topic-num{
+      width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:15px;flex-shrink:0;
+    }
+    .topic-info{flex:1;}
+    .topic-header-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+    .topic-name{font-size:15px;font-weight:700;color:#fff;}
+    .topic-desc{font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.4;}
+    .topic-study-btn{
+      padding:8px 18px;border-radius:10px;font-size:12px;font-weight:700;
+      color:#fff;border:none;cursor:pointer;transition:opacity .15s;
+    }
+    .topic-study-btn:hover{opacity:.9;}
+
+    /* Large Next button */
+    .topics-cta-card{
+      margin-top:32px;padding:28px;border-radius:20px;text-align:center;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);
+      display:flex;flex-direction:column;align-items:center;gap:14px;
+    }
+    .topics-cta-title{font-size:18px;font-weight:800;color:#fff;}
+    .topics-cta-desc{font-size:13px;color:rgba(255,255,255,.6);max-width:500px;line-height:1.45;}
+    .topics-next-big-btn{
+      padding:15px 36px;border-radius:14px;font-size:15px;font-weight:800;
+      color:#fff;background:linear-gradient(135deg,#c026d3,#7c3aed);
+      border:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+      box-shadow:0 8px 24px rgba(192,38,211,.4);transition:all .2s;
+    }
+    .topics-next-big-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(192,38,211,.6);}
+
+    /* ── Notification Bell in Navbar ── */
+    .notif-bell-btn{
+      position:relative;background:none;border:none;cursor:pointer;padding:6px;color:rgba(255,255,255,.65);
+      border-radius:10px;display:flex;align-items:center;justify-content:center;transition:color .15s;
+    }
+    .notif-bell-btn:hover{color:#fff;}
+    .notif-badge{
+      position:absolute;top:2px;right:2px;background:#ef4444;color:#fff;
+      font-size:9px;font-weight:900;height:16px;min-width:16px;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;padding:0 3px;
+      border:1.5px solid #07020f;animation:bellpulse 2s infinite ease-in-out;
+    }
+    @keyframes bellpulse{
+      0%,100%{transform:scale(1);}
+      50%{transform:scale(1.2);}
+    }
+
+    /* ── Notification Panel ── */
+    #notif-panel-modal{
+      position:fixed;inset:0;z-index:100;display:none;background:rgba(0,0,0,.65);
+      backdrop-filter:blur(8px);align-items:flex-start;justify-content:flex-end;
+      padding-top:60px;padding-right:24px;box-sizing:border-box;
+    }
+    #notif-panel-modal.show{display:flex;}
+    .notif-panel-card{
+      width:100%;max-width:440px;max-height:80vh;border-radius:20px;
+      background:rgba(18,10,34,.96);border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 20px 50px rgba(0,0,0,.8);display:flex;flex-direction:column;
+      overflow:hidden;animation:panelin .25s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes panelin{from{opacity:0;transform:translateY(-12px) scale(.97);}to{opacity:1;transform:none;}}
+    .notif-p-header{
+      display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+    }
+    .notif-p-title{font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;}
+    .notif-p-actions{display:flex;align-items:center;gap:8px;}
+    .notif-mark-btn{
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;
+      padding:4px 10px;font-size:11px;font-weight:700;color:#c026d3;cursor:pointer;
+    }
+    .notif-close-btn{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;}
+    .notif-p-tabs{
+      display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .notif-tab{
+      background:none;border:1px solid transparent;border-radius:8px;padding:4px 10px;
+      font-size:12px;font-weight:700;color:rgba(255,255,255,.55);cursor:pointer;
+    }
+    .notif-tab.active{background:rgba(192,38,211,.15);border-color:rgba(192,38,211,.4);color:#ff8cf8;}
+    .notif-p-body{padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;flex:1;}
+    .notif-card{
+      display:flex;gap:12px;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.02);position:relative;
+    }
+    .notif-card.unread{background:rgba(255,255,255,.05);border-left:4px solid var(--nc-color,#c026d3);}
+    .notif-icon-box{
+      width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+      font-size:18px;flex-shrink:0;background:var(--nc-bg,rgba(192,38,211,.15));
+    }
+    .notif-info{flex:1;}
+    .notif-top-line{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+    .notif-name{font-size:13.5px;font-weight:800;color:#fff;}
+    .notif-time{font-size:11px;color:rgba(255,255,255,.4);}
+    .notif-msg{font-size:12px;color:rgba(255,255,255,.65);line-height:1.4;}
+    .notif-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+    .notif-sender{font-size:10.5px;color:rgba(255,255,255,.45);font-weight:600;}
+    .notif-action-btn{
+      padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;color:#fff;
+      background:var(--nc-color,#6366f1);border:none;cursor:pointer;
+    }
+
+    /* Simulation Tray */
+    .notif-sim-tray{
+      border-top:1px solid rgba(255,255,255,.08);padding:12px 16px;background:rgba(255,255,255,.02);
+    }
+    .notif-sim-lbl{font-size:10px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:8px;}
+    .notif-sim-btns{display:flex;gap:6px;flex-wrap:wrap;}
+    .sim-btn{
+      padding:4px 9px;border-radius:6px;font-size:10.5px;font-weight:700;cursor:pointer;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);
+    }
+    .sim-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+
+    /* Role Pill in Chat Header */
+    .role-pill{
+      font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 6px;border-radius:5px;
+      background:rgba(192,38,211,.2);border:1px solid rgba(192,38,211,.4);color:#ff8cf8;
+      cursor:pointer;
+    }
 
     /* ── SHARED BACKGROUND ── */
     body.th-g{background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(0,200,83,.06) 0%,#020c05 55%);}
@@ -1587,6 +1896,99 @@
     <div class="ctx-item danger" id="ctx-del-all">🗑 Delete for everyone</div>
   </div>
 
+  <!-- ══ ENGINEERING STUDY LIBRARY PAGE ══ -->
+  <div id="page-study">
+    <div class="study-navbar">
+      <div class="study-brand">
+        <div class="study-logo-icon">📚</div>
+        <div>
+          <div class="study-brand-title">StudyChat <span class="study-pro-tag">LIBRARY</span></div>
+          <div class="study-brand-sub">Engineering Digital Books</div>
+        </div>
+      </div>
+      <button class="study-skip-btn" onclick="goToLogin()">
+        <span>Login to Chat</span>
+        <span>→</span>
+      </button>
+    </div>
+
+    <div class="study-container">
+      <div class="study-hero">
+        <div class="study-hero-badge">ENGINEERING CURRICULUM</div>
+        <h1 class="study-hero-title">Engineering Study Library</h1>
+        <p class="study-hero-sub">Learn. Practice. Prepare. Master your engineering subjects chapter by chapter.</p>
+        <div class="study-search-wrap">
+          <span class="study-search-icon">🔍</span>
+          <input id="study-search-inp" class="study-search-inp" placeholder="Search subjects, topics (e.g. Matrices, Python, Neural Networks)..." oninput="renderStudyBooks(this.value)"/>
+        </div>
+      </div>
+
+      <div class="study-section-header">
+        <div class="study-section-title" id="study-count-lbl">10 SUBJECTS AVAILABLE</div>
+        <div class="study-section-hint">Click any book to explore topics &amp; study material</div>
+      </div>
+
+      <div class="study-grid" id="study-books-grid">
+        <!-- Rendered by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SUBJECT TOPICS PAGE ══ -->
+  <div id="page-topics">
+    <div class="topics-topbar">
+      <button class="topics-back-btn" onclick="backToStudyLibrary()">
+        <span>←</span>
+        <span>Study Library</span>
+      </button>
+      <div class="topics-top-title" id="topics-nav-title">Engineering Mathematics</div>
+      <button class="topics-quick-next" onclick="goToLogin()">
+        Next →
+      </button>
+    </div>
+
+    <div class="study-container">
+      <div class="topics-hero-card" id="topics-hero-banner">
+        <div class="topics-hero-icon" id="topics-hero-icon" style="background:rgba(99,102,241,.2);color:#6366f1;">∑</div>
+        <div class="topics-hero-info">
+          <div class="topics-hero-badge" id="topics-hero-badge" style="background:#6366f1;">MATHEMATICS</div>
+          <h2 class="topics-hero-title" id="topics-hero-name">Engineering Mathematics</h2>
+          <p class="topics-hero-desc" id="topics-hero-desc">Core mathematical foundations for every engineering discipline.</p>
+          <div class="topics-diff-chips" id="topics-diff-chips">
+            <!-- Chips rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="study-progress-card">
+        <div class="progress-row">
+          <div class="progress-label">Study Preparation</div>
+          <div class="progress-percent" id="topics-progress-pct" style="color:#6366f1;">0% Prepared</div>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="topics-progress-fill" style="width:0%;background:#6366f1;"></div>
+        </div>
+      </div>
+
+      <div class="study-section-header">
+        <div class="study-section-title">CHAPTER TOPICS LIST</div>
+        <div class="study-section-hint">Click 'Study' on any topic to review key concepts</div>
+      </div>
+
+      <div class="topics-list" id="topics-cards-list">
+        <!-- Topic cards rendered by JS -->
+      </div>
+
+      <div class="topics-cta-card">
+        <h3 class="topics-cta-title">Ready to start your session?</h3>
+        <p class="topics-cta-desc">Continue to the chat application to collaborate with teachers, peers, and ask doubts.</p>
+        <button class="topics-next-big-btn" onclick="goToLogin()">
+          <span>Next → Continue to Chat</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ LOGIN PAGE ══ -->
   <div id="page-login">
     <div class="scene">
@@ -1633,6 +2035,9 @@
           <div class="l-footxt"><span></span>Only someone special knows the way in<span></span></div>
           <div class="fdots"><s></s><s class="on"></s><s></s></div>
         </div>
+        <button type="button" onclick="openStudyLibrary()" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,.6);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:color .15s;">
+          <span>←</span> <span>Back to Study Library</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1652,9 +2057,27 @@
         <div style="display:flex;align-items:center;gap:6px;">
           <p id="ch-name">…</p>
           <div id="online-dot"></div>
+          <button class="role-pill" id="btn-role" onclick="openRoleModal()" title="Switch conversation role">
+            <span id="role-pill-txt">Student</span> ▾
+          </button>
         </div>
         <p id="ch-status">connecting…</p>
       </div>
+
+      <!-- Quick back to Study Library -->
+      <button class="hdr-btn" onclick="openStudyLibrary()" title="Engineering Study Library">
+        <span style="font-size:16px;">📚</span>
+      </button>
+
+      <!-- Notification Bell with Red Badge -->
+      <button class="hdr-btn notif-bell-btn" id="btn-notif" onclick="toggleNotifPanel()" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+        <span class="notif-badge" id="notif-badge-count">3</span>
+      </button>
+
       <button class="hdr-btn" id="btn-search" onclick="toggleSearch()" title="Search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
@@ -1964,6 +2387,743 @@ function goBack(){
     btn.style.pointerEvents='';
   },300);
 }
+
+/* ═══════════════════════════════════════════════
+   ENGINEERING STUDY LIBRARY & SMART NOTIFICATIONS
+═══════════════════════════════════════════════ */
+
+const STUDY_SUBJECTS = [
+  {
+    id: 'mathematics',
+    title: 'Engineering Mathematics',
+    shortTitle: 'Mathematics',
+    description: 'Core mathematical foundations for every engineering discipline.',
+    chapters: 10,
+    accent: '#6366f1',
+    accentLight: '#eef2ff',
+    icon: '∑',
+    topics: [
+      { number: 1, name: 'Matrices', description: 'Matrix algebra, eigenvalues, and linear transformations.', difficulty: 'Beginner' },
+      { number: 2, name: 'Differential Calculus', description: 'Derivatives, limits, continuity, and applications.', difficulty: 'Intermediate' },
+      { number: 3, name: 'Integral Calculus', description: 'Definite & indefinite integrals and integral theorems.', difficulty: 'Intermediate' },
+      { number: 4, name: 'Differential Equations', description: 'ODEs, PDEs, and methods of solution.', difficulty: 'Advanced' },
+      { number: 5, name: 'Vector Calculus', description: 'Gradient, divergence, curl, and Stokes theorem.', difficulty: 'Advanced' },
+      { number: 6, name: 'Complex Numbers', description: 'Argand plane, complex functions, and residues.', difficulty: 'Intermediate' },
+      { number: 7, name: 'Laplace Transforms', description: 'Transform pairs, inverse transforms, and applications.', difficulty: 'Advanced' },
+      { number: 8, name: 'Fourier Series', description: 'Periodic functions, half-range expansions.', difficulty: 'Advanced' },
+      { number: 9, name: 'Probability', description: 'Axioms, distributions, and Bayes theorem.', difficulty: 'Intermediate' },
+      { number: 10, name: 'Statistics', description: 'Mean, variance, correlation, and hypothesis testing.', difficulty: 'Intermediate' }
+    ]
+  },
+  {
+    id: 'c-programming',
+    title: 'Programming in C',
+    shortTitle: 'C Programming',
+    description: 'Structured programming, pointers, and system-level coding in C.',
+    chapters: 10,
+    accent: '#0ea5e9',
+    accentLight: '#f0f9ff',
+    icon: 'C',
+    topics: [
+      { number: 1, name: 'Basics & Syntax', description: 'Tokens, data types, operators, and first programs.', difficulty: 'Beginner' },
+      { number: 2, name: 'Control Flow', description: 'if-else, switch, loops, and break/continue.', difficulty: 'Beginner' },
+      { number: 3, name: 'Functions', description: 'Prototypes, recursion, and scope.', difficulty: 'Beginner' },
+      { number: 4, name: 'Arrays & Strings', description: '1D/2D arrays, string handling functions.', difficulty: 'Intermediate' },
+      { number: 5, name: 'Pointers', description: 'Pointer arithmetic, pointer to pointer, void pointers.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Structures & Unions', description: 'User-defined types, bit fields, and typedef.', difficulty: 'Intermediate' },
+      { number: 7, name: 'File I/O', description: 'File operations, streams, and error handling.', difficulty: 'Intermediate' },
+      { number: 8, name: 'Dynamic Memory', description: 'malloc, calloc, realloc, and free.', difficulty: 'Advanced' },
+      { number: 9, name: 'Preprocessor', description: 'Macros, conditional compilation, and include guards.', difficulty: 'Intermediate' },
+      { number: 10, name: 'Linked Lists in C', description: 'Singly and doubly linked list implementation.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'python',
+    title: 'Python Programming',
+    shortTitle: 'Python',
+    description: 'Modern Python from basics to data science fundamentals.',
+    chapters: 10,
+    accent: '#f59e0b',
+    accentLight: '#fffbeb',
+    icon: 'Py',
+    topics: [
+      { number: 1, name: 'Variables & Data Types', description: 'int, float, str, bool, and dynamic typing.', difficulty: 'Beginner' },
+      { number: 2, name: 'Conditions', description: 'if / elif / else and ternary expressions.', difficulty: 'Beginner' },
+      { number: 3, name: 'Loops', description: 'for, while, list comprehensions, and generators.', difficulty: 'Beginner' },
+      { number: 4, name: 'Functions', description: 'args, kwargs, lambda, and closures.', difficulty: 'Beginner' },
+      { number: 5, name: 'Lists & Tuples', description: 'Sequence operations, slicing, and sorting.', difficulty: 'Beginner' },
+      { number: 6, name: 'Dictionaries & Sets', description: 'Key-value stores, set algebra, and comprehensions.', difficulty: 'Intermediate' },
+      { number: 7, name: 'OOP', description: 'Classes, inheritance, dunder methods, and decorators.', difficulty: 'Intermediate' },
+      { number: 8, name: 'File Handling', description: 'Reading, writing, and context managers.', difficulty: 'Intermediate' },
+      { number: 9, name: 'NumPy', description: 'Arrays, broadcasting, and linear algebra.', difficulty: 'Advanced' },
+      { number: 10, name: 'Pandas', description: 'DataFrames, groupby, merging, and CSV I/O.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'data-structures',
+    title: 'Data Structures',
+    shortTitle: 'Data Structures',
+    description: 'Fundamental data structures and algorithm analysis.',
+    chapters: 9,
+    accent: '#10b981',
+    accentLight: '#ecfdf5',
+    icon: 'DS',
+    topics: [
+      { number: 1, name: 'Arrays', description: 'Static vs dynamic arrays, time complexity.', difficulty: 'Beginner' },
+      { number: 2, name: 'Linked Lists', description: 'Singly, doubly, and circular linked lists.', difficulty: 'Beginner' },
+      { number: 3, name: 'Stack', description: 'LIFO operations, expression evaluation.', difficulty: 'Beginner' },
+      { number: 4, name: 'Queue', description: 'FIFO, dequeue, priority queue.', difficulty: 'Beginner' },
+      { number: 5, name: 'Trees', description: 'BST, AVL, heaps, and traversals.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Graphs', description: 'BFS, DFS, shortest path algorithms.', difficulty: 'Advanced' },
+      { number: 7, name: 'Hashing', description: 'Hash functions, collision resolution.', difficulty: 'Intermediate' },
+      { number: 8, name: 'Sorting', description: 'Merge, quick, heap, and radix sort.', difficulty: 'Intermediate' },
+      { number: 9, name: 'Searching', description: 'Linear, binary, and interpolation search.', difficulty: 'Beginner' }
+    ]
+  },
+  {
+    id: 'physics',
+    title: 'Engineering Physics',
+    shortTitle: 'Physics',
+    description: 'Optics, quantum mechanics, and solid-state physics for engineers.',
+    chapters: 9,
+    accent: '#8b5cf6',
+    accentLight: '#f5f3ff',
+    icon: 'φ',
+    topics: [
+      { number: 1, name: 'Oscillations', description: 'SHM, damping, and resonance.', difficulty: 'Intermediate' },
+      { number: 2, name: 'Wave Optics', description: 'Interference, diffraction, and polarisation.', difficulty: 'Intermediate' },
+      { number: 3, name: 'Laser & Fibre Optics', description: 'Laser types, numerical aperture, and applications.', difficulty: 'Intermediate' },
+      { number: 4, name: 'Quantum Mechanics', description: 'Wave-particle duality, Schrödinger equation.', difficulty: 'Advanced' },
+      { number: 5, name: 'Electromagnetic Theory', description: 'Maxwell equations and wave propagation.', difficulty: 'Advanced' },
+      { number: 6, name: 'Solid State Physics', description: 'Crystal structure, band theory, semiconductors.', difficulty: 'Advanced' },
+      { number: 7, name: 'Superconductivity', description: 'Meissner effect and BCS theory basics.', difficulty: 'Advanced' },
+      { number: 8, name: 'Acoustics', description: 'Sound waves, ultrasound, and applications.', difficulty: 'Intermediate' },
+      { number: 9, name: 'Nanotechnology', description: 'Carbon nanotubes, quantum dots, applications.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'chemistry',
+    title: 'Engineering Chemistry',
+    shortTitle: 'Chemistry',
+    description: 'Chemical thermodynamics, polymers, corrosion, and water treatment.',
+    chapters: 8,
+    accent: '#ec4899',
+    accentLight: '#fdf2f8',
+    icon: 'Ch',
+    topics: [
+      { number: 1, name: 'Water Technology', description: 'Hardness, treatment, and softening methods.', difficulty: 'Beginner' },
+      { number: 2, name: 'Electrochemistry', description: 'Electrochemical cells, Nernst equation.', difficulty: 'Intermediate' },
+      { number: 3, name: 'Corrosion', description: 'Types of corrosion and prevention techniques.', difficulty: 'Intermediate' },
+      { number: 4, name: 'Polymers', description: 'Addition, condensation polymers, and plastics.', difficulty: 'Intermediate' },
+      { number: 5, name: 'Fuels & Combustion', description: 'Calorific value, bomb calorimeter, and biofuels.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Lubricants', description: 'Types, properties, and flash/fire point.', difficulty: 'Beginner' },
+      { number: 7, name: 'Phase Rule', description: 'Gibbs phase rule, one- and two-component systems.', difficulty: 'Advanced' },
+      { number: 8, name: 'Nanomaterials', description: 'Synthesis, properties, and engineering applications.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'digital-electronics',
+    title: 'Digital Electronics',
+    shortTitle: 'Digital Electronics',
+    description: 'Boolean algebra, combinational, and sequential circuits.',
+    chapters: 9,
+    accent: '#ef4444',
+    accentLight: '#fef2f2',
+    icon: '01',
+    topics: [
+      { number: 1, name: 'Number Systems', description: 'Binary, octal, hex, and conversions.', difficulty: 'Beginner' },
+      { number: 2, name: 'Boolean Algebra', description: 'Laws, theorems, and simplification.', difficulty: 'Beginner' },
+      { number: 3, name: 'Logic Gates', description: 'AND, OR, NOT, NAND, NOR, XOR gates.', difficulty: 'Beginner' },
+      { number: 4, name: 'Karnaugh Maps', description: 'SOP, POS minimisation with K-map.', difficulty: 'Intermediate' },
+      { number: 5, name: 'Combinational Circuits', description: 'Adders, subtractors, multiplexers, decoders.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Sequential Circuits', description: 'Flip-flops, latches, and counters.', difficulty: 'Intermediate' },
+      { number: 7, name: 'Registers', description: 'Shift registers, SISO, SIPO, PISO.', difficulty: 'Intermediate' },
+      { number: 8, name: 'Memories', description: 'ROM, RAM, EPROM, and flash memory.', difficulty: 'Advanced' },
+      { number: 9, name: 'Programmable Logic', description: 'PAL, PLA, FPGA basics.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'computer-organization',
+    title: 'Computer Organization',
+    shortTitle: 'Comp. Org.',
+    description: 'CPU design, memory hierarchy, I/O, and instruction sets.',
+    chapters: 9,
+    accent: '#64748b',
+    accentLight: '#f8fafc',
+    icon: 'CO',
+    topics: [
+      { number: 1, name: 'Basic Structure', description: 'Von Neumann model, ALU, CU, and registers.', difficulty: 'Beginner' },
+      { number: 2, name: 'Instruction Set', description: 'Addressing modes, RISC vs CISC.', difficulty: 'Intermediate' },
+      { number: 3, name: 'CPU Design', description: 'Data path, control unit, and hardwiring.', difficulty: 'Advanced' },
+      { number: 4, name: 'Pipelining', description: 'Pipeline stages, hazards, and stalls.', difficulty: 'Advanced' },
+      { number: 5, name: 'Memory Organisation', description: 'Cache, virtual memory, and hierarchy.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Cache Memory', description: 'Mapping techniques, write policies.', difficulty: 'Intermediate' },
+      { number: 7, name: 'I/O Organisation', description: 'DMA, interrupts, and buses.', difficulty: 'Intermediate' },
+      { number: 8, name: 'Arithmetic Operations', description: 'Booth algorithm, floating-point, and IEEE 754.', difficulty: 'Advanced' },
+      { number: 9, name: 'Parallel Processing', description: 'SIMD, MIMD, and multiprocessors.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'artificial-intelligence',
+    title: 'Artificial Intelligence',
+    shortTitle: 'AI',
+    description: 'Search strategies, knowledge representation, and expert systems.',
+    chapters: 9,
+    accent: '#06b6d4',
+    accentLight: '#ecfeff',
+    icon: 'AI',
+    topics: [
+      { number: 1, name: 'Introduction to AI', description: 'History, Turing test, and AI paradigms.', difficulty: 'Beginner' },
+      { number: 2, name: 'Search Strategies', description: 'BFS, DFS, A*, and heuristic search.', difficulty: 'Intermediate' },
+      { number: 3, name: 'Knowledge Representation', description: 'Logic, frames, semantic nets, and ontologies.', difficulty: 'Intermediate' },
+      { number: 4, name: 'Expert Systems', description: 'Inference engines, CLIPS, and Prolog basics.', difficulty: 'Intermediate' },
+      { number: 5, name: 'Natural Language Processing', description: 'Parsing, stemming, and IR basics.', difficulty: 'Advanced' },
+      { number: 6, name: 'Planning', description: 'STRIPS, state-space, and partial-order planning.', difficulty: 'Advanced' },
+      { number: 7, name: 'Uncertainty', description: 'Bayesian reasoning and fuzzy logic.', difficulty: 'Advanced' },
+      { number: 8, name: 'Machine Learning Basics', description: 'Supervised, unsupervised, and RL overview.', difficulty: 'Intermediate' },
+      { number: 9, name: 'Neural Networks', description: 'Perceptrons, backpropagation, deep learning intro.', difficulty: 'Advanced' }
+    ]
+  },
+  {
+    id: 'machine-learning',
+    title: 'Machine Learning',
+    shortTitle: 'ML',
+    description: 'Algorithms, model evaluation, and real-world ML pipelines.',
+    chapters: 9,
+    accent: '#f97316',
+    accentLight: '#fff7ed',
+    icon: 'ML',
+    topics: [
+      { number: 1, name: 'ML Foundations', description: 'Types of ML, bias-variance tradeoff, and pipelines.', difficulty: 'Beginner' },
+      { number: 2, name: 'Regression', description: 'Linear, polynomial, and logistic regression.', difficulty: 'Beginner' },
+      { number: 3, name: 'Classification', description: 'KNN, SVM, decision trees, and random forests.', difficulty: 'Intermediate' },
+      { number: 4, name: 'Clustering', description: 'K-means, DBSCAN, and hierarchical clustering.', difficulty: 'Intermediate' },
+      { number: 5, name: 'Dimensionality Reduction', description: 'PCA, LDA, and t-SNE.', difficulty: 'Intermediate' },
+      { number: 6, name: 'Model Evaluation', description: 'Cross-validation, confusion matrix, ROC curve.', difficulty: 'Intermediate' },
+      { number: 7, name: 'Neural Networks', description: 'Activation functions, layers, and backprop.', difficulty: 'Advanced' },
+      { number: 8, name: 'Deep Learning', description: 'CNNs, RNNs, transformers, and transfer learning.', difficulty: 'Advanced' },
+      { number: 9, name: 'Reinforcement Learning', description: 'Q-learning, policy gradient, and environments.', difficulty: 'Advanced' }
+    ]
+  }
+];
+
+let STUDY_NOTIFS = [
+  {
+    id: 1,
+    type: 'assessment',
+    title: 'New Assessment',
+    message: 'You have a new assessment in Engineering Mathematics.',
+    sender: 'Teacher (Prof. Ramesh)',
+    time: '5 min ago',
+    read: false,
+    action: 'View Assessment',
+    route: 'assessment'
+  },
+  {
+    id: 2,
+    type: 'study_material',
+    title: 'New Study Material',
+    message: 'New study material has been uploaded for you in Data Structures.',
+    sender: 'Teacher (Prof. Priya)',
+    time: '20 min ago',
+    read: false,
+    action: 'Study Now',
+    route: 'study:data-structures'
+  },
+  {
+    id: 3,
+    type: 'message',
+    title: 'New Message',
+    message: 'Arun sent you a message: "Hey! Have you solved question 4 from Matrices?"',
+    sender: 'Arun',
+    time: '1 hour ago',
+    read: false,
+    action: 'Open Chat',
+    route: 'chat'
+  },
+  {
+    id: 4,
+    type: 'assignment',
+    title: 'New Assignment',
+    message: 'You have a new assignment due in Python Programming.',
+    sender: 'Teacher (Prof. Meena)',
+    time: '2 hours ago',
+    read: true,
+    action: 'View Assignment',
+    route: 'assignment'
+  },
+  {
+    id: 5,
+    type: 'announcement',
+    title: 'Announcement',
+    message: 'Guest lecture on Artificial Intelligence tomorrow at 3:00 PM.',
+    sender: 'Admin',
+    time: 'Yesterday',
+    read: true,
+    action: 'View Details',
+    route: 'chat'
+  }
+];
+
+let currentSubjectId = 'mathematics';
+let studiedTopicsSet = new Set();
+let notifFilter = 'all';
+
+function renderStudyBooks(filterQuery) {
+  const container = document.getElementById('study-books-grid');
+  if (!container) return;
+  const q = (filterQuery || '').trim().toLowerCase();
+  const list = STUDY_SUBJECTS.filter(s => {
+    if (!q) return true;
+    return s.title.toLowerCase().includes(q) ||
+           s.description.toLowerCase().includes(q) ||
+           s.topics.some(t => t.name.toLowerCase().includes(q));
+  });
+
+  const countLbl = document.getElementById('study-count-lbl');
+  if (countLbl) {
+    countLbl.textContent = `${list.length} ${list.length === 1 ? 'SUBJECT' : 'SUBJECTS'} AVAILABLE`;
+  }
+
+  container.innerHTML = list.map(s => `
+    <div class="book-card" style="--b-color:${s.accent};--b-glow:${s.accent}44;--b-bg:${s.accent}1a;" onclick="openSubjectTopics('${s.id}')">
+      <div class="book-spine">
+        <span class="book-spine-txt">${s.shortTitle}</span>
+      </div>
+      <div class="book-body">
+        <div class="book-top-row">
+          <div class="book-icon-badge">${s.icon}</div>
+          <div class="book-chapters">${s.chapters} Chapters</div>
+        </div>
+        <div>
+          <div class="book-title">${s.title}</div>
+          <div class="book-desc">${s.description}</div>
+        </div>
+        <div class="book-footer">
+          <div class="book-topics-hint">${s.topics.length} topics • Practice ready</div>
+          <button class="book-open-btn" onclick="event.stopPropagation();openSubjectTopics('${s.id}')">
+            <span>Open Book</span> <span>→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openStudyLibrary() {
+  closeAllModals();
+  const pStudy = document.getElementById('page-study');
+  const pTopics = document.getElementById('page-topics');
+  const pLogin = document.getElementById('page-login');
+  const pChat = document.getElementById('page-chat');
+
+  if (pTopics) pTopics.classList.remove('show');
+  if (pLogin) pLogin.classList.remove('show');
+  if (pChat) pChat.classList.remove('show');
+  if (pStudy) {
+    pStudy.classList.remove('hide');
+    renderStudyBooks();
+  }
+  history.replaceState(null, '', '#study');
+}
+
+function openSubjectTopics(subjectId) {
+  currentSubjectId = subjectId;
+  const s = STUDY_SUBJECTS.find(x => x.id === subjectId) || STUDY_SUBJECTS[0];
+  const pStudy = document.getElementById('page-study');
+  const pTopics = document.getElementById('page-topics');
+  const pLogin = document.getElementById('page-login');
+
+  if (pStudy) pStudy.classList.add('hide');
+  if (pLogin) pLogin.classList.remove('show');
+  if (pTopics) pTopics.classList.add('show');
+
+  const navTitle = document.getElementById('topics-nav-title');
+  if (navTitle) navTitle.textContent = s.title;
+
+  const heroBanner = document.getElementById('topics-hero-banner');
+  if (heroBanner) {
+    heroBanner.style.borderColor = s.accent + '33';
+    heroBanner.style.background = s.accent + '0f';
+  }
+  const heroIcon = document.getElementById('topics-hero-icon');
+  if (heroIcon) {
+    heroIcon.textContent = s.icon;
+    heroIcon.style.color = s.accent;
+    heroIcon.style.background = s.accent + '22';
+  }
+  const heroBadge = document.getElementById('topics-hero-badge');
+  if (heroBadge) {
+    heroBadge.textContent = s.shortTitle.toUpperCase();
+    heroBadge.style.background = s.accent;
+  }
+  const heroName = document.getElementById('topics-hero-name');
+  if (heroName) heroName.textContent = s.title;
+  const heroDesc = document.getElementById('topics-hero-desc');
+  if (heroDesc) heroDesc.textContent = s.description;
+
+  const diffs = { Beginner: 0, Intermediate: 0, Advanced: 0 };
+  s.topics.forEach(t => { diffs[t.difficulty] = (diffs[t.difficulty] || 0) + 1; });
+  const diffChips = document.getElementById('topics-diff-chips');
+  if (diffChips) {
+    const dColors = { Beginner: '#10b981', Intermediate: '#f59e0b', Advanced: '#ef4444' };
+    diffChips.innerHTML = Object.entries(diffs).map(([d, count]) => `
+      <div class="diff-chip" style="background:${dColors[d]}22;color:${dColors[d]};border:1px solid ${dColors[d]}44;">
+        ${count} ${d}
+      </div>
+    `).join('');
+  }
+
+  updateTopicsProgress(s);
+  renderTopicCards(s);
+  history.replaceState(null, '', `#study/${s.id}`);
+}
+
+function updateTopicsProgress(subject) {
+  const s = subject || STUDY_SUBJECTS.find(x => x.id === currentSubjectId) || STUDY_SUBJECTS[0];
+  const studiedInSubject = s.topics.filter(t => studiedTopicsSet.has(`${s.id}-${t.number}`)).length;
+  const pct = Math.round((studiedInSubject / s.topics.length) * 100);
+  const pctEl = document.getElementById('topics-progress-pct');
+  const fillEl = document.getElementById('topics-progress-fill');
+  if (pctEl) {
+    pctEl.textContent = `${pct}% Prepared (${studiedInSubject}/${s.topics.length})`;
+    pctEl.style.color = s.accent;
+  }
+  if (fillEl) {
+    fillEl.style.width = `${pct}%`;
+    fillEl.style.background = s.accent;
+  }
+}
+
+function renderTopicCards(subject) {
+  const s = subject || STUDY_SUBJECTS.find(x => x.id === currentSubjectId) || STUDY_SUBJECTS[0];
+  const listEl = document.getElementById('topics-cards-list');
+  if (!listEl) return;
+  const dColors = { Beginner: '#10b981', Intermediate: '#f59e0b', Advanced: '#ef4444' };
+
+  listEl.innerHTML = s.topics.map(t => {
+    const isStudied = studiedTopicsSet.has(`${s.id}-${t.number}`);
+    const numStr = String(t.number).padStart(2, '0');
+    return `
+      <div class="topic-item-card" style="border-color:${isStudied ? '#10b981' : 'rgba(255,255,255,0.08)'};">
+        <div class="topic-num" style="background:${isStudied ? '#10b98122' : s.accent + '20'};color:${isStudied ? '#10b981' : s.accent};">
+          ${isStudied ? '✓' : numStr}
+        </div>
+        <div class="topic-info">
+          <div class="topic-header-row">
+            <div class="topic-name">${t.name}</div>
+            <span class="diff-chip" style="background:${dColors[t.difficulty]}22;color:${dColors[t.difficulty]};">
+              ${t.difficulty}
+            </span>
+          </div>
+          <div class="topic-desc">${t.description}</div>
+        </div>
+        <button class="topic-study-btn" style="background:${isStudied ? '#10b981' : s.accent};" onclick="openTopicStudyModal('${s.id}', ${t.number})">
+          ${isStudied ? 'Reviewed' : 'Study'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function backToStudyLibrary() {
+  const pTopics = document.getElementById('page-topics');
+  if (pTopics) pTopics.classList.remove('show');
+  const pStudy = document.getElementById('page-study');
+  if (pStudy) pStudy.classList.remove('hide');
+  history.replaceState(null, '', '#study');
+}
+
+function goToLogin() {
+  closeAllModals();
+  const pStudy = document.getElementById('page-study');
+  const pTopics = document.getElementById('page-topics');
+  const pLogin = document.getElementById('page-login');
+
+  if (pStudy) pStudy.classList.add('hide');
+  if (pTopics) pTopics.classList.remove('show');
+  if (pLogin) {
+    pLogin.classList.remove('hide');
+    pLogin.classList.add('show');
+  }
+  history.replaceState(null, '', '#login');
+}
+
+/* ── Interactive Topic Study Modal ── */
+let currentStudyingTopic = null;
+function openTopicStudyModal(subjectId, topicNum) {
+  const s = STUDY_SUBJECTS.find(x => x.id === subjectId);
+  if (!s) return;
+  const t = s.topics.find(x => x.number === topicNum);
+  if (!t) return;
+  currentStudyingTopic = { subjectId, topicNum, subjectTitle: s.title, topicName: t.name };
+
+  const modal = document.getElementById('topic-modal');
+  document.getElementById('tm-num').textContent = String(t.number).padStart(2, '0');
+  document.getElementById('tm-num').style.color = s.accent;
+  document.getElementById('tm-num').style.background = s.accent + '22';
+  document.getElementById('tm-title').textContent = t.name;
+  document.getElementById('tm-sub').textContent = s.title;
+  document.getElementById('tm-desc').textContent = t.description;
+
+  const key = `${subjectId}-${topicNum}`;
+  const btn = document.getElementById('tm-mark-btn');
+  if (studiedTopicsSet.has(key)) {
+    btn.textContent = 'Mark as Not Studied';
+    btn.style.background = '#64748b';
+  } else {
+    btn.textContent = 'Mark as Studied / Reviewed';
+    btn.style.background = '#10b981';
+  }
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeTopicModal() {
+  const modal = document.getElementById('topic-modal');
+  if (modal) modal.style.display = 'none';
+  currentStudyingTopic = null;
+}
+
+function toggleTopicStudied() {
+  if (!currentStudyingTopic) return;
+  const key = `${currentStudyingTopic.subjectId}-${currentStudyingTopic.topicNum}`;
+  if (studiedTopicsSet.has(key)) studiedTopicsSet.delete(key);
+  else studiedTopicsSet.add(key);
+
+  const s = STUDY_SUBJECTS.find(x => x.id === currentStudyingTopic.subjectId);
+  if (s) {
+    updateTopicsProgress(s);
+    renderTopicCards(s);
+  }
+  closeTopicModal();
+}
+
+/* ── Smart Notification System ── */
+function updateNotifBadge() {
+  const unreadCount = STUDY_NOTIFS.filter(n => !n.read).length;
+  const badge = document.getElementById('notif-badge-count');
+  const tag = document.getElementById('notif-unread-tag');
+  if (badge) {
+    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+  }
+  if (tag) {
+    tag.textContent = `${unreadCount} new`;
+    tag.style.display = unreadCount > 0 ? 'inline-block' : 'none';
+  }
+}
+
+function toggleNotifPanel() {
+  const modal = document.getElementById('notif-panel-modal');
+  if (!modal) return;
+  if (modal.classList.contains('show')) {
+    closeNotifPanel();
+  } else {
+    modal.classList.add('show');
+    renderNotifs();
+  }
+}
+
+function closeNotifPanel() {
+  const modal = document.getElementById('notif-panel-modal');
+  if (modal) modal.classList.remove('show');
+}
+
+function filterNotifs(tab) {
+  notifFilter = tab;
+  document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+  const btn = document.getElementById(`ntab-${tab}`);
+  if (btn) btn.classList.add('active');
+  renderNotifs();
+}
+
+function toggleSimTray() {
+  const tray = document.getElementById('notif-sim-tray');
+  if (!tray) return;
+  tray.style.display = tray.style.display === 'none' ? 'block' : 'none';
+}
+
+function renderNotifs() {
+  const listEl = document.getElementById('notif-p-list');
+  if (!listEl) return;
+  updateNotifBadge();
+
+  const list = notifFilter === 'unread' ? STUDY_NOTIFS.filter(n => !n.read) : STUDY_NOTIFS;
+  if (list.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:36px 16px;color:rgba(255,255,255,.45);">
+        <div style="font-size:32px;margin-bottom:6px;">🔔</div>
+        <div style="font-size:14px;font-weight:700;color:#fff;">No notifications</div>
+        <div style="font-size:12px;margin-top:2px;">You are all caught up!</div>
+      </div>
+    `;
+    return;
+  }
+
+  const typeConfig = {
+    assessment: { icon: '📋', color: '#3b82f6', bg: 'rgba(59,130,246,.15)' },
+    study_material: { icon: '📚', color: '#10b981', bg: 'rgba(16,185,129,.15)' },
+    message: { icon: '💬', color: '#a855f7', bg: 'rgba(168,85,247,.15)' },
+    assignment: { icon: '📝', color: '#f59e0b', bg: 'rgba(245,158,11,.15)' },
+    announcement: { icon: '📢', color: '#ec4899', bg: 'rgba(236,72,153,.15)' }
+  };
+
+  listEl.innerHTML = list.map(n => {
+    const cfg = typeConfig[n.type] || { icon: '🔔', color: '#6366f1', bg: 'rgba(99,102,241,.15)' };
+    return `
+      <div class="notif-card ${n.read ? '' : 'unread'}" style="--nc-color:${cfg.color};--nc-bg:${cfg.bg};">
+        <div class="notif-icon-box">${cfg.icon}</div>
+        <div class="notif-info">
+          <div class="notif-top-line">
+            <div class="notif-name">${n.title}</div>
+            <div class="notif-time">${n.time}</div>
+          </div>
+          <div class="notif-msg">${n.message}</div>
+          <div class="notif-card-footer">
+            <div class="notif-sender">From: ${n.sender || 'System'}</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button class="notif-action-btn" onclick="handleNotifAction(${n.id})">${n.action || 'View'}</button>
+              ${!n.read ? `<button onclick="markNotifRead(${n.id})" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:3px 6px;color:#fff;font-size:11px;cursor:pointer;">✓</button>` : ''}
+              <button onclick="deleteNotif(${n.id})" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:12px;">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function markAllNotifsRead() {
+  STUDY_NOTIFS.forEach(n => { n.read = true; });
+  renderNotifs();
+}
+
+function markNotifRead(id) {
+  const n = STUDY_NOTIFS.find(x => x.id === id);
+  if (n) n.read = true;
+  renderNotifs();
+}
+
+function deleteNotif(id) {
+  STUDY_NOTIFS = STUDY_NOTIFS.filter(x => x.id !== id);
+  renderNotifs();
+}
+
+function handleNotifAction(id) {
+  const n = STUDY_NOTIFS.find(x => x.id === id);
+  if (!n) return;
+  n.read = true;
+  closeNotifPanel();
+  if (n.route && n.route.startsWith('study:')) {
+    const slug = n.route.split(':')[1];
+    openSubjectTopics(slug);
+  }
+}
+
+function triggerMockNotif(type) {
+  let item = null;
+  if (type === 'message') {
+    item = {
+      id: Date.now(),
+      type: 'message',
+      title: 'New Message',
+      message: 'Arun sent you a message: "Hey! Have you solved question 4 from Matrices?"',
+      sender: 'Arun (Student)',
+      time: 'Just now',
+      read: false,
+      action: 'Open Chat',
+      route: 'chat'
+    };
+  } else if (type === 'study_material') {
+    item = {
+      id: Date.now(),
+      type: 'study_material',
+      title: 'New Study Material',
+      message: 'Prof. Priya uploaded new lecture notes and problem set for Data Structures.',
+      sender: 'Prof. Priya (Teacher)',
+      time: 'Just now',
+      read: false,
+      action: 'Study Now',
+      route: 'study:data-structures'
+    };
+  } else if (type === 'assessment') {
+    item = {
+      id: Date.now(),
+      type: 'assessment',
+      title: 'New Assessment',
+      message: 'Prof. Ramesh created an Engineering Mathematics Quiz scheduled for Friday.',
+      sender: 'Prof. Ramesh (Teacher)',
+      time: 'Just now',
+      read: false,
+      action: 'View Assessment',
+      route: 'assessment'
+    };
+  } else if (type === 'assignment') {
+    item = {
+      id: Date.now(),
+      type: 'assignment',
+      title: 'New Assignment',
+      message: 'You have a new assignment: Implement BST & Graph traversal algorithms in Python.',
+      sender: 'Prof. Meena (Teacher)',
+      time: 'Just now',
+      read: false,
+      action: 'View Assignment',
+      route: 'assignment'
+    };
+  }
+  if (item) {
+    STUDY_NOTIFS.unshift(item);
+    renderNotifs();
+  }
+}
+
+/* ── Multi-role Chat Switcher ── */
+let currentRole = 'Student';
+function openRoleModal() {
+  const modal = document.getElementById('role-modal');
+  if (modal) modal.style.display = 'flex';
+}
+function closeRoleModal() {
+  const modal = document.getElementById('role-modal');
+  if (modal) modal.style.display = 'none';
+}
+function selectChatRole(role, name) {
+  currentRole = role;
+  const pill = document.getElementById('role-pill-txt');
+  const chName = document.getElementById('ch-name');
+  if (pill) pill.textContent = role;
+  if (chName) chName.textContent = name;
+  closeRoleModal();
+
+  if (role === 'Other Student') {
+    setTimeout(() => {
+      triggerMockNotif('message');
+    }, 1500);
+  }
+}
+
+function closeAllModals() {
+  closeNotifPanel();
+  closeRoleModal();
+  closeTopicModal();
+}
+
+// Initial route check
+window.addEventListener('DOMContentLoaded', () => {
+  renderStudyBooks();
+  updateNotifBadge();
+  const hash = window.location.hash;
+  if (hash === '#chat') {
+    goToLogin();
+  } else if (hash === '#login') {
+    goToLogin();
+  } else if (hash.startsWith('#study/')) {
+    const slug = hash.replace('#study/', '');
+    openSubjectTopics(slug);
+  } else {
+    openStudyLibrary();
+  }
+});
 
 /* ═══════════════════════════════════════════════
    NEW FEATURE JAVASCRIPT
@@ -3679,6 +4839,120 @@ function gPetalBurst(e){
       <button onclick="skipDbSetup()" style="padding:10px;background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:13px">Continue without database (local only)</button>
     </div>
   </div>
+  <!-- ══ NOTIFICATION PANEL MODAL ══ -->
+  <div id="notif-panel-modal" onclick="if(event.target===this)closeNotifPanel()">
+    <div class="notif-panel-card">
+      <div class="notif-p-header">
+        <div class="notif-p-title">
+          <span>🔔</span> Notifications <span id="notif-unread-tag" style="font-size:11px;background:#ef4444;color:#fff;padding:2px 7px;border-radius:10px;margin-left:4px;">3 new</span>
+        </div>
+        <div class="notif-p-actions">
+          <button class="notif-mark-btn" onclick="markAllNotifsRead()">Mark all</button>
+          <button class="notif-close-btn" onclick="closeNotifPanel()">✕</button>
+        </div>
+      </div>
+      <div class="notif-p-tabs">
+        <button class="notif-tab active" id="ntab-all" onclick="filterNotifs('all')">All</button>
+        <button class="notif-tab" id="ntab-unread" onclick="filterNotifs('unread')">Unread</button>
+        <button class="notif-tab" style="margin-left:auto;color:#c026d3;" onclick="toggleSimTray()">+ Test Triggers</button>
+      </div>
+
+      <!-- Test simulation tray -->
+      <div class="notif-sim-tray" id="notif-sim-tray" style="display:none;">
+        <div class="notif-sim-lbl">DEMO NOTIFICATION TRIGGERS (STUDY &amp; CHAT)</div>
+        <div class="notif-sim-btns">
+          <button class="sim-btn" onclick="triggerMockNotif('message')">💬 Msg from Arun</button>
+          <button class="sim-btn" onclick="triggerMockNotif('study_material')">📚 Teacher Material</button>
+          <button class="sim-btn" onclick="triggerMockNotif('assessment')">📋 Teacher Assessment</button>
+          <button class="sim-btn" onclick="triggerMockNotif('assignment')">📝 Assignment</button>
+        </div>
+      </div>
+
+      <div class="notif-p-body" id="notif-p-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ROLE SWITCHER MODAL ══ -->
+  <div id="role-modal" style="position:fixed;inset:0;z-index:110;display:none;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeRoleModal()">
+    <div style="background:rgba(18,10,34,.98);border:1px solid rgba(255,255,255,.12);border-radius:20px;max-width:440px;width:100%;padding:20px;box-shadow:0 24px 60px rgba(0,0,0,.85);display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:12px;">
+        <div style="font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;">
+          <span>👥</span> Select Conversation &amp; Role
+        </div>
+        <button onclick="closeRoleModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <p style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.4;">Switch conversation context between student, teacher, and admin:</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div onclick="selectChatRole('Student','Dharya')" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(192,38,211,.4);cursor:pointer;">
+          <div style="width:38px;height:38px;border-radius:19px;background:rgba(192,38,211,.2);color:#c026d3;display:flex;align-items:center;justify-content:center;font-weight:800;">D</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:#fff;">Dharya <span style="font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(192,38,211,.25);color:#ff8cf8;font-weight:800;">Student</span></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);">3rd Sem CS • Active</div>
+          </div>
+        </div>
+        <div onclick="selectChatRole('Teacher','Prof. Ramesh')" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(59,130,246,.4);cursor:pointer;">
+          <div style="width:38px;height:38px;border-radius:19px;background:rgba(59,130,246,.2);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-weight:800;">R</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:#fff;">Prof. Ramesh <span style="font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(59,130,246,.25);color:#60a5fa;font-weight:800;">Teacher</span></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);">Prof of Mathematics &amp; Computing</div>
+          </div>
+        </div>
+        <div onclick="selectChatRole('Admin','Dean Office')" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(236,72,153,.4);cursor:pointer;">
+          <div style="width:38px;height:38px;border-radius:19px;background:rgba(236,72,153,.2);color:#ec4899;display:flex;align-items:center;justify-content:center;font-weight:800;">A</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:#fff;">Academic Dean Office <span style="font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(236,72,153,.25);color:#f472b6;font-weight:800;">Admin</span></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);">Department Coordination</div>
+          </div>
+        </div>
+        <div onclick="selectChatRole('Other Student','Arun')" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(16,185,129,.4);cursor:pointer;">
+          <div style="width:38px;height:38px;border-radius:19px;background:rgba(16,185,129,.2);color:#10b981;display:flex;align-items:center;justify-content:center;font-weight:800;">A</div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:#fff;">Arun <span style="font-size:10px;padding:2px 6px;border-radius:5px;background:rgba(16,185,129,.25);color:#34d399;font-weight:800;">Other Student</span></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.5);">Studying Machine Learning</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOPIC STUDY MODAL ══ -->
+  <div id="topic-modal" style="position:fixed;inset:0;z-index:110;display:none;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)closeTopicModal()">
+    <div style="background:rgba(18,10,34,.98);border:1px solid rgba(255,255,255,.14);border-radius:20px;max-width:500px;width:100%;padding:24px;box-shadow:0 24px 60px rgba(0,0,0,.9);display:flex;flex-direction:column;gap:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="tm-num" style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,.2);color:#6366f1;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;">01</div>
+          <div>
+            <div id="tm-title" style="font-size:16px;font-weight:800;color:#fff;">Topic Name</div>
+            <div id="tm-sub" style="font-size:12px;color:rgba(255,255,255,.5);">Subject</div>
+          </div>
+        </div>
+        <button onclick="closeTopicModal()" style="background:none;border:none;color:rgba(255,255,255,.5);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:4px;">OVERVIEW</div>
+        <div id="tm-desc" style="font-size:13px;color:rgba(255,255,255,.8);line-height:1.5;">Description</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:rgba(255,255,255,.4);">CORE STUDY HIGHLIGHTS</div>
+        <div style="font-size:12.5px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:8px;">
+          <span>✦</span> <span>Important theorem proofs, core formulas, and engineering derivations.</span>
+        </div>
+        <div style="font-size:12.5px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:8px;">
+          <span>⏱</span> <span>Recommended study time: 45 - 60 minutes with practice problem sets.</span>
+        </div>
+        <div style="font-size:12.5px;color:rgba(255,255,255,.65);display:flex;align-items:center;gap:8px;">
+          <span>💬</span> <span>Ask your professor in Chat for solved previous year question papers.</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button id="tm-mark-btn" onclick="toggleTopicStudied()" style="flex:1;padding:12px;border-radius:12px;background:#10b981;color:#fff;border:none;font-weight:700;cursor:pointer;font-size:13px;">Mark as Studied</button>
+        <button onclick="closeTopicModal();goToLogin();" style="padding:12px 18px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;font-weight:700;cursor:pointer;font-size:13px;">Discuss in Chat →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ GARDEN PAGE ══ -->
   <div id="page-garden">
     <canvas id="g-sky"></canvas>

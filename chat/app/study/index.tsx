@@ -5,12 +5,13 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BookOpen, Search, ArrowRight, Sparkles, GraduationCap } from 'lucide-react-native';
+import { BookOpen, Search, ArrowRight, Sparkles, Star, Layers } from 'lucide-react-native';
 import { SUBJECTS, Subject } from '../../src/data/studyData';
 import { useChatStore } from '../../src/store/chatStore';
 import { Colors, ColorPalette } from '../../src/lib/colors';
+import { BookEngineeringLogo } from '../../src/components/BookEngineeringLogo';
 
-// ─── Realistic Digital Book Card ───────────────────────────────────────────────
+// ─── Realistic Engineering Textbook Card ───────────────────────────────────────────
 function BookCard({
   subject,
   C,
@@ -30,14 +31,14 @@ function BookCard({
           width: cardWidth as any,
           backgroundColor: C.surface,
           borderColor: hovered ? subject.accent : C.border,
-          transform: [{ translateY: hovered ? -4 : 0 }],
+          transform: [{ translateY: hovered ? -6 : 0 }],
           shadowColor: hovered ? subject.accent : '#000',
-          shadowOpacity: hovered ? 0.25 : 0.08,
+          shadowOpacity: hovered ? 0.35 : 0.12,
+          shadowRadius: hovered ? 20 : 10,
         },
       ]}
       onPress={() => router.push(`/study/${subject.id}` as any)}
       activeOpacity={0.88}
-      // Web hover events
       {...(Platform.OS === 'web'
         ? {
             onMouseEnter: () => setHovered(true),
@@ -45,54 +46,85 @@ function BookCard({
           }
         : {})}
     >
-      {/* 3D Realistic Book Spine Effect */}
+      {/* 3D Bound Book Spine on Left */}
       <View style={[s.spineContainer, { backgroundColor: subject.accent }]}>
         <View style={s.spineHighlight} />
+        <View style={s.spineRibTop} />
+        <View style={s.spineRibMid} />
+        <View style={s.spineRibBot} />
         <View style={s.spineShadow} />
-        <Text style={s.spineText}>{subject.shortTitle.toUpperCase()}</Text>
+        <Text style={s.spineText} numberOfLines={1}>{subject.shortTitle.toUpperCase()}</Text>
       </View>
 
-      {/* Book Cover / Front Body */}
+      {/* Front Textbook Cover */}
       <View style={s.coverBody}>
-        {/* Top Header inside book */}
+        {/* Top Header with Edition Badge */}
         <View style={s.coverTopRow}>
-          <View style={[s.iconBadge, { backgroundColor: subject.accent + '22', borderColor: subject.accent + '44' }]}>
-            <Text style={[s.iconText, { color: subject.accent }]}>{subject.icon}</Text>
+          <View style={[s.badgePill, { backgroundColor: subject.accent + '22', borderColor: subject.accent + '55' }]}>
+            <Sparkles size={11} color={subject.accent} style={{ marginRight: 4 }} />
+            <Text style={[s.badgeText, { color: subject.accent }]}>{subject.badge}</Text>
           </View>
-          <View style={[s.chapterBadge, { backgroundColor: subject.accent + '1a', borderColor: subject.accent + '33' }]}>
-            <Text style={[s.chapterText, { color: subject.accent }]}>
-              {subject.chapters} Chapters
-            </Text>
+          <View style={s.ratingRow}>
+            <Star size={12} color="#fbbf24" fill="#fbbf24" style={{ marginRight: 3 }} />
+            <Text style={[s.ratingText, { color: C.text }]}>{subject.rating}</Text>
           </View>
         </View>
 
-        {/* Title & Description */}
-        <View style={s.textContainer}>
-          <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={2}>
-            {subject.title}
-          </Text>
+        {/* Center Title & Technical Schematic Graphic */}
+        <View style={s.centerContent}>
+          <View style={s.titleRow}>
+            <View style={[s.iconEmblem, { backgroundColor: subject.accent + '1a', borderColor: subject.accent + '44' }]}>
+              <Text style={[s.iconText, { color: subject.accent }]}>{subject.icon}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.cardTitle, { color: C.text }]} numberOfLines={2}>
+                {subject.title}
+              </Text>
+              <Text style={[s.authorByline, { color: subject.accent }]}>
+                {subject.author}
+              </Text>
+            </View>
+          </View>
+
           <Text style={[s.cardDesc, { color: C.textSecondary }]} numberOfLines={2}>
             {subject.description}
           </Text>
         </View>
 
-        {/* Footer with "Open Book" button */}
-        <View style={s.cardFooter}>
-          <View style={s.footerTopicsHint}>
-            <Text style={[s.topicCountHint, { color: C.textMuted }]}>
-              {subject.topics.length} topics • Practice ready
-            </Text>
+        {/* Edition & Specification Bar */}
+        <View style={[s.editionBar, { backgroundColor: subject.accent + '0d', borderColor: subject.accent + '25' }]}>
+          <View style={s.specItem}>
+            <Layers size={12} color={C.textMuted} style={{ marginRight: 4 }} />
+            <Text style={[s.specText, { color: C.textMuted }]}>{subject.topics.length} Syllabus Units</Text>
           </View>
+          <View style={s.specDivider} />
+          <View style={s.specItem}>
+            <Text style={[s.specText, { color: C.textMuted }]}>{subject.pages} Pages</Text>
+          </View>
+        </View>
+
+        {/* Footer with "Open Book" action */}
+        <View style={s.cardFooter}>
+          <Text style={[s.editionLabel, { color: C.textMuted }]} numberOfLines={1}>
+            {subject.edition}
+          </Text>
           <TouchableOpacity
             style={[s.openBtn, { backgroundColor: subject.accent }]}
             onPress={() => router.push(`/study/${subject.id}` as any)}
             activeOpacity={0.85}
           >
-            <BookOpen size={14} color="#ffffff" style={{ marginRight: 5 }} />
+            <BookOpen size={13} color="#ffffff" style={{ marginRight: 5 }} />
             <Text style={s.openBtnTxt}>Open Book</Text>
             <ArrowRight size={13} color="#ffffff" style={{ marginLeft: 3 }} />
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Right Edge: Realistic Stacked Paper Pages */}
+      <View style={s.paperEdgeContainer}>
+        <View style={s.paperPage1} />
+        <View style={s.paperPage2} />
+        <View style={s.paperPage3} />
       </View>
     </TouchableOpacity>
   );
@@ -119,27 +151,26 @@ export default function StudyLibraryScreen() {
     return (
       s.title.toLowerCase().includes(q) ||
       s.description.toLowerCase().includes(q) ||
+      s.author.toLowerCase().includes(q) ||
       s.topics.some((t) => t.name.toLowerCase().includes(q))
     );
   });
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: C.bg }]} edges={['top', 'bottom']}>
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar with Custom Book & Engineering Gear Logo */}
       <View style={[s.navBar, { backgroundColor: C.surface, borderBottomColor: C.border }]}>
         <View style={s.brandRow}>
-          <View style={[s.brandIcon, { backgroundColor: C.accent + '22' }]}>
-            <GraduationCap size={22} color={C.accent} />
-          </View>
-          <View>
+          <BookEngineeringLogo size={42} />
+          <View style={{ marginLeft: 10 }}>
             <View style={s.brandTitleRow}>
               <Text style={[s.brandName, { color: C.text }]}>StudyChat</Text>
               <View style={[s.proTag, { backgroundColor: C.accent + '25' }]}>
                 <Sparkles size={10} color={C.accent} />
-                <Text style={[s.proText, { color: C.accent }]}>LIBRARY</Text>
+                <Text style={[s.proText, { color: C.accent }]}>ENGINEERING</Text>
               </View>
             </View>
-            <Text style={[s.brandSub, { color: C.textSecondary }]}>Engineering Digital Books</Text>
+            <Text style={[s.brandSub, { color: C.textSecondary }]}>Digital Textbook Library</Text>
           </View>
         </View>
 
@@ -160,14 +191,18 @@ export default function StudyLibraryScreen() {
       >
         {/* Hero Section */}
         <View style={s.hero}>
-          <Text style={[s.heroBadge, { color: C.accent, backgroundColor: C.accent + '18' }]}>
-            ENGINEERING CURRICULUM
-          </Text>
+          <View style={s.heroLogoBadge}>
+            <BookEngineeringLogo size={32} />
+            <Text style={[s.heroBadge, { color: C.accent }]}>
+              ENGINEERING CURRICULUM • GATE & AICTE STANDARD
+            </Text>
+          </View>
+
           <Text style={[s.heroTitle, { color: C.text }]}>
             Engineering Study Library
           </Text>
           <Text style={[s.heroSub, { color: C.textSecondary }]}>
-            Learn. Practice. Prepare. Master your engineering subjects chapter by chapter.
+            Learn. Practice. Prepare. Master textbook chapters, theorems, and practice problem sets.
           </Text>
 
           {/* Search bar */}
@@ -175,7 +210,7 @@ export default function StudyLibraryScreen() {
             <Search size={18} color={C.textMuted} style={s.searchIcon} />
             <TextInput
               style={[s.searchInput, { color: C.text }]}
-              placeholder="Search subjects, topics (e.g. Matrices, Python, Neural Networks)..."
+              placeholder="Search textbooks, authors, topics (e.g. Khurmi, Grewal, Matrices, Thermodynamics)..."
               placeholderTextColor={C.textMuted}
               value={search}
               onChangeText={setSearch}
@@ -188,14 +223,16 @@ export default function StudyLibraryScreen() {
           </View>
         </View>
 
-        {/* Section Header */}
+        {/* Section Header with Bookshelf styling */}
         <View style={s.sectionHeaderRow}>
-          <Text style={[s.sectionTitle, { color: C.textMuted }]}>
-            {filteredSubjects.length} {filteredSubjects.length === 1 ? 'SUBJECT' : 'SUBJECTS'} AVAILABLE
-          </Text>
-          <Text style={[s.sectionDesc, { color: C.textMuted }]}>
-            Click any book to explore topics & study material
-          </Text>
+          <View style={s.sectionHeaderLeft}>
+            <Text style={[s.sectionTitle, { color: C.text }]}>
+              {filteredSubjects.length} {filteredSubjects.length === 1 ? 'TEXTBOOK' : 'TEXTBOOKS'} AVAILABLE
+            </Text>
+            <Text style={[s.sectionDesc, { color: C.textMuted }]}>
+              Standard University Editions with Comprehensive Syllabus Units
+            </Text>
+          </View>
         </View>
 
         {/* Grid of Subjects */}
@@ -217,7 +254,7 @@ export default function StudyLibraryScreen() {
               Ready to collaborate and discuss?
             </Text>
             <Text style={[s.bottomBannerSub, { color: C.textSecondary }]}>
-              Connect directly with teachers, mentors, and fellow engineering students in real time.
+              Connect directly with professors, peers, and study groups in real-time chat.
             </Text>
           </View>
           <TouchableOpacity
@@ -225,12 +262,10 @@ export default function StudyLibraryScreen() {
             onPress={() => router.push('/login')}
             activeOpacity={0.85}
           >
-            <Text style={s.bottomBannerBtnTxt}>Continue to Chat</Text>
+            <Text style={s.bottomBannerBtnTxt}>Next: Continue to Chat</Text>
             <ArrowRight size={16} color="#ffffff" />
           </TouchableOpacity>
         </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -238,133 +273,162 @@ export default function StudyLibraryScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1 },
-
-  // Navigation
+  root: {
+    flex: 1,
+  },
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    zIndex: 10,
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  brandIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  brandTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  brandName: { fontSize: 17, fontWeight: '800', letterSpacing: 0.3 },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  brandTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandName: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
   proTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
+    gap: 3,
   },
-  proText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  brandSub: { fontSize: 11, marginTop: 1 },
+  proText: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  brandSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
   skipBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderWidth: 1,
-    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
   },
-  skipTxt: { fontSize: 13, fontWeight: '700' },
-
-  // Scroll content
+  skipTxt: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 24,
+    paddingTop: 24,
+    paddingBottom: 48,
+    maxWidth: 1280,
+    width: '100%',
+    alignSelf: 'center',
   },
-
-  // Hero
   hero: {
     alignItems: 'center',
     textAlign: 'center',
-    marginBottom: 26,
-    marginTop: 6,
+    marginBottom: 32,
+  },
+  heroLogoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(99,102,241,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(99,102,241,0.25)',
+    marginBottom: 12,
   },
   heroBadge: {
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.2,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 10,
+    letterSpacing: 1,
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
+    letterSpacing: -0.8,
     textAlign: 'center',
-    letterSpacing: -0.3,
+    marginBottom: 8,
   },
   heroSub: {
-    fontSize: 14,
-    marginTop: 6,
+    fontSize: 15,
     textAlign: 'center',
     maxWidth: 580,
-    lineHeight: 20,
+    lineHeight: 22,
+    marginBottom: 20,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 580,
-    marginTop: 18,
+    maxWidth: 640,
     borderRadius: 14,
     borderWidth: 1,
     paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    paddingVertical: 4,
   },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, outlineStyle: 'none' as any },
-  clearBtn: { padding: 4 },
-
-  // Section Header
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
+  },
+  clearBtn: {
+    padding: 4,
+  },
   sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    flexWrap: 'wrap',
-    gap: 6,
+    marginBottom: 18,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  sectionHeaderLeft: {
+    gap: 2,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
   },
   sectionDesc: {
     fontSize: 12,
   },
-
-  // Grid
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 18,
     justifyContent: 'flex-start',
   },
 
-  // Realistic Digital Book Card
+  // 3D Realistic Engineering Textbook Card
   card: {
     flexDirection: 'row',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    marginBottom: 4,
+    marginBottom: 6,
+    minHeight: 220,
   },
   spineContainer: {
-    width: 24,
+    width: 26,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -376,7 +440,31 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.35)',
+  },
+  spineRibTop: {
+    position: 'absolute',
+    top: 24,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  spineRibMid: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
+  spineRibBot: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   spineShadow: {
     position: 'absolute',
@@ -384,22 +472,22 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 5,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   spineText: {
     color: '#ffffff',
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: '900',
-    letterSpacing: 1.5,
+    letterSpacing: 2,
     transform: [{ rotate: '-90deg' }],
-    width: 140,
+    width: 170,
     textAlign: 'center',
-    opacity: 0.85,
+    opacity: 0.9,
   },
   coverBody: {
     flex: 1,
     padding: 16,
-    gap: 10,
+    gap: 8,
     justifyContent: 'space-between',
   },
   coverTopRow: {
@@ -407,10 +495,39 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  centerContent: {
+    gap: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconEmblem: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -419,28 +536,41 @@ const s = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
   },
-  chapterBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    lineHeight: 20,
   },
-  chapterText: {
+  authorByline: {
     fontSize: 11,
     fontWeight: '700',
-  },
-  textContainer: {
-    gap: 4,
     marginTop: 2,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 22,
   },
   cardDesc: {
     fontSize: 12,
-    lineHeight: 18,
+    lineHeight: 17,
+  },
+  editionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  specItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  specDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  specText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   cardFooter: {
     flexDirection: 'row',
@@ -449,41 +579,54 @@ const s = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.06)',
-    marginTop: 4,
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
-  footerTopicsHint: {
-    flex: 1,
-  },
-  topicCountHint: {
-    fontSize: 11,
+  editionLabel: {
+    fontSize: 10,
     fontWeight: '600',
+    flex: 1,
   },
   openBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 13,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
   },
   openBtnTxt: {
     color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 12,
+    fontWeight: '800',
+    fontSize: 11,
+  },
+
+  // Right Edge: Realistic Stacked Paper Pages
+  paperEdgeContainer: {
+    width: 8,
+    backgroundColor: '#1a1329',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.4)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  paperPage1: {
+    width: 2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  paperPage2: {
+    width: 2,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  paperPage3: {
+    width: 2,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
   // Bottom Banner
   bottomBanner: {
     marginTop: 34,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 24,
+    padding: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -507,13 +650,13 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
   },
   bottomBannerBtnTxt: {
     color: '#ffffff',
     fontWeight: '800',
-    fontSize: 14,
+    fontSize: 13,
   },
 });

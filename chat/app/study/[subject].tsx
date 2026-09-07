@@ -7,11 +7,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft, ChevronRight, BookOpen, CheckCircle,
-  Clock, Sparkles, X, Award, ExternalLink
+  Clock, Sparkles, X, Award, FileText, HelpCircle
 } from 'lucide-react-native';
 import { getSubject, Topic, Difficulty } from '../../src/data/studyData';
 import { useChatStore } from '../../src/store/chatStore';
 import { Colors, ColorPalette } from '../../src/lib/colors';
+import { BookEngineeringLogo } from '../../src/components/BookEngineeringLogo';
 
 // ─── difficulty pill ──────────────────────────────────────────────────────────
 const DIFF_COLOR: Record<Difficulty, string> = {
@@ -64,9 +65,28 @@ function TopicCard({
           <Text style={[tc.name, { color: C.text }]} numberOfLines={1}>{topic.name}</Text>
           <DiffPill diff={topic.difficulty} />
         </View>
+
         <Text style={[tc.desc, { color: C.textSecondary }]} numberOfLines={2}>
           {topic.description}
         </Text>
+
+        {/* Formula / Key Equation Pill */}
+        {topic.formula && (
+          <View style={[tc.formulaBox, { backgroundColor: accent + '10', borderColor: accent + '30' }]}>
+            <Text style={[tc.formulaLabel, { color: accent }]}>Formula:</Text>
+            <Text style={[tc.formulaCode, { color: C.text }]} numberOfLines={1}>{topic.formula}</Text>
+          </View>
+        )}
+
+        {/* Meta info */}
+        {topic.questionsCount && (
+          <View style={tc.metaRow}>
+            <HelpCircle size={12} color={C.textMuted} />
+            <Text style={[tc.metaText, { color: C.textMuted }]}>
+              {topic.questionsCount} GATE / University practice questions
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Study Button */}
@@ -115,7 +135,7 @@ const tc = StyleSheet.create({
   },
   body: {
     flex: 1,
-    gap: 5,
+    gap: 6,
   },
   row: {
     flexDirection: 'row',
@@ -131,6 +151,36 @@ const tc = StyleSheet.create({
   desc: {
     fontSize: 12,
     lineHeight: 18,
+  },
+  formulaBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  formulaLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  formulaCode: {
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '600',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    fontWeight: '500',
   },
   studyBtn: {
     borderRadius: 10,
@@ -195,7 +245,7 @@ export default function SubjectTopicsScreen() {
 
   return (
     <SafeAreaView style={[s.root, { backgroundColor: C.bg }]} edges={['top', 'bottom']}>
-      {/* Top Bar */}
+      {/* Top Bar with Book & Engineering Logo */}
       <View style={[s.topBar, { backgroundColor: C.surface, borderBottomColor: C.border }]}>
         <TouchableOpacity
           onPress={() => router.push('/study')}
@@ -206,11 +256,14 @@ export default function SubjectTopicsScreen() {
         </TouchableOpacity>
 
         <View style={s.topBarCenter}>
-          <Text style={[s.topBarTitle, { color: C.text }]} numberOfLines={1}>
-            {subject.title}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <BookEngineeringLogo size={24} />
+            <Text style={[s.topBarTitle, { color: C.text }]} numberOfLines={1}>
+              {subject.title}
+            </Text>
+          </View>
           <Text style={[s.topBarSub, { color: C.textSecondary }]}>
-            {studiedIds.size} of {subject.topics.length} topics prepared
+            {studiedIds.size} of {subject.topics.length} topics prepared • By {subject.author}
           </Text>
         </View>
 
@@ -225,7 +278,7 @@ export default function SubjectTopicsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        {/* Hero Banner */}
+        {/* Hero Textbook Banner */}
         <View style={[s.hero, { backgroundColor: subject.accent + '14', borderColor: subject.accent + '33' }]}>
           <View style={[s.heroCoverIcon, { backgroundColor: subject.accent + '28' }]}>
             <Text style={[s.heroIcon, { color: subject.accent }]}>{subject.icon}</Text>
@@ -233,10 +286,10 @@ export default function SubjectTopicsScreen() {
           <View style={s.heroInfo}>
             <View style={s.heroBadgeRow}>
               <View style={[s.heroPill, { backgroundColor: subject.accent }]}>
-                <Text style={s.heroPillTxt}>{subject.shortTitle.toUpperCase()}</Text>
+                <Text style={s.heroPillTxt}>{subject.badge}</Text>
               </View>
               <Text style={[s.heroChapters, { color: C.textSecondary }]}>
-                {subject.chapters} Chapters • {subject.topics.length} Core Topics
+                {subject.author} • {subject.edition}
               </Text>
             </View>
 
@@ -250,6 +303,9 @@ export default function SubjectTopicsScreen() {
                   <Text style={[s.statTxt, { color: DIFF_COLOR[d] }]}>{n} {d}</Text>
                 </View>
               ))}
+              <View style={[s.statChip, { backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }]}>
+                <Text style={[s.statTxt, { color: C.textMuted }]}>{subject.pages} Pages</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -271,10 +327,10 @@ export default function SubjectTopicsScreen() {
         {/* Section Header */}
         <View style={s.sectionRow}>
           <Text style={[s.sectionLabel, { color: C.textMuted }]}>
-            CHAPTER TOPICS LIST
+            TEXTBOOK SYLLABUS UNITS ({subject.topics.length})
           </Text>
           <Text style={[s.sectionHint, { color: C.textMuted }]}>
-            Click 'Study' on any topic to review key concepts
+            Click 'Study' on any topic to review key formulas & derivations
           </Text>
         </View>
 
@@ -294,7 +350,7 @@ export default function SubjectTopicsScreen() {
         <View style={[s.nextSection, { backgroundColor: C.surface, borderColor: C.border }]}>
           <View style={s.nextTextWrap}>
             <Text style={[s.nextTitle, { color: C.text }]}>
-              Finished viewing {subject.shortTitle} topics?
+              Finished reviewing {subject.shortTitle} syllabus?
             </Text>
             <Text style={[s.nextHint, { color: C.textSecondary }]}>
               Continue to the chat application to collaborate with teachers, peers, and ask doubts.
@@ -334,7 +390,7 @@ export default function SubjectTopicsScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[s.modalTitle, { color: C.text }]}>{activeTopic.name}</Text>
-                      <Text style={[s.modalSub, { color: C.textSecondary }]}>{subject.title}</Text>
+                      <Text style={[s.modalSub, { color: C.textSecondary }]}>{subject.title} • {subject.author}</Text>
                     </View>
                   </View>
                   <TouchableOpacity onPress={() => setActiveTopic(null)} style={s.modalClose}>
@@ -344,9 +400,17 @@ export default function SubjectTopicsScreen() {
 
                 <View style={s.modalBody}>
                   <View style={[s.modalDescBox, { backgroundColor: C.card, borderColor: C.border }]}>
-                    <Text style={[s.modalSectionLabel, { color: C.textMuted }]}>OVERVIEW</Text>
+                    <Text style={[s.modalSectionLabel, { color: C.textMuted }]}>SYLLABUS OVERVIEW</Text>
                     <Text style={[s.modalDesc, { color: C.text }]}>{activeTopic.description}</Text>
                   </View>
+
+                  {/* Highlight Formula if present */}
+                  {activeTopic.formula && (
+                    <View style={[s.modalFormulaBox, { backgroundColor: subject.accent + '15', borderColor: subject.accent + '40' }]}>
+                      <Text style={[s.modalFormulaLabel, { color: subject.accent }]}>KEY FORMULA / EQUATION</Text>
+                      <Text style={[s.modalFormulaCode, { color: C.text }]}>{activeTopic.formula}</Text>
+                    </View>
+                  )}
 
                   <View style={s.keyTakeaways}>
                     <Text style={[s.modalSectionLabel, { color: C.textMuted }]}>CORE STUDY HIGHLIGHTS</Text>
@@ -365,7 +429,7 @@ export default function SubjectTopicsScreen() {
                     <View style={s.bulletItem}>
                       <BookOpen size={15} color={subject.accent} />
                       <Text style={[s.bulletText, { color: C.textSecondary }]}>
-                        Ask your professor in Chat for solved previous year question papers.
+                        {activeTopic.questionsCount ? `${activeTopic.questionsCount} standard exam problems.` : 'Standard university exam problems.'}
                       </Text>
                     </View>
                   </View>
@@ -381,12 +445,12 @@ export default function SubjectTopicsScreen() {
                     ]}
                     onPress={() => {
                       toggleStudied(activeTopic.id);
-                      setActiveTopic(null);
                     }}
+                    activeOpacity={0.85}
                   >
-                    <CheckCircle size={16} color="#ffffff" />
+                    <CheckCircle size={16} color="#ffffff" style={{ marginRight: 6 }} />
                     <Text style={s.modalMarkBtnTxt}>
-                      {studiedIds.has(activeTopic.id) ? 'Mark as Not Studied' : 'Mark as Studied / Reviewed'}
+                      {studiedIds.has(activeTopic.id) ? 'Studied ✓' : 'Mark as Studied'}
                     </Text>
                   </TouchableOpacity>
 
@@ -396,9 +460,9 @@ export default function SubjectTopicsScreen() {
                       setActiveTopic(null);
                       router.push('/login');
                     }}
+                    activeOpacity={0.8}
                   >
-                    <Text style={[s.modalChatBtnTxt, { color: C.text }]}>Discuss in Chat</Text>
-                    <ChevronRight size={14} color={C.text} />
+                    <Text style={[s.modalChatBtnTxt, { color: C.text }]}>Discuss in Chat →</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -412,66 +476,71 @@ export default function SubjectTopicsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1 },
-  notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  notFoundTxt: { fontSize: 16 },
-
-  // Top Bar
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
+  root: {
+    flex: 1,
   },
-  backBtn: {
-    width: 38,
-    height: 38,
+  notFound: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  notFoundTxt: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  backBtn: {
+    padding: 6,
+    borderRadius: 8,
+  },
   topBarCenter: {
+    alignItems: 'center',
     flex: 1,
+    marginHorizontal: 10,
   },
   topBarTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
   topBarSub: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 1,
   },
   quickNextBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    gap: 4,
   },
   quickNextTxt: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
   },
-
-  // Scroll
   scroll: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 30,
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    maxWidth: 860,
+    width: '100%',
+    alignSelf: 'center',
   },
-
-  // Hero
   hero: {
-    flexDirection: 'row',
     borderRadius: 20,
-    padding: 20,
     borderWidth: 1,
-    marginBottom: 16,
-    gap: 16,
-    flexWrap: 'wrap',
+    padding: 22,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 18,
+    marginBottom: 18,
   },
   heroCoverIcon: {
     width: 64,
@@ -482,18 +551,17 @@ const s = StyleSheet.create({
     flexShrink: 0,
   },
   heroIcon: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
   },
   heroInfo: {
     flex: 1,
-    minWidth: 240,
     gap: 6,
   },
   heroBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     flexWrap: 'wrap',
   },
   heroPill: {
@@ -503,18 +571,18 @@ const s = StyleSheet.create({
   },
   heroPillTxt: {
     color: '#ffffff',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '900',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
   heroChapters: {
     fontSize: 12,
     fontWeight: '600',
   },
   heroTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '900',
-    letterSpacing: -0.2,
+    letterSpacing: -0.5,
   },
   heroDesc: {
     fontSize: 13,
@@ -522,22 +590,20 @@ const s = StyleSheet.create({
   },
   heroStats: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     marginTop: 4,
+    flexWrap: 'wrap',
   },
   statChip: {
-    borderRadius: 8,
-    paddingHorizontal: 9,
+    paddingHorizontal: 10,
     paddingVertical: 3,
+    borderRadius: 8,
     borderWidth: 1,
   },
   statTxt: {
     fontSize: 11,
     fontWeight: '700',
   },
-
-  // Progress Card
   progressCard: {
     borderRadius: 16,
     borderWidth: 1,
@@ -567,72 +633,59 @@ const s = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-
-  // Section
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
+    paddingHorizontal: 2,
     flexWrap: 'wrap',
     gap: 6,
   },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.1,
+    letterSpacing: 1.2,
   },
   sectionHint: {
-    fontSize: 12,
+    fontSize: 11,
   },
-
-  // Next Section CTA
   nextSection: {
     borderRadius: 20,
     borderWidth: 1,
-    padding: 24,
-    marginTop: 18,
-    alignItems: 'center',
+    padding: 22,
+    marginTop: 16,
     gap: 16,
-    textAlign: 'center',
   },
   nextTextWrap: {
-    alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   nextTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    textAlign: 'center',
   },
   nextHint: {
     fontSize: 13,
-    textAlign: 'center',
-    maxWidth: 480,
     lineHeight: 19,
   },
   nextBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
     gap: 8,
-    borderRadius: 14,
-    paddingVertical: 15,
-    paddingHorizontal: 28,
     shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
   nextBtnTxt: {
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.2,
   },
-
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',
@@ -642,15 +695,16 @@ const s = StyleSheet.create({
   },
   modalCard: {
     width: '100%',
-    maxWidth: 520,
+    maxWidth: 500,
     borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
-    gap: 16,
+    padding: 22,
+    gap: 18,
     shadowColor: '#000',
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.35,
     shadowRadius: 20,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -674,9 +728,10 @@ const s = StyleSheet.create({
   },
   modalSub: {
     fontSize: 12,
+    marginTop: 1,
   },
   modalClose: {
-    padding: 6,
+    padding: 4,
   },
   modalBody: {
     gap: 14,
@@ -685,64 +740,75 @@ const s = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 14,
-    gap: 6,
+    gap: 4,
   },
   modalSectionLabel: {
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
+    marginBottom: 4,
   },
   modalDesc: {
     fontSize: 13,
     lineHeight: 19,
   },
+  modalFormulaBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    gap: 4,
+  },
+  modalFormulaLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  modalFormulaCode: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
   keyTakeaways: {
-    gap: 10,
+    gap: 8,
   },
   bulletItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: 8,
   },
   bulletText: {
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
     flex: 1,
   },
   modalFooter: {
     flexDirection: 'row',
     gap: 10,
-    paddingTop: 8,
-    flexWrap: 'wrap',
+    marginTop: 4,
   },
   modalMarkBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    flex: 1,
-    minWidth: 180,
+    borderRadius: 10,
   },
   modalMarkBtnTxt: {
     color: '#ffffff',
-    fontWeight: '700',
     fontSize: 13,
+    fontWeight: '700',
   },
   modalChatBtn: {
-    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
   },
   modalChatBtnTxt: {
-    fontWeight: '700',
     fontSize: 13,
+    fontWeight: '700',
   },
 });

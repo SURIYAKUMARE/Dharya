@@ -9,6 +9,7 @@ import { ColorPalette } from '../lib/colors';
 import { formatLastSeen } from '../lib/utils';
 import { useNotificationStore } from '../store/notificationStore';
 import { UserRole } from '../types';
+import { BookEngineeringLogo } from './BookEngineeringLogo';
 
 interface Props {
   partnerName:         string;
@@ -133,9 +134,9 @@ export function ChatHeader({
         <TouchableOpacity
           onPress={() => router.push('/study')}
           style={s.iconBtn}
-          accessibilityLabel="Study Library"
+          accessibilityLabel="Engineering Study Library"
         >
-          <GraduationCap size={19} color={C.iconDefault} />
+          <BookEngineeringLogo size={22} />
         </TouchableOpacity>
 
         {/* Search */}

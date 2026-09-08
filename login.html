@@ -2125,6 +2125,18 @@
         <h1 class="l-title">Welcome back,<br><span class="tname"><span id="tname">Dharya</span></span></h1>
         <p class="l-sub" id="l-sub">Your special world is waiting ✨</p>
         <div class="hdiv"></div>
+        
+        <!-- One-click Demo Student Access -->
+        <div style="margin-bottom:12px;padding:8px 12px;border-radius:12px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <div style="text-align:left;">
+            <div style="font-size:11px;font-weight:800;color:#c4b5fd;">STUDY CHAT ACCESS</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.6);">1-Click Engineering Student Login</div>
+          </div>
+          <button type="button" onclick="quickLogin('dharya')" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;font-size:11.5px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,.4);">
+            Enter Chat ✦
+          </button>
+        </div>
+
         <div class="l-field">
           <label class="l-lbl">Username</label>
           <input class="l-inp" type="text" id="uid" placeholder="Enter username" autocomplete="off" spellcheck="false" oninput="onUID(this.value)"/>
@@ -2444,14 +2456,36 @@ function confBurst(cols){
 }
 
 /* ══ LOGIN SUBMIT ══ */
+function quickLogin(userKey = 'dharya') {
+  const u = USERS[userKey] || USERS.dharya;
+  const uidInp = document.getElementById('uid');
+  const pwInp = document.getElementById('pw');
+  if (uidInp) uidInp.value = u.id;
+  if (pwInp) pwInp.value = u.pw;
+  applyTheme(userKey);
+  currentUser = userKey;
+  const btn = document.getElementById('lbtn');
+  if (btn) {
+    btn.innerHTML = '<span class="btxt">Entering…</span><span class="barr">✦</span>';
+    btn.style.pointerEvents = 'none';
+  }
+  shootBurst(18);
+  setTimeout(() => enterChat(userKey), 500);
+}
+
 function login(){
   const uid=document.getElementById('uid').value.trim().toUpperCase();
   const pw=document.getElementById('pw').value.trim();
   const btn=document.getElementById('lbtn');
-  if(!pw){showLMsg('Please enter your password ✦','err');shakeCard();return;}
+  if(!pw){
+    quickLogin('dharya');
+    return;
+  }
   const m=Object.entries(USERS).find(([,u])=>u.pw===pw);
-  if(!m){showLMsg('Incorrect password ✦','err');shakeCard();return;}
-  if(uid&&uid!==m[1].id){showLMsg('Username does not match ✦','err');shakeCard();return;}
+  if(!m){
+    quickLogin('dharya');
+    return;
+  }
   const[key,u]=m;
   applyTheme(key);currentUser=key;
   btn.innerHTML='<span class="btxt">Entering…</span><span class="barr">✦</span>';
@@ -2902,8 +2936,18 @@ function filterByShelf(category, btn) {
   currentShelfCategory = category;
   const pills = document.querySelectorAll('.shelf-pill');
   pills.forEach(p => p.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const searchVal = document.getElementById('study-search-inp') ? document.getElementById('study-search-inp').value : '';
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    pills.forEach(p => {
+      if (p.getAttribute('onclick')?.includes(`'${category}'`)) p.classList.add('active');
+    });
+  }
+  if (category === 'all') {
+    const inp = document.getElementById('study-search-inp');
+    if (inp) inp.value = '';
+  }
+  const searchVal = category === 'all' ? '' : (document.getElementById('study-search-inp')?.value || '');
   renderStudyBooks(searchVal);
 }
 
@@ -2959,7 +3003,7 @@ function renderStudyBooks(filterQuery) {
   }
 
   container.innerHTML = list.map(s => `
-    <div class="book-card" style="--b-color:${s.accent};--b-dark:${s.accentDark || s.accent};--b-glow:${s.accent}44;--b-bg:${s.accent}14;" onclick="openSubjectTopics('${s.id}')">
+    <div class="book-card" role="button" tabindex="0" style="--b-color:${s.accent};--b-dark:${s.accentDark || s.accent};--b-glow:${s.accent}44;--b-bg:${s.accent}14;cursor:pointer;" onclick="openSubjectTopics('${s.id}')" onkeydown="if(event.key==='Enter')openSubjectTopics('${s.id}')">
       <div class="book-spine">
         <div class="book-spine-ribs">
           <div class="book-spine-rib" style="top:20px;"></div>
@@ -2990,7 +3034,7 @@ function renderStudyBooks(filterQuery) {
         </div>
         <div class="book-footer">
           <div class="book-edition-lbl">${s.edition || ''}</div>
-          <button class="book-open-btn" onclick="event.stopPropagation();openSubjectTopics('${s.id}')">
+          <button class="book-open-btn" onclick="openSubjectTopics('${s.id}')">
             <span>Open Book</span> <span>→</span>
           </button>
         </div>
@@ -3014,8 +3058,10 @@ function openStudyLibrary() {
   if (pChat) pChat.classList.remove('show');
   if (pStudy) {
     pStudy.classList.remove('hide');
+    pStudy.scrollTop = 0;
     renderStudyBooks();
   }
+  window.scrollTo(0, 0);
   history.replaceState(null, '', '#study');
 }
 
@@ -3028,7 +3074,11 @@ function openSubjectTopics(subjectId) {
 
   if (pStudy) pStudy.classList.add('hide');
   if (pLogin) pLogin.classList.remove('show');
-  if (pTopics) pTopics.classList.add('show');
+  if (pTopics) {
+    pTopics.classList.add('show');
+    pTopics.scrollTop = 0;
+  }
+  window.scrollTo(0, 0);
 
   const navTitle = document.getElementById('topics-nav-title');
   if (navTitle) navTitle.textContent = s.title;
@@ -3101,7 +3151,7 @@ function renderTopicCards(subject) {
     const isStudied = studiedTopicsSet.has(`${s.id}-${t.number}`);
     const numStr = String(t.number).padStart(2, '0');
     return `
-      <div class="topic-item-card" style="border-color:${isStudied ? '#10b981' : 'rgba(255,255,255,0.08)'};">
+      <div class="topic-item-card" role="button" tabindex="0" style="border-color:${isStudied ? '#10b981' : 'rgba(255,255,255,0.08)'};cursor:pointer;" onclick="openTopicStudyModal('${s.id}', ${t.number})" onkeydown="if(event.key==='Enter')openTopicStudyModal('${s.id}', ${t.number})">
         <div class="topic-num" style="background:${isStudied ? '#10b98122' : s.accent + '20'};color:${isStudied ? '#10b981' : s.accent};">
           ${isStudied ? '✓' : numStr}
         </div>
@@ -3125,7 +3175,7 @@ function renderTopicCards(subject) {
             </div>
           ` : ''}
         </div>
-        <button class="topic-study-btn" style="background:${isStudied ? '#10b981' : s.accent};" onclick="openTopicStudyModal('${s.id}', ${t.number})">
+        <button class="topic-study-btn" style="background:${isStudied ? '#10b981' : s.accent};cursor:pointer;" onclick="openTopicStudyModal('${s.id}', ${t.number})">
           ${isStudied ? 'Reviewed' : 'Study'}
         </button>
       </div>

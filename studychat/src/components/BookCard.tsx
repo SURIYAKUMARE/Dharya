@@ -11,11 +11,12 @@ interface BookCardProps {
 export const BookCard: React.FC<BookCardProps> = ({ book, onOpenBook }) => {
   return (
     <motion.div
+      onClick={() => onOpenBook(book)}
       whileHover={{
         y: -4,
         transition: { duration: 0.2, ease: 'easeOut' },
       }}
-      className="group relative flex rounded-2xl overflow-hidden glass-card transition-all duration-300 min-h-[290px] border border-white/10 hover:border-white/25"
+      className="group relative flex rounded-2xl overflow-hidden glass-card transition-all duration-300 min-h-[290px] border border-white/10 hover:border-white/25 cursor-pointer"
       style={
         {
           '--card-accent': book.accent,

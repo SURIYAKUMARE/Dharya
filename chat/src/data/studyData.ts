@@ -2,6 +2,7 @@
 // All subjects + topics live here. Pages read from this file — no hard-coded JSX.
 
 export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+export type SubjectCategory = 'all' | 'core' | 'cs' | 'ai' | 'exam';
 
 export interface Topic {
   id: string;
@@ -28,6 +29,10 @@ export interface Subject {
   rating: number;
   pages: number;
   badge: string;
+  category: SubjectCategory;
+  isbn: string;
+  publisher: string;
+  academicLevel: string;
 }
 
 export const SUBJECTS: Subject[] = [
@@ -46,6 +51,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 1240,
     badge: 'GATE • ESE 2027',
+    category: 'core',
+    isbn: '978-81-7409-195-5',
+    publisher: 'Khanna Publishers • New Delhi',
+    academicLevel: 'B.Tech / GATE / ESE',
     topics: [
       { id: 'm1',  number: 1,  name: 'Matrices & Linear Algebra',          description: 'Matrix rank, eigenvalues, eigenvectors, Cayley-Hamilton theorem, and diagonalisation.', difficulty: 'Beginner', formula: 'det(A - λI) = 0', questionsCount: 45 },
       { id: 'm2',  number: 2,  name: 'Differential Calculus & Mean Value', description: 'Rolle’s theorem, Cauchy’s mean value theorem, Taylor series expansion, indeterminate forms.', difficulty: 'Intermediate', formula: 'f(x) = ∑ fⁿ(a)(x-a)ⁿ / n!', questionsCount: 38 },
@@ -76,6 +85,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.8,
     pages: 1450,
     badge: 'GATE • ESE • PSUs',
+    category: 'core',
+    isbn: '978-81-219-0176-5',
+    publisher: 'S. Chand & Co. Ltd.',
+    academicLevel: 'B.E. / B.Tech / PSUs',
     topics: [
       { id: 'me1',  number: 1,  name: 'Engineering Mechanics & Statics',     description: 'Free body diagrams, equilibrium of forces, centroids, moments of inertia, and friction analysis.', difficulty: 'Beginner', formula: '∑ Fx = 0, ∑ Fy = 0, ∑ M = 0', questionsCount: 55 },
       { id: 'me2',  number: 2,  name: 'Strength of Materials & Stresses',    description: 'Stress-strain curves, Mohr’s circle, shear force and bending moment diagrams, torsion in shafts.', difficulty: 'Intermediate', formula: 'σ = E·ε, τ/r = T/J = Gθ/L', questionsCount: 60 },
@@ -105,6 +118,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 620,
     badge: 'AICTE STANDARD',
+    category: 'cs',
+    isbn: '978-93-5260-732-7',
+    publisher: 'McGraw Hill Higher Education',
+    academicLevel: 'CSE / IT / ECE',
     topics: [
       { id: 'c1',  number: 1,  name: 'Tokens, Types & Memory Layout',    description: 'Data types, format specifiers, signed/unsigned ranges, and memory addresses.', difficulty: 'Beginner', formula: 'sizeof(int) == 4 bytes', questionsCount: 30 },
       { id: 'c2',  number: 2,  name: 'Branching, Loops & Control Flow',  description: 'if-else conditions, switch-case jump tables, while, for, and do-while loops.', difficulty: 'Beginner', formula: 'switch(expr) { case 1: ... }', questionsCount: 35 },
@@ -134,6 +151,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 740,
     badge: 'INDUSTRY READY',
+    category: 'cs',
+    isbn: '978-0-19-948017-6',
+    publisher: 'Oxford University Press',
+    academicLevel: 'Data Science & Engg.',
     topics: [
       { id: 'py1',  number: 1,  name: 'Core Syntax, Types & Memory Model',   description: 'Dynamic typing, mutable vs immutable, references, garbage collection, and slices.', difficulty: 'Beginner', formula: 'id(x), type(x), list[start:end:step]', questionsCount: 35 },
       { id: 'py2',  number: 2,  name: 'Data Structures & Comprehensions',    description: 'Lists, tuples, dict hash-tables, sets, list/dict comprehensions, and generators.', difficulty: 'Beginner', formula: '[x**2 for x in nums if x % 2 == 0]', questionsCount: 40 },
@@ -163,6 +184,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 890,
     badge: 'GATE & FAANG READY',
+    category: 'cs',
+    isbn: '978-0-07-060168-0',
+    publisher: 'Schaum’s / McGraw Hill',
+    academicLevel: 'GATE CS / FAANG Prep',
     topics: [
       { id: 'ds1',  number: 1,  name: 'Asymptotic Analysis & Big-O',        description: 'Time and space complexity, Best/Worst/Average cases, Big-O, Big-Omega, Big-Theta notation.', difficulty: 'Beginner', formula: 'T(n) = a T(n/b) + O(n^d)', questionsCount: 45 },
       { id: 'ds2',  number: 2,  name: 'Arrays & Dynamic Vectors',           description: 'Contiguous storage, amortised insertion, 2D matrix mapping, sliding window pattern.', difficulty: 'Beginner', formula: 'Addr(A[i][j]) = Base + (i·N + j)·w', questionsCount: 40 },
@@ -192,6 +217,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.7,
     pages: 940,
     badge: 'UNIVERSITY STANDARD',
+    category: 'core',
+    isbn: '978-81-89928-85-8',
+    publisher: 'Dhanpat Rai Publications',
+    academicLevel: 'First Year Engineering',
     topics: [
       { id: 'ph1',  number: 1,  name: 'Wave Optics & Interference',        description: 'Interference in thin films, Newton’s rings, air wedge, refractive index determination.', difficulty: 'Intermediate', formula: '2μt cos r = nλ (Bright fringe)', questionsCount: 35 },
       { id: 'ph2',  number: 2,  name: 'Diffraction & Polarization',        description: 'Fraunhofer diffraction at single slit, diffraction grating resolving power, Brewster’s law.', difficulty: 'Intermediate', formula: '(a+b) sin θ = nλ, tan θ_p = μ', questionsCount: 32 },
@@ -221,6 +250,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.7,
     pages: 820,
     badge: 'AICTE STANDARD',
+    category: 'core',
+    isbn: '978-81-87433-17-0',
+    publisher: 'Dhanpat Rai Publishing Co.',
+    academicLevel: 'First Year Engineering',
     topics: [
       { id: 'ch1',  number: 1,  name: 'Water Technology & Hardness Removal', description: 'Temporary vs permanent hardness, EDTA titrations, zeolite process, ion exchange, reverse osmosis.', difficulty: 'Beginner', formula: 'Hardness = [Vol of EDTA × N × 50 × 1000] / V_sample', questionsCount: 40 },
       { id: 'ch2',  number: 2,  name: 'Electrochemistry & Nernst Equation',  description: 'Electrode potential, standard hydrogen electrode, electrochemical cells, EMF and Nernst equation.', difficulty: 'Intermediate', formula: 'E = E° - (RT/nF) ln Q', questionsCount: 45 },
@@ -250,6 +283,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.8,
     pages: 710,
     badge: 'HARDWARE & GATE',
+    category: 'cs',
+    isbn: '978-0-13-198924-5',
+    publisher: 'Pearson Education Worldwide',
+    academicLevel: 'ECE / EEE / CSE',
     topics: [
       { id: 'de1',  number: 1,  name: 'Number Systems, Complements & Codes', description: 'Binary, octal, hex arithmetic, 1’s & 2’s complements, BCD, Excess-3, and Gray code conversions.', difficulty: 'Beginner', formula: '2\'s comp = 1\'s comp + 1', questionsCount: 38 },
       { id: 'de2',  number: 2,  name: 'Boolean Algebra & De Morgan Laws',    description: 'Boolean postulates, duality theorem, canonical SOP & POS expressions, and standard logic gates.', difficulty: 'Beginner', formula: '(A + B)\' = A\' · B\'', questionsCount: 42 },
@@ -258,7 +295,7 @@ export const SUBJECTS: Subject[] = [
       { id: 'de5',  number: 5,  name: 'Multiplexers, Decoders & Encoders',   description: '2:1, 4:1, 8:1 MUX implementation, decoders with active-low enables, priority encoders, and parity bits.', difficulty: 'Intermediate', formula: 'MUX Output = ∑ (m_i · s_i)', questionsCount: 40 },
       { id: 'de6',  number: 6,  name: 'Latches & Flip-Flops (SR, JK, D, T)', description: 'Clocking, setup & hold times, race-around condition in JK, Master-Slave JK flip-flop, excitation tables.', difficulty: 'Intermediate', formula: 'Q(t+1) = J Q\' + K\' Q', questionsCount: 50 },
       { id: 'de7',  number: 7,  name: 'Synchronous & Asynchronous Counters', description: 'Ripple counters, up/down counters, Mod-N synchronous counter design using state diagrams.', difficulty: 'Advanced', formula: 'Modulus = 2ⁿ states', questionsCount: 48 },
-      { id: 'de8',  number: 8,  name: 'Shift Registers & Ring Counters',     description: 'SISO, SIPO, PISO, PIPO shift registers, Johnson ring counters, and linear feedback shift registers.', difficulty: 'Intermediate', formula: 'Johnson mod = 2n states', questionsCount: 34 },
+      { id: 'de8',  number: 8,  name: 'Shift Registers & Ring Counters',     description: 'SISO, SIPO, PIPO shift registers, Johnson ring counters, and linear feedback shift registers.', difficulty: 'Intermediate', formula: 'Johnson mod = 2n states', questionsCount: 34 },
       { id: 'de9',  number: 9,  name: 'Memory Arrays: ROM, RAM & EPROM',     description: 'Static RAM 6T cell vs Dynamic RAM 1T cell, refresh circuitry, ROM diode matrix, flash memory.', difficulty: 'Advanced', formula: 'Memory capacity = 2^k words × m bits', questionsCount: 36 },
       { id: 'de10', number: 10, name: 'Programmable Logic Devices & FPGAs',   description: 'PLA, PAL, CPLD, and FPGA logic blocks, Look-Up Tables (LUTs), and hardware description basics.', difficulty: 'Advanced', formula: 'PLA: Prog AND + Prog OR', questionsCount: 30 }
     ],
@@ -279,6 +316,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.8,
     pages: 780,
     badge: 'CORE SYSTEMS',
+    category: 'cs',
+    isbn: '978-0-13-410161-3',
+    publisher: 'Pearson Higher Education',
+    academicLevel: 'Core Computer Systems',
     topics: [
       { id: 'co1',  number: 1,  name: 'Functional Units & Von Neumann',      description: 'CPU, memory, system bus (Data, Address, Control), instruction execution cycle (Fetch-Decode-Execute).', difficulty: 'Beginner', formula: 'Bus Width = 2ⁿ addressable bytes', questionsCount: 32 },
       { id: 'co2',  number: 2,  name: 'Instruction Set & Addressing Modes',  description: 'Opcode formats, zero/one/two-address instructions, direct, indirect, register, and indexed addressing.', difficulty: 'Intermediate', formula: 'Effective Address = Base + Offset', questionsCount: 42 },
@@ -308,6 +349,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 1150,
     badge: 'CUTTING EDGE',
+    category: 'ai',
+    isbn: '978-0-13-461099-3',
+    publisher: 'Pearson Global Editions',
+    academicLevel: 'AI & Data Science Specialization',
     topics: [
       { id: 'ai1',  number: 1,  name: 'Intelligent Agents & Environments',   description: 'PEAS descriptions, reflex vs goal-based agents, discrete vs continuous, deterministic vs stochastic domains.', difficulty: 'Beginner', formula: 'Agent = Architecture + Program', questionsCount: 30 },
       { id: 'ai2',  number: 2,  name: 'Uninformed Search: BFS, DFS & UCS',  description: 'State space representations, Breadth-First, Depth-First, Depth-Limited, and Uniform Cost Search.', difficulty: 'Beginner', formula: 'BFS: O(b^d), DFS: O(b^m)', questionsCount: 40 },
@@ -337,6 +382,10 @@ export const SUBJECTS: Subject[] = [
     rating: 4.9,
     pages: 980,
     badge: 'CUTTING EDGE',
+    category: 'ai',
+    isbn: '978-1-492-03264-9',
+    publisher: 'O’Reilly Media / Academic Press',
+    academicLevel: 'Advanced ML & Research',
     topics: [
       { id: 'ml1',  number: 1,  name: 'ML Taxonomy & Problem Formulation',  description: 'Supervised vs Unsupervised vs Reinforcement learning, feature scaling, train-validation-test split.', difficulty: 'Beginner', formula: 'Loss = (1/n) ∑ L(y_pred, y_true)', questionsCount: 35 },
       { id: 'ml2',  number: 2,  name: 'Linear & Ridge/Lasso Regression',    description: 'Gradient descent, ordinary least squares, L1 (Lasso) feature sparsity, and L2 (Ridge) weight decay.', difficulty: 'Beginner', formula: 'J(θ) = MSE(θ) + α ∑ |θ_i| (Lasso)', questionsCount: 44 },

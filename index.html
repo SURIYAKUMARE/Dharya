@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
   <title>Dharya ✦ Private Space</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><radialGradient id='g' cx='40%' cy='35%'><stop offset='0' stop-color='%23f472b6'/><stop offset='1' stop-color='%237c3aed'/></radialGradient></defs><circle cx='50' cy='50' r='48' fill='url(%23g)'/><text y='68' x='50' text-anchor='middle' font-size='52' font-family='serif'>✦</text></svg>"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,700;1,800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700;1,800;1,900&family=Cormorant+Garamond:ital,wght@1,700;1,800&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* ── RESET ── */
@@ -29,7 +29,8 @@
       opacity:1;pointer-events:all;
       transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
       transform:translateY(0);
-      background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(99,102,241,.14) 0%,#07020f 65%);
+      background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(139,92,246,.25) 0%,#0A0A0F 70%);
+      background-color:#0A0A0F;
     }
     #page-study.hide{opacity:0;transform:scale(.95) translateY(-10px);pointer-events:none;display:none;}
 
@@ -40,7 +41,8 @@
       opacity:0;pointer-events:none;
       transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
       transform:translateY(14px);
-      background:radial-gradient(ellipse 100% 80% at 50% -10%,rgba(168,85,247,.14) 0%,#07020f 65%);
+      background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(139,92,246,.22) 0%,#0A0A0F 70%);
+      background-color:#0A0A0F;
     }
     #page-topics.show{display:flex;opacity:1;pointer-events:all;transform:translateY(0);}
 
@@ -64,125 +66,165 @@
     /* ── STUDY LIBRARY & TOPICS STYLES ── */
     .study-navbar{
       display:flex;align-items:center;justify-content:space-between;
-      padding:16px 28px;
-      border-bottom:1px solid rgba(255,255,255,.07);
-      background:rgba(15,10,26,.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-      position:sticky;top:0;z-index:20;
+      padding:14px 28px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:rgba(10,10,15,.82);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      position:sticky;top:0;z-index:30;
     }
     .study-brand{display:flex;align-items:center;gap:12px;}
     .study-logo-icon{
-      width:38px;height:38px;border-radius:10px;
-      background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.3);
+      width:40px;height:40px;border-radius:12px;
+      background:linear-gradient(135deg,#8b5cf6,#6366f1);border:1px solid rgba(255,255,255,.2);
       display:flex;align-items:center;justify-content:center;font-size:20px;
+      box-shadow:0 4px 15px rgba(139,92,246,.35);
     }
-    .study-brand-title{font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:.2px;}
-    .study-pro-tag{font-size:10px;font-weight:800;letter-spacing:1px;background:rgba(192,38,211,.25);color:#ff4d8b;padding:2px 7px;border-radius:6px;}
+    .study-brand-title{font-size:19px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;letter-spacing:-.2px;}
+    .study-brand-title span.accent-part{color:#a78bfa;}
+    .study-pro-tag{
+      font-size:10px;font-weight:900;letter-spacing:1.2px;background:rgba(139,92,246,.2);
+      color:#c4b5fd;border:1px solid rgba(139,92,246,.4);padding:2px 8px;border-radius:9999px;
+    }
     .study-brand-sub{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;}
     .study-skip-btn{
-      padding:8px 16px;border-radius:10px;background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.4);
-      color:#ff8cf8;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;
-      transition:all .2s;
+      padding:9px 20px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#6366f1);
+      border:1px solid rgba(196,181,253,.35);color:#fff;font-size:13.5px;font-weight:700;
+      cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s;
+      box-shadow:0 4px 16px rgba(139,92,246,.35);
     }
-    .study-skip-btn:hover{background:rgba(192,38,211,.3);transform:translateY(-1px);color:#fff;}
+    .study-skip-btn:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(139,92,246,.55);color:#fff;}
     
-    .study-container{max-width:1200px;margin:0 auto;padding:28px 24px 60px;width:100%;box-sizing:border-box;}
-    .study-hero{text-align:center;margin-bottom:34px;display:flex;flex-direction:column;align-items:center;}
+    .study-container{max-width:1240px;margin:0 auto;padding:32px 24px 70px;width:100%;box-sizing:border-box;}
+    .study-hero{text-align:center;margin-bottom:32px;display:flex;flex-direction:column;align-items:center;position:relative;}
     .study-hero-badge{
-      font-size:11px;font-weight:800;letter-spacing:1.4px;color:#c026d3;
-      background:rgba(192,38,211,.15);border:1px solid rgba(192,38,211,.3);
-      padding:4px 14px;border-radius:20px;margin-bottom:12px;
+      font-size:11px;font-weight:800;letter-spacing:1.4px;color:#c4b5fd;
+      background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.4);
+      padding:5px 16px;border-radius:9999px;margin-bottom:14px;
+      display:flex;align-items:center;gap:7px;box-shadow:0 2px 10px rgba(139,92,246,.15);
     }
-    .study-hero-title{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:700;font-style:italic;color:#fff;letter-spacing:.3px;line-height:1.15;}
-    .study-hero-sub{font-size:15px;color:rgba(255,255,255,.65);margin-top:8px;max-width:580px;line-height:1.5;}
+    .study-hero-title{
+      font-family:'Playfair Display',Georgia,serif;font-size:3.4rem;font-weight:700;
+      font-style:italic;color:#fff;letter-spacing:-.5px;line-height:1.1;margin-bottom:10px;
+    }
+    @media(max-width:768px){.study-hero-title{font-size:2.5rem;}}
+    .study-hero-sub{font-size:16px;color:#94a3b8;max-width:620px;line-height:1.6;}
     
     .study-search-wrap{
-      margin-top:22px;width:100%;max-width:540px;position:relative;
+      margin-top:26px;width:100%;max-width:580px;position:relative;
     }
     .study-search-inp{
-      width:100%;padding:12px 16px 12px 42px;border-radius:14px;
-      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-      color:#fff;font-size:14px;font-family:'Inter',sans-serif;outline:none;
-      transition:border-color .2s,box-shadow .2s;box-sizing:border-box;
+      width:100%;padding:14px 20px 14px 46px;border-radius:9999px;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);
+      backdrop-filter:blur(20px);color:#fff;font-size:14.5px;font-family:'Inter',sans-serif;
+      outline:none;transition:border-color .2s,box-shadow .2s;box-sizing:border-box;
+      box-shadow:0 10px 30px rgba(0,0,0,.5);
     }
-    .study-search-inp:focus{border-color:#c026d3;box-shadow:0 0 16px rgba(192,38,211,.25);}
-    .study-search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:rgba(255,255,255,.4);pointer-events:none;}
+    .study-search-inp:focus{
+      border-color:#8b5cf6;
+      box-shadow:0 0 0 3px rgba(139,92,246,.25),0 12px 35px rgba(0,0,0,.6);
+    }
+    .study-search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:#94a3b8;pointer-events:none;}
+
+    /* Shelf Category Filter Pills */
+    .study-shelf-filters{
+      display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+      margin:22px 0 28px;
+    }
+    .shelf-pill{
+      display:flex;align-items:center;gap:7px;padding:7px 15px;border-radius:12px;
+      font-size:13px;font-weight:700;color:#94a3b8;background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);cursor:pointer;transition:all .2s;
+    }
+    .shelf-pill:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.18);}
+    .shelf-pill.active{
+      background:rgba(139,92,246,.25);border-color:#8b5cf6;color:#fff;
+      box-shadow:0 4px 16px rgba(139,92,246,.25);
+    }
+    .shelf-pill-count{
+      font-size:10px;font-weight:900;padding:1px 6px;border-radius:9999px;
+      background:rgba(255,255,255,.12);color:#cbd5e1;
+    }
+    .shelf-pill.active .shelf-pill-count{background:#8b5cf6;color:#fff;}
 
     .study-section-header{
-      display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;
     }
-    .study-section-title{font-size:11px;font-weight:800;letter-spacing:1.2px;color:rgba(255,255,255,.45);text-transform:uppercase;}
-    .study-section-hint{font-size:12px;color:rgba(255,255,255,.4);}
+    .study-section-title{font-size:11px;font-weight:800;letter-spacing:1.4px;color:#64748b;text-transform:uppercase;}
+    .study-section-hint{font-size:12px;color:#64748b;}
 
-    /* ── Book Grid ── */
+    /* ── Book Grid (3-column, responsive to 1-col mobile) ── */
     .study-grid{
-      display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:24px;
     }
     .book-card{
-      display:flex;border-radius:14px;overflow:hidden;
-      background:rgba(20,13,34,.75);border:1px solid rgba(255,255,255,.09);
+      display:flex;border-radius:18px;overflow:hidden;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
       backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-      transition:transform .28s cubic-bezier(.4,0,.2,1),box-shadow .28s ease,border-color .28s ease;
-      cursor:pointer;position:relative;min-height:220px;
+      box-shadow:0 20px 40px -15px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.09);
+      transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s ease,border-color .25s ease;
+      cursor:pointer;position:relative;min-height:280px;
     }
     .book-card:hover{
-      transform:translateY(-6px);
-      border-color:var(--b-color,#c026d3);
-      box-shadow:0 18px 45px rgba(0,0,0,.75),0 0 28px var(--b-glow,rgba(192,38,211,.25));
+      transform:translateY(-4px);
+      border-color:var(--b-color,#8b5cf6);
+      box-shadow:0 25px 50px -12px rgba(0,0,0,.85),0 0 25px var(--b-glow,rgba(139,92,246,.25)),inset 0 1px 0 rgba(255,255,255,.18);
     }
     .book-spine{
-      width:28px;position:relative;background:var(--b-color,#6366f1);
+      width:36px;position:relative;background:var(--b-color,#8b5cf6);
       display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+      border-right:1px solid rgba(255,255,255,.12);
     }
     .book-spine::before{
-      content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:rgba(255,255,255,.35);
+      content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,.3);
     }
     .book-spine::after{
-      content:'';position:absolute;right:0;top:0;bottom:0;width:5px;background:rgba(0,0,0,.35);
+      content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:rgba(0,0,0,.25);
     }
-    .book-spine-ribs{position:absolute;inset:0;pointer-events:none;}
-    .book-spine-rib{position:absolute;left:0;right:0;height:3px;background:rgba(255,255,255,.25);}
     .book-spine-txt{
-      color:#fff;font-size:8.5px;font-weight:900;letter-spacing:2px;
-      transform:rotate(-90deg);white-space:nowrap;opacity:.95;text-transform:uppercase;width:170px;text-align:center;
+      color:#fff;font-size:9.5px;font-weight:900;letter-spacing:2.2px;
+      transform:rotate(-90deg);white-space:nowrap;opacity:.95;text-transform:uppercase;
+      width:220px;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.4);
     }
-    .book-body{padding:16px;flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:8px;}
-    .book-top-row{display:flex;align-items:center;justify-content:space-between;}
+    .book-body{padding:20px 18px;flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:12px;}
+    .book-top-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
     .book-badge-tag{
-      font-size:9.5px;font-weight:900;padding:3px 8px;border-radius:6px;letter-spacing:.6px;
-      background:var(--b-bg,rgba(99,102,241,.15));color:var(--b-color,#6366f1);
-      border:1px solid var(--b-color,#6366f1);text-transform:uppercase;
+      font-size:10px;font-weight:800;padding:3px 9px;border-radius:6px;letter-spacing:.6px;
+      background:var(--b-bg,rgba(139,92,246,.15));color:var(--b-color,#8b5cf6);
+      border:1px solid var(--b-border,rgba(139,92,246,.4));text-transform:uppercase;
     }
-    .book-rating{font-size:12px;font-weight:800;color:#fbbf24;display:flex;align-items:center;gap:3px;}
-    .book-mid{display:flex;flex-direction:column;gap:6px;}
-    .book-title-row{display:flex;align-items:center;gap:10px;}
+    .book-rating{
+      font-size:12px;font-weight:800;color:#f1f5f9;display:flex;align-items:center;gap:4px;
+      background:rgba(0,0,0,.4);padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.08);
+    }
+    .book-rating span.star{color:#fbbf24;}
+    .book-mid{display:flex;flex-direction:column;gap:8px;}
+    .book-title-row{display:flex;align-items:center;gap:12px;}
     .book-icon-badge{
-      width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-      font-weight:900;font-size:18px;background:var(--b-bg,rgba(99,102,241,.15));
-      color:var(--b-color,#6366f1);border:1px solid var(--b-color,#6366f1);flex-shrink:0;
+      width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:20px;background:var(--b-bg,rgba(139,92,246,.15));
+      color:var(--b-color,#8b5cf6);border:1px solid var(--b-border,rgba(139,92,246,.4));flex-shrink:0;
+      box-shadow:0 4px 12px rgba(0,0,0,.2);
     }
-    .book-title{font-size:15px;font-weight:800;color:#fff;line-height:1.25;}
-    .book-author{font-size:11px;font-weight:700;color:var(--b-color,#a855f7);margin-top:2px;}
-    .book-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.45;}
+    .book-title{font-size:16px;font-weight:800;color:#fff;line-height:1.3;}
+    .book-author{font-size:12px;font-weight:700;color:var(--b-color,#a855f7);margin-top:2px;}
+    .book-desc{
+      font-size:12.5px;color:#94a3b8;line-height:1.5;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    }
     .book-specs-bar{
-      display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;
-      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:11px;color:rgba(255,255,255,.5);
+      display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:11.5px;color:#94a3b8;
     }
     .book-footer{
       display:flex;align-items:center;justify-content:space-between;
-      border-top:1px solid rgba(255,255,255,.06);padding-top:8px;gap:6px;
+      border-top:1px solid rgba(255,255,255,.08);padding-top:10px;gap:8px;
     }
-    .book-edition-lbl{font-size:10px;color:rgba(255,255,255,.45);font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .book-edition-lbl{font-size:11px;font-style:italic;color:#64748b;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .book-open-btn{
-      padding:6px 12px;border-radius:8px;background:var(--b-color,#6366f1);
-      color:#fff;font-size:11.5px;font-weight:800;cursor:pointer;border:none;
-      display:flex;align-items:center;gap:4px;transition:opacity .15s;
+      padding:7px 16px;border-radius:9px;background:linear-gradient(135deg,var(--b-color,#8b5cf6),var(--b-dark,#6366f1));
+      color:#fff;font-size:12px;font-weight:800;cursor:pointer;border:1px solid rgba(255,255,255,.2);
+      display:flex;align-items:center;gap:5px;transition:all .2s;box-shadow:0 4px 14px var(--b-glow,rgba(139,92,246,.3));
     }
-    .book-open-btn:hover{opacity:.9;}
-    .book-paper-edge{
-      width:8px;background:#1a1329;border-left:1px solid rgba(0,0,0,.4);
-      display:flex;justify-content:space-between;flex-shrink:0;
-    }
-    .book-paper-edge span{width:2px;background:rgba(255,255,255,.07);}
+    .book-open-btn:hover{transform:scale(1.02);box-shadow:0 6px 18px var(--b-glow,rgba(139,92,246,.5));}
 
 
     /* ── Subject Topics Page ── */
@@ -1947,7 +1989,7 @@
           <path d="M 5,38.5 L 5,40.5 C 12,38 19,39.5 24,42 C 29,39.5 36,38 43,40.5 L 43,38.5 C 36,36 29,37.5 24,40 C 19,37.5 12,36 5,38.5 Z" fill="#4338ca"/>
         </svg>
         <div style="margin-left:8px;">
-          <div class="study-brand-title">StudyChat <span class="study-pro-tag">ENGINEERING</span></div>
+          <div class="study-brand-title">Study<span class="accent-part">Chat</span> <span class="study-pro-tag">ENGINEERING</span></div>
           <div class="study-brand-sub">Digital Textbook Library</div>
         </div>
       </div>
@@ -1959,21 +2001,39 @@
 
     <div class="study-container">
       <div class="study-hero">
-        <div class="study-hero-badge" style="display:flex;align-items:center;gap:6px;">
-          <span>⚙️</span> ENGINEERING CURRICULUM • GATE &amp; AICTE STANDARD
+        <div class="study-hero-badge">
+          <span style="display:inline-block;font-size:12px;">⚙️</span> ENGINEERING CURRICULUM • GATE &amp; AICTE STANDARD
         </div>
         <h1 class="study-hero-title">Engineering Study Library</h1>
-        <p class="study-hero-sub">Learn. Practice. Prepare. Master your engineering textbook chapters, formulas, and practice problem sets.</p>
+        <p class="study-hero-sub">Learn. Practice. Prepare. Master textbook syllabus units, governing equations, and exam problem banks across core departments.</p>
 
         <div class="study-search-wrap">
           <span class="study-search-icon">🔍</span>
-          <input id="study-search-inp" class="study-search-inp" placeholder="Search subjects, topics (e.g. Matrices, Python, Neural Networks)..." oninput="renderStudyBooks(this.value)"/>
+          <input id="study-search-inp" class="study-search-inp" placeholder="Search engineering textbooks, authors, topics (e.g. Khurmi, Grewal, Matrices, Thermodynamics)..." oninput="renderStudyBooks(this.value)"/>
+        </div>
+
+        <div class="study-shelf-filters" id="study-shelf-filters">
+          <button class="shelf-pill active" onclick="filterByShelf('all', this)">
+            <span>📚 All Textbooks</span> <span class="shelf-pill-count">11</span>
+          </button>
+          <button class="shelf-pill" onclick="filterByShelf('core', this)">
+            <span>⚙️ Core Engineering</span> <span class="shelf-pill-count">4</span>
+          </button>
+          <button class="shelf-pill" onclick="filterByShelf('cs', this)">
+            <span>💻 CS &amp; Software</span> <span class="shelf-pill-count">4</span>
+          </button>
+          <button class="shelf-pill" onclick="filterByShelf('ai', this)">
+            <span>🤖 AI &amp; Data Science</span> <span class="shelf-pill-count">2</span>
+          </button>
+          <button class="shelf-pill" onclick="filterByShelf('exam', this)">
+            <span>🎯 GATE &amp; ESE Prep</span> <span class="shelf-pill-count">5</span>
+          </button>
         </div>
       </div>
 
       <div class="study-section-header">
-        <div class="study-section-title" id="study-count-lbl">10 SUBJECTS AVAILABLE</div>
-        <div class="study-section-hint">Click any book to explore topics &amp; study material</div>
+        <div class="study-section-title" id="study-count-lbl">11 TEXTBOOKS AVAILABLE</div>
+        <div class="study-section-hint">Click any book to explore units, formulas &amp; question banks</div>
       </div>
 
       <div class="study-grid" id="study-books-grid">
@@ -2445,9 +2505,12 @@ const STUDY_SUBJECTS = [
     id: 'mathematics',
     title: 'Engineering Mathematics',
     shortTitle: 'Mathematics',
+    category: 'core',
+    categoryLabel: 'MATHEMATICS',
     description: 'Calculus, linear algebra, complex analysis, differential equations and numerical transforms.',
     chapters: 11,
-    accent: '#6366f1',
+    accent: '#8b5cf6',
+    accentDark: '#6d28d9',
     accentLight: '#eef2ff',
     icon: '∑',
     author: 'Dr. B.S. Grewal & Dr. H.K. Dass',
@@ -2473,9 +2536,12 @@ const STUDY_SUBJECTS = [
     id: 'mechanical-engineering',
     title: 'Mechanical Engineering',
     shortTitle: 'Mechanical Engg.',
+    category: 'core',
+    categoryLabel: 'MECHANICAL',
     description: 'Applied mechanics, strength of materials, thermodynamics, fluid machinery, and machine design.',
     chapters: 10,
-    accent: '#e11d48',
+    accent: '#ef4444',
+    accentDark: '#b91c1c',
     accentLight: '#ffe4e6',
     icon: '⚙️',
     author: 'R.S. Khurmi & J.K. Gupta',
@@ -2500,11 +2566,14 @@ const STUDY_SUBJECTS = [
     id: 'c-programming',
     title: 'Programming in C',
     shortTitle: 'C Programming',
+    category: 'cs',
+    categoryLabel: 'PROGRAMMING',
     description: 'Structured programming, pointers, low-level memory control, bit manipulation, and POSIX I/O.',
     chapters: 10,
     accent: '#0ea5e9',
+    accentDark: '#0369a1',
     accentLight: '#f0f9ff',
-    icon: 'C',
+    icon: '💻',
     author: 'Dr. E. Balagurusamy & Dennis Ritchie',
     edition: 'ANSI C Standard 8th Edition',
     rating: 4.9,
@@ -2527,9 +2596,12 @@ const STUDY_SUBJECTS = [
     id: 'python',
     title: 'Python Programming',
     shortTitle: 'Python',
+    category: 'cs',
+    categoryLabel: 'PYTHON',
     description: 'Modern Python 3, object-oriented design, vectorized computing with NumPy, Pandas, and concurrency.',
     chapters: 10,
     accent: '#f59e0b',
+    accentDark: '#b45309',
     accentLight: '#fffbeb',
     icon: '🐍',
     author: 'Mark Lutz & Guido van Rossum',
@@ -2554,9 +2626,12 @@ const STUDY_SUBJECTS = [
     id: 'data-structures',
     title: 'Data Structures & Algorithms',
     shortTitle: 'Data Structures',
+    category: 'cs',
+    categoryLabel: 'DATA STRUCTURES',
     description: 'Algorithm complexity, linked structures, balanced trees, graph traversal, and dynamic programming.',
     chapters: 10,
     accent: '#10b981',
+    accentDark: '#047857',
     accentLight: '#ecfdf5',
     icon: '🌲',
     author: 'Seymour Lipschutz & Sartaj Sahni',
@@ -2581,9 +2656,12 @@ const STUDY_SUBJECTS = [
     id: 'physics',
     title: 'Engineering Physics',
     shortTitle: 'Physics',
+    category: 'core',
+    categoryLabel: 'PHYSICS',
     description: 'Wave optics, lasers, fiber optics, quantum wave mechanics, Maxwell equations, and superconductivity.',
     chapters: 10,
     accent: '#8b5cf6',
+    accentDark: '#6d28d9',
     accentLight: '#f5f3ff',
     icon: '⚛️',
     author: 'Dr. M.N. Avadhanulu & Dr. P.G. Kshirsagar',
@@ -2608,9 +2686,12 @@ const STUDY_SUBJECTS = [
     id: 'chemistry',
     title: 'Engineering Chemistry',
     shortTitle: 'Chemistry',
+    category: 'core',
+    categoryLabel: 'CHEMISTRY',
     description: 'Water treatment, electrochemistry, energy storage batteries, corrosion prevention, and high polymers.',
     chapters: 10,
     accent: '#ec4899',
+    accentDark: '#be185d',
     accentLight: '#fdf2f8',
     icon: '🧪',
     author: 'Dr. P.C. Jain & Dr. Monika Jain',
@@ -2635,9 +2716,12 @@ const STUDY_SUBJECTS = [
     id: 'digital-electronics',
     title: 'Digital Electronics & Logic Design',
     shortTitle: 'Digital Electronics',
+    category: 'ece',
+    categoryLabel: 'ELECTRONICS',
     description: 'Boolean theorems, combinational arithmetic, flip-flops, sequential finite state machines, and FPGA.',
     chapters: 10,
     accent: '#ef4444',
+    accentDark: '#b91c1c',
     accentLight: '#fef2f2',
     icon: '⚡',
     author: 'M. Morris Mano & Michael D. Ciletti',
@@ -2662,9 +2746,12 @@ const STUDY_SUBJECTS = [
     id: 'computer-organization',
     title: 'Computer Organization & Architecture',
     shortTitle: 'Comp. Architecture',
+    category: 'cs',
+    categoryLabel: 'ARCHITECTURE',
     description: 'CPU pipelining, RISC vs CISC, instruction cycles, memory hierarchy, cache mapping, and DMA channels.',
     chapters: 10,
     accent: '#06b6d4',
+    accentDark: '#0e7490',
     accentLight: '#ecfeff',
     icon: '🖥️',
     author: 'Carl Hamacher & Andrew S. Tanenbaum',
@@ -2689,9 +2776,12 @@ const STUDY_SUBJECTS = [
     id: 'artificial-intelligence',
     title: 'Artificial Intelligence',
     shortTitle: 'AI Foundations',
+    category: 'ai',
+    categoryLabel: 'ARTIFICIAL INTEL',
     description: 'Heuristic search algorithms, knowledge engineering, propositional logic, game trees, and NLP systems.',
     chapters: 10,
     accent: '#a855f7',
+    accentDark: '#7e22ce',
     accentLight: '#faf5ff',
     icon: '🤖',
     author: 'Stuart Russell & Peter Norvig',
@@ -2716,9 +2806,12 @@ const STUDY_SUBJECTS = [
     id: 'machine-learning',
     title: 'Machine Learning',
     shortTitle: 'Machine Learning',
+    category: 'ai',
+    categoryLabel: 'MACHINE LEARNING',
     description: 'Supervised regression & classification, SVMs, random forests, deep neural networks, and model tuning.',
     chapters: 11,
     accent: '#14b8a6',
+    accentDark: '#0f766e',
     accentLight: '#f0fdfa',
     icon: '🧠',
     author: 'Tom Mitchell & Aurélien Géron',
@@ -2803,16 +2896,48 @@ let STUDY_NOTIFS = [
 let currentSubjectId = 'mathematics';
 let studiedTopicsSet = new Set();
 let notifFilter = 'all';
+let currentShelfCategory = 'all';
+
+function filterByShelf(category, btn) {
+  currentShelfCategory = category;
+  const pills = document.querySelectorAll('.shelf-pill');
+  pills.forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const searchVal = document.getElementById('study-search-inp') ? document.getElementById('study-search-inp').value : '';
+  renderStudyBooks(searchVal);
+}
+
+function clearStudySearch() {
+  const inp = document.getElementById('study-search-inp');
+  if (inp) inp.value = '';
+  currentShelfCategory = 'all';
+  const pills = document.querySelectorAll('.shelf-pill');
+  pills.forEach((p, idx) => {
+    if (idx === 0) p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  renderStudyBooks();
+}
 
 function renderStudyBooks(filterQuery) {
   const container = document.getElementById('study-books-grid');
   if (!container) return;
-  const q = (filterQuery || '').trim().toLowerCase();
+  const q = (filterQuery !== undefined ? filterQuery : (document.getElementById('study-search-inp')?.value || '')).trim().toLowerCase();
+  
   const list = STUDY_SUBJECTS.filter(s => {
+    // 1. Shelf Category filter
+    if (currentShelfCategory === 'core' && s.category !== 'core') return false;
+    if (currentShelfCategory === 'cs' && s.category !== 'cs') return false;
+    if (currentShelfCategory === 'ai' && s.category !== 'ai') return false;
+    if (currentShelfCategory === 'exam' && !(s.badge && (s.badge.includes('GATE') || s.badge.includes('ESE') || s.badge.includes('FAANG')))) return false;
+
+    // 2. Query search
     if (!q) return true;
     return s.title.toLowerCase().includes(q) ||
            s.description.toLowerCase().includes(q) ||
+           (s.categoryLabel && s.categoryLabel.toLowerCase().includes(q)) ||
            (s.author && s.author.toLowerCase().includes(q)) ||
+           (s.badge && s.badge.toLowerCase().includes(q)) ||
            s.topics.some(t => t.name.toLowerCase().includes(q));
   });
 
@@ -2821,25 +2946,37 @@ function renderStudyBooks(filterQuery) {
     countLbl.textContent = `${list.length} ${list.length === 1 ? 'TEXTBOOK' : 'TEXTBOOKS'} AVAILABLE`;
   }
 
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column:1/-1;padding:60px 20px;text-align:center;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.12);border-radius:18px;">
+        <div style="font-size:36px;margin-bottom:12px;">🔍</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:6px;">No textbooks matched your filter</div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:18px;">Try searching for another subject or clear the category filters.</div>
+        <button class="shelf-pill active" style="margin:0 auto;display:inline-flex;padding:8px 18px;" onclick="clearStudySearch()">Reset Search</button>
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = list.map(s => `
-    <div class="book-card" style="--b-color:${s.accent};--b-glow:${s.accent}44;--b-bg:${s.accent}14;" onclick="openSubjectTopics('${s.id}')">
+    <div class="book-card" style="--b-color:${s.accent};--b-dark:${s.accentDark || s.accent};--b-glow:${s.accent}44;--b-bg:${s.accent}14;" onclick="openSubjectTopics('${s.id}')">
       <div class="book-spine">
         <div class="book-spine-ribs">
-          <div class="book-spine-rib" style="top:22px;"></div>
+          <div class="book-spine-rib" style="top:20px;"></div>
           <div class="book-spine-rib" style="top:50%;"></div>
-          <div class="book-spine-rib" style="bottom:22px;"></div>
+          <div class="book-spine-rib" style="bottom:20px;"></div>
         </div>
-        <span class="book-spine-txt">${s.shortTitle}</span>
+        <span class="book-spine-txt">${s.categoryLabel || s.shortTitle.toUpperCase()}</span>
       </div>
       <div class="book-body">
         <div class="book-top-row">
-          <div class="book-badge-tag">${s.badge || 'STANDARD EDITION'}</div>
+          <div class="book-badge-tag">${s.badge || 'AICTE STANDARD'}</div>
           <div class="book-rating">★ ${s.rating || 4.9}</div>
         </div>
         <div class="book-mid">
           <div class="book-title-row">
             <div class="book-icon-badge">${s.icon}</div>
-            <div>
+            <div style="flex:1;min-width:0;">
               <div class="book-title">${s.title}</div>
               <div class="book-author">By ${s.author}</div>
             </div>

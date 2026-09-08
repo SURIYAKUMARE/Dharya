@@ -1,11 +1,12 @@
 import React from 'react';
-import { ArrowRight, BookOpen, Sparkles, MessageSquare } from 'lucide-react';
+import { ArrowRight, BookOpen, Sparkles, MessageSquare, Lock } from 'lucide-react';
 
 interface NavbarProps {
   onLoginClick?: () => void;
+  onSecretClick?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onLoginClick, onSecretClick }) => {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-[#0A0A0F]/80 border-b border-white/[0.08] transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -27,8 +28,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
           </div>
         </div>
 
-        {/* Right Action: Login to Chat Button */}
-        <div className="flex items-center gap-4">
+        {/* Right Actions: Secret Mode & Login to Chat */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onSecretClick || (() => { window.location.href = '/login.html'; })}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-violet-200 bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 transition-all duration-200 cursor-pointer"
+            title="Secret Room / Private Space"
+          >
+            <Lock className="w-3.5 h-3.5 text-violet-400" />
+            <span className="hidden sm:inline">Secret Mode</span>
+          </button>
+
           <button
             onClick={onLoginClick}
             className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 shadow-xl shadow-violet-600/35 hover:shadow-violet-600/60 border border-violet-400/40 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"

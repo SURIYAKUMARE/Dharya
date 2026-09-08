@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Sparkles, MessageSquare } from 'lucide-react';
 
 interface NavbarProps {
   onLoginClick?: () => void;
@@ -31,8 +31,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onLoginClick }) => {
         <div className="flex items-center gap-4">
           <button
             onClick={onLoginClick}
-            className="group relative inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-600/30 hover:shadow-violet-600/50 border border-violet-400/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+            className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-indigo-500 shadow-xl shadow-violet-600/35 hover:shadow-violet-600/60 border border-violet-400/40 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
+            <MessageSquare className="w-4 h-4 text-violet-200 group-hover:scale-110 transition-transform" />
             <span>Login to Chat</span>
             <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 text-violet-200" />
           </button>

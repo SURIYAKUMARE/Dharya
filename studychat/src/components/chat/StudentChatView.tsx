@@ -28,9 +28,9 @@ export const StudentChatView: React.FC = () => {
       {
         id: 'msg-init',
         sender: 'assistant',
-        text: `Hello ${student?.name || 'Student'}! Congratulations on completing your assessment on ${
-          assessmentRecord?.topicTitle || 'your engineering topic'
-        } with a score of ${assessmentRecord?.score || 0}/${assessmentRecord?.total || 0}.\n\nI am your Educational AI Study Assistant. You can ask me to derive equations, explain code step-by-step, review common examination mistakes, or solve textbook doubts. What would you like to explore next?`,
+        text: `Welcome back, ${student?.name || 'Dharya'}! ✨\n\nI am your Educational AI Study Assistant. You can ask me to derive equations, explain code step-by-step, review common examination mistakes, or solve textbook doubts for ${
+          assessmentRecord?.topicTitle || 'your engineering curriculum'
+        }. What would you like to explore next?`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ];

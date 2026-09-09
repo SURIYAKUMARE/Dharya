@@ -6,7 +6,7 @@ import { StudyHomePage } from './components/study/StudyHomePage';
 import { SubjectTopicsView } from './components/study/SubjectTopicsView';
 import { TopicExplanationView } from './components/study/TopicExplanationView';
 import { AssessmentModal } from './components/assessment/AssessmentModal';
-import { ChatAuthModal } from './components/auth/ChatAuthModal';
+import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
 import { StudentChatView } from './components/chat/StudentChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
@@ -25,7 +25,7 @@ function AppContent() {
       case 'assessment':
         return <AssessmentModal />;
       case 'chat-login':
-        return <ChatAuthModal />;
+        return <DharyaLoginPage />;
       case 'chat':
         return <StudentChatView />;
       case 'planner':

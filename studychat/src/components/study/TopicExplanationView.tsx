@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const TopicExplanationView: React.FC = () => {
-  const { selectedTopic, selectedSubject, openAssessment, switchTab } = useStudyApp();
+  const { selectedTopic, selectedSubject, openAssessment, openAssessmentQuiz, switchTab } = useStudyApp();
 
   const currentTopic = selectedTopic || SUBJECTS_DATA[0].topics[0];
   const currentSubject = selectedSubject || SUBJECTS_DATA[0];
@@ -244,13 +244,23 @@ export const TopicExplanationView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={openAssessment}
-          className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-        >
-          <span>TAKE ASSESSMENT</span>
-          <span>→</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
+          <button
+            onClick={openAssessmentQuiz}
+            className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5"
+          >
+            <span>Practice MCQs</span>
+          </button>
+
+          <button
+            onClick={openAssessment}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+          >
+            <Award className="w-4 h-4 text-amber-300" />
+            <span>TAKE ASSESSMENT</span>
+            <span>→</span>
+          </button>
+        </div>
       </div>
     </div>
   );

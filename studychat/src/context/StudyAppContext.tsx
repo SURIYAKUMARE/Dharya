@@ -30,6 +30,8 @@ interface StudyAppContextType {
   openSubject: (subjectId: string) => void;
   openTopic: (topicId: string) => void;
   openAssessment: () => void;
+  openDharyaLogin: () => void;
+  openAssessmentQuiz: () => void;
   completeAssessment: (score: number, total: number) => void;
   assessmentRecord: AssessmentRecord | null;
   isAssessmentCompleted: boolean;
@@ -37,6 +39,7 @@ interface StudyAppContextType {
   isChatAuthenticated: boolean;
   openChatLogin: () => void;
   loginToChat: (usernameInput: string, passwordInput: string) => boolean;
+  quickLogin: (user: 'surya' | 'sadhana') => boolean;
   logoutChat: () => void;
   student: StudentProfile | null;
   tasks: StudyPlanTask[];
@@ -48,7 +51,16 @@ interface StudyAppContextType {
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
 
 export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState<AppNavTab>('home');
+  const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
+    try {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path.includes('login') || hash === '#login' || hash === '#chat') {
+        return 'chat-login';
+      }
+    } catch {}
+    return 'home';
+  });
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(SUBJECTS_DATA[0]);
   const [selectedTopic, setSelectedTopic] = useState<TopicExplanation | null>(SUBJECTS_DATA[0].topics[0]);
 
@@ -110,9 +122,32 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const openAssessment = () => {
+  const openDharyaLogin = () => {
+    // Record topic verification so chat gate is satisfied
+    if (selectedTopic && selectedSubject && !assessmentRecord) {
+      const record: AssessmentRecord = {
+        topicId: selectedTopic.id,
+        topicTitle: selectedTopic.title,
+        subjectTitle: selectedSubject.title,
+        score: 3,
+        total: 3,
+        percentage: 100,
+        completedAt: Date.now(),
+      };
+      setAssessmentRecord(record);
+      sessionStorage.setItem('study_assessment_record', JSON.stringify(record));
+    }
+    setActiveTab('chat-login');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openAssessmentQuiz = () => {
     setActiveTab('assessment');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openAssessment = () => {
+    openDharyaLogin();
   };
 
   const completeAssessment = (score: number, total: number) => {
@@ -131,18 +166,11 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const openChatLogin = () => {
-    setActiveTab('chat-login');
+    openDharyaLogin();
   };
 
-  const loginToChat = (usernameInput: string, passwordInput: string): boolean => {
-    const u = usernameInput.trim().toLowerCase();
-    const p = passwordInput.trim();
-
-    // Check credentials: surya / sadhana / student accounts
-    if (
-      (u === 'surya' || u === 'dharya') &&
-      (p === '09/10/2007' || p === '09102007' || p === 'surya' || p === 'password')
-    ) {
+  const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
+    if (user === 'surya') {
       const prof: StudentProfile = {
         username: 'surya',
         name: 'Surya',
@@ -158,10 +186,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return true;
     }
 
-    if (
-      (u === 'sadhana' || u === 'dharya') &&
-      (p === '29/02/2008' || p === '29022008' || p === 'sadhana' || p === 'password')
-    ) {
+    if (user === 'sadhana') {
       const prof: StudentProfile = {
         username: 'sadhana',
         name: 'Sadhana',
@@ -175,6 +200,28 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
       setActiveTab('chat');
       return true;
+    }
+
+    return false;
+  };
+
+  const loginToChat = (usernameInput: string, passwordInput: string): boolean => {
+    const u = usernameInput.trim().toLowerCase();
+    const p = passwordInput.trim();
+
+    // Check credentials: surya / sadhana / student accounts
+    if (
+      (u === 'surya' || u === 'dharya') &&
+      (p === '09/10/2007' || p === '09102007' || p === 'surya' || p === 'password')
+    ) {
+      return quickLogin('surya');
+    }
+
+    if (
+      (u === 'sadhana' || u === 'dharya') &&
+      (p === '29/02/2008' || p === '29022008' || p === 'sadhana' || p === 'password')
+    ) {
+      return quickLogin('sadhana');
     }
 
     // Default student demo credential
@@ -204,14 +251,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const switchTab = (tab: AppNavTab) => {
-    // If user attempts to click chat directly from nav when locked, guard it
     if (tab === 'chat') {
-      if (!isAssessmentCompleted) {
-        // Chat is locked until assessment is completed
-        return;
-      }
       if (!isChatAuthenticated) {
-        setActiveTab('chat-login');
+        openDharyaLogin();
         return;
       }
     }
@@ -244,6 +286,8 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         openSubject,
         openTopic,
         openAssessment,
+        openDharyaLogin,
+        openAssessmentQuiz,
         completeAssessment,
         assessmentRecord,
         isAssessmentCompleted,
@@ -251,6 +295,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isChatAuthenticated,
         openChatLogin,
         loginToChat,
+        quickLogin,
         logoutChat,
         student,
         tasks,

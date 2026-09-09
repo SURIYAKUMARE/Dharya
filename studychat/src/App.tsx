@@ -1,96 +1,72 @@
-import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { AcademicShell } from './components/common/AcademicShell';
-import { LoginCard } from './components/auth/LoginCard';
-import { SecretArchiveModal } from './components/auth/SecretArchiveModal';
-import { CourseDiscussion } from './components/chat/CourseDiscussion';
-import { StudyStreakGarden } from './components/garden/StudyStreakGarden';
-import { CourseTimeline } from './components/timeline/CourseTimeline';
-import { ResourceGallery } from './components/gallery/ResourceGallery';
-import { ExamScheduleTracker } from './components/schedule/ExamScheduleTracker';
-import { BonusStudyMaterial } from './components/bonus/BonusStudyMaterial';
-import { ConceptPuzzle } from './components/puzzle/ConceptPuzzle';
-import { CampusDistanceTracker } from './components/distance/CampusDistanceTracker';
-import { Lock, X } from 'lucide-react';
+import React from 'react';
+import { StudyAppProvider, useStudyApp } from './context/StudyAppContext';
+import { StudyNavbar } from './components/study/StudyNavbar';
+import { StudyBottomNav } from './components/study/StudyBottomNav';
+import { StudyHomePage } from './components/study/StudyHomePage';
+import { SubjectTopicsView } from './components/study/SubjectTopicsView';
+import { TopicExplanationView } from './components/study/TopicExplanationView';
+import { AssessmentModal } from './components/assessment/AssessmentModal';
+import { ChatAuthModal } from './components/auth/ChatAuthModal';
+import { StudentChatView } from './components/chat/StudentChatView';
+import { PlannerView } from './components/planner/PlannerView';
+import { ProfileView } from './components/profile/ProfileView';
 
-function PortalContent() {
-  const [activeTab, setActiveTab] = useState('discuss');
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSecretModalOpen, setIsSecretModalOpen] = useState(false);
-  const { isAuthenticated, secretMode } = useAuth();
+function AppContent() {
+  const { activeTab } = useStudyApp();
 
-  const renderActiveTab = () => {
+  const renderActiveView = () => {
     switch (activeTab) {
-      case 'discuss':
-        return <CourseDiscussion />;
-      case 'streak':
-        return <StudyStreakGarden />;
-      case 'modules':
-        return <CourseTimeline />;
-      case 'notes':
-        return <ResourceGallery />;
-      case 'schedule':
-        return <ExamScheduleTracker />;
-      case 'bonus':
-        return <BonusStudyMaterial />;
-      case 'practice':
-        return <ConceptPuzzle />;
-      case 'location':
-        return <CampusDistanceTracker />;
+      case 'home':
+        return <StudyHomePage />;
+      case 'subjects':
+        return <SubjectTopicsView />;
+      case 'topic-explanation':
+        return <TopicExplanationView />;
+      case 'assessment':
+        return <AssessmentModal />;
+      case 'chat-login':
+        return <ChatAuthModal />;
+      case 'chat':
+        return <StudentChatView />;
+      case 'planner':
+        return <PlannerView />;
+      case 'profile':
+        return <ProfileView />;
       default:
-        return <CourseDiscussion />;
+        return <StudyHomePage />;
     }
   };
 
   return (
-    <AcademicShell
-      activeTab={activeTab}
-      onTabChange={(tab) => setActiveTab(tab)}
-      onOpenLoginModal={() => setIsLoginModalOpen(true)}
-      onOpenSecretModal={() => setIsSecretModalOpen(true)}
-    >
-      {/* Active Component */}
-      {renderActiveTab()}
+    <div className="min-h-screen bg-[#0A0A0F] text-slate-100 flex flex-col selection:bg-indigo-500/25 selection:text-indigo-200">
+      {/* Background Glow */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(99,102,241,0.12)_0%,#0A0A0F_75%)] z-0" />
 
-      {/* Institutional Login Modal */}
-      {isLoginModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="relative w-full max-w-md">
-            <button
-              onClick={() => setIsLoginModalOpen(false)}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full text-slate-400 hover:text-white bg-black/40 hover:bg-black/60 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <LoginCard
-              onSuccess={() => setIsLoginModalOpen(false)}
-              onOpenSecretModal={() => {
-                setIsLoginModalOpen(false);
-                setIsSecretModalOpen(true);
-              }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Top Academic Navigation */}
+      <StudyNavbar />
 
-      {/* Secret Room Access (Private PIN) Modal */}
-      <SecretArchiveModal
-        isOpen={isSecretModalOpen}
-        onClose={() => setIsSecretModalOpen(false)}
-        onSuccess={() => {
-          setIsSecretModalOpen(false);
-          setActiveTab('bonus');
-        }}
-      />
-    </AcademicShell>
+      {/* Main Study Container */}
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col">
+        {renderActiveView()}
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <StudyBottomNav />
+
+      {/* Academic Footer */}
+      <footer className="relative z-10 border-t border-white/10 bg-[#0A0A0F]/80 backdrop-blur py-4 px-6 text-center text-xs text-slate-500 hidden sm:flex items-center justify-between">
+        <div>Study Portal • Engineering Curriculum &amp; Conceptual Assessment Platform</div>
+        <div className="font-mono text-[11px] text-slate-600">AICTE &amp; GATE STANDARD • 2026</div>
+      </footer>
+    </div>
   );
 }
 
 export function App() {
   return (
-    <AuthProvider>
-      <PortalContent />
-    </AuthProvider>
+    <StudyAppProvider>
+      <AppContent />
+    </StudyAppProvider>
   );
 }
 

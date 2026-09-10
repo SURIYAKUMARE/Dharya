@@ -6,7 +6,7 @@ import confetti from 'canvas-confetti';
 export const DharyaLoginPage: React.FC = () => {
   const { loginToChat, switchTab, selectedTopic, selectedSubject } = useStudyApp();
 
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('DHARYA');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');

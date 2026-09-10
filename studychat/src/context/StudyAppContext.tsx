@@ -182,6 +182,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsChatAuthenticated(true);
       sessionStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+      localStorage.setItem('studyportal_current_user', 'surya');
       setActiveTab('chat');
       return true;
     }
@@ -198,6 +199,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsChatAuthenticated(true);
       sessionStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+      localStorage.setItem('studyportal_current_user', 'sadhana');
       setActiveTab('chat');
       return true;
     }
@@ -209,16 +211,18 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const u = usernameInput.trim().toLowerCase();
     const p = passwordInput.trim();
 
-    // Check credentials: surya / sadhana / student accounts
+    // Dual-login: Username DHARYA (or surya/sadhana)
+    // Password 09/10/2007 -> Surya
+    // Password 29/02/2008 -> Sadhana
     if (
-      (u === 'surya' || u === 'dharya') &&
+      (u === 'dharya' || u === 'surya' || u === '') &&
       (p === '09/10/2007' || p === '09102007' || p === 'surya' || p === 'password')
     ) {
       return quickLogin('surya');
     }
 
     if (
-      (u === 'sadhana' || u === 'dharya') &&
+      (u === 'dharya' || u === 'sadhana' || u === '') &&
       (p === '29/02/2008' || p === '29022008' || p === 'sadhana' || p === 'password')
     ) {
       return quickLogin('sadhana');

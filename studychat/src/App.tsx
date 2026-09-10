@@ -7,7 +7,7 @@ import { SubjectTopicsView } from './components/study/SubjectTopicsView';
 import { TopicExplanationView } from './components/study/TopicExplanationView';
 import { AssessmentModal } from './components/assessment/AssessmentModal';
 import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
-import { StudentChatView } from './components/chat/StudentChatView';
+import { WhatsAppChatView } from './components/chat/WhatsAppChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
 
@@ -27,7 +27,7 @@ function AppContent() {
       case 'chat-login':
         return <DharyaLoginPage />;
       case 'chat':
-        return <StudentChatView />;
+        return <WhatsAppChatView />;
       case 'planner':
         return <PlannerView />;
       case 'profile':

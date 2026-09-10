@@ -78,7 +78,7 @@ export const StudyHomePage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search books, authors, algorithms, or formulas (e.g. Otranto, Eigenvalues, CLRS, Pointers)..."
+              placeholder="Search engineering textbooks, authors, algorithms, or formulas (e.g. CLRS, Grewal, Compilers, Pointers, Operating Systems)..."
               className="w-full pl-11 pr-10 py-3 rounded-xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#1E293B] placeholder-[#94A3B8] text-xs sm:text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all shadow-inner"
             />
             {searchQuery && (
@@ -95,13 +95,14 @@ export const StudyHomePage: React.FC = () => {
           <div className="flex items-center gap-2 pt-3 overflow-x-auto scrollbar-none text-[11px] text-[#64748B]">
             <span className="font-medium shrink-0">Popular in Library:</span>
             {[
-              'Castle of Otranto',
-              'Nation of Idiots',
               'CLRS Algorithms',
               'Higher Math Grewal',
               'C Language K&R',
+              'Dragon Book Compilers',
+              'Operating Systems',
               'Modern Physics',
-              'Deep Learning'
+              'Deep Learning',
+              'Effective Java'
             ].map((tag) => (
               <button
                 key={tag}

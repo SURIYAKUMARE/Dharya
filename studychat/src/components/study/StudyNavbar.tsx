@@ -28,11 +28,11 @@ export const StudyNavbar: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`font-bold text-sm tracking-tight ${
+                  className={`font-black text-sm sm:text-base tracking-tight ${
                     isHome ? 'text-[#1E293B]' : 'text-white'
                   }`}
                 >
-                  Engineering Portal
+                  ENGIHUB
                 </span>
                 <span
                   className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
@@ -41,7 +41,7 @@ export const StudyNavbar: React.FC = () => {
                       : 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
                   }`}
                 >
-                  B.Tech • EIE &amp; CSE
+                  All Engineering Departments
                 </span>
               </div>
               <p
@@ -49,7 +49,7 @@ export const StudyNavbar: React.FC = () => {
                   isHome ? 'text-[#64748B]' : 'text-slate-400'
                 }`}
               >
-                B.Tech Curriculum &amp; Examination Repository
+                Learn • Connect • Grow • B.Tech Engineering Portal
               </p>
             </div>
           </div>

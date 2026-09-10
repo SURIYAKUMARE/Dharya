@@ -13,6 +13,7 @@ import {
   ExternalLink,
   BookMarked
 } from 'lucide-react';
+import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyHomePage: React.FC = () => {
   const { openSubject, openTopic } = useStudyApp();
@@ -55,17 +56,20 @@ export const StudyHomePage: React.FC = () => {
       {/* 1. Open Library Banner & Academic Search */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-[#E5DFD5] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EBF3FB] border border-[#BFDBFE] text-[#1D4ED8] text-xs font-semibold">
-              <GraduationCap className="w-3.5 h-3.5 text-[#2563EB]" />
-              <span>Digital Engineering Repository • B.Tech Semester IV</span>
+          <div className="flex items-start sm:items-center gap-4">
+            <EngineeringLogo size="lg" className="hidden sm:flex" />
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EBF3FB] border border-[#BFDBFE] text-[#1D4ED8] text-xs font-semibold">
+                <GraduationCap className="w-3.5 h-3.5 text-[#2563EB]" />
+                <span>ENGIHUB • All Engineering Departments</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E293B] tracking-tight mt-1 font-serif">
+                Open Engineering Library
+              </h1>
+              <p className="text-xs sm:text-sm text-[#64748B] mt-0.5 max-w-2xl font-normal">
+                Borrow authoritative textbooks, access unit-by-unit syllabus problem sets, and complete accredited module assessments across all disciplines.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E293B] tracking-tight mt-2 font-serif">
-              Open Engineering Library
-            </h1>
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1 max-w-2xl font-normal">
-              Borrow authoritative textbooks, access unit-by-unit syllabus problem sets, and complete accredited module assessments.
-            </p>
           </div>
 
           {/* Quick Stats Pill */}

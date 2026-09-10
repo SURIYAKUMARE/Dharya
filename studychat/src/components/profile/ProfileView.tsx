@@ -1,45 +1,92 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { User, Award, CheckCircle2, Calendar, BookOpen, Clock, ShieldCheck, LogOut } from 'lucide-react';
+import { Award, CheckCircle2, Calendar, BookOpen, Clock, ShieldCheck, LogOut, Edit3, X, Save, User } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export const ProfileView: React.FC = () => {
-  const { student, assessmentRecord, isChatAuthenticated, logoutChat, tasks } = useStudyApp();
+  const { student, updateStudentProfile, assessmentRecord, isChatAuthenticated, logoutChat, tasks } = useStudyApp();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(student?.name || 'Surya');
+  const [editStudentId, setEditStudentId] = useState(student?.studentId || 'ENG-2024-0910');
+  const [editDepartment, setEditDepartment] = useState(student?.department || 'Computer Science & Engineering');
+  const [editSemester, setEditSemester] = useState(student?.semester || 'Semester 4');
 
   const completedTasks = tasks.filter((t) => t.status === 'Completed').length;
   const pendingTasks = tasks.filter((t) => t.status === 'Pending').length;
 
+  const handleOpenEdit = () => {
+    setEditName(student?.name || 'Surya');
+    setEditStudentId(student?.studentId || 'ENG-2024-0910');
+    setEditDepartment(student?.department || 'Computer Science & Engineering');
+    setEditSemester(student?.semester || 'Semester 4');
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+
+    updateStudentProfile({
+      name: editName.trim(),
+      studentId: editStudentId.trim() || 'ENG-2024-0910',
+      department: editDepartment.trim() || 'Computer Science & Engineering',
+      semester: editSemester.trim() || 'Semester 4',
+    });
+
+    setIsEditing(false);
+
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.6 },
+      colors: ['#6366f1', '#a855f7', '#10b981'],
+    });
+  };
+
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6 pb-20">
       {/* Student Profile Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0d0a18]/90 border border-white/10 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#0d0a18]/90 border border-white/10 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 border border-white/20 flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-indigo-500/20">
-            {student ? student.name.charAt(0) : 'S'}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 border border-white/20 flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-indigo-500/20 uppercase">
+            {student?.name ? student.name.charAt(0) : 'S'}
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold text-white">
-                {student ? student.name : 'Engineering Student'}
+                {student?.name || 'Surya'}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                {student ? student.studentId : 'ID: ENG-2026'}
+                {student?.studentId || 'ENG-2024-0910'}
               </span>
             </div>
             <p className="text-xs text-slate-300 font-mono">
-              {student ? student.department : 'Department of Computer Science & Engineering'} • Semester 4
+              {student?.department || 'Department of Computer Science & Engineering'} • {student?.semester || 'Semester 4'}
             </p>
           </div>
         </div>
 
-        {isChatAuthenticated && (
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {/* Edit Profile / Change Name Button */}
           <button
-            onClick={logoutChat}
-            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-semibold text-slate-400 hover:text-rose-300 transition-colors flex items-center gap-2"
+            onClick={handleOpenEdit}
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-indigo-300 hover:text-white transition-colors flex items-center gap-1.5"
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out of Chat</span>
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>Edit Profile</span>
           </button>
-        )}
+
+          {isChatAuthenticated && (
+            <button
+              onClick={logoutChat}
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-semibold text-slate-400 hover:text-rose-300 transition-colors flex items-center gap-1.5"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Academic Highlights & Stats */}
@@ -69,12 +116,12 @@ export const ProfileView: React.FC = () => {
         </div>
 
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-          <div className="text-2xl font-extrabold text-pink-400 font-mono">
-            {isChatAuthenticated ? 'Active' : 'Locked'}
+          <div className="text-2xl font-extrabold text-indigo-300 font-mono">
+            {isChatAuthenticated ? 'Verified' : 'Enrolled'}
           </div>
-          <div className="text-xs font-bold text-white">AI Chat Access</div>
+          <div className="text-xs font-bold text-white">Academic Standing</div>
           <div className="text-[10px] text-slate-400">
-            {isChatAuthenticated ? 'Verified' : 'Assessment Required'}
+            {isChatAuthenticated ? 'Active Student' : 'Course Registered'}
           </div>
         </div>
       </div>
@@ -116,6 +163,99 @@ export const ProfileView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Profile / Change Name Modal */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="relative bg-[#111827] border border-white/15 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-lg font-bold text-white">Update Profile &amp; Name</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditing(false)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Student Name
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Enter your name (e.g. Surya or Sadhana)"
+                  required
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Student ID / Roll Number
+                </label>
+                <input
+                  type="text"
+                  value={editStudentId}
+                  onChange={(e) => setEditStudentId(e.target.value)}
+                  placeholder="e.g. ENG-2024-0910"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Academic Department
+                </label>
+                <input
+                  type="text"
+                  value={editDepartment}
+                  onChange={(e) => setEditDepartment(e.target.value)}
+                  placeholder="e.g. Computer Science &amp; Engineering"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Semester
+                </label>
+                <input
+                  type="text"
+                  value={editSemester}
+                  onChange={(e) => setEditSemester(e.target.value)}
+                  placeholder="e.g. Semester 4"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Profile</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

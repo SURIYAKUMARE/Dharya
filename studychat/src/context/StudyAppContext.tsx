@@ -42,6 +42,7 @@ interface StudyAppContextType {
   quickLogin: (user: 'surya' | 'sadhana') => boolean;
   logoutChat: () => void;
   student: StudentProfile | null;
+  updateStudentProfile: (updated: Partial<StudentProfile>) => void;
   tasks: StudyPlanTask[];
   addTask: (task: Omit<StudyPlanTask, 'id' | 'createdAt'>) => void;
   setTaskStatus: (taskId: string, status: PlanStatus) => void;
@@ -83,11 +84,32 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [student, setStudent] = useState<StudentProfile | null>(() => {
     try {
-      const saved = sessionStorage.getItem('study_student_profile');
+      const saved = sessionStorage.getItem('study_student_profile') || localStorage.getItem('study_student_profile');
       if (saved) return JSON.parse(saved);
     } catch {}
-    return null;
+    return {
+      username: 'surya',
+      name: 'Surya',
+      studentId: 'ENG-2024-0910',
+      department: 'Computer Science & Engineering',
+      semester: 'Semester 4',
+    };
   });
+
+  const updateStudentProfile = (updated: Partial<StudentProfile>) => {
+    setStudent((prev) => {
+      const next: StudentProfile = {
+        username: prev?.username || 'surya',
+        name: updated.name !== undefined ? updated.name : prev?.name || 'Surya',
+        studentId: updated.studentId !== undefined ? updated.studentId : prev?.studentId || 'ENG-2024-0910',
+        department: updated.department !== undefined ? updated.department : prev?.department || 'Computer Science & Engineering',
+        semester: updated.semester !== undefined ? updated.semester : prev?.semester || 'Semester 4',
+      };
+      sessionStorage.setItem('study_student_profile', JSON.stringify(next));
+      localStorage.setItem('study_student_profile', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // Planner tasks
   const [tasks, setTasks] = useState<StudyPlanTask[]>(() => getStoredTasks());
@@ -302,6 +324,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         quickLogin,
         logoutChat,
         student,
+        updateStudentProfile,
         tasks,
         addTask,
         setTaskStatus,

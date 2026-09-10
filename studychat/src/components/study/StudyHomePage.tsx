@@ -17,6 +17,23 @@ import {
 export const StudyHomePage: React.FC = () => {
   const { openSubject, openTopic } = useStudyApp();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'eie' | 'cs' | 'software' | 'sciences'>('all');
+
+  const filteredSubjects = useMemo(() => {
+    if (activeCategory === 'eie') {
+      return SUBJECTS_DATA.filter((s) => ['sensors-transducers', 'control-systems'].includes(s.id));
+    }
+    if (activeCategory === 'cs') {
+      return SUBJECTS_DATA.filter((s) => ['programming', 'data-structures', 'database'].includes(s.id));
+    }
+    if (activeCategory === 'software') {
+      return SUBJECTS_DATA.filter((s) => ['java', 'python', 'ai-ml'].includes(s.id));
+    }
+    if (activeCategory === 'sciences') {
+      return SUBJECTS_DATA.filter((s) => ['mathematics', 'physics'].includes(s.id));
+    }
+    return SUBJECTS_DATA;
+  }, [activeCategory]);
 
   // Filtered books when searching
   const searchResults = useMemo(() => {
@@ -54,12 +71,12 @@ export const StudyHomePage: React.FC = () => {
           {/* Quick Stats Pill */}
           <div className="flex items-center gap-3 self-start sm:self-auto bg-[#FAF8F5] px-4 py-2.5 rounded-xl border border-[#E8E1D7]">
             <div className="text-center">
-              <div className="text-sm font-bold text-[#1E293B] font-mono">8</div>
+              <div className="text-sm font-bold text-[#1E293B] font-mono">10</div>
               <div className="text-[10px] text-[#64748B] uppercase">Courses</div>
             </div>
             <div className="h-6 w-px bg-[#E2E8F0]" />
             <div className="text-center">
-              <div className="text-sm font-bold text-[#1E293B] font-mono">32</div>
+              <div className="text-sm font-bold text-[#1E293B] font-mono">40</div>
               <div className="text-[10px] text-[#64748B] uppercase">Units</div>
             </div>
             <div className="h-6 w-px bg-[#E2E8F0]" />
@@ -78,7 +95,7 @@ export const StudyHomePage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search engineering textbooks, authors, algorithms, or formulas (e.g. CLRS, Grewal, Compilers, Pointers, Operating Systems)..."
+              placeholder="Search engineering textbooks, authors, algorithms, or formulas (e.g. Sawhney, Ogata, LVDT, PID, CLRS, Grewal)..."
               className="w-full pl-11 pr-10 py-3 rounded-xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#1E293B] placeholder-[#94A3B8] text-xs sm:text-sm focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB] transition-all shadow-inner"
             />
             {searchQuery && (
@@ -95,14 +112,14 @@ export const StudyHomePage: React.FC = () => {
           <div className="flex items-center gap-2 pt-3 overflow-x-auto scrollbar-none text-[11px] text-[#64748B]">
             <span className="font-medium shrink-0">Popular in Library:</span>
             {[
+              'Sawhney Measurements',
+              'Ogata Control Systems',
+              'Strain Gauges & LVDT',
+              'Pt100 RTD',
+              'PID Tuning',
               'CLRS Algorithms',
               'Higher Math Grewal',
-              'C Language K&R',
-              'Dragon Book Compilers',
-              'Operating Systems',
-              'Modern Physics',
-              'Deep Learning',
-              'Effective Java'
+              'C Language K&R'
             ].map((tag) => (
               <button
                 key={tag}
@@ -188,13 +205,70 @@ export const StudyHomePage: React.FC = () => {
               Access complete 4-unit course modules, mathematical derivations, and academic assessments.
             </p>
           </div>
-          <span className="text-xs font-mono text-[#2563EB] bg-[#EFF6FF] px-3 py-1 rounded-lg border border-[#DBEAFE] font-semibold self-start sm:self-auto">
-            8 Core Courses • 32 Modular Units
-          </span>
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+            <span className="text-xs font-mono text-[#2563EB] bg-[#EFF6FF] px-3 py-1 rounded-lg border border-[#DBEAFE] font-semibold">
+              10 Core Courses • 40 Modular Units
+            </span>
+          </div>
+        </div>
+
+        {/* Discipline Category Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] w-fit">
+          <button
+            onClick={() => setActiveCategory('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeCategory === 'all'
+                ? 'bg-[#1273C4] text-white shadow-sm'
+                : 'text-[#475569] hover:text-[#1E293B] hover:bg-white/60'
+            }`}
+          >
+            All (10)
+          </button>
+          <button
+            onClick={() => setActiveCategory('eie')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
+              activeCategory === 'eie'
+                ? 'bg-[#D97706] text-white shadow-sm'
+                : 'text-[#B45309] hover:bg-amber-100/60'
+            }`}
+          >
+            <span>⚡</span>
+            <span>EIE &amp; Instrumentation (2)</span>
+          </button>
+          <button
+            onClick={() => setActiveCategory('cs')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeCategory === 'cs'
+                ? 'bg-[#1273C4] text-white shadow-sm'
+                : 'text-[#475569] hover:text-[#1E293B] hover:bg-white/60'
+            }`}
+          >
+            Core CS (3)
+          </button>
+          <button
+            onClick={() => setActiveCategory('software')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeCategory === 'software'
+                ? 'bg-[#1273C4] text-white shadow-sm'
+                : 'text-[#475569] hover:text-[#1E293B] hover:bg-white/60'
+            }`}
+          >
+            Software &amp; AI (3)
+          </button>
+          <button
+            onClick={() => setActiveCategory('sciences')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeCategory === 'sciences'
+                ? 'bg-[#1273C4] text-white shadow-sm'
+                : 'text-[#475569] hover:text-[#1E293B] hover:bg-white/60'
+            }`}
+          >
+            Sciences (2)
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {SUBJECTS_DATA.map((subject) => (
+          {filteredSubjects.map((subject) => (
             <div
               key={subject.id}
               onClick={() => openSubject(subject.id)}

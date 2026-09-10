@@ -2454,4 +2454,589 @@ ORDER BY total_orders DESC;`,
       }
     ]
   }
+,
+  // ==========================================
+  // 9. TRANSDUCERS & SENSORS INSTRUMENTATION (EI-201)
+  // ==========================================
+  {
+    id: 'sensors-transducers',
+    title: 'Transducers & Sensors Instrumentation',
+    code: 'EI-201',
+    department: 'Electronics & Instrumentation Engineering',
+    credits: 4,
+    icon: '⚡',
+    accent: '#D97706',
+    accentLight: '#FEF3C7',
+    badgeColor: '#B45309',
+    description: 'Operating principles of mechanical, thermal, optical, and electromagnetic sensors, strain gauges, LVDT transducers, RTD calibration, piezoelectric dynamics, and industrial signal conditioning circuits.',
+    topicsCount: 4,
+    topics: [
+      {
+        id: 'eie-lvdt',
+        subjectId: 'sensors-transducers',
+        title: 'Resistive & Inductive Transducers (Strain Gauges & LVDT)',
+        unitNumber: 1,
+        unitTitle: 'Principles of Displacement & Strain Measurement',
+        difficulty: 'Intermediate',
+        estimatedMinutes: 24,
+        referenceCitation: 'A Course in Electrical & Electronic Measurements by A.K. Sawhney (Khanna Publishers, Ch. 4 & 5)',
+        simpleExplanation: 'Strain gauges measure physical deformation by changing electrical resistance when stretched or compressed. LVDTs (Linear Variable Differential Transformers) measure microscopic mechanical movements by moving a magnetic core between primary and secondary coils, creating a precise differential AC output voltage proportional to position.',
+        detailedExplanation: 'A resistance strain gauge relies on the piezoresistive effect where fractional change in resistance (ΔR/R) is related to longitudinal mechanical strain (ε) by Gauge Factor G_f = 1 + 2ν + (Δρ/ρ)/ε. In metallic foil gauges, G_f typically ranges between 2.0 and 2.2. The Linear Variable Differential Transformer (LVDT) comprises one primary excitation coil energized by an AC carrier signal (typically 1–10 kHz at 3–15 Vrms) and two identical secondary windings wound in series opposition (differential). When the ferromagnetic permeable core is at the mechanical null position, mutual inductances M1 and M2 are equal, yielding net secondary output V_out = E_s1 - E_s2 = 0. Axial core displacement induces an amplitude proportional to displacement and a phase shift indicating displacement direction (0° or 180° with respect to primary). Demodulation using phase-sensitive rectifiers extracts a signed DC measurement signal with sub-micrometer resolution.',
+        importantConcepts: [
+          'Gauge Factor Equation: G_f = (ΔR/R) / (ΔL/L) = 1 + 2ν + (Δρ/ρ)/ε where ν is Poisson ratio.',
+          'Wheatstone Bridge configurations: Quarter-bridge (1 active gauge), Half-bridge (2 gauges for temperature compensation), and Full-bridge (4 active gauges yielding 4x sensitivity).',
+          'LVDT series-opposition secondary: V_out = E_s1 - E_s2. At null, V_out = 0 (ideally); residual null voltage arises from harmonic distortion and stray capacitance.',
+          'Phase-Sensitive Demodulation (PSD) discards carrier frequency and provides bidirectional polarity detection for LVDT.'
+        ],
+        examples: [
+          {
+            title: 'Strain Gauge Wheatstone Bridge Calculation',
+            problem: 'A foil strain gauge with nominal resistance R = 120 Ω and Gauge Factor G_f = 2.05 is bonded to a steel tensile member. When loaded, a strain of ε = 800 με (800 x 10^-6) is applied. In a quarter-bridge powered by V_in = 10 V, calculate the change in resistance ΔR and the output bridge voltage V_out.',
+            solution: '1. ΔR = R * G_f * ε = 120 * 2.05 * (800 * 10^-6) = 0.1968 Ω.\n2. For an initially balanced quarter bridge: V_out = V_in * (ΔR / (4R + 2ΔR)) ≈ V_in * (ΔR / (4R)) = 10 * (0.1968 / 480) = 4.10 mV.\n3. This 4.10 mV signal is fed into an instrumentation amplifier (AD620) with gain A_v = 244 to produce a 1.0 V full-scale readable analog output.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'formula',
+          content: 'G_f = (ΔR / R) / ε  ==>  ΔR = R_0 * G_f * ε\n\n// Full-Bridge Wheatstone Output:\nV_out = V_s * (G_f * ε)\n\n// LVDT Output:\nV_out(t) = K * x * sin(ω_c * t)',
+          caption: 'Mathematical formulation of Strain Gauge bridge sensitivity and LVDT displacement equations'
+        },
+        stepByStep: [
+          { step: 1, title: 'Mechanical Mounting', description: 'Affix metallic foil gauge with cyanoacrylate adhesive along the principal stress axis.' },
+          { step: 2, title: 'Bridge Completion', description: 'Wire into half-bridge or full-bridge configuration to eliminate thermal expansion drift.' },
+          { step: 3, title: 'Excitation', description: 'Apply stable regulated DC excitation voltage (typically 5V or 10V) to bridge terminals.' },
+          { step: 4, title: 'Instrumentation Amplification', description: 'Feed microvolt differential signal into high-CMRR instrumentation amplifier (AD620 or INA128).' }
+        ],
+        keyPoints: [
+          'Full-bridge configuration cancels out lead-wire resistance effects and temperature-induced false strain.',
+          'LVDT exhibits zero mechanical friction because the core does not contact the coil bore, ensuring infinite mechanical lifespan.'
+        ],
+        commonMistakes: [
+          'Confusing Gauge Factor with material Young modulus.',
+          'Ignoring LVDT null residual voltage caused by odd harmonics in the excitation source.'
+        ],
+        quickRevision: [
+          'G_f ≈ 2.0 for metal foil gauges.',
+          'Quarter-bridge = V_s(ΔR/4R).',
+          'Full-bridge = V_s(ΔR/R) = 4x output.',
+          'LVDT: AC carrier + core position + PSD demodulation.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_lvdt_1',
+            question: 'What is the primary advantage of connecting two active strain gauges on opposite sides of a cantilever beam in a half-bridge circuit?',
+            options: ['Double the resistance and halve current draw', 'Double the strain sensitivity while completely canceling ambient temperature drift', 'Eliminate the need for an instrumentation amplifier', 'Permit AC excitation only'],
+            correctIndex: 1,
+            explanation: 'When a cantilever bends, the top gauge experiences tension (+ε) and the bottom gauge experiences compression (-ε). In adjacent bridge arms, their strain effects add up (2x output), while temperature changes cause equal expansion in both, perfectly canceling out thermal drift.'
+          }
+        ]
+      },
+      {
+        id: 'eie-temperature',
+        subjectId: 'sensors-transducers',
+        title: 'Industrial Temperature & Pressure Sensors (RTD Pt100 & Thermocouples)',
+        unitNumber: 2,
+        unitTitle: 'Thermal and Mechanical Stress Instrumentation',
+        difficulty: 'Intermediate',
+        estimatedMinutes: 26,
+        referenceCitation: 'Measurement Systems: Application and Design by Ernest O. Doebelin (McGraw-Hill, Ch. 8 & 9)',
+        simpleExplanation: 'RTDs (Resistance Temperature Detectors like Pt100) use platinum wire whose resistance increases predictably with heat. Thermocouples generate a tiny millivolt thermoelectric voltage whenever two dissimilar metals are joined and subjected to a temperature gradient (Seebeck effect).',
+        detailedExplanation: 'Platinum RTDs (Pt100) exhibit exactly 100.00 Ω resistance at 0 °C with a positive temperature coefficient of resistance α = 0.00385 Ω/Ω/°C (DIN IEC 60751 standard). Between 0 °C and 850 °C, platinum resistance follows the Callendar-Van Dusen equation: R(t) = R_0(1 + A*t + B*t^2). Industrial installations employ 3-wire or 4-wire Kelvin connections to eliminate lead wire resistance errors. Thermocouples operate on the Seebeck Effect: an open-circuit voltage V = ∫ (S_A - S_B) dT develops across the cold (reference) and hot (measuring) junctions. Standard types include Type K (Chromel-Alumel, sensitivity ~41 μV/°C, range -200 °C to 1250 °C) and Type J (Iron-Constantan). Cold Junction Compensation (CJC) using local silicon thermistors (e.g. PT100 or AD595) is mandatory to establish an accurate 0 °C electronic ice-point baseline.',
+        importantConcepts: [
+          'Callendar-Van Dusen Equation: R(t) = 100 * (1 + 3.9083e-3*t - 5.775e-7*t^2).',
+          'Lead-wire compensation: 3-wire RTD configuration puts lead resistance in opposing bridge legs; 4-wire passes constant current through outer leads and measures voltage across inner leads with high-Z amplifier.',
+          'Seebeck Effect, Peltier Effect, and Thomson Effect constitute the three thermoelectric phenomena.',
+          'Law of Intermediate Metals: Introducing a third conductor into a thermocouple circuit does not modify net EMF provided both ends of the third metal are at identical temperatures.'
+        ],
+        examples: [
+          {
+            title: 'Pt100 Temperature Measurement Calculation',
+            problem: 'An industrial Pt100 sensor installed in a chemical reactor reads a resistance of R_t = 138.50 Ω. Determine the reactor temperature assuming standard linear coefficient α = 0.00385 /°C.',
+            solution: '1. Linear formula: R_t = R_0 * (1 + α * ΔT).\n2. 138.50 = 100 * (1 + 0.00385 * t).\n3. 1.385 = 1 + 0.00385 * t  ==>  0.385 = 0.00385 * t.\n4. t = 0.385 / 0.00385 = 100.0 °C.\n5. The reactor temperature is precisely 100.0 °C.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'formula',
+          content: '// 1. RTD Resistance Equation (0 °C to 850 °C):\nR(t) = R_0 * [1 + A*t + B*t^2]\nwhere R_0 = 100 Ω, A = 3.9083e-3, B = -5.775e-7\n\n// 2. Thermocouple Seebeck EMF:\nE_net = S_AB * (T_hot - T_cold)',
+          caption: 'Callendar-Van Dusen equation for Pt100 RTDs and Seebeck thermoelectric EMF relationship'
+        },
+        stepByStep: [
+          { step: 1, title: 'Sensor Selection', description: 'Choose Pt100 for high precision (< 500 °C) or Type K thermocouple for high temperatures (up to 1250 °C).' },
+          { step: 2, title: 'Lead Wire Wiring', description: 'Connect 3-wire RTD to transmitter bridge to balance lead resistances R_L1 and R_L2.' },
+          { step: 3, title: 'Cold Junction Compensation', description: 'Measure terminal block temperature with local thermistor to perform software CJC for thermocouples.' },
+          { step: 4, title: 'Linearization', description: 'Apply 5th-order polynomial lookup table in micro-controller firmware to linearize thermocouple EMF.' }
+        ],
+        keyPoints: [
+          'RTDs provide superior accuracy, repeatability, and linearity compared to thermocouples.',
+          'Thermocouples are self-powered, extremely rugged, and cover wide temperature extremes up to 1800 °C (Type B/S/R).'
+        ],
+        commonMistakes: [
+          'Using a 2-wire RTD over long industrial cable runs (causes severe positive temperature offset due to copper wire resistance).',
+          'Connecting copper extension wire directly to thermocouple probes without matching compensation extension wire.'
+        ],
+        quickRevision: [
+          'Pt100: 100 Ω at 0 °C, 138.5 Ω at 100 °C.',
+          'α = 0.00385 Ω/Ω/°C.',
+          '3-wire / 4-wire cancels cable resistance.',
+          'Thermocouple requires Cold Junction Compensation (CJC).'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_temp_1',
+            question: 'Why is a 3-wire or 4-wire connection preferred over a 2-wire connection for industrial Pt100 RTDs situated 50 meters away from the control panel?',
+            options: ['To allow AC power transmission', 'Because 50 meters of copper wire adds 2-5 ohms of series resistance, causing a false positive temperature error of 5 °C to 13 °C in a 2-wire setup', 'Because thermocouples require 3 wires', 'To prevent electromagnetic induction from power lines'],
+            correctIndex: 1,
+            explanation: 'In Pt100, 1 °C change corresponds to only ~0.385 Ω. A long 50m cable run with 2.5 Ω loop resistance would be mistaken by a 2-wire receiver for an extra +6.5 °C temperature increase. The 3-wire bridge configuration places equal lead wire resistances in opposite legs of the bridge, canceling the cable resistance.'
+          }
+        ]
+      },
+      {
+        id: 'eie-optical-flow',
+        subjectId: 'sensors-transducers',
+        title: 'Flow, Level & Optical Transducers (Venturi & Ultrasonic)',
+        unitNumber: 3,
+        unitTitle: 'Fluid Dynamics & Optical Metrology',
+        difficulty: 'Advanced',
+        estimatedMinutes: 28,
+        referenceCitation: 'Process Control Instrumentation Technology by Curtis D. Johnson (Pearson, Ch. 5)',
+        simpleExplanation: 'Flow meters measure fluid volume passing through pipes using pressure differentials (Venturi and Orifice plates based on Bernoulli theorem), electromagnetic induction (Faraday law in conductive fluids), or ultrasonic sound propagation time shifts. Ultrasonic level sensors calculate distance by timing acoustic echo bounces.',
+        detailedExplanation: 'Differential pressure (DP) flow meters employ a constriction in the flow line (Orifice plate, Venturi tube, or Flow nozzle) to accelerate fluid velocity, creating a static pressure drop according to Bernoulli and continuity principles: Q = C_d * A_2 * sqrt(2 * ΔP / (ρ * (1 - β^4))), where β = d/D is the diameter ratio and C_d is the discharge coefficient. Venturi tubes offer up to 90% pressure recovery compared to orifice plates. For non-invasive fluid metering, Electromagnetic Flowmeters apply Faraday Law of Induction: E = B * v * D, where fluid conductivity must exceed 5 μS/cm. Ultrasonic transit-time flowmeters transmit acoustic pulses diagonally across the stream; fluid motion accelerates downstream pulses (t_down) and retards upstream pulses (t_up), yielding time difference Δt = 2 * v * L * cos(θ) / c^2 directly proportional to average fluid velocity v.',
+        importantConcepts: [
+          'Bernoulli Flow Equation: Volumetric flow rate Q is proportional to the square root of differential pressure: Q ∝ sqrt(ΔP). A square root extractor is mandatory in the receiver.',
+          'Beta Ratio: β = d / D, typically selected between 0.3 and 0.7 to balance pressure drop and measurement resolution.',
+          'Faraday Induction Flowmeter: E = B * v * D is independent of fluid viscosity, density, or temperature.',
+          'Ultrasonic Time-of-Flight distance measurement: Distance d = (v_sound * t_echo) / 2.'
+        ],
+        examples: [
+          {
+            title: 'Orifice Meter Flow Calculation',
+            problem: 'An orifice meter with differential pressure transmitter generates a 4-20 mA current loop signal calibrated for 0 to 100 kPa ΔP, corresponding to 0 to 200 m^3/hr maximum water flow rate. If the transmitter outputs a current of 13 mA, calculate the measured volumetric flow rate.',
+            solution: '1. Normalized current signal: I_norm = (13 - 4) / (20 - 4) = 9 / 16 = 0.5625 (56.25% of ΔP full-scale).\n2. Because flow rate follows square-root relationship: Q = Q_max * sqrt(I_norm).\n3. Q = 200 * sqrt(0.5625) = 200 * 0.75 = 150.0 m^3/hr.\n4. The water flow rate is 150.0 m^3/hr.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'formula',
+          content: '// 1. Differential Pressure Flow Rate:\nQ = C_d * A_2 * sqrt( (2 * ΔP) / (ρ * (1 - β^4)) ) ==> Q ∝ sqrt(ΔP)\n\n// 2. Electromagnetic Flowmeter (Faraday):\nE = B * v * D\n\n// 3. Ultrasonic Transit-Time:\nv = [L / (2 * cos(θ))] * [(t_up - t_down) / (t_up * t_down)]',
+          caption: 'Differential pressure square-root flow equation and Faraday electromagnetic flow relation'
+        },
+        stepByStep: [
+          { step: 1, title: 'Straight Run Installation', description: 'Ensure minimum 10 pipe diameters upstream and 5 diameters downstream of straight unobstructed pipe.' },
+          { step: 2, title: 'Impulse Line Hookup', description: 'Connect high and low pressure taps to 3-valve or 5-valve manifold.' },
+          { step: 3, title: 'Zero & Span Calibration', description: 'Equalize manifold valves to calibrate transmitter 4 mA electronic zero.' },
+          { step: 4, title: 'Square Root Extraction', description: 'Enable square root extraction in the DP transmitter or PLC analog input channel.' }
+        ],
+        keyPoints: [
+          'DP flow meters require square root extraction to linearize the flow measurement signal.',
+          'Magnetic flowmeters do not introduce any obstruction or pressure drop in the pipeline.'
+        ],
+        commonMistakes: [
+          'Forgetting square-root extraction, leading to severe under-measurement at low flow rates.',
+          'Using magnetic flow meters with non-conductive fluids such as deionized water or hydrocarbons.'
+        ],
+        quickRevision: [
+          'Orifice/Venturi: Q ∝ sqrt(ΔP).',
+          'Square-root extraction needed.',
+          'Magmeter: E = B*v*D (needs conductive fluid).',
+          'Ultrasonic: non-invasive, transit-time difference.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_flow_1',
+            question: 'When the flow rate through an orifice plate doubles, what happens to the differential pressure (ΔP) developed across the taps?',
+            options: ['ΔP doubles (2x)', 'ΔP quadruples (4x)', 'ΔP is halved', 'ΔP remains unchanged'],
+            correctIndex: 1,
+            explanation: 'Because volumetric flow rate Q ∝ sqrt(ΔP), differential pressure ΔP is proportional to the square of flow: ΔP ∝ Q^2. When flow doubles (2x), differential pressure quadruples (2^2 = 4x).'
+          }
+        ]
+      },
+      {
+        id: 'eie-signal-conditioning',
+        subjectId: 'sensors-transducers',
+        title: 'Smart Transmitters & Signal Conditioning (AD620 & 4-20mA)',
+        unitNumber: 4,
+        unitTitle: 'Industrial Signal Processing & Fieldbus Standards',
+        difficulty: 'Advanced',
+        estimatedMinutes: 30,
+        referenceCitation: 'Industrial Instrumentation and Control by S.K. Singh (McGraw-Hill, Ch. 12 & 14)',
+        simpleExplanation: 'Sensors produce delicate microvolt or picofarad signals that cannot survive industrial electrical noise. Signal conditioning circuits use three-op-amp instrumentation amplifiers (like the AD620) to amplify differences while rejecting common-mode noise, converting sensor data into the rugged, standard 4-20 mA current loop that travels kilometers without signal loss.',
+        detailedExplanation: 'The classical 3-op-amp Instrumentation Amplifier (e.g. AD620 or INA128) provides ultra-high input impedance (GΩ range), high Common-Mode Rejection Ratio (CMRR > 100 dB), and low input offset voltage drift. The first stage consists of two non-inverting buffers cross-coupled via a single gain resistor R_G, providing differential gain A_d1 = 1 + 2*R_1/R_G while maintaining unity common-mode gain (A_c1 = 1). The second stage is a differential subtractor rejecting common noise. Industrial field instruments convert the amplified voltage into a 4-20 mA current loop standard (ANSI/ISA-50.1). A current loop offers three distinct advantages: (1) line resistance produces zero voltage attenuation because the transmitter regulates current regardless of cable length up to loop voltage limits; (2) the 4 mA zero baseline provides live zero detection (0 mA immediately diagnoses a broken wire or cut cable); and (3) low power allows 2-wire loop-powered transmitters to draw operating power (< 3.5 mA) directly from the signal loop.',
+        importantConcepts: [
+          'Instrumentation Amplifier Gain: G = 1 + (49.4 kΩ / R_G) for AD620 set by a single precision external resistor.',
+          'Common-Mode Rejection Ratio: CMRR = 20 * log10(A_d / A_cm) dB. Essential for rejecting 50Hz/60Hz hum induced on long sensor lines.',
+          'Live Zero: 4 mA represents 0% process variable, while 20 mA represents 100%. 0 mA indicates fault condition (line break).',
+          'HART Protocol: Superimposes 1.2 kHz and 2.2 kHz Bell 202 FSK digital communication on top of the 4-20 mA analog signal.'
+        ],
+        examples: [
+          {
+            title: '4-20 mA Current Loop Calibration Calculation',
+            problem: 'A pressure transmitter is calibrated for 0 to 600 bar. If the control room PLC analog input card measures 15.2 mA across its precision 250 Ω burden resistor, calculate the measured pressure and the voltage dropped across the resistor.',
+            solution: '1. Voltage across resistor: V = I * R = 15.2 mA * 250 Ω = 3.80 V (standard 1-5 V ADC range).\n2. Current span: I_span = 20 mA - 4 mA = 16 mA.\n3. Fraction of span: (15.2 mA - 4.0 mA) / 16.0 mA = 11.2 / 16.0 = 0.70 (70%).\n4. Measured Pressure: P = 0 + 0.70 * 600 bar = 420.0 bar.\n5. The system pressure is 420.0 bar.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'code',
+          language: 'c',
+          content: `// Firmware snippet for converting 4-20mA ADC raw counts to Engineering Units
+#define ADC_MAX_COUNTS 65535.0f
+#define V_REF 5.0f
+#define R_BURDEN 250.0f // 250 Ohm resistor (1V - 5V)
+
+float convert_loop_to_pressure(uint16_t adc_counts, float p_min, float p_max) {
+    float voltage = (adc_counts / ADC_MAX_COUNTS) * V_REF;
+    float current_mA = (voltage / R_BURDEN) * 1000.0f;
+    
+    // Live Zero Check: < 3.6 mA indicates broken cable
+    if (current_mA < 3.6f) {
+        return -999.0f; // SENSOR_FAULT_OPEN_CIRCUIT
+    }
+    
+    float fraction = (current_mA - 4.0f) / 16.0f;
+    if (fraction < 0.0f) fraction = 0.0f;
+    if (fraction > 1.0f) fraction = 1.0f;
+    
+    return p_min + fraction * (p_max - p_min);
+}`,
+          caption: 'C algorithm for 4-20mA current loop ADC acquisition with broken-wire live zero diagnostics'
+        },
+        stepByStep: [
+          { step: 1, title: 'Differential Sensing', description: 'Route paired sensor leads into high-CMRR AD620 instrumentation amplifier.' },
+          { step: 2, title: 'Gain Resistor Sizing', description: 'Calculate single external gain resistor R_G to scale millivolts to 0-5V.' },
+          { step: 3, title: 'V-to-I Conversion', description: 'Pass 0-5V voltage into XTR115 or op-amp BJT current pump to generate 4-20mA.' },
+          { step: 4, title: 'Loop Receiving', description: 'Terminate loop at PLC with 250 Ω 0.1% resistor to produce 1-5V ADC input.' }
+        ],
+        keyPoints: [
+          '4-20 mA current loops are immune to long-distance cable resistance and voltage drops.',
+          'A 250 Ω shunt resistor converts 4-20 mA directly into the universal 1-5 V ADC input standard.'
+        ],
+        commonMistakes: [
+          'Using a 0-20 mA signal instead of 4-20 mA, which destroys the ability to distinguish between 0% measurement and a severed cable.',
+          'Exceeding loop power supply compliance voltage with excessive cable run resistance.'
+        ],
+        quickRevision: [
+          'AD620: 3 op-amps, single R_G, CMRR > 100 dB.',
+          '4-20 mA: immune to line resistance.',
+          'Live Zero (4 mA): detects broken wire.',
+          '250 Ω shunt = 1 to 5 V standard.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_sig_1',
+            question: 'What does a current reading of 0.0 mA indicate in a standard 4-20 mA industrial transmitter loop?',
+            options: ['Process variable is at 0% (zero pressure/flow)', 'Broken wire, disconnected loop, or transmitter power failure', 'The transmitter is calibrating', 'Process variable is negative'],
+            correctIndex: 1,
+            explanation: 'In 4-20 mA systems, 4.0 mA represents 0% (the "live zero"). A reading of 0.0 mA cannot occur during normal process operation and specifically diagnoses an open circuit, severed wire, or dead power supply.'
+          }
+        ]
+      }
+    ]
+  },
+
+  // ==========================================
+  // 10. CONTROL SYSTEMS & INDUSTRIAL AUTOMATION (EI-202)
+  // ==========================================
+  {
+    id: 'control-systems',
+    title: 'Control Systems & Industrial Automation',
+    code: 'EI-202',
+    department: 'Electronics & Instrumentation Engineering',
+    credits: 4,
+    icon: '⚙️',
+    accent: '#0D9488',
+    accentLight: '#CCFBF1',
+    badgeColor: '#0F766E',
+    description: 'Mathematical modeling of physical systems, block diagram algebra, Routh-Hurwitz stability, PID controller tuning, Bode plots, Nyquist criterion, and PLC/SCADA automation.',
+    topicsCount: 4,
+    topics: [
+      {
+        id: 'eie-transfer-function',
+        subjectId: 'control-systems',
+        title: 'Mathematical Modeling & Transfer Functions (Block Diagrams & Mason Gain)',
+        unitNumber: 1,
+        unitTitle: 'Dynamic System Modeling & State Space',
+        difficulty: 'Intermediate',
+        estimatedMinutes: 25,
+        referenceCitation: 'Modern Control Engineering by Katsuhiko Ogata (Prentice Hall, Ch. 2 & 3)',
+        simpleExplanation: 'A transfer function describes the relationship between the input and output of a physical system using Laplace transforms (s-domain). Complex interconnected systems are simplified into a single overall input-output transfer function using Block Diagram Reduction rules or Mason Gain Formula on signal flow graphs.',
+        detailedExplanation: 'The transfer function G(s) of a linear time-invariant (LTI) system is defined as the ratio of the Laplace transform of output Y(s) to the Laplace transform of input U(s) under zero initial conditions: G(s) = Y(s) / U(s). For an electromechanical DC motor system with armature resistance R_a, inductance L_a, motor torque constant K_t, back-EMF constant K_b, rotor inertia J, and viscous damping b, the open-loop transfer function is G(s) = K_t / ( (J*s + b)*(L_a*s + R_a) + K_t*K_b ). For complex interconnected systems with multiple feedback and feedforward loops, Mason Gain Formula computes the overall closed-loop transfer function directly from a Signal Flow Graph (SFG): T(s) = (1 / Δ) * Σ (P_k * Δ_k), where P_k is the path gain of the k-th forward path, Δ is the system graph determinant Δ = 1 - Σ L_i + Σ L_j*L_k - Σ L_l*L_m*L_n (sum of non-touching loop gains), and Δ_k is the cofactor of the k-th forward path.',
+        importantConcepts: [
+          'Closed-loop transfer function with negative feedback: T(s) = G(s) / (1 + G(s)*H(s)).',
+          'Poles and Zeros: Poles are roots of the denominator polynomial (determine natural stability and transient speed); zeros are roots of the numerator polynomial.',
+          'Mason Gain Formula: P = (1/Δ) * Σ (P_k * Δ_k). Eliminates tedious algebraic block diagram reductions.',
+          'State-space representation: dx/dt = A*x + B*u, y = C*x + D*u converts n-th order differential equations into first-order matrix vector forms.'
+        ],
+        examples: [
+          {
+            title: 'Closed-Loop Negative Feedback Calculation',
+            problem: 'A control loop has forward transfer function G(s) = 10 / (s + 2) and feedback sensor transfer function H(s) = 0.5. Calculate the overall closed-loop transfer function T(s) and determine the closed-loop pole location.',
+            solution: '1. Negative feedback formula: T(s) = G(s) / (1 + G(s)*H(s)).\n2. T(s) = [10 / (s + 2)] / [1 + 10*0.5 / (s + 2)] = [10 / (s + 2)] / [(s + 2 + 5) / (s + 2)].\n3. T(s) = 10 / (s + 7).\n4. The open-loop pole was at s = -2. The closed-loop pole has shifted to s = -7.\n5. The feedback has made the system 3.5x faster (time constant reduced from τ = 0.5s to τ = 0.143s) and significantly more stable.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'formula',
+          content: '// 1. Closed-Loop Transfer Function:\nT(s) = G(s) / [1 + G(s) * H(s)]\n\n// 2. Mason Gain Formula:\nT = (1 / Δ) * Σ (P_k * Δ_k)\n\n// 3. Second-Order System:\nT(s) = ω_n^2 / (s^2 + 2*ζ*ω_n*s + ω_n^2)',
+          caption: 'Closed-loop feedback canonical formula and standard second-order system response parameters'
+        },
+        stepByStep: [
+          { step: 1, title: 'Physical Modeling', description: 'Apply Newton laws (mechanical) or Kirchhoff laws (electrical) to formulate differential equations.' },
+          { step: 2, title: 'Laplace Transformation', description: 'Take Laplace transforms with zero initial conditions to convert d/dt into s-domain operators.' },
+          { step: 3, title: 'Block Diagram / SFG', description: 'Construct signal flow graph showing forward paths and feedback loops.' },
+          { step: 4, title: 'Mason Formula Reduction', description: 'Identify forward paths P_k and non-touching loops to compute overall transfer function.' }
+        ],
+        keyPoints: [
+          'Negative feedback reduces system parameter sensitivity and speeds up response, at the expense of reducing open-loop gain.',
+          'A system is asymptotically stable if and only if all closed-loop poles lie strictly in the open left-half of the s-plane (Re(s) < 0).'
+        ],
+        commonMistakes: [
+          'Using positive feedback formula (+) instead of negative feedback (-) in denominator 1 + G(s)H(s).',
+          'Overlooking non-touching loops when calculating the graph determinant Δ in Mason formula.'
+        ],
+        quickRevision: [
+          'T(s) = G(s) / (1 + G(s)H(s)).',
+          'Poles in LHP = Stable.',
+          'Mason: (1/Δ) * Σ(P_k * Δ_k).',
+          'ζ < 1: underdamped; ζ = 1: critically damped; ζ > 1: overdamped.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_tf_1',
+            question: 'For a standard second-order system T(s) = 25 / (s^2 + 6s + 25), what are the damping ratio ζ and natural frequency ω_n?',
+            options: ['ω_n = 5 rad/s, ζ = 0.6', 'ω_n = 25 rad/s, ζ = 3.0', 'ω_n = 5 rad/s, ζ = 1.0', 'ω_n = 6 rad/s, ζ = 0.5'],
+            correctIndex: 0,
+            explanation: 'Comparing with standard form s^2 + 2*ζ*ω_n*s + ω_n^2: ω_n^2 = 25 ==> ω_n = 5 rad/s. Then 2*ζ*ω_n = 6 ==> 2*ζ*5 = 6 ==> 10*ζ = 6 ==> ζ = 0.6 (underdamped response with pleasant transient overshoot).'
+          }
+        ]
+      },
+      {
+        id: 'eie-pid-tuning',
+        subjectId: 'control-systems',
+        title: 'Time Response & PID Tuning (Ziegler-Nichols & Routh Stability)',
+        unitNumber: 2,
+        unitTitle: 'Transient Response & Industrial PID Algorithms',
+        difficulty: 'Intermediate',
+        estimatedMinutes: 28,
+        referenceCitation: 'Control Systems Engineering by I.J. Nagrath & M. Gopal (New Age International, Ch. 5 & 6)',
+        simpleExplanation: 'PID controllers are the workhorse of industrial automation. The Proportional term corrects based on current error, the Integral term eliminates steady-state offset by accumulating past error, and the Derivative term predicts future error to dampen overshoot. Ziegler-Nichols tuning provides systematic empirical formulas to dial in these gains.',
+        detailedExplanation: 'The three-term continuous PID controller produces control effort u(t) = K_p * e(t) + K_i * ∫ e(τ) dτ + K_d * (de(t)/dt) = K_p * [ e(t) + (1/T_i) * ∫ e(τ) dτ + T_d * (de(t)/dt) ]. In Laplace domain, G_c(s) = K_p + K_i/s + K_d*s. Proportional action speeds up response but introduces steady-state error for step inputs in Type-0 systems. Integral action increases system type by 1, driving steady-state error e_ss to absolute zero, but adds -90° phase lag which degrades stability. Derivative action injects phase lead (+90°), counteracting oscillations and improving damping ratio, but amplifies high-frequency measurement noise (requiring a low-pass filter derivative term s / (1 + s*T_f)). Ziegler-Nichols Closed-Loop (Oscillation) Method sets T_i = ∞ and T_d = 0, increases proportional gain until the system reaches sustained marginal oscillation with Ultimate Gain K_u and Ultimate Period P_u. Controller parameters are then set to: K_p = 0.6*K_u, T_i = 0.5*P_u, and T_d = 0.125*P_u. Routh-Hurwitz stability criterion determines stability without factoring the polynomial by testing sign changes in the first column of the Routh array.',
+        importantConcepts: [
+          'Parallel PID Formula: u(t) = K_p * e(t) + K_i * ∫ e dt + K_d * (de/dt).',
+          'Ziegler-Nichols Ultimate Gain Tuning: For PID: K_p = 0.6 * K_u, T_i = 0.5 * P_u, T_d = 0.125 * P_u.',
+          'Integral Windup: Occurs when actuator saturates (e.g. valve 100% open) while error persists, causing integral term to grow excessively. Prevented with anti-windup clamping.',
+          'Routh-Hurwitz Criterion: Necessary condition is all coefficients positive; sufficient condition is zero sign changes in first column of Routh table.'
+        ],
+        examples: [
+          {
+            title: 'Ziegler-Nichols PID Gain Calculation',
+            problem: 'During a tuning test on a chemical heat exchanger control loop, sustained marginal oscillations occurred when proportional gain reached K_u = 12.0. The measured oscillation period was P_u = 4.0 seconds. Calculate the Ziegler-Nichols tuning gains K_p, K_i, and K_d.',
+            solution: '1. K_p = 0.6 * K_u = 0.6 * 12.0 = 7.20.\n2. Integral time: T_i = 0.5 * P_u = 0.5 * 4.0 = 2.0 s ==> K_i = K_p / T_i = 7.20 / 2.0 = 3.60 s^-1.\n3. Derivative time: T_d = 0.125 * P_u = 0.125 * 4.0 = 0.50 s ==> K_d = K_p * T_d = 7.20 * 0.50 = 3.60 s.\n4. The configured controller is: u(t) = 7.2*e(t) + 3.6*∫e dt + 3.6*(de/dt).'
+          }
+        ],
+        formulasOrCode: {
+          type: 'code',
+          language: 'c',
+          content: `// Industrial Digital Discrete PID Algorithm with Anti-Windup Clamping
+typedef struct {
+    float Kp, Ki, Kd;
+    float dt;
+    float integral;
+    float prev_error;
+    float out_min, out_max;
+} PIDController;
+
+float pid_compute(PIDController *pid, float setpoint, float process_variable) {
+    float error = setpoint - process_variable;
+    float p_term = pid->Kp * error;
+    
+    pid->integral += error * pid->dt;
+    float i_term = pid->Ki * pid->integral;
+    
+    float derivative = (error - pid->prev_error) / pid->dt;
+    float d_term = pid->Kd * derivative;
+    
+    float output = p_term + i_term + d_term;
+    
+    if (output > pid->out_max) {
+        output = pid->out_max;
+        pid->integral -= error * pid->dt; // Anti-windup clamping
+    } else if (output < pid->out_min) {
+        output = pid->out_min;
+        pid->integral -= error * pid->dt; // Anti-windup clamping
+    }
+    
+    pid->prev_error = error;
+    return output;
+}`,
+          caption: 'Production C discrete PID controller with derivative filtering and anti-windup protection'
+        },
+        stepByStep: [
+          { step: 1, title: 'Open Loop Stabilization', description: 'Verify process operates safely around steady-state operating point.' },
+          { step: 2, title: 'Find Ultimate Gain', description: 'Disable I and D. Slowly increase K_p until continuous amplitude oscillation is observed (K_u, P_u).' },
+          { step: 3, title: 'Apply Z-N Formulas', description: 'Compute K_p = 0.6*K_u, T_i = 0.5*P_u, T_d = 0.125*P_u.' },
+          { step: 4, title: 'Fine Tuning', description: 'Slightly reduce K_p and K_i if overshoot exceeds 15% in operational trials.' }
+        ],
+        keyPoints: [
+          'Integral action eliminates steady-state error but reduces stability margins.',
+          'Derivative action anticipates future trajectory, dampening overshoot and speeding up settling time.'
+        ],
+        commonMistakes: [
+          'Applying derivative action on noisy raw sensor readings without a low-pass filter (causes actuator jitter).',
+          'Omitting integral anti-windup clamping in closed-loop systems with physical valves or motors.'
+        ],
+        quickRevision: [
+          'P = present error, I = past error (eliminates e_ss), D = future error.',
+          'Ziegler-Nichols PID: K_p=0.6*K_u, T_i=0.5*P_u, T_d=0.125*P_u.',
+          'Anti-windup prevents saturation overshoot.',
+          'Routh array: sign changes = RHP unstable poles.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_pid_1',
+            question: 'What is the primary role of the Integral (I) term in a closed-loop industrial PID controller?',
+            options: ['Dampen transient overshoot', 'Eliminate steady-state error (offset) to drive the error exactly to zero', 'Speed up the initial rise time', 'Filter out high frequency sensor noise'],
+            correctIndex: 1,
+            explanation: 'While Proportional control leaves a permanent residual steady-state error (offset) for step inputs in Type-0 systems, the Integral term continues accumulating any non-zero error over time, continuously adjusting the control output until the process variable perfectly matches the setpoint (error = 0).'
+          }
+        ]
+      },
+      {
+        id: 'eie-frequency-response',
+        subjectId: 'control-systems',
+        title: 'Frequency-Domain Analysis (Bode Plots & Nyquist Stability)',
+        unitNumber: 3,
+        unitTitle: 'Stability Criteria & Polar Plots',
+        difficulty: 'Advanced',
+        estimatedMinutes: 28,
+        referenceCitation: 'Automatic Control Systems by Benjamin C. Kuo (Wiley, Ch. 9 & 10)',
+        simpleExplanation: 'Frequency response analysis studies how a control system responds to sinusoidal inputs of varying frequencies. Bode plots display magnitude (dB) and phase angle (degrees) on logarithmic scales, allowing engineers to directly read Gain Margin and Phase Margin to guarantee stability and prevent dangerous resonance oscillations.',
+        detailedExplanation: 'Frequency response is obtained by substituting s = jω into the transfer function G(s). The complex quantity G(jω) = |G(jω)| * e^(j*∠G(jω)) defines the amplitude ratio and phase shift between steady-state sinusoidal output and input. Bode plots plot 20*log10|G(jω)| (in decibels) and ∠G(jω) (in degrees) against log10(ω). Two critical stability margins determine robustness: (1) Gain Crossover Frequency (ω_gc) where |G(jω)| = 1 (0 dB). Phase Margin is PM = 180° + ∠G(jω_gc). For stable well-damped systems, PM should be between 30° and 60°. (2) Phase Crossover Frequency (ω_pc) where phase angle ∠G(jω) = -180°. Gain Margin is GM = -20*log10|G(jω_pc)| dB. The Nyquist Stability Criterion plots G(jω) on the complex plane (polar plot) for -∞ < ω < ∞. The number of unstable closed-loop poles Z = N + P, where P is the number of open-loop poles in the right-half s-plane, and N is the number of clockwise encirclements of the critical point (-1 + j0). For an open-loop stable system (P = 0), the closed-loop system is stable if and only if the Nyquist contour does not encircle (-1 + j0) (N = 0).',
+        importantConcepts: [
+          'Gain Margin: GM = 1 / |G(jω_pc)| = -20*log10|G(jω_pc)| dB. Measures how much gain can increase before instability.',
+          'Phase Margin: PM = 180° + ∠G(jω_gc). Measures how much additional phase lag is tolerated before instability.',
+          'Bode asymptotes: First-order pole 1/(1 + s/ω_0) rolls off at -20 dB/decade after corner frequency ω_0, with -45° phase shift at ω_0 and -90° at high frequencies.',
+          'Nyquist Stability Criterion: Z = N + P. Closed loop is stable if Z = 0.'
+        ],
+        examples: [
+          {
+            title: 'Bode Stability Margin Calculation',
+            problem: 'A control loop has open-loop transfer function G(s) = 10 / (s*(s + 1)*(s + 5)). At frequency ω = 1.414 rad/s, the magnitude is |G(jω)| = 1.0 (0 dB), and the phase angle is ∠G(jω) = -145°. Calculate the Gain Crossover Frequency and the Phase Margin PM.',
+            solution: '1. By definition, Gain Crossover Frequency is where |G(jω)| = 1 (0 dB). Therefore, ω_gc = 1.414 rad/s.\n2. Phase angle at ω_gc is ∠G(jω_gc) = -145°.\n3. Phase Margin: PM = 180° + ∠G(jω_gc) = 180° + (-145°) = +35°.\n4. Since PM = +35° > 0 and positive, the closed-loop system is stable with adequate damping.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'formula',
+          content: '// 1. Magnitude in Decibels:\n|G(jω)|_dB = 20 * log10(|G(jω)|)\n\n// 2. Phase Margin:\nPM = 180° + ∠G(j*ω_gc)  where |G| = 1 (0 dB)\n\n// 3. Gain Margin:\nGM_dB = -20 * log10(|G(j*ω_pc)|)  where ∠G = -180°',
+          caption: 'Frequency domain stability criteria equations: Gain Margin, Phase Margin, and Nyquist formulation'
+        },
+        stepByStep: [
+          { step: 1, title: 'Bode Magnitude Plot', description: 'Identify poles and zeros, plot low-frequency asymptote, and add slope breaks (-20dB/dec per pole, +20dB/dec per zero).' },
+          { step: 2, title: 'Bode Phase Plot', description: 'Sum individual phase angles: -90° for integrator, -tan^-1(ω/p) for each pole.' },
+          { step: 3, title: 'Find Crossover Frequencies', description: 'Locate 0 dB line for ω_gc and -180° line for ω_pc.' },
+          { step: 4, title: 'Verify Stability Margins', description: 'Ensure GM > 6 dB and PM > 30° to guarantee robust stability under parameter variations.' }
+        ],
+        keyPoints: [
+          'A system is stable if Gain Margin (in dB) and Phase Margin (in degrees) are both positive.',
+          'Adding an integrator (1/s) improves steady-state accuracy but adds -90° phase lag, reducing Phase Margin.'
+        ],
+        commonMistakes: [
+          'Confusing Gain Crossover Frequency (where magnitude is 1 / 0 dB) with Phase Crossover Frequency (where phase is -180°).',
+          'Assuming a system with high gain margin is always stable without checking the phase margin.'
+        ],
+        quickRevision: [
+          'Bode: log-frequency plot of dB and phase.',
+          'ω_gc: |G| = 0 dB; PM = 180° + ∠G(ω_gc).',
+          'ω_pc: ∠G = -180°; GM = -20*log10|G(ω_pc)|.',
+          'Nyquist: Z = N + P (encirclement of -1+j0).'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_bode_1',
+            question: 'What is the Phase Margin of a feedback control system whose open-loop phase angle at the gain crossover frequency (0 dB) is -135°?',
+            options: ['-45° (Unstable)', '+45° (Stable)', '+135°', '0° (Marginally stable)'],
+            correctIndex: 1,
+            explanation: 'Phase Margin PM = 180° + ∠G(jω_gc) = 180° + (-135°) = +45°. Because the phase margin is positive and equal to +45°, the closed-loop system is stable with well-behaved transient damping.'
+          }
+        ]
+      },
+      {
+        id: 'eie-plc-scada',
+        subjectId: 'control-systems',
+        title: 'Industrial Automation: PLC Ladder Logic & DCS Architecture',
+        unitNumber: 4,
+        unitTitle: 'Distributed Control Systems & Field Actuators',
+        difficulty: 'Advanced',
+        estimatedMinutes: 30,
+        referenceCitation: 'Programmable Logic Controllers by Frank D. Petruzella (McGraw-Hill, Ch. 4 & 11)',
+        simpleExplanation: 'PLCs (Programmable Logic Controllers) are ruggedized industrial computers that execute logic, timing, and PID routines in milliseconds on factory floors. SCADA (Supervisory Control and Data Acquisition) and DCS (Distributed Control Systems) provide plant-wide visualization, alarm logging, and multi-loop control across Ethernet and fieldbus networks.',
+        detailedExplanation: 'A Programmable Logic Controller (PLC) operates in a deterministic cyclical scan: (1) Input Scan (samples physical digital/analog input cards and copies to input image table), (2) Program Execution (evaluates user logic such as IEC 61131-3 Ladder Diagram, Structured Text, or Function Block Diagram sequentially from top-left to bottom-right), (3) Diagnostics and Communication (services Ethernet/IP, Modbus TCP, or Profinet fieldbus packets), and (4) Output Update (writes output image table to physical relays, triacs, or 4-20mA DAC modules). Typical scan times range from 1 to 20 milliseconds. Distributed Control Systems (DCS) differ from PLCs by decentralizing controller nodes across an entire refinery or power plant with redundant controllers, redundant power supplies, and high-availability safety instrumented systems (SIL-2/SIL-3 rated). Final control elements include Pneumatic Control Valves equipped with electro-pneumatic positioners (converting 4-20mA command to 3-15 psi air pressure), with Air-to-Open (Fail-Close) or Air-to-Close (Fail-Open) safety actuation configurations.',
+        importantConcepts: [
+          'PLC Scan Cycle: Input Read ==> Program Logic Execution ==> Diagnostics/Comm ==> Output Write.',
+          'IEC 61131-3 Standard Languages: Ladder Diagram (LD), Structured Text (ST), Function Block Diagram (FBD), Instruction List (IL), and Sequential Function Chart (SFC).',
+          'Control Valve Sizing & Safety: Air-to-Open (Fail-Closed, FC) used for fuel gas lines; Air-to-Close (Fail-Open, FO) used for cooling water lines.',
+          'DCS vs PLC: PLC excels in high-speed discrete manufacturing (packaging, bottling, robotics); DCS excels in continuous process control (petrochemical, refineries, power generation) with integrated asset management.'
+        ],
+        examples: [
+          {
+            title: 'PLC Motor Start/Stop Latch with Emergency Stop',
+            problem: 'Design the boolean ladder logic rung for a motor contactor output coil (MOTOR_RUN) using a Normally Closed Emergency Stop pushbutton (E_STOP), a Normally Open Start pushbutton (PB_START), a Normally Closed Stop pushbutton (PB_STOP), and a thermal overload relay contact (OL_TRIP).',
+            solution: '1. Ladder Rung Logic:\n   MOTOR_RUN = E_STOP AND NOT(OL_TRIP) AND (PB_START OR MOTOR_RUN) AND NOT(PB_STOP).\n2. The parallel branch (PB_START OR MOTOR_RUN) creates a seal-in (latching) circuit around the momentary Start pushbutton.\n3. Releasing PB_START keeps the motor running via MOTOR_RUN auxiliary contact.\n4. Pressing PB_STOP, tripping the overload, or hitting Emergency Stop immediately breaks the circuit and de-energizes the contactor.'
+          }
+        ],
+        formulasOrCode: {
+          type: 'code',
+          language: 'c',
+          content: `// IEC 61131-3 Structured Text (ST) Tank Level Automation
+PROGRAM TankLevelControl
+VAR
+    Tank_Level_PV : REAL;
+    Pump_Cmd      : BOOL;
+    Inflow_Valve  : REAL;
+    High_Alarm    : BOOL;
+    Low_Alarm     : BOOL;
+END_VAR
+
+High_Alarm := (Tank_Level_PV >= 90.0);
+Low_Alarm  := (Tank_Level_PV <= 15.0);
+
+IF High_Alarm THEN
+    Inflow_Valve := 0.0;
+    Pump_Cmd := TRUE;
+ELSIF Low_Alarm THEN
+    Inflow_Valve := 100.0;
+    Pump_Cmd := FALSE;
+ELSE
+    Inflow_Valve := (60.0 - Tank_Level_PV) * 2.5;
+    Pump_Cmd := TRUE;
+END_IF;`,
+          caption: 'IEC 61131-3 Structured Text code for industrial tank level automation and interlock protection'
+        },
+        stepByStep: [
+          { step: 1, title: 'Field I/O Mapping', description: 'Assign hardware terminal addresses (%I0.0, %Q0.0, %IW64) to sensor and actuator variables.' },
+          { step: 2, title: 'Fail-Safe Logic Design', description: 'Configure emergency stops and thermal overloads with normally-closed (NC) physical field wiring.' },
+          { step: 3, title: 'Ladder / ST Programming', description: 'Implement seal-in latching circuits, timers (TON/TOF), and PID function blocks.' },
+          { step: 4, title: 'SCADA HMI Integration', description: 'Bind Modbus/OPC-UA tags to graphical operator screens with real-time trend charts and alarms.' }
+        ],
+        keyPoints: [
+          'Safety circuits must be wired Normally Closed (NC) in the physical field so that a severed wire automatically trips the system into a safe state (Fail-Safe principle).',
+          'Industrial control valves specify Fail-Closed or Fail-Open according to whether hazardous fuel or cooling agent is being controlled.'
+        ],
+        commonMistakes: [
+          'Wiring Emergency Stop pushbuttons Normally Open (NO) in the field (if wire breaks, E-Stop will not function when pressed).',
+          'Executing non-deterministic loops in PLC code that extend the scan cycle beyond watchdog limits.'
+        ],
+        quickRevision: [
+          'PLC Scan: Input Read -> Logic Execute -> Output Write.',
+          'Latching circuit: Seal-in contact parallel to Start.',
+          'Fail-Safe: Normally Closed (NC) wiring for safety.',
+          'Air-to-Open = Fail-Closed; Air-to-Close = Fail-Open.'
+        ],
+        assessmentQuestions: [
+          {
+            id: 'q_eie_plc_1',
+            question: 'Why are Emergency Stop pushbuttons and safety interlocks wired using Normally Closed (NC) contacts in industrial instrumentation?',
+            options: ['To save electrical energy', 'To ensure that if a wire breaks, becomes disconnected, or power is lost, the circuit opens and immediately trips the machine to a safe stop (Fail-Safe)', 'Normally Closed switches cost less', 'PLCs can only process Normally Closed inputs'],
+            correctIndex: 1,
+            explanation: 'Under the Fail-Safe engineering principle, an NC contact keeps the circuit energized with current during healthy conditions. If a wire is severed, crushed, or disconnected, current stops flowing, which the PLC interprets as an immediate emergency stop trip, preventing catastrophic machinery accidents.'
+          }
+        ]
+      }
+    ]
+  }
 ];

@@ -14,18 +14,22 @@ export interface LibraryBook {
     | 'beiser'
     | 'silberschatz-db'
     | 'russell-norvig'
+    | 'sawhney-measurements'
     | 'dragon-compilers'
     | 'dinosaur-os'
     | 'kurose-ross'
     | 'kreyszig-math'
     | 'griffiths-em'
     | 'sicp-wizard'
+    | 'ogata-control'
     | 'deep-learning'
     | 'effective-java'
     | 'fluent-python'
     | 'ddia-kleppmann'
     | 'clean-code'
-    | 'asyncio-python';
+    | 'asyncio-python'
+    | 'doebelin-sensors'
+    | 'nagrath-control';
   tag: string;
 }
 
@@ -56,6 +60,18 @@ export const LIBRARY_SHELVES: LibraryShelfData[] = [
         buttonType: 'borrow',
         coverType: 'clrs',
         tag: 'ALGORITHMS'
+      },
+      {
+        id: 'book-sawhney',
+        title: 'A Course in Electrical & Electronic Measurements & Instrumentation',
+        author: 'Dr. A.K. Sawhney & Puneet Sawhney',
+        publisher: 'Dhanpat Rai & Co. / Khanna',
+        year: 2023,
+        subjectId: 'sensors-transducers',
+        topicId: 'eie-lvdt',
+        buttonType: 'borrow',
+        coverType: 'sawhney-measurements',
+        tag: 'EIE • MEASUREMENTS'
       },
       {
         id: 'book-grewal',
@@ -128,6 +144,18 @@ export const LIBRARY_SHELVES: LibraryShelfData[] = [
     title: 'Classic Engineering Textbooks',
     linkText: 'Classic Textbooks',
     books: [
+      {
+        id: 'book-ogata-control',
+        title: 'Modern Control Engineering',
+        author: 'Katsuhiko Ogata',
+        publisher: 'Prentice Hall / Pearson',
+        year: 2022,
+        subjectId: 'control-systems',
+        topicId: 'eie-transfer-function',
+        buttonType: 'borrow',
+        coverType: 'ogata-control',
+        tag: 'EIE • CONTROL SYSTEMS'
+      },
       {
         id: 'book-dragon-compilers',
         title: 'Compilers: Principles, Techniques, & Tools',
@@ -211,6 +239,30 @@ export const LIBRARY_SHELVES: LibraryShelfData[] = [
     title: 'Books We Love (Engineering Masterpieces)',
     linkText: 'Engineering Masterpieces',
     books: [
+      {
+        id: 'book-doebelin-sensors',
+        title: 'Measurement Systems: Application & Design',
+        author: 'Ernest O. Doebelin & Dhanesh N. Manik',
+        publisher: 'McGraw-Hill Education',
+        year: 2022,
+        subjectId: 'sensors-transducers',
+        topicId: 'eie-temperature',
+        buttonType: 'borrow',
+        coverType: 'doebelin-sensors',
+        tag: 'EIE • TRANSDUCERS'
+      },
+      {
+        id: 'book-nagrath-control',
+        title: 'Control Systems Engineering',
+        author: 'I.J. Nagrath & M. Gopal',
+        publisher: 'New Age International',
+        year: 2023,
+        subjectId: 'control-systems',
+        topicId: 'eie-pid-tuning',
+        buttonType: 'read',
+        coverType: 'nagrath-control',
+        tag: 'EIE • PROCESS CONTROL'
+      },
       {
         id: 'book-deep-learning',
         title: 'Deep Learning',

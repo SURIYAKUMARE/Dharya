@@ -626,6 +626,140 @@ export const BookCoverRenderer: React.FC<BookCoverRendererProps> = ({ book, isHo
           </div>
         );
 
+      // 19. SAWHNEY: ELECTRICAL & ELECTRONIC MEASUREMENTS (EIE BIBLE)
+      case 'sawhney-measurements':
+        return (
+          <div className="w-full h-full bg-[#1E3A5F] text-[#FEF3C7] flex flex-col justify-between p-2.5 relative overflow-hidden select-none font-serif border border-[#3B82F6]">
+            <div className="border border-[#FDE68A]/30 p-2 h-full flex flex-col justify-between">
+              <div className="text-center space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-[#93C5FD] font-mono font-bold">
+                  Dhanpat Rai &amp; Co. / EIE
+                </div>
+                <h3 className="text-xs font-bold text-white uppercase tracking-tight leading-tight">
+                  A Course in
+                  <br />
+                  <span className="text-[#FDE68A] text-xs font-black">Electrical &amp; Electronic</span>
+                  <br />
+                  Measurements
+                </h3>
+                <div className="text-[6.5px] text-slate-300 italic font-sans">&amp; Instrumentation</div>
+              </div>
+
+              {/* Galvanometer Dial & Wheatstone Bridge Icon */}
+              <div className="my-auto mx-auto w-16 h-14 relative flex items-center justify-center">
+                <svg className="w-full h-full" viewBox="0 0 100 70">
+                  <path d="M10 50 A 40 40 0 0 1 90 50" stroke="#FDE68A" strokeWidth="2" fill="none" />
+                  <line x1="50" y1="50" x2="65" y2="22" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="50" cy="50" r="4" fill="#FDE68A" />
+                  <text x="45" y="65" fill="#93C5FD" fontSize="9" fontFamily="monospace">G</text>
+                </svg>
+              </div>
+
+              <div className="text-center space-y-0.5">
+                <div className="text-[8px] font-bold text-[#FEF08A]">
+                  A.K. Sawhney • P. Sawhney
+                </div>
+                <div className="text-[6px] font-mono text-slate-300">
+                  Standard SI Edition
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      // 20. OGATA: MODERN CONTROL ENGINEERING (EIE CLASSIC)
+      case 'ogata-control':
+        return (
+          <div className="w-full h-full bg-[#064E3B] text-white flex flex-col justify-between p-2.5 relative overflow-hidden select-none font-sans border-t-4 border-[#10B981]">
+            <div className="space-y-0.5 z-10">
+              <div className="text-[7px] uppercase tracking-wider text-emerald-300 font-mono font-bold">
+                Prentice Hall Control Engineering
+              </div>
+              <h3 className="text-xs font-black text-white tracking-tight leading-snug">
+                Modern Control
+                <br />
+                <span className="text-emerald-300 text-sm font-black">Engineering</span>
+              </h3>
+              <div className="text-[6.5px] text-emerald-200/80 font-mono">Fifth Edition</div>
+            </div>
+
+            {/* Root Locus & Feedback Loop Graphic */}
+            <div className="my-auto mx-auto w-20 h-16 relative flex items-center justify-center">
+              <svg className="w-full h-full" viewBox="0 0 100 70">
+                <line x1="10" y1="35" x2="90" y2="35" stroke="#A7F3D0" strokeWidth="1" />
+                <line x1="50" y1="10" x2="50" y2="60" stroke="#A7F3D0" strokeWidth="1" />
+                {/* Root Locus trajectories */}
+                <path d="M25 35 Q 38 15 50 15 Q 62 15 75 35" stroke="#34D399" strokeWidth="2" fill="none" />
+                <path d="M25 35 Q 38 55 50 55 Q 62 55 75 35" stroke="#34D399" strokeWidth="2" fill="none" />
+                <text x="22" y="38" fill="#F87171" fontSize="10" fontWeight="bold">✕</text>
+                <text x="72" y="38" fill="#F87171" fontSize="10" fontWeight="bold">✕</text>
+              </svg>
+            </div>
+
+            <div className="text-[7px] font-serif text-emerald-100 border-t border-emerald-800 pt-1">
+              Katsuhiko Ogata
+            </div>
+          </div>
+        );
+
+      // 21. DOEBELIN: MEASUREMENT SYSTEMS
+      case 'doebelin-sensors':
+        return (
+          <div className="w-full h-full bg-[#78350F] text-white flex flex-col justify-between p-2.5 relative overflow-hidden select-none font-sans border-t-4 border-[#F59E0B]">
+            <div className="space-y-0.5 z-10">
+              <div className="text-[7px] uppercase tracking-wider text-amber-300 font-bold">
+                McGraw-Hill Mechanical &amp; EIE
+              </div>
+              <h3 className="text-xs font-black text-white leading-tight">
+                Measurement Systems
+              </h3>
+              <div className="text-[6.5px] text-amber-200/90 font-serif italic">
+                Application and Design
+              </div>
+            </div>
+
+            {/* Sensor Transducer Block Diagram Graphic */}
+            <div className="my-auto mx-auto w-20 h-14 border border-amber-400/50 rounded p-1 flex flex-col justify-center items-center bg-black/20">
+              <div className="text-[8px] font-mono text-amber-300 font-bold">SENSOR ➔ AD620</div>
+              <div className="text-[6.5px] font-mono text-white mt-1">4 - 20 mA LOOP</div>
+            </div>
+
+            <div className="text-[6.5px] font-mono text-amber-100 border-t border-amber-900 pt-1">
+              Ernest O. Doebelin • D.N. Manik
+            </div>
+          </div>
+        );
+
+      // 22. NAGRATH & GOPAL: CONTROL SYSTEMS ENGINEERING
+      case 'nagrath-control':
+        return (
+          <div className="w-full h-full bg-[#1E293B] text-white flex flex-col justify-between p-2.5 relative overflow-hidden select-none font-sans border border-slate-700">
+            <div className="space-y-0.5 z-10">
+              <div className="text-[7px] uppercase tracking-wider text-cyan-400 font-bold font-mono">
+                New Age International
+              </div>
+              <h3 className="text-xs font-black text-white leading-tight">
+                Control Systems
+                <br />
+                <span className="text-cyan-400 text-xs">Engineering</span>
+              </h3>
+            </div>
+
+            {/* Nyquist Polar Contour Graphic */}
+            <div className="my-auto mx-auto w-18 h-16 relative flex items-center justify-center">
+              <svg className="w-full h-full" viewBox="0 0 100 70">
+                <circle cx="50" cy="35" r="24" fill="none" stroke="#38BDF8" strokeWidth="1.5" />
+                <circle cx="35" cy="35" r="3" fill="#EF4444" />
+                <text x="25" y="30" fill="#EF4444" fontSize="6" fontFamily="monospace">-1+j0</text>
+              </svg>
+            </div>
+
+            <div className="text-[6.5px] font-mono text-slate-200 border-t border-slate-700 pt-1">
+              I.J. Nagrath • M. Gopal
+            </div>
+          </div>
+        );
+
       default:
         return (
           <div className="w-full h-full bg-slate-800 text-white p-3 flex flex-col justify-between">

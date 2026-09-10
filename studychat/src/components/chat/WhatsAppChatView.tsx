@@ -446,7 +446,7 @@ export const WhatsAppChatView: React.FC = () => {
   }, [messages, searchQuery]);
 
   return (
-    <div className="max-w-4xl mx-auto w-full h-[88vh] flex flex-col rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#0b141a] text-[#e9edef] select-none">
+    <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto max-w-5xl mx-auto w-full h-[100dvh] md:h-[86vh] flex flex-col md:rounded-2xl overflow-hidden md:border md:border-[#2a3942] shadow-2xl bg-[#0b141a] text-[#e9edef] select-none">
       {/* ── 1. WHATSAPP HEADER ── */}
       <div className="bg-[#1f2c34] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -866,8 +866,8 @@ export const WhatsAppChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── 4. BOTTOM INPUT BAR (WHATSAPP STYLED) ── */}
-      <div className="bg-[#1f2c34] px-3 py-2 flex items-center gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
+      {/* ── 4. CHAT INPUT BAR ── */}
+      <div className="bg-[#1f2c34] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
         <button
           onClick={() => setInputText((prev) => prev + ' 😊 ')}

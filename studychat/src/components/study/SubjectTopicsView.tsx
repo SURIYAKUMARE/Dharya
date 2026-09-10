@@ -205,7 +205,7 @@ export const SubjectTopicsView: React.FC = () => {
               </div>
 
               {/* Right Action & Assessment Badge */}
-              <div className="flex flex-col items-end gap-2 shrink-0 self-stretch md:self-center pt-2 md:pt-0 border-t md:border-t-0 border-[#E5DFD5]">
+              <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-2 shrink-0 self-stretch md:self-center pt-3 md:pt-0 border-t md:border-t-0 border-[#E5DFD5]">
                 <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#047857] bg-[#ECFDF5] px-2.5 py-1 rounded-md border border-[#A7F3D0]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Assessment Ready</span>

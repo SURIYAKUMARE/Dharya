@@ -34,7 +34,7 @@ export const TopicExplanationView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-28 max-w-4xl mx-auto w-full">
+    <div className="space-y-8 pb-36 md:pb-24 max-w-4xl mx-auto w-full">
       {/* 1. Academic Breadcrumbs & Back Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
         <button
@@ -271,7 +271,7 @@ export const TopicExplanationView: React.FC = () => {
       </section>
 
       {/* MANDATORY ASSESSMENT CALL TO ACTION (Preserving 100% of Working Gateway Model) */}
-      <div className="sticky bottom-4 z-30 p-5 sm:p-6 rounded-2xl bg-white/95 backdrop-blur-xl border border-[#E5DFD5] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="sticky bottom-[72px] md:bottom-4 z-30 p-4 sm:p-6 rounded-2xl bg-white/95 backdrop-blur-xl border border-[#E5DFD5] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3.5 sm:gap-4">
         <div className="space-y-1 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-[#1273C4] font-mono">
             <Award className="w-4 h-4 text-[#F59E0B]" />

@@ -5,51 +5,30 @@ import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
-  const isLibraryTheme = activeTab !== 'chat';
 
   return (
-    <header
-      className={`sticky top-0 z-40 transition-colors duration-200 ${
-        isLibraryTheme
-          ? 'bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E5DFD5]'
-          : 'bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+    <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E5DFD5] pt-[env(safe-area-inset-top,0px)] transition-colors select-none">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-3 sm:gap-4">
           {/* Engineering Logo & Platform Name */}
           <div
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group"
             onClick={() => switchTab('home')}
           >
-            <div className="group-hover:scale-105 transition-transform">
+            <div className="group-hover:scale-105 transition-transform shrink-0">
               <EngineeringLogo size="md" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`font-black text-sm sm:text-base tracking-tight ${
-                    isLibraryTheme ? 'text-[#1E293B]' : 'text-white'
-                  }`}
-                >
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-black text-sm sm:text-base tracking-tight text-[#1E293B]">
                   ENGIHUB
                 </span>
-                <span
-                  className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
-                    isLibraryTheme
-                      ? 'bg-[#EBF3FB] text-[#2563EB] border border-[#BFDBFE]'
-                      : 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
-                  }`}
-                >
-                  All Engineering Departments
+                <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-mono font-bold uppercase tracking-wider bg-[#EBF3FB] text-[#2563EB] border border-[#BFDBFE]">
+                  All Engineering
                 </span>
               </div>
-              <p
-                className={`text-[11px] tracking-tight hidden sm:block font-mono ${
-                  isLibraryTheme ? 'text-[#64748B]' : 'text-slate-400'
-                }`}
-              >
-                Learn • Connect • Grow • B.Tech Engineering Portal
+              <p className="text-[10px] sm:text-[11px] tracking-tight hidden xs:block sm:block font-mono text-[#64748B]">
+                Learn • Connect • Grow
               </p>
             </div>
           </div>
@@ -61,9 +40,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'home'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isLibraryTheme
-                  ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
               }`}
             >
               <BookOpen className="w-4 h-4 text-inherit" />
@@ -75,9 +52,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'subjects' || activeTab === 'topic-explanation'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isLibraryTheme
-                  ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
               }`}
             >
               <Layers className="w-4 h-4 text-inherit" />
@@ -89,9 +64,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'planner'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isLibraryTheme
-                  ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
               }`}
             >
               <Calendar className="w-4 h-4 text-inherit" />
@@ -103,9 +76,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'profile'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isLibraryTheme
-                  ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
               }`}
             >
               <User className="w-4 h-4 text-inherit" />
@@ -113,19 +84,17 @@ export const StudyNavbar: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right Indicator (Academic Semester Tag) */}
+          {/* Right Indicator (Academic Semester Tag / Tap to view profile on mobile) */}
           <div className="flex items-center gap-2">
-            <div
-              className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-2 ${
-                isLibraryTheme
-                  ? 'bg-[#F4EEE8] border-[#E5DFD5] text-[#334155]'
-                  : 'bg-[#0E1424] border-slate-800 text-slate-300'
-              }`}
+            <button
+              onClick={() => switchTab('profile')}
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-[#E5DFD5] bg-[#F4EEE8] hover:bg-[#EFE8E0] text-[#334155] text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-colors cursor-pointer shadow-2xs"
+              title="View Profile"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="hidden sm:inline">Semester 4 • B.Tech CSE</span>
-              <span className="sm:hidden">Sem 4</span>
-            </div>
+              <span className="sm:hidden font-bold text-[11px]">Sem 4</span>
+            </button>
           </div>
         </div>
       </div>

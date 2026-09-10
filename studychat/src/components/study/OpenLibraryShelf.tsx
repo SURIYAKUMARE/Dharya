@@ -54,33 +54,31 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
       </div>
 
       {/* 2. Horizontal Shelf Row with Warm Cream Surface */}
-      <div className="relative bg-[#F4EEE8] border-y border-[#E8E1D7] py-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)] group">
-        {/* Left Circular Scroll Button */}
+      <div className="relative bg-[#F4EEE8] border-y border-[#E8E1D7] py-5 sm:py-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)] group">
+        {/* Left Circular Scroll Button (Visible on desktop web application) */}
         <button
           onClick={() => scroll('left')}
           aria-label="Scroll left"
-          className="absolute left-2 sm:left-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E5EEF5] hover:bg-[#D6E5F2] text-[#3D698F] flex items-center justify-center shadow-md transition-all border border-[#CCDCE9] hover:scale-105 active:scale-95"
+          className="hidden md:flex absolute left-2 sm:left-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E5EEF5] hover:bg-[#D6E5F2] text-[#3D698F] items-center justify-center shadow-md transition-all border border-[#CCDCE9] hover:scale-105 active:scale-95"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>
 
-        {/* Scrollable Books Container */}
+        {/* Scrollable Books Container: Smooth Touch Swiping on Mobile, Mouse Scroll on Laptop */}
         <div
           ref={scrollRef}
-          className="flex items-start gap-5 sm:gap-6 overflow-x-auto scrollbar-none px-12 sm:px-16 scroll-smooth"
-          style={{ scrollSnapType: 'x proximity' }}
+          className="flex items-start gap-4 sm:gap-6 overflow-x-auto scrollbar-none px-4 sm:px-16 scroll-smooth snap-x snap-mandatory touch-pan-x"
         >
           {shelf.books.map((book) => (
             <div
               key={book.id}
-              className="w-[150px] sm:w-[160px] shrink-0 flex flex-col items-center group/book cursor-pointer"
-              style={{ scrollSnapAlign: 'start' }}
+              className="w-[138px] sm:w-[160px] shrink-0 flex flex-col items-center group/book cursor-pointer snap-start"
               onMouseEnter={() => setHoveredBookId(book.id)}
               onMouseLeave={() => setHoveredBookId(null)}
               onClick={() => openTopic(book.topicId)}
             >
               {/* Physical Vertical Book Cover */}
-              <div className="w-full h-[225px] sm:h-[238px] transition-transform duration-200 group-hover/book:-translate-y-1">
+              <div className="w-full h-[208px] sm:h-[238px] transition-transform duration-200 group-hover/book:-translate-y-1">
                 <BookCoverRenderer
                   book={book}
                   isHovered={hoveredBookId === book.id}
@@ -88,14 +86,14 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
               </div>
 
               {/* Blue Action Button Beneath the Book */}
-              <div className="w-full mt-3">
+              <div className="w-full mt-2.5 sm:mt-3">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     openTopic(book.topicId);
                   }}
-                  className="w-full h-9 rounded bg-[#1273C4] hover:bg-[#0F60A8] active:bg-[#0C4E83] text-white font-medium text-xs sm:text-[13px] flex items-center justify-center gap-1.5 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full h-8 sm:h-9 rounded-lg bg-[#1273C4] hover:bg-[#0F60A8] active:bg-[#0C4E83] text-white font-medium text-xs sm:text-[13px] flex items-center justify-center gap-1.5 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   {getButtonContent(book.buttonType)}
                 </button>
@@ -104,11 +102,11 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
           ))}
         </div>
 
-        {/* Right Circular Scroll Button (Vibrant Blue as in screenshot) */}
+        {/* Right Circular Scroll Button (Visible on desktop web application) */}
         <button
           onClick={() => scroll('right')}
           aria-label="Scroll right"
-          className="absolute right-2 sm:right-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#1075C7] hover:bg-[#0D62A6] text-white flex items-center justify-center shadow-md transition-all border border-[#0D62A6] hover:scale-105 active:scale-95"
+          className="hidden md:flex absolute right-2 sm:right-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#1273C4] hover:bg-[#0D62A5] text-white items-center justify-center shadow-md transition-all border border-[#0F60A8] hover:scale-105 active:scale-95"
         >
           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>

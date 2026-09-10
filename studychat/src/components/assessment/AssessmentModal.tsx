@@ -46,19 +46,19 @@ export const AssessmentModal: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6 pb-20">
       {/* Assessment Header */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
         <div>
-          <span className="text-xs font-mono text-indigo-400 font-bold uppercase">
+          <span className="text-xs font-mono text-[#1273C4] font-bold uppercase">
             {currentSubject.title} Assessment
           </span>
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
+          <h1 className="text-2xl font-extrabold text-[#1E293B] tracking-tight font-serif">
             {currentTopic.title}
           </h1>
         </div>
 
         <button
           onClick={() => switchTab('topic-explanation')}
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+          className="p-2 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#64748B] hover:text-[#1E293B] shadow-2xs transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -66,37 +66,37 @@ export const AssessmentModal: React.FC = () => {
 
       {/* Assessment Status / Instructions */}
       {!isSubmitted ? (
-        <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/25 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-xs text-indigo-200">
-            <HelpCircle className="w-4 h-4 text-indigo-400" />
+        <div className="p-4 rounded-2xl bg-[#EBF3FB] border border-[#BFDBFE] flex items-center justify-between">
+          <div className="flex items-center gap-2.5 text-xs text-[#1D4ED8]">
+            <HelpCircle className="w-4 h-4 text-[#2563EB]" />
             <span>Answer all {questions.length} multiple-choice questions to complete topic verification.</span>
           </div>
-          <span className="text-xs font-mono font-bold text-indigo-400">
+          <span className="text-xs font-mono font-bold text-[#1D4ED8]">
             {Object.keys(selectedAnswers).length}/{questions.length} Answered
           </span>
         </div>
       ) : (
         /* Assessment Completed Banner */
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-teal-900/20 to-slate-900 border border-emerald-500/40 shadow-2xl space-y-3 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <Award className="w-8 h-8 text-emerald-400" />
+        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-[#E5DFD5] shadow-xl space-y-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] mx-auto flex items-center justify-center shadow-sm">
+            <Award className="w-8 h-8 text-[#059669]" />
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">
+            <div className="text-xs font-mono font-bold text-[#059669] uppercase tracking-wider">
               Verification Verified
             </div>
-            <h2 className="text-2xl font-extrabold text-white">Assessment Completed</h2>
-            <p className="text-sm text-slate-300">
-              You scored <span className="font-bold text-emerald-400">{score}</span> out of{' '}
-              <span className="font-bold text-white">{questions.length}</span> (
+            <h2 className="text-2xl font-extrabold text-[#1E293B] font-serif">Assessment Completed</h2>
+            <p className="text-sm text-[#475569]">
+              You scored <span className="font-bold text-[#059669]">{score}</span> out of{' '}
+              <span className="font-bold text-[#1E293B]">{questions.length}</span> (
               {Math.round((score / questions.length) * 100)}%).
             </p>
           </div>
 
-          <div className="pt-3">
+          <div className="pt-2">
             <button
               onClick={openChatLogin}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-sm shadow-md transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2"
             >
               <span>CONTINUE TO CHAT</span>
               <ArrowRight className="w-4 h-4" />
@@ -115,31 +115,31 @@ export const AssessmentModal: React.FC = () => {
           return (
             <div
               key={q.id}
-              className={`p-6 rounded-3xl border transition-all shadow-xl ${
+              className={`p-6 rounded-2xl border transition-all shadow-sm ${
                 isSubmitted
                   ? isCorrect
-                    ? 'bg-emerald-950/15 border-emerald-500/30'
-                    : 'bg-rose-950/15 border-rose-500/30'
-                  : 'bg-[#0d0a18]/90 border-white/10'
+                    ? 'bg-[#F0FDF4] border-[#BBF7D0]'
+                    : 'bg-[#FFF1F2] border-[#FECDD3]'
+                  : 'bg-white border-[#E5DFD5]'
               }`}
             >
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-xl bg-white/10 text-indigo-300 font-mono text-xs font-bold flex items-center justify-center">
+                  <span className="w-7 h-7 rounded-xl bg-[#EBF3FB] text-[#1D4ED8] font-mono text-xs font-bold flex items-center justify-center border border-[#BFDBFE]">
                     Q{qIndex + 1}
                   </span>
-                  <h3 className="text-sm sm:text-base font-bold text-white">{q.question}</h3>
+                  <h3 className="text-sm sm:text-base font-bold text-[#1E293B] font-serif">{q.question}</h3>
                 </div>
 
                 {isSubmitted && (
                   <div>
                     {isCorrect ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 font-mono">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[#059669] font-mono">
                         <CheckCircle2 className="w-4 h-4" />
                         <span>Correct (+1)</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-400 font-mono">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-[#E11D48] font-mono">
                         <XCircle className="w-4 h-4" />
                         <span>Incorrect</span>
                       </span>
@@ -155,13 +155,13 @@ export const AssessmentModal: React.FC = () => {
                   const isTheCorrectOption = isSubmitted && optIdx === q.correctIndex;
                   const isTheWrongSelection = isSubmitted && isSelected && !isCorrect;
 
-                  let optClass = 'bg-white/5 hover:bg-white/10 border-white/10 text-slate-200';
+                  let optClass = 'bg-[#FAF8F5] hover:bg-[#F3EFE9] border-[#DDD5C7] text-[#334155]';
                   if (isSelected && !isSubmitted) {
-                    optClass = 'bg-indigo-600/25 border-indigo-500/60 text-white font-semibold shadow-inner';
+                    optClass = 'bg-[#EBF3FB] border-[#1273C4] text-[#1273C4] font-bold shadow-2xs';
                   } else if (isTheCorrectOption) {
-                    optClass = 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200 font-semibold';
+                    optClass = 'bg-[#ECFDF5] border-[#10B981] text-[#065F46] font-bold';
                   } else if (isTheWrongSelection) {
-                    optClass = 'bg-rose-500/20 border-rose-500/60 text-rose-200';
+                    optClass = 'bg-[#FFE4E6] border-[#F43F5E] text-[#9F1239]';
                   }
 
                   return (
@@ -170,7 +170,7 @@ export const AssessmentModal: React.FC = () => {
                       type="button"
                       disabled={isSubmitted}
                       onClick={() => handleSelectOption(q.id, optIdx)}
-                      className={`w-full p-3.5 rounded-2xl border text-xs sm:text-sm text-left transition-all flex items-center justify-between ${optClass}`}
+                      className={`w-full p-3.5 rounded-xl border text-xs sm:text-sm text-left transition-all flex items-center justify-between ${optClass}`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="w-5 h-5 rounded-full border border-current/40 flex items-center justify-center text-[10px] font-mono shrink-0">
@@ -178,8 +178,8 @@ export const AssessmentModal: React.FC = () => {
                         </span>
                         <span>{option}</span>
                       </div>
-                      {isTheCorrectOption && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                      {isTheWrongSelection && <XCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                      {isTheCorrectOption && <CheckCircle2 className="w-4 h-4 text-[#059669] shrink-0" />}
+                      {isTheWrongSelection && <XCircle className="w-4 h-4 text-[#E11D48] shrink-0" />}
                     </button>
                   );
                 })}
@@ -187,8 +187,8 @@ export const AssessmentModal: React.FC = () => {
 
               {/* Feedback Explanation (shown after submission) */}
               {isSubmitted && (
-                <div className="mt-4 p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 leading-relaxed font-sans">
-                  <strong className="text-indigo-400">Explanation: </strong>
+                <div className="mt-4 p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E8E2D8] text-xs text-[#334155] leading-relaxed font-sans">
+                  <strong className="text-[#1273C4]">Explanation: </strong>
                   {q.explanation}
                 </div>
               )}
@@ -199,18 +199,18 @@ export const AssessmentModal: React.FC = () => {
 
       {/* Submit Button (if not yet submitted) */}
       {!isSubmitted && (
-        <div className="p-4 rounded-2xl bg-[#0A0A0F] border border-white/10 flex items-center justify-between gap-4">
-          <div className="text-xs text-slate-400 font-mono">
+        <div className="p-4 rounded-2xl bg-white border border-[#E5DFD5] shadow-sm flex items-center justify-between gap-4">
+          <div className="text-xs text-[#64748B] font-mono">
             {allAnswered ? 'All questions answered. Ready to submit.' : 'Please answer all questions above.'}
           </div>
 
           <button
             onClick={handleSubmitAssessment}
             disabled={!allAnswered}
-            className={`px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-lg ${
+            className={`px-6 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all shadow-md ${
               allAnswered
-                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white cursor-pointer shadow-indigo-500/25 active:scale-95'
-                : 'bg-white/10 text-slate-500 border border-white/10 cursor-not-allowed'
+                ? 'bg-[#1273C4] hover:bg-[#0D62A5] text-white cursor-pointer active:scale-95'
+                : 'bg-[#FAF8F5] text-[#94A3B8] border border-[#DDD5C7] cursor-not-allowed'
             }`}
           >
             Submit Assessment

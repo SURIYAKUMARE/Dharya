@@ -5,12 +5,12 @@ import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
-  const isHome = activeTab === 'home';
+  const isLibraryTheme = activeTab !== 'chat';
 
   return (
     <header
       className={`sticky top-0 z-40 transition-colors duration-200 ${
-        isHome
+        isLibraryTheme
           ? 'bg-[#FAF8F5]/95 backdrop-blur-md border-b border-[#E5DFD5]'
           : 'bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800'
       }`}
@@ -29,14 +29,14 @@ export const StudyNavbar: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span
                   className={`font-black text-sm sm:text-base tracking-tight ${
-                    isHome ? 'text-[#1E293B]' : 'text-white'
+                    isLibraryTheme ? 'text-[#1E293B]' : 'text-white'
                   }`}
                 >
                   ENGIHUB
                 </span>
                 <span
                   className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
-                    isHome
+                    isLibraryTheme
                       ? 'bg-[#EBF3FB] text-[#2563EB] border border-[#BFDBFE]'
                       : 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
                   }`}
@@ -46,7 +46,7 @@ export const StudyNavbar: React.FC = () => {
               </div>
               <p
                 className={`text-[11px] tracking-tight hidden sm:block font-mono ${
-                  isHome ? 'text-[#64748B]' : 'text-slate-400'
+                  isLibraryTheme ? 'text-[#64748B]' : 'text-slate-400'
                 }`}
               >
                 Learn • Connect • Grow • B.Tech Engineering Portal
@@ -61,7 +61,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'home'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isHome
+                  : isLibraryTheme
                   ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -75,7 +75,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'subjects' || activeTab === 'topic-explanation'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isHome
+                  : isLibraryTheme
                   ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -89,7 +89,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'planner'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isHome
+                  : isLibraryTheme
                   ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -103,7 +103,7 @@ export const StudyNavbar: React.FC = () => {
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'profile'
                   ? 'bg-[#1273C4] text-white shadow-sm'
-                  : isHome
+                  : isLibraryTheme
                   ? 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F1EBE3]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -117,7 +117,7 @@ export const StudyNavbar: React.FC = () => {
           <div className="flex items-center gap-2">
             <div
               className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-2 ${
-                isHome
+                isLibraryTheme
                   ? 'bg-[#F4EEE8] border-[#E5DFD5] text-[#334155]'
                   : 'bg-[#0E1424] border-slate-800 text-slate-300'
               }`}

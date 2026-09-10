@@ -1,15 +1,14 @@
 import React from 'react';
 import { useStudyApp, AppNavTab } from '../../context/StudyAppContext';
-import { BookOpen, Layers, Calendar, MessageSquare, User, Lock } from 'lucide-react';
+import { BookOpen, Layers, Calendar, User } from 'lucide-react';
 
 export const StudyBottomNav: React.FC = () => {
-  const { activeTab, switchTab, isChatUnlocked } = useStudyApp();
+  const { activeTab, switchTab } = useStudyApp();
 
   const navItems = [
     { id: 'home' as AppNavTab, label: 'Home', icon: BookOpen },
     { id: 'subjects' as AppNavTab, label: 'Subjects', icon: Layers },
     { id: 'planner' as AppNavTab, label: 'Planner', icon: Calendar },
-    { id: 'chat' as AppNavTab, label: 'Chat', icon: MessageSquare, locked: !isChatUnlocked },
     { id: 'profile' as AppNavTab, label: 'Profile', icon: User },
   ];
 
@@ -19,8 +18,7 @@ export const StudyBottomNav: React.FC = () => {
         const Icon = item.icon;
         const isActive =
           activeTab === item.id ||
-          (item.id === 'subjects' && activeTab === 'topic-explanation') ||
-          (item.id === 'chat' && activeTab === 'chat-login');
+          (item.id === 'subjects' && activeTab === 'topic-explanation');
 
         return (
           <button
@@ -30,14 +28,7 @@ export const StudyBottomNav: React.FC = () => {
               isActive ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <div className="relative">
-              <Icon className="w-5 h-5" />
-              {item.locked && (
-                <div className="absolute -top-1 -right-2 w-3.5 h-3.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
-                  <Lock className="w-2 h-2" />
-                </div>
-              )}
-            </div>
+            <Icon className="w-5 h-5" />
             <span className="text-[10px] tracking-tight mt-1">{item.label}</span>
           </button>
         );

@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStudyApp, AppNavTab } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, MessageSquare, User, Lock, Layers, Sparkles, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Calendar, User, Layers, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const StudyNavbar: React.FC = () => {
-  const { activeTab, switchTab, isChatUnlocked, isChatAuthenticated, isAssessmentCompleted } = useStudyApp();
+  const { activeTab, switchTab } = useStudyApp();
 
   return (
     <header className="sticky top-0 z-40 bg-[#0A0A0F]/85 backdrop-blur-xl border-b border-white/10 transition-colors">
@@ -66,36 +66,6 @@ export const StudyNavbar: React.FC = () => {
             >
               <Calendar className="w-4 h-4 text-emerald-400" />
               <span>Planner</span>
-            </button>
-
-            {/* Chat Tab with Lock Indicator */}
-            <button
-              onClick={() => switchTab('chat')}
-              className={`relative px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                activeTab === 'chat' || activeTab === 'chat-login'
-                  ? 'bg-white/10 text-white border border-white/15 shadow-sm'
-                  : isChatUnlocked
-                  ? 'text-slate-300 hover:text-white hover:bg-white/5'
-                  : 'text-slate-500 cursor-not-allowed opacity-80'
-              }`}
-              title={
-                isChatUnlocked
-                  ? 'Educational AI Study Assistant'
-                  : 'Complete a topic assessment to unlock Chat'
-              }
-            >
-              <MessageSquare className={`w-4 h-4 ${isChatUnlocked ? 'text-cyan-400' : 'text-slate-500'}`} />
-              <span>Chat</span>
-              {!isChatUnlocked ? (
-                <span className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-slate-400 border border-white/10">
-                  <Lock className="w-2.5 h-2.5 text-amber-400" />
-                  <span>Locked</span>
-                </span>
-              ) : isChatAuthenticated ? (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
-              ) : (
-                <span className="text-[10px] font-mono text-cyan-400">Unlocked</span>
-              )}
             </button>
 
             <button

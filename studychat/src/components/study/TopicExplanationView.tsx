@@ -240,7 +240,7 @@ export const TopicExplanationView: React.FC = () => {
             <span>TOPIC ASSESSMENT REQUIRED</span>
           </div>
           <p className="text-xs text-slate-300">
-            Verify your comprehension of {currentTopic.title} to unlock Chat with the AI Study Assistant.
+            Verify your comprehension of {currentTopic.title} to complete this engineering module.
           </p>
         </div>
 

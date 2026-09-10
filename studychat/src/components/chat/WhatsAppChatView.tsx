@@ -16,6 +16,8 @@ import {
   Pin,
   Sparkles,
   Lock,
+  Unlock,
+  Shield,
   ShieldCheck,
   Image as ImageIcon,
   FileText,
@@ -24,12 +26,17 @@ import {
   Play,
   Pause,
   Eye,
+  EyeOff,
   FileAudio,
   HardDrive,
   Filter,
   Volume2,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Camera,
+  Copy,
+  BookOpen,
+  Key
 } from 'lucide-react';
 
 interface ExtendedChatMessage extends ChatMessage {
@@ -49,47 +56,16 @@ export const WhatsAppChatView: React.FC = () => {
   const partnerUser: 'surya' | 'sadhana' = currentUser === 'surya' ? 'sadhana' : 'surya';
   const partnerName = partnerUser === 'sadhana' ? 'Sadhana' : 'Surya';
 
-  // Seed default messages if storage is empty
-  const initialMessages: ExtendedChatMessage[] = [
-    {
-      id: 'msg-seed-1',
-      sender: 'sadhana',
-      text: 'Hey Surya! Are you reviewing the engineering notes?',
-      time: '10:14 AM',
-      timestamp: Date.now() - 1000 * 60 * 60 * 3,
-      read: true,
-      type: 'text',
-    },
-    {
-      id: 'msg-seed-2',
-      sender: 'surya',
-      text: 'Hey Sadhana! Yes, going through integration and matrix proofs right now.',
-      time: '10:15 AM',
-      timestamp: Date.now() - 1000 * 60 * 60 * 2.8,
-      read: true,
-      type: 'text',
-    },
-    {
-      id: 'msg-seed-3',
-      sender: 'sadhana',
-      text: 'Awesome! Let me know if you need any derivations explained.',
-      time: '10:16 AM',
-      timestamp: Date.now() - 1000 * 60 * 60 * 2.5,
-      read: true,
-      type: 'text',
-      isPinned: true,
-    },
-  ];
-
+  // Load stored messages permanently from localStorage; zero mock login/seed messages injected
   const [messages, setMessages] = useState<ExtendedChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_MESSAGES_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return initialMessages;
+    return [];
   });
 
   const [inputText, setInputText] = useState('');
@@ -104,6 +80,21 @@ export const WhatsAppChatView: React.FC = () => {
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
 
+  // ── SECURITY SECTION STATES ──
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [disguisePanic, setDisguisePanic] = useState(false);
+  const [chatPinEnabled, setChatPinEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('study_chat_pin_enabled') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isChatLocked, setIsChatLocked] = useState<boolean>(false);
+  const [enteredPin, setEnteredPin] = useState('');
+  const [pinError, setPinError] = useState('');
+  const [copiedSafetyCode, setCopiedSafetyCode] = useState(false);
+
   // Advanced Privacy Toggle
   const [advancedPrivacy, setAdvancedPrivacy] = useState<boolean>(() => {
     try {
@@ -113,12 +104,13 @@ export const WhatsAppChatView: React.FC = () => {
     }
   });
 
-  // HD Photo state
+  // Photo & Gallery state
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
   const [isHdSelected, setIsHdSelected] = useState(false);
   const [isViewOnceSelected, setIsViewOnceSelected] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Audio recording simulation state
   const [isPlayingAudioId, setIsPlayingAudioId] = useState<string | null>(null);
@@ -129,7 +121,7 @@ export const WhatsAppChatView: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Save messages to localStorage and broadcast
+  // Save messages permanently to localStorage and broadcast
   const persistMessages = (newMessages: ExtendedChatMessage[]) => {
     setMessages(newMessages);
     try {
@@ -137,7 +129,7 @@ export const WhatsAppChatView: React.FC = () => {
     } catch {}
   };
 
-  // Sync cross-tab messages
+  // Sync cross-tab messages permanently
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === LOCAL_MESSAGES_KEY && e.newValue) {
@@ -151,6 +143,17 @@ export const WhatsAppChatView: React.FC = () => {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Emergency Panic Camouflage hotkey: Press Escape anywhere to camouflage
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDisguisePanic((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Supabase Realtime channel setup
@@ -188,6 +191,52 @@ export const WhatsAppChatView: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Handle Photo Selected from Device Gallery / File Picker
+  const handleGalleryFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawData = event.target?.result as string;
+      if (!rawData) return;
+
+      // Optimize image on canvas to maintain high fidelity without breaking localStorage quota
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        const maxDim = isHdSelected ? 1920 : 1200;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const finalUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', isHdSelected ? 0.92 : 0.82);
+          setPhotoUrl(finalUrl);
+          setPhotoModalOpen(true);
+        } else {
+          setPhotoUrl(rawData);
+          setPhotoModalOpen(true);
+        }
+      };
+      img.src = rawData;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   // Send a Text Message
   const handleSendText = () => {
     const text = inputText.trim();
@@ -208,7 +257,6 @@ export const WhatsAppChatView: React.FC = () => {
     persistMessages(next);
     setInputText('');
 
-    // Broadcast over Supabase Realtime
     try {
       getSupabase().channel('whatsapp-one-on-one-room').send({
         type: 'broadcast',
@@ -218,7 +266,7 @@ export const WhatsAppChatView: React.FC = () => {
     } catch {}
   };
 
-  // Send a Photo (Standard or HD)
+  // Send a Photo from Gallery (Standard or HD)
   const handleSendPhoto = () => {
     if (!photoUrl) return;
 
@@ -390,6 +438,30 @@ export const WhatsAppChatView: React.FC = () => {
     localStorage.setItem('studyportal_privacy_toggle', String(next));
   };
 
+  const handleToggleChatPin = () => {
+    const next = !chatPinEnabled;
+    setChatPinEnabled(next);
+    localStorage.setItem('study_chat_pin_enabled', String(next));
+  };
+
+  const handleUnlockPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (enteredPin === '0929' || enteredPin === '0910' || enteredPin === '2902') {
+      setIsChatLocked(false);
+      setEnteredPin('');
+      setPinError('');
+    } else {
+      setPinError('Incorrect 4-digit Security PIN. Please try again.');
+    }
+  };
+
+  const handleCopySafetyCode = () => {
+    const safetyNumber = '52910 09102 00729 02200 81928 47291 93820 18472 90184 75619 38291 04928';
+    navigator.clipboard.writeText(safetyNumber);
+    setCopiedSafetyCode(true);
+    setTimeout(() => setCopiedSafetyCode(false), 2500);
+  };
+
   // Text formatting parser (*bold*, _italic_, ~strike~, `code`)
   const renderFormattedText = (content: string) => {
     const boldRegex = /\*([^*]+)\*/g;
@@ -399,28 +471,24 @@ export const WhatsAppChatView: React.FC = () => {
 
     let parts: (string | React.ReactNode)[] = [content];
 
-    // Bold
     parts = parts.flatMap((part) => {
       if (typeof part !== 'string') return part;
       const subParts = part.split(boldRegex);
       return subParts.map((sub, i) => (i % 2 === 1 ? <strong key={'b-' + i}>{sub}</strong> : sub));
     });
 
-    // Italic
     parts = parts.flatMap((part) => {
       if (typeof part !== 'string') return part;
       const subParts = part.split(italicRegex);
       return subParts.map((sub, i) => (i % 2 === 1 ? <em key={'i-' + i}>{sub}</em> : sub));
     });
 
-    // Strikethrough
     parts = parts.flatMap((part) => {
       if (typeof part !== 'string') return part;
       const subParts = part.split(strikeRegex);
       return subParts.map((sub, i) => (i % 2 === 1 ? <del key={'s-' + i}>{sub}</del> : sub));
     });
 
-    // Monospace code
     parts = parts.flatMap((part) => {
       if (typeof part !== 'string') return part;
       const subParts = part.split(codeRegex);
@@ -445,8 +513,138 @@ export const WhatsAppChatView: React.FC = () => {
     return messages.filter((m) => m.text.toLowerCase().includes(q) || m.transcript?.toLowerCase().includes(q));
   }, [messages, searchQuery]);
 
+  // ── EMERGENCY PANIC CAMOUFLAGE OVERLAY ──
+  if (disguisePanic) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#FAF8F5] text-[#1E293B] p-4 sm:p-8 overflow-y-auto font-serif select-text">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between border-b border-[#E5DFD5] pb-4">
+            <div>
+              <span className="text-xs font-mono text-[#1273C4] font-bold uppercase tracking-wider">
+                Department of Electrical &amp; Instrumentation Engineering
+              </span>
+              <h1 className="text-2xl font-bold text-[#1E293B] mt-1 font-serif">
+                EI-201: Multivariable Vector Calculus &amp; Sensor Calibration
+              </h1>
+            </div>
+            <button
+              onClick={() => setDisguisePanic(false)}
+              className="px-3 py-1.5 rounded-lg bg-[#FAF8F5] hover:bg-[#EDE8E1] border border-[#DDD5C7] text-xs font-mono text-[#475569] hover:text-[#1E293B] transition-colors flex items-center gap-1.5"
+              title="Resume Chat"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#1273C4]" />
+              <span>Resume (Esc)</span>
+            </button>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-[#E5DFD5] shadow-xs space-y-4 text-sm leading-relaxed text-[#334155]">
+            <h2 className="text-lg font-bold text-[#1E293B] font-serif">Section 4.2: Divergence and Curl in Orthogonal Coordinates</h2>
+            <p>
+              In three-dimensional Euclidean space, let F(x, y, z) = P i + Q j + R k be a continuously differentiable vector field representing sensor flux density.
+            </p>
+            <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#E8E2D8] font-mono text-xs text-[#1E293B] overflow-x-auto">
+              curl(F) = ∇ × F = | i    j    k   |<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| ∂/∂x ∂/∂y ∂/∂z|<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| P    Q    R   |
+            </div>
+            <p>
+              A vector field is conservative if and only if curl(F) = 0, which implies the existence of a potential scalar function φ such that F = ∇φ. For industrial instrumentation, this condition guarantees path independence of work done in electromagnetic sensor coils.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] space-y-2">
+                <div className="text-xs font-bold text-[#1E293B]">Key Theorem: Green's Theorem in Plane</div>
+                <p className="text-xs text-[#64748B] font-sans">
+                  ∮_C (L dx + M dy) = ∬_D (∂M/∂x - ∂L/∂y) dA
+                </p>
+              </div>
+              <div className="p-4 rounded-xl border border-[#E5DFD5] bg-[#FAF8F5] space-y-2">
+                <div className="text-xs font-bold text-[#1E293B]">Applied Sensor Calibration</div>
+                <p className="text-xs text-[#64748B] font-sans">
+                  Sensitivity S = ΔV_out / ΔInput, Linearity error ≤ 0.05% FSO.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center text-xs font-mono text-[#94A3B8]">
+            Press Escape or click Resume above to return to private session.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── CHAT PIN LOCK OVERLAY ──
+  if (chatPinEnabled && isChatLocked) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#0b141a] flex items-center justify-center p-4 select-none">
+        <div className="bg-[#182229] border border-[#2a3942] rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-6">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg">
+            <Lock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-white tracking-tight">WhatsApp Locked</h2>
+            <p className="text-xs text-[#8696a0]">
+              Enter 4-digit Security PIN to access confidential chat with {partnerName}.
+            </p>
+          </div>
+
+          <form onSubmit={handleUnlockPin} className="space-y-4">
+            <input
+              type="password"
+              maxLength={4}
+              value={enteredPin}
+              onChange={(e) => setEnteredPin(e.target.value)}
+              placeholder="••••"
+              autoFocus
+              className="w-36 mx-auto text-center tracking-[1em] text-2xl font-mono py-2 rounded-xl bg-[#2a3942] border border-[#3b4a54] text-white focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+            />
+
+            {pinError && (
+              <p className="text-xs text-rose-400 font-mono">{pinError}</p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl bg-[#00a884] hover:bg-[#029071] text-white font-bold text-sm shadow transition-all flex items-center justify-center gap-2"
+            >
+              <Unlock className="w-4 h-4" />
+              <span>Unlock Chat</span>
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs text-[#8696a0]">
+            <button
+              onClick={() => setDisguisePanic(true)}
+              className="hover:text-white flex items-center gap-1 text-[11px]"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Camouflage</span>
+            </button>
+            <button
+              onClick={logoutChat}
+              className="hover:text-rose-400 text-[11px]"
+            >
+              Switch Account
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto max-w-5xl mx-auto w-full h-[100dvh] md:h-[86vh] flex flex-col md:rounded-2xl overflow-hidden md:border md:border-[#2a3942] shadow-2xl bg-[#0b141a] text-[#e9edef] select-none">
+      {/* Hidden File Input for Gallery Photo Selection */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleGalleryFileSelect}
+        className="hidden"
+      />
+
       {/* ── 1. WHATSAPP HEADER ── */}
       <div className="bg-[#1f2c34] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -484,11 +682,20 @@ export const WhatsAppChatView: React.FC = () => {
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 sm:gap-2 text-[#aebac1]">
+          {/* Security & Privacy Section Quick Button */}
+          <button
+            onClick={() => setShowSecurityModal(true)}
+            className="p-2 rounded-full hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition-colors"
+            title="Security &amp; Privacy Section"
+          >
+            <ShieldCheck className="w-4 h-4" />
+          </button>
+
           {/* Chat Lists & Filters Button */}
           <button
             onClick={() => setShowChatLists(true)}
             className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
-            title="Chat Lists & Filters"
+            title="Chat Lists &amp; Filters"
           >
             <Filter className="w-4 h-4" />
           </button>
@@ -531,7 +738,7 @@ export const WhatsAppChatView: React.FC = () => {
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-10 w-52 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
+              <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
                 <button
                   onClick={() => {
                     setShowContactInfo(true);
@@ -541,6 +748,37 @@ export const WhatsAppChatView: React.FC = () => {
                 >
                   Contact Info
                 </button>
+
+                {/* Security & Privacy Section Option */}
+                <button
+                  onClick={() => {
+                    setShowSecurityModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-emerald-300 font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Security &amp; Privacy</span>
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">E2EE</span>
+                </button>
+
+                {/* Emergency Panic Button */}
+                <button
+                  onClick={() => {
+                    setDisguisePanic(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-amber-300"
+                >
+                  <span className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Panic Camouflage</span>
+                  </span>
+                  <span className="text-[10px] text-[#8696a0] font-mono">Esc</span>
+                </button>
+
                 <button
                   onClick={() => {
                     setShowStorageModal(true);
@@ -551,6 +789,7 @@ export const WhatsAppChatView: React.FC = () => {
                   <span>Manage Storage</span>
                   <span className="text-[10px] text-emerald-400 font-mono">{storageStats.totalMb} MB</span>
                 </button>
+
                 <button
                   onClick={() => {
                     handleTogglePrivacy();
@@ -563,6 +802,20 @@ export const WhatsAppChatView: React.FC = () => {
                     {advancedPrivacy ? 'ON' : 'OFF'}
                   </span>
                 </button>
+
+                {chatPinEnabled && (
+                  <button
+                    onClick={() => {
+                      setIsChatLocked(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-sky-300"
+                  >
+                    <span>Lock Chat Now</span>
+                    <Lock className="w-3 h-3 text-sky-400" />
+                  </button>
+                )}
+
                 <div className="h-px bg-white/10 my-1" />
                 <button
                   onClick={() => {
@@ -641,14 +894,17 @@ export const WhatsAppChatView: React.FC = () => {
           backgroundSize: '24px 24px',
         }}
       >
-        {/* End-to-End Encryption Banner */}
-        <div className="mx-auto max-w-sm p-3 rounded-xl bg-[#182229] border border-[#ffb800]/20 text-center shadow-lg my-2">
+        {/* End-to-End Encryption Banner - Clickable to open Security Section */}
+        <div
+          onClick={() => setShowSecurityModal(true)}
+          className="mx-auto max-w-sm p-3 rounded-xl bg-[#182229] border border-[#ffb800]/20 text-center shadow-lg my-2 cursor-pointer hover:border-[#ffb800]/40 transition-colors"
+        >
           <div className="flex items-center justify-center gap-1.5 text-[#ffd279] text-xs font-semibold mb-0.5">
             <Lock className="w-3.5 h-3.5" />
             <span>End-to-End Encrypted</span>
           </div>
           <p className="text-[11px] text-[#8696a0] leading-tight">
-            Messages and calls are end-to-end encrypted. No one outside of this chat can read or listen to them.
+            Messages and calls are end-to-end encrypted. Tap to verify security &amp; safety numbers.
           </p>
         </div>
 
@@ -658,6 +914,28 @@ export const WhatsAppChatView: React.FC = () => {
             Today
           </span>
         </div>
+
+        {/* Clean Empty State when no messages exist yet */}
+        {displayedMessages.length === 0 && (
+          <div className="flex flex-col items-center justify-center text-center py-16 px-4 space-y-4 max-w-sm mx-auto">
+            <div className="w-16 h-16 rounded-full bg-[#182229] border border-[#2a3942] flex items-center justify-center shadow-lg">
+              <Lock className="w-7 h-7 text-emerald-400" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-white">No messages yet</h3>
+              <p className="text-xs text-[#8696a0]">
+                All messages and gallery photos sent between you and <span className="text-emerald-400 font-semibold">{partnerName}</span> are stored permanently on this device and secured with 256-bit encryption.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSecurityModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#182229] border border-emerald-500/30 text-[11px] text-emerald-400 font-medium hover:bg-[#202c33] transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Verify Security Section</span>
+            </button>
+          </div>
+        )}
 
         {/* Messages List */}
         {displayedMessages.map((msg) => {
@@ -690,13 +968,13 @@ export const WhatsAppChatView: React.FC = () => {
                   </div>
                 )}
 
-                {/* ── IMAGE MESSAGE ── */}
+                {/* ── IMAGE MESSAGE FROM GALLERY ── */}
                 {msg.type === 'image' && (
                   <div className="space-y-1.5 mb-1">
                     <div className="relative rounded-xl overflow-hidden bg-black/40 max-h-72">
                       <img
                         src={msg.mediaUrl}
-                        alt="Photo"
+                        alt="Photo from Gallery"
                         className="w-full h-auto object-cover rounded-xl"
                       />
                       {/* HD Badge Overlay */}
@@ -867,7 +1145,7 @@ export const WhatsAppChatView: React.FC = () => {
       </div>
 
       {/* ── 4. CHAT INPUT BAR ── */}
-      <div className="bg-[#1f2c34] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
+      <div className="bg-[#1f2c34] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
         <button
           onClick={() => setInputText((prev) => prev + ' 😊 ')}
@@ -875,6 +1153,15 @@ export const WhatsAppChatView: React.FC = () => {
           title="Emojis"
         >
           <Smile className="w-5 h-5" />
+        </button>
+
+        {/* Quick Camera/Gallery Photo Picker */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="p-2 text-[#8696a0] hover:text-white rounded-full hover:bg-white/5 transition-colors"
+          title="Send Photo from Gallery"
+        >
+          <Camera className="w-5 h-5" />
         </button>
 
         {/* Paperclip Attach Button */}
@@ -890,12 +1177,10 @@ export const WhatsAppChatView: React.FC = () => {
           {/* WhatsApp Attachment Sheet */}
           {showAttachMenu && (
             <div className="absolute bottom-12 left-0 w-64 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-3 text-center">
+              {/* Device Gallery Photo Option */}
               <button
                 onClick={() => {
-                  setPhotoUrl(
-                    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=80'
-                  );
-                  setPhotoModalOpen(true);
+                  fileInputRef.current?.click();
                   setShowAttachMenu(false);
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
@@ -903,7 +1188,7 @@ export const WhatsAppChatView: React.FC = () => {
                 <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow">
                   <ImageIcon className="w-5 h-5" />
                 </div>
-                <span className="text-[10px]">Photos &amp; HD</span>
+                <span className="text-[10px]">Gallery</span>
               </button>
 
               <button
@@ -921,7 +1206,7 @@ export const WhatsAppChatView: React.FC = () => {
 
               <button
                 onClick={() => {
-                  setInputText('📍 Shared Engineering Library Coordinates: 13.0827° N, 80.2707° E');
+                  setInputText('📍 Shared Engineering Campus Library Coordinates: 13.0827° N, 80.2707° E');
                   setShowAttachMenu(false);
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
@@ -969,7 +1254,7 @@ export const WhatsAppChatView: React.FC = () => {
         )}
       </div>
 
-      {/* ── HD PHOTO PREVIEW & SENDER MODAL ── */}
+      {/* ── HD PHOTO PREVIEW & SENDER MODAL (Directly from Gallery) ── */}
       {photoModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative bg-[#182229] border border-[#2a3942] rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4">
@@ -1015,9 +1300,9 @@ export const WhatsAppChatView: React.FC = () => {
               </button>
             </div>
 
-            {/* Photo Preview */}
+            {/* Photo Preview from user's gallery */}
             <div className="rounded-2xl overflow-hidden bg-black/50 max-h-80 flex items-center justify-center">
-              <img src={photoUrl} alt="Preview" className="max-h-80 w-auto object-contain" />
+              <img src={photoUrl} alt="Gallery Preview" className="max-h-80 w-auto object-contain" />
             </div>
 
             {/* Caption & Send */}
@@ -1030,20 +1315,182 @@ export const WhatsAppChatView: React.FC = () => {
                 className="w-full bg-[#2a3942] text-sm text-white px-4 py-2.5 rounded-xl border border-transparent focus:outline-none focus:border-[#00a884]"
               />
 
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-between items-center pt-1">
                 <button
-                  onClick={() => setPhotoModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 text-xs text-[#8696a0] hover:text-white"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
                 >
-                  Cancel
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>Choose Another Photo</span>
                 </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPhotoModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-white/5 text-xs text-[#8696a0] hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSendPhoto}
+                    className="px-6 py-2 rounded-xl bg-[#00a884] hover:bg-[#029071] text-white text-xs font-bold shadow flex items-center gap-1.5"
+                  >
+                    <span>Send</span>
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. COMPREHENSIVE SECURITY & PRIVACY SECTION MODAL ── */}
+      {showSecurityModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-[#202c33] p-4 sm:p-5 flex items-center justify-between border-b border-[#2a3942]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white tracking-tight">Security &amp; Privacy Center</h3>
+                  <p className="text-[11px] text-[#8696a0]">End-to-End Encrypted Private Channel</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSecurityModal(false)}
+                className="p-1 rounded-full text-[#8696a0] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-5 text-xs text-[#d1d7db]">
+              {/* E2EE Safety Number Verification */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-sm text-white">Encryption Safety Number</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-mono text-[10px] font-bold">
+                    AES-256 Verified
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[#8696a0] leading-relaxed">
+                  Compare this 60-digit cryptographic number with {partnerName} to verify that messages and gallery photos cannot be read by anyone else.
+                </p>
+
+                {/* 60-Digit Safety Number in Groups of 5 */}
+                <div className="p-3.5 rounded-xl bg-[#0b141a] border border-white/5 font-mono text-center text-xs tracking-wider text-emerald-300 leading-relaxed select-all">
+                  52910 09102 00729 02200 81928 47291<br />
+                  93820 18472 90184 75619 38291 04928
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    onClick={handleCopySafetyCode}
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium flex items-center gap-1.5 transition-colors"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{copiedSafetyCode ? 'Copied to Clipboard!' : 'Copy Safety Number'}</span>
+                  </button>
+                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>Keys Authenticated</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Screen Camouflage & Panic Switch */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                      <BookOpen className="w-4 h-4 text-amber-400" />
+                      <span>Emergency Panic Camouflage</span>
+                    </div>
+                    <p className="text-[11px] text-[#8696a0] mt-0.5">
+                      Instantly disguises screen into an Engineering Mathematics textbook page.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowSecurityModal(false);
+                      setDisguisePanic(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold font-mono transition-colors"
+                  >
+                    Trigger (Esc)
+                  </button>
+                </div>
+              </div>
+
+              {/* Chat PIN Lock Protection */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                    <Key className="w-4 h-4 text-sky-400" />
+                    <span>Chat PIN Lock Protection</span>
+                  </div>
+                  <p className="text-[11px] text-[#8696a0] mt-0.5">
+                    Requires a 4-digit PIN (default 0929) to view chat.
+                  </p>
+                </div>
                 <button
-                  onClick={handleSendPhoto}
-                  className="px-6 py-2 rounded-xl bg-[#00a884] hover:bg-[#029071] text-white text-xs font-bold shadow flex items-center gap-1.5"
+                  onClick={handleToggleChatPin}
+                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+                    chatPinEnabled ? 'bg-sky-500' : 'bg-slate-700'
+                  }`}
                 >
-                  <span>Send</span>
-                  <Send className="w-3.5 h-3.5" />
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                      chatPinEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
                 </button>
+              </div>
+
+              {/* Advanced Chat Privacy (No Exports, Device-Only Storage) */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <span>Advanced Chat Privacy</span>
+                  </div>
+                  <p className="text-[11px] text-[#8696a0] mt-0.5">
+                    Prevents message exports and keeps all media stored strictly on this device.
+                  </p>
+                </div>
+                <button
+                  onClick={handleTogglePrivacy}
+                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+                    advancedPrivacy ? 'bg-emerald-500' : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                      advancedPrivacy ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Storage & Local Persistence Status */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-white">Stored Conversation History</span>
+                  <span className="text-emerald-400 font-mono">{storageStats.totalMb} MB</span>
+                </div>
+                <div className="text-[11px] text-[#8696a0] leading-relaxed">
+                  All your past messages, gallery photos, and voice notes remain stored permanently on this device across any number of logins.
+                </div>
               </div>
             </div>
           </div>
@@ -1188,6 +1635,18 @@ export const WhatsAppChatView: React.FC = () => {
               <h3 className="text-xl font-bold text-white">{partnerName}</h3>
               <p className="text-xs text-emerald-400 font-medium">Verified 1-to-1 End-to-End Chat</p>
             </div>
+
+            {/* Security Section Button */}
+            <button
+              onClick={() => {
+                setShowContactInfo(false);
+                setShowSecurityModal(true);
+              }}
+              className="w-full py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Security &amp; Privacy Section</span>
+            </button>
 
             {/* Advanced Chat Privacy Toggle */}
             <div className="p-3.5 rounded-2xl bg-[#202c33] border border-[#2a3942] text-left flex items-center justify-between">

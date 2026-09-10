@@ -27,37 +27,14 @@ export const CourseDiscussion: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_MESSAGES_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
     } catch {
       // fallback
     }
-    return [
-      {
-        id: '1',
-        sender: 'surya',
-        text: 'Hey Sadhana! Have you looked at the notes for our semester project?',
-        time: '10:15 AM',
-        timestamp: Date.now() - 3600000,
-        read: true,
-      },
-      {
-        id: '2',
-        sender: 'sadhana',
-        text: 'Yes Surya! I finished reviewing chapter 3. Can we prepare together this evening? 🌿❤️',
-        time: '10:18 AM',
-        timestamp: Date.now() - 3000000,
-        read: true,
-        reactions: { '❤️': ['surya'] },
-      },
-      {
-        id: '3',
-        sender: 'surya',
-        text: 'Always. Our special space is ready. Keep blooming! ✨',
-        time: '10:20 AM',
-        timestamp: Date.now() - 1800000,
-        read: true,
-      },
-    ];
+    return [];
   });
 
   const [inputText, setInputText] = useState('');

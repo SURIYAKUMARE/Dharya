@@ -37,23 +37,40 @@ function AppContent() {
     }
   };
 
+  const isHome = activeTab === 'home';
+
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col selection:bg-blue-500/25 selection:text-blue-200 relative">
-      {/* Subtle Engineering Dot Grid Pattern */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-15"
-        style={{
-          backgroundImage: 'radial-gradient(#38bdf8 0.75px, transparent 0.75px), radial-gradient(#818cf8 0.75px, #0B0F17 0.75px)',
-          backgroundSize: '36px 36px',
-          backgroundPosition: '0 0, 18px 18px',
-        }}
-      />
+    <div
+      className={`min-h-screen flex flex-col relative transition-colors duration-200 ${
+        isHome
+          ? 'bg-[#FAF8F5] text-[#1E293B] selection:bg-blue-200 selection:text-blue-900'
+          : 'bg-[#0B0F17] text-slate-100 selection:bg-blue-500/25 selection:text-blue-200'
+      }`}
+    >
+      {/* Subtle Engineering Dot Grid Pattern for dark mode */}
+      {!isHome && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0 opacity-15"
+          style={{
+            backgroundImage:
+              'radial-gradient(#38bdf8 0.75px, transparent 0.75px), radial-gradient(#818cf8 0.75px, #0B0F17 0.75px)',
+            backgroundSize: '36px 36px',
+            backgroundPosition: '0 0, 18px 18px',
+          }}
+        />
+      )}
 
       {/* Top Academic Navigation */}
       <StudyNavbar />
 
       {/* Main Study Container */}
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col">
+      <main
+        className={`relative z-10 flex-1 w-full flex flex-col ${
+          isHome
+            ? 'max-w-7xl mx-auto p-3 sm:p-6 lg:p-8'
+            : 'max-w-7xl mx-auto p-4 sm:p-6 lg:p-8'
+        }`}
+      >
         {renderActiveView()}
       </main>
 
@@ -61,9 +78,15 @@ function AppContent() {
       <StudyBottomNav />
 
       {/* Academic Footer */}
-      <footer className="relative z-10 border-t border-slate-800 bg-[#0B0F17]/90 backdrop-blur py-4 px-6 text-center text-xs text-slate-400 hidden sm:flex items-center justify-between font-mono">
-        <div>Study Portal • Engineering Curriculum &amp; Conceptual Assessment Platform</div>
-        <div className="text-[11px] text-slate-500">AICTE &amp; GATE STANDARD • FALL 2026</div>
+      <footer
+        className={`relative z-10 py-4 px-6 text-center text-xs hidden sm:flex items-center justify-between font-mono transition-colors ${
+          isHome
+            ? 'border-t border-[#E5DFD5] bg-[#FAF8F5] text-[#64748B]'
+            : 'border-t border-slate-800 bg-[#0B0F17]/90 backdrop-blur text-slate-400'
+        }`}
+      >
+        <div>Open Library • Engineering Curriculum &amp; Conceptual Assessment Platform</div>
+        <div className="text-[11px] opacity-75">AICTE &amp; GATE STANDARD • FALL 2026</div>
       </footer>
     </div>
   );

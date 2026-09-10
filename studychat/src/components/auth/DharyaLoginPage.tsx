@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { Eye, EyeOff, ShieldCheck, ArrowRight, ArrowLeft, X, User, KeyRound } from 'lucide-react';
+import { EngineeringLogo } from '../common/EngineeringLogo';
 import confetti from 'canvas-confetti';
 
 export const DharyaLoginPage: React.FC = () => {
@@ -58,8 +59,8 @@ export const DharyaLoginPage: React.FC = () => {
 
           {/* Academic Portal Verification Emblem */}
           <div className="pt-4 mb-4 flex justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shadow-lg">
-              <ShieldCheck className="w-7 h-7" />
+            <div className="p-1 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center shadow-lg">
+              <EngineeringLogo size="lg" />
             </div>
           </div>
 

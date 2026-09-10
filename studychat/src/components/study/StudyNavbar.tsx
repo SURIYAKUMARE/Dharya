@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { BookOpen, Calendar, User, Layers } from 'lucide-react';
+import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
@@ -16,25 +17,13 @@ export const StudyNavbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo & Platform Name */}
+          {/* Engineering Logo & Platform Name */}
           <div
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => switchTab('home')}
           >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${
-                isHome
-                  ? 'bg-[#EBF3FB] border border-[#BFDBFE]'
-                  : 'bg-blue-600/15 border border-blue-500/30'
-              }`}
-            >
-              <span
-                className={`font-serif font-black text-lg ${
-                  isHome ? 'text-[#1D4ED8]' : 'text-blue-400'
-                }`}
-              >
-                D+
-              </span>
+            <div className="group-hover:scale-105 transition-transform">
+              <EngineeringLogo size="md" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -43,7 +32,7 @@ export const StudyNavbar: React.FC = () => {
                     isHome ? 'text-[#1E293B]' : 'text-white'
                   }`}
                 >
-                  Study Portal
+                  Engineering Portal
                 </span>
                 <span
                   className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase tracking-wider ${
@@ -52,7 +41,7 @@ export const StudyNavbar: React.FC = () => {
                       : 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
                   }`}
                 >
-                  Academic
+                  B.Tech • EIE &amp; CSE
                 </span>
               </div>
               <p

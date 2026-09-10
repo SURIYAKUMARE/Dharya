@@ -36,12 +36,12 @@ export const DharyaLoginPage: React.FC = () => {
         <div className="absolute -inset-2 rounded-3xl bg-indigo-500/15 blur-2xl opacity-70 pointer-events-none" />
 
         {/* Card Container */}
-        <div className="relative bg-[#0d071a]/95 border border-indigo-500/30 rounded-3xl p-6 sm:p-8 backdrop-blur-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-center">
+        <div className="relative bg-[#0E1424] border border-slate-700/80 rounded-2xl p-6 sm:p-8 backdrop-blur-3xl shadow-2xl text-center">
           {/* Top Back to Study Portal Button */}
           <button
             type="button"
             onClick={() => switchTab(selectedTopic ? 'topic-explanation' : 'home')}
-            className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-semibold transition-all"
+            className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-xs font-semibold transition-all border border-slate-800"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Study Portal</span>
@@ -50,7 +50,7 @@ export const DharyaLoginPage: React.FC = () => {
           <button
             type="button"
             onClick={() => switchTab('home')}
-            className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10"
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -58,13 +58,13 @@ export const DharyaLoginPage: React.FC = () => {
 
           {/* Academic Portal Verification Emblem */}
           <div className="pt-4 mb-4 flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600/30 to-violet-600/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <ShieldCheck className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center shadow-lg">
+              <ShieldCheck className="w-7 h-7" />
             </div>
           </div>
 
           {/* Academic Verification Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-[11px] font-bold uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] font-mono font-bold uppercase tracking-wider mb-2">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             <span>Academic Assessment Verification</span>
           </div>
@@ -76,7 +76,7 @@ export const DharyaLoginPage: React.FC = () => {
 
           <p className="text-xs text-slate-400 mt-1 mb-6">
             Enter your university credentials to verify topic assessment for{' '}
-            <span className="text-indigo-400 font-semibold">{selectedTopic?.title || 'Engineering Curriculum'}</span>.
+            <span className="text-blue-400 font-semibold">{selectedTopic?.title || 'Engineering Curriculum'}</span>.
           </p>
 
           {/* Form Fields */}
@@ -90,9 +90,9 @@ export const DharyaLoginPage: React.FC = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter Student ID (e.g. surya or sadhana)"
+                placeholder="Enter Student ID (e.g. DHARYA)"
                 required
-                className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/60 transition-all font-sans"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-sans"
               />
             </div>
 
@@ -108,7 +108,7 @@ export const DharyaLoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/60 transition-all font-sans pr-11"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-sans pr-11"
                 />
                 <button
                   type="button"
@@ -128,7 +128,7 @@ export const DharyaLoginPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-indigo-600/30 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/25 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
             >
               <span>Verify &amp; Proceed</span>
               <ArrowRight className="w-4 h-4" />
@@ -136,7 +136,7 @@ export const DharyaLoginPage: React.FC = () => {
           </form>
 
           {/* Academic Footer Note */}
-          <div className="mt-6 pt-4 border-t border-white/10 text-[11px] text-slate-500 text-center font-mono">
+          <div className="mt-6 pt-4 border-t border-slate-800 text-[11px] text-slate-500 text-center font-mono">
             Department of Engineering &amp; Technology • AICTE GATE Standard
           </div>
         </div>

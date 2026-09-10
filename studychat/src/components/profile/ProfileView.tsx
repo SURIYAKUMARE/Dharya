@@ -47,9 +47,9 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6 pb-20">
       {/* Student Profile Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#0d0a18]/90 border border-white/10 shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative">
+      <div className="p-6 sm:p-8 rounded-2xl bg-[#0E1424] border border-slate-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 border border-white/20 flex items-center justify-center text-white text-2xl font-black shadow-xl shadow-indigo-500/20 uppercase">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/30 flex items-center justify-center text-white text-2xl font-black shadow-lg uppercase">
             {student?.name ? student.name.charAt(0) : 'S'}
           </div>
           <div className="space-y-1">
@@ -57,7 +57,7 @@ export const ProfileView: React.FC = () => {
               <h2 className="text-xl font-bold text-white">
                 {student?.name || 'Surya'}
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
                 {student?.studentId || 'ENG-2024-0910'}
               </span>
             </div>
@@ -71,7 +71,7 @@ export const ProfileView: React.FC = () => {
           {/* Edit Profile / Change Name Button */}
           <button
             onClick={handleOpenEdit}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-indigo-300 hover:text-white transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-slate-700 text-xs font-semibold text-blue-400 hover:text-white transition-colors flex items-center gap-1.5"
           >
             <Edit3 className="w-3.5 h-3.5" />
             <span>Edit Profile</span>
@@ -80,7 +80,7 @@ export const ProfileView: React.FC = () => {
           {isChatAuthenticated && (
             <button
               onClick={logoutChat}
-              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-white/10 hover:border-rose-500/30 text-xs font-semibold text-slate-400 hover:text-rose-300 transition-colors flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/30 text-xs font-semibold text-slate-400 hover:text-rose-300 transition-colors flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign Out</span>
@@ -91,55 +91,55 @@ export const ProfileView: React.FC = () => {
 
       {/* Academic Highlights & Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-          <div className="text-2xl font-extrabold text-indigo-400 font-mono">
+        <div className="p-4 rounded-xl bg-[#0E1424] border border-slate-800 space-y-1">
+          <div className="text-2xl font-extrabold text-blue-400 font-mono">
             {assessmentRecord ? '1' : '0'}
           </div>
           <div className="text-xs font-bold text-white">Assessments</div>
-          <div className="text-[10px] text-slate-400">Verified Completed</div>
+          <div className="text-[10px] text-slate-400 font-mono">Verified Completed</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+        <div className="p-4 rounded-xl bg-[#0E1424] border border-slate-800 space-y-1">
           <div className="text-2xl font-extrabold text-emerald-400 font-mono">
             {completedTasks}
           </div>
           <div className="text-xs font-bold text-white">Tasks Done</div>
-          <div className="text-[10px] text-slate-400">Manual Study Plans</div>
+          <div className="text-[10px] text-slate-400 font-mono">Manual Study Plans</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+        <div className="p-4 rounded-xl bg-[#0E1424] border border-slate-800 space-y-1">
           <div className="text-2xl font-extrabold text-amber-400 font-mono">
             {pendingTasks}
           </div>
           <div className="text-xs font-bold text-white">Pending Tasks</div>
-          <div className="text-[10px] text-slate-400">On Schedule</div>
+          <div className="text-[10px] text-slate-400 font-mono">On Schedule</div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-          <div className="text-2xl font-extrabold text-indigo-300 font-mono">
+        <div className="p-4 rounded-xl bg-[#0E1424] border border-slate-800 space-y-1">
+          <div className="text-2xl font-extrabold text-cyan-400 font-mono">
             {isChatAuthenticated ? 'Verified' : 'Enrolled'}
           </div>
           <div className="text-xs font-bold text-white">Academic Standing</div>
-          <div className="text-[10px] text-slate-400">
+          <div className="text-[10px] text-slate-400 font-mono">
             {isChatAuthenticated ? 'Active Student' : 'Course Registered'}
           </div>
         </div>
       </div>
 
       {/* Assessment Verification Record */}
-      <div className="p-6 rounded-3xl bg-[#0d0a18]/90 border border-white/10 shadow-xl space-y-4">
+      <div className="p-6 rounded-2xl bg-[#0E1424] border border-slate-800 shadow-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-indigo-400" />
+            <Award className="w-5 h-5 text-blue-400" />
             <h3 className="text-base font-bold text-white">Assessment Records</h3>
           </div>
           <span className="text-xs font-mono text-slate-400">Academic Verification</span>
         </div>
 
         {assessmentRecord ? (
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-[#090D16] border border-slate-800 flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-xs font-mono text-indigo-400 font-bold">
+              <div className="text-xs font-mono text-blue-400 font-bold">
                 {assessmentRecord.subjectTitle}
               </div>
               <h4 className="text-sm font-bold text-white">{assessmentRecord.topicTitle}</h4>
@@ -152,13 +152,13 @@ export const ProfileView: React.FC = () => {
               <div className="text-lg font-black text-emerald-400 font-mono">
                 {assessmentRecord.score} / {assessmentRecord.total}
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold font-mono">
                 {assessmentRecord.percentage}% PASSED
               </span>
             </div>
           </div>
         ) : (
-          <div className="p-6 rounded-2xl bg-white/[0.02] border border-dashed border-white/10 text-center text-xs text-slate-400 font-mono">
+          <div className="p-6 rounded-xl bg-[#090D16] border border-dashed border-slate-800 text-center text-xs text-slate-400 font-mono">
             No assessments completed yet. Study a textbook topic and complete its assessment to log scores here.
           </div>
         )}
@@ -167,16 +167,16 @@ export const ProfileView: React.FC = () => {
       {/* Edit Profile / Change Name Modal */}
       {isEditing && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="relative bg-[#111827] border border-white/15 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="relative bg-[#0E1424] border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-indigo-400" />
+                <User className="w-5 h-5 text-blue-400" />
                 <h3 className="text-lg font-bold text-white">Update Profile &amp; Name</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -193,7 +193,7 @@ export const ProfileView: React.FC = () => {
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Enter your name (e.g. Surya or Sadhana)"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export const ProfileView: React.FC = () => {
                   value={editStudentId}
                   onChange={(e) => setEditStudentId(e.target.value)}
                   placeholder="e.g. ENG-2024-0910"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60 font-mono"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
                 />
               </div>
 
@@ -219,7 +219,7 @@ export const ProfileView: React.FC = () => {
                   value={editDepartment}
                   onChange={(e) => setEditDepartment(e.target.value)}
                   placeholder="e.g. Computer Science &amp; Engineering"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -232,7 +232,7 @@ export const ProfileView: React.FC = () => {
                   value={editSemester}
                   onChange={(e) => setEditSemester(e.target.value)}
                   placeholder="e.g. Semester 4"
-                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-indigo-500/60"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#090D16] border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export const ProfileView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg flex items-center gap-1.5"
                 >
                   <Save className="w-4 h-4" />
                   <span>Save Profile</span>

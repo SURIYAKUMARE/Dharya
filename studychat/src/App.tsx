@@ -38,9 +38,16 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-slate-100 flex flex-col selection:bg-indigo-500/25 selection:text-indigo-200">
-      {/* Background Glow */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(99,102,241,0.12)_0%,#0A0A0F_75%)] z-0" />
+    <div className="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col selection:bg-blue-500/25 selection:text-blue-200 relative">
+      {/* Subtle Engineering Dot Grid Pattern */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-15"
+        style={{
+          backgroundImage: 'radial-gradient(#38bdf8 0.75px, transparent 0.75px), radial-gradient(#818cf8 0.75px, #0B0F17 0.75px)',
+          backgroundSize: '36px 36px',
+          backgroundPosition: '0 0, 18px 18px',
+        }}
+      />
 
       {/* Top Academic Navigation */}
       <StudyNavbar />
@@ -54,9 +61,9 @@ function AppContent() {
       <StudyBottomNav />
 
       {/* Academic Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-[#0A0A0F]/80 backdrop-blur py-4 px-6 text-center text-xs text-slate-500 hidden sm:flex items-center justify-between">
+      <footer className="relative z-10 border-t border-slate-800 bg-[#0B0F17]/90 backdrop-blur py-4 px-6 text-center text-xs text-slate-400 hidden sm:flex items-center justify-between font-mono">
         <div>Study Portal • Engineering Curriculum &amp; Conceptual Assessment Platform</div>
-        <div className="font-mono text-[11px] text-slate-600">AICTE &amp; GATE STANDARD • 2026</div>
+        <div className="text-[11px] text-slate-500">AICTE &amp; GATE STANDARD • FALL 2026</div>
       </footer>
     </div>
   );

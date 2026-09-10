@@ -1,12 +1,12 @@
 import React from 'react';
-import { useStudyApp, AppNavTab } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, User, Layers, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useStudyApp } from '../../context/StudyAppContext';
+import { BookOpen, Calendar, User, Layers } from 'lucide-react';
 
 export const StudyNavbar: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0A0A0F]/85 backdrop-blur-xl border-b border-white/10 transition-colors">
+    <header className="sticky top-0 z-40 bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo & Platform Name */}
@@ -14,18 +14,18 @@ export const StudyNavbar: React.FC = () => {
             className="flex items-center gap-3 cursor-pointer group"
             onClick={() => switchTab('home')}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/10 border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/10 group-hover:scale-105 transition-transform">
-              <span className="font-serif font-black text-lg text-indigo-400">D+</span>
+            <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <span className="font-serif font-black text-lg text-blue-400">D+</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm tracking-tight text-white">Study Portal</span>
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 uppercase tracking-wider">
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-blue-500/15 text-blue-400 border border-blue-500/25 uppercase tracking-wider">
                   Academic
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 tracking-tight hidden sm:block">
-                Engineering Curriculum &amp; Assessment Platform
+              <p className="text-[11px] text-slate-400 tracking-tight hidden sm:block font-mono">
+                B.Tech Curriculum &amp; Examination Repository
               </p>
             </div>
           </div>
@@ -36,11 +36,11 @@ export const StudyNavbar: React.FC = () => {
               onClick={() => switchTab('home')}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'home'
-                  ? 'bg-white/10 text-white border border-white/15 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <BookOpen className="w-4 h-4 text-indigo-400" />
+              <BookOpen className="w-4 h-4 text-inherit" />
               <span>Home</span>
             </button>
 
@@ -48,11 +48,11 @@ export const StudyNavbar: React.FC = () => {
               onClick={() => switchTab('subjects')}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'subjects' || activeTab === 'topic-explanation'
-                  ? 'bg-white/10 text-white border border-white/15 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Layers className="w-4 h-4 text-violet-400" />
+              <Layers className="w-4 h-4 text-inherit" />
               <span>Subjects</span>
             </button>
 
@@ -60,11 +60,11 @@ export const StudyNavbar: React.FC = () => {
               onClick={() => switchTab('planner')}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'planner'
-                  ? 'bg-white/10 text-white border border-white/15 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <Calendar className="w-4 h-4 text-emerald-400" />
+              <Calendar className="w-4 h-4 text-inherit" />
               <span>Planner</span>
             </button>
 
@@ -72,20 +72,20 @@ export const StudyNavbar: React.FC = () => {
               onClick={() => switchTab('profile')}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
                 activeTab === 'profile'
-                  ? 'bg-white/10 text-white border border-white/15 shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
               }`}
             >
-              <User className="w-4 h-4 text-pink-400" />
+              <User className="w-4 h-4 text-inherit" />
               <span>Profile</span>
             </button>
           </nav>
 
           {/* Right Indicator (Academic Semester Tag) */}
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-mono text-slate-300 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-              <span className="hidden sm:inline">Semester 4 • Engineering</span>
+            <div className="px-3 py-1.5 rounded-xl bg-[#0E1424] border border-slate-800 text-xs font-mono text-slate-300 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="hidden sm:inline">Semester 4 • B.Tech CSE</span>
               <span className="sm:hidden">Sem 4</span>
             </div>
           </div>

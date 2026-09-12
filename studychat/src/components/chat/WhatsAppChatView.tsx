@@ -46,6 +46,9 @@ interface ExtendedChatMessage extends ChatMessage {
   transcript?: string;
   isPinned?: boolean;
   fileSizeKb?: number;
+  duration?: string;
+  thumbnailUrl?: string;
+  mediaType?: 'image' | 'video';
 }
 
 export const WhatsAppChatView: React.FC = () => {
@@ -248,13 +251,29 @@ export const WhatsAppChatView: React.FC = () => {
     );
   };
 
-  // Photo & Gallery state
-  const [photoModalOpen, setPhotoModalOpen] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [photoCaption, setPhotoCaption] = useState('');
+  // Media Sender Preview Modal State (Photo or Video)
+  const [mediaModalOpen, setMediaModalOpen] = useState(false);
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [mediaThumbnail, setMediaThumbnail] = useState('');
+  const [mediaDuration, setMediaDuration] = useState('');
+  const [mediaFileSizeKb, setMediaFileSizeKb] = useState(0);
+  const [mediaCaption, setMediaCaption] = useState('');
   const [isHdSelected, setIsHdSelected] = useState(false);
   const [isViewOnceSelected, setIsViewOnceSelected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Fullscreen WhatsApp Lightbox / Media Viewer
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    caption?: string;
+    sender: string;
+    time: string;
+    isViewOnce?: boolean;
+    msgId?: string;
+  } | null>(null);
 
   // Audio recording simulation state
   const [isPlayingAudioId, setIsPlayingAudioId] = useState<string | null>(null);
@@ -629,49 +648,101 @@ export const WhatsAppChatView: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle Photo Selected from Device Gallery / File Picker
-  const handleGalleryFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Media Selected (Photo or Video from Camera or Gallery)
+  const handleMediaFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const rawData = event.target?.result as string;
-      if (!rawData) return;
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isImage && !isVideo) {
+      alert('Please select an image or video file.');
+      return;
+    }
 
-      // Optimize image on canvas to maintain high fidelity without breaking localStorage quota
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        const maxDim = isHdSelected ? 1920 : 1200;
+    setMediaType(isVideo ? 'video' : 'image');
+    setMediaCaption('');
+    setIsHdSelected(false);
+    setIsViewOnceSelected(false);
+    const sizeKb = Math.round(file.size / 1024);
+    setMediaFileSizeKb(sizeKb);
 
-        if (width > maxDim || height > maxDim) {
-          if (width > height) {
-            height = Math.round((height * maxDim) / width);
-            width = maxDim;
-          } else {
-            width = Math.round((width * maxDim) / height);
-            height = maxDim;
-          }
-        }
+    if (isVideo) {
+      const objectUrl = URL.createObjectURL(file);
+      setMediaUrl(objectUrl);
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const finalUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', isHdSelected ? 0.92 : 0.82);
-          setPhotoUrl(finalUrl);
-          setPhotoModalOpen(true);
-        } else {
-          setPhotoUrl(rawData);
-          setPhotoModalOpen(true);
-        }
+      // Generate video thumbnail and calculate duration
+      const tempVideo = document.createElement('video');
+      tempVideo.preload = 'metadata';
+      tempVideo.src = objectUrl;
+      tempVideo.muted = true;
+      tempVideo.playsInline = true;
+
+      tempVideo.onloadedmetadata = () => {
+        const secs = Math.round(tempVideo.duration) || 0;
+        const mins = Math.floor(secs / 60);
+        const remSecs = secs % 60;
+        const durStr = `${mins}:${remSecs < 10 ? '0' : ''}${remSecs}`;
+        setMediaDuration(durStr);
+        tempVideo.currentTime = Math.min(1, Math.max(0, tempVideo.duration / 2));
       };
-      img.src = rawData;
-    };
-    reader.readAsDataURL(file);
+
+      tempVideo.onseeked = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.min(640, tempVideo.videoWidth || 640);
+          canvas.height = Math.min(360, tempVideo.videoHeight || 360);
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+            const thumb = canvas.toDataURL('image/jpeg', 0.8);
+            setMediaThumbnail(thumb);
+          }
+        } catch {}
+      };
+
+      setMediaModalOpen(true);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawData = event.target?.result as string;
+        if (!rawData) return;
+
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const maxDim = isHdSelected ? 1920 : 1280;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const finalUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85);
+            setMediaUrl(finalUrl);
+            setMediaThumbnail(finalUrl);
+            setMediaModalOpen(true);
+          } else {
+            setMediaUrl(rawData);
+            setMediaThumbnail(rawData);
+            setMediaModalOpen(true);
+          }
+        };
+        img.src = rawData;
+      };
+      reader.readAsDataURL(file);
+    }
     e.target.value = '';
   };
 
@@ -708,44 +779,79 @@ export const WhatsAppChatView: React.FC = () => {
     } catch {}
   };
 
-  // Send a Photo from Gallery (Standard or HD)
-  const handleSendPhoto = () => {
-    if (!photoUrl) return;
+  // Send a Photo or Video (Standard or HD, Regular or View-Once)
+  const handleSendMedia = () => {
+    if (!mediaUrl) return;
 
     const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+    const isVideo = mediaType === 'video';
 
     const newMsg: ExtendedChatMessage = {
-      id: 'msg-img-' + Date.now(),
+      id: `msg-${isVideo ? 'vid' : 'img'}-${Date.now()}`,
       sender: currentUser,
-      text: photoCaption.trim() || (isHdSelected ? 'High Definition Photo' : 'Photo'),
+      text: mediaCaption.trim() || (isVideo ? 'Video' : isHdSelected ? 'High Definition Photo' : 'Photo'),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
       status: initialStatus,
-      type: 'image',
-      mediaUrl: photoUrl,
+      type: isVideo ? 'video' : 'image',
+      mediaUrl: mediaUrl,
+      thumbnailUrl: mediaThumbnail || (isVideo ? undefined : mediaUrl),
+      duration: mediaDuration,
       isHd: isHdSelected,
       isViewOnce: isViewOnceSelected,
       isOpened: false,
-      fileSizeKb: isHdSelected ? 2450 : 420,
+      fileSizeKb: mediaFileSizeKb || (isVideo ? 2450 : isHdSelected ? 1200 : 420),
     };
 
     const next = [...messages, newMsg];
     persistMessages(next);
-    setPhotoModalOpen(false);
-    setPhotoUrl('');
-    setPhotoCaption('');
+    setMediaModalOpen(false);
+    setMediaUrl('');
+    setMediaThumbnail('');
+    setMediaCaption('');
     setIsHdSelected(false);
     setIsViewOnceSelected(false);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      const broadcastPayload = {
+        ...newMsg,
+        mediaUrl: mediaUrl.startsWith('blob:') ? (mediaThumbnail || mediaUrl) : mediaUrl,
+      };
       activeChannel.send({
         type: 'broadcast',
         event: 'new_message',
-        payload: newMsg,
+        payload: broadcastPayload,
       });
     } catch {}
+  };
+
+  // Open media in Fullscreen Lightbox / Media Viewer
+  const openLightbox = (msg: ExtendedChatMessage) => {
+    setLightboxMedia({
+      url: msg.mediaUrl || msg.thumbnailUrl || '',
+      type: msg.type === 'video' ? 'video' : 'image',
+      caption: msg.text,
+      sender: msg.sender,
+      time: msg.time,
+      isViewOnce: msg.isViewOnce,
+      msgId: msg.id,
+    });
+  };
+
+  // Open View Once Media
+  const handleOpenViewOnce = (msg: ExtendedChatMessage) => {
+    openLightbox(msg);
+
+    // Permanently mark as opened
+    setMessages((prev) => {
+      const updated = prev.map((m) => (m.id === msg.id ? { ...m, isOpened: true } : m));
+      try {
+        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   // Send a Voice Note with Transcript & View-Once support
@@ -1087,12 +1193,21 @@ export const WhatsAppChatView: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 w-full h-full flex flex-col overflow-hidden bg-[#0c1317] text-[#e9edef] select-none">
-      {/* Hidden File Input for Gallery Photo Selection */}
+      {/* Hidden File Input for Gallery Photos & Videos */}
       <input
         type="file"
         ref={fileInputRef}
-        accept="image/*"
-        onChange={handleGalleryFileSelect}
+        accept="image/*,video/*"
+        onChange={handleMediaFileSelect}
+        className="hidden"
+      />
+      {/* Hidden File Input for Device Camera Capture */}
+      <input
+        type="file"
+        ref={cameraInputRef}
+        accept="image/*,video/*"
+        capture="environment"
+        onChange={handleMediaFileSelect}
         className="hidden"
       />
 
@@ -1446,30 +1561,100 @@ export const WhatsAppChatView: React.FC = () => {
                   </div>
                 )}
 
-                {/* ── IMAGE MESSAGE FROM GALLERY ── */}
-                {msg.type === 'image' && (
-                  <div className="space-y-1.5 mb-1">
-                    <div className="relative rounded-xl overflow-hidden bg-black/40 max-h-72">
+                {/* ── VIEW ONCE MEDIA (PHOTO OR VIDEO) ── */}
+                {msg.isViewOnce && (
+                  <div className="py-1">
+                    {msg.isOpened ? (
+                      <div className="flex items-center gap-2 py-2 px-3 bg-black/20 rounded-xl select-none text-[#8696a0]">
+                        <div className="w-6 h-6 rounded-full border border-dashed border-[#8696a0] flex items-center justify-center text-[10px] font-bold">
+                          ①
+                        </div>
+                        <span className="text-sm italic">Opened</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenViewOnce(msg)}
+                        className="flex items-center gap-3 py-2 px-3 bg-black/25 hover:bg-black/40 rounded-xl transition-all border border-emerald-500/20 group text-left w-full"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-sm font-bold shadow group-hover:scale-105 transition-transform flex-shrink-0">
+                          ①
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                            {msg.type === 'video' ? 'Video' : 'Photo'}
+                          </span>
+                          <span className="text-[10px] text-[#8696a0]">Tap to view</span>
+                        </div>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* ── REGULAR IMAGE MESSAGE ── */}
+                {msg.type === 'image' && !msg.isViewOnce && (
+                  <div className="space-y-1.5 mb-1 cursor-pointer" onClick={() => openLightbox(msg)}>
+                    <div className="relative rounded-xl overflow-hidden bg-black/40 max-h-80 group">
                       <img
-                        src={msg.mediaUrl}
-                        alt="Photo from Gallery"
-                        className="w-full h-auto object-cover rounded-xl"
+                        src={msg.mediaUrl || msg.thumbnailUrl}
+                        alt="Photo"
+                        className="w-full h-auto object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
                       />
                       {/* HD Badge Overlay */}
                       {msg.isHd && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5">
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5 shadow">
                           <span>HD</span>
                         </div>
                       )}
-                      {/* View Once indicator */}
-                      {msg.isViewOnce && (
-                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-emerald-600/90 text-white flex items-center justify-center font-bold text-xs shadow">
-                          ①
+                    </div>
+                    {msg.text && msg.text !== 'Photo' && msg.text !== 'High Definition Photo' && (
+                      <p className="text-sm leading-relaxed text-white pt-1">
+                        {renderFormattedText(msg.text)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* ── REGULAR VIDEO MESSAGE ── */}
+                {msg.type === 'video' && !msg.isViewOnce && (
+                  <div className="space-y-1.5 mb-1 cursor-pointer" onClick={() => openLightbox(msg)}>
+                    <div className="relative rounded-xl overflow-hidden bg-black/60 max-h-80 group flex items-center justify-center">
+                      {msg.thumbnailUrl ? (
+                        <img
+                          src={msg.thumbnailUrl}
+                          alt="Video Thumbnail"
+                          className="w-full h-auto object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                      ) : (
+                        <video
+                          src={msg.mediaUrl}
+                          preload="metadata"
+                          className="w-full h-auto object-cover rounded-xl pointer-events-none"
+                        />
+                      )}
+
+                      {/* Center WhatsApp Play Button Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur border border-white/40 text-white flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-black/75 transition-all">
+                          <Play className="w-5 h-5 fill-current ml-0.5 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Video Duration Badge */}
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-semibold text-white flex items-center gap-1 shadow">
+                        <Video className="w-3 h-3" />
+                        <span>{msg.duration || '0:15'}</span>
+                      </div>
+
+                      {/* HD Badge Overlay */}
+                      {msg.isHd && (
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5 shadow">
+                          <span>HD</span>
                         </div>
                       )}
                     </div>
-                    {msg.text && (
-                      <p className="text-sm leading-relaxed text-white">
+                    {msg.text && msg.text !== 'Video' && (
+                      <p className="text-sm leading-relaxed text-white pt-1">
                         {renderFormattedText(msg.text)}
                       </p>
                     )}
@@ -1629,11 +1814,11 @@ export const WhatsAppChatView: React.FC = () => {
           <Smile className="w-5 h-5" />
         </button>
 
-        {/* Quick Camera/Gallery Photo Picker */}
+        {/* Quick Camera Capture (Photo or Video) */}
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => cameraInputRef.current?.click()}
           className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
-          title="Send Photo from Gallery"
+          title="Camera (Photo & Video)"
         >
           <Camera className="w-5 h-5" />
         </button>
@@ -1650,8 +1835,8 @@ export const WhatsAppChatView: React.FC = () => {
 
           {/* WhatsApp Attachment Sheet */}
           {showAttachMenu && (
-            <div className="absolute bottom-12 left-0 w-64 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-3 text-center">
-              {/* Device Gallery Photo Option */}
+            <div className="absolute bottom-12 left-0 w-72 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-4 gap-2 text-center">
+              {/* Gallery Photos & Videos Option */}
               <button
                 onClick={() => {
                   fileInputRef.current?.click();
@@ -1665,6 +1850,21 @@ export const WhatsAppChatView: React.FC = () => {
                 <span className="text-[10px]">Gallery</span>
               </button>
 
+              {/* Camera Option */}
+              <button
+                onClick={() => {
+                  cameraInputRef.current?.click();
+                  setShowAttachMenu(false);
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+              >
+                <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow">
+                  <Camera className="w-5 h-5" />
+                </div>
+                <span className="text-[10px]">Camera</span>
+              </button>
+
+              {/* Audio Note Option */}
               <button
                 onClick={() => {
                   handleSendVoiceNote();
@@ -1678,6 +1878,7 @@ export const WhatsAppChatView: React.FC = () => {
                 <span className="text-[10px]">Audio Note</span>
               </button>
 
+              {/* Location Option */}
               <button
                 onClick={() => {
                   setInputText('📍 Shared Engineering Campus Library Coordinates: 13.0827° N, 80.2707° E');
@@ -1728,14 +1929,14 @@ export const WhatsAppChatView: React.FC = () => {
         )}
       </div>
 
-      {/* ── HD PHOTO PREVIEW & SENDER MODAL (Directly from Gallery) ── */}
-      {photoModalOpen && (
+      {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos from Gallery or Camera) ── */}
+      {mediaModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="relative bg-[#182229] border border-[#2a3942] rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4">
-            {/* Top Bar with HD Toggle */}
+            {/* Top Bar with HD and View Once Toggles */}
             <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
               <div className="flex items-center gap-2">
-                {/* Standard or HD Photo Toggle Button */}
+                {/* Standard or HD Toggle Button */}
                 <button
                   type="button"
                   onClick={() => setIsHdSelected(!isHdSelected)}
@@ -1744,10 +1945,11 @@ export const WhatsAppChatView: React.FC = () => {
                       ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
                       : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
                   }`}
+                  title="Toggle High Definition"
                 >
                   <span>HD</span>
                   <span className="text-[10px] font-normal">
-                    {isHdSelected ? 'High Resolution' : 'Standard'}
+                    {isHdSelected ? 'HD Quality' : 'Standard'}
                   </span>
                 </button>
 
@@ -1757,57 +1959,97 @@ export const WhatsAppChatView: React.FC = () => {
                   onClick={() => setIsViewOnceSelected(!isViewOnceSelected)}
                   className={`w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center border ${
                     isViewOnceSelected
-                      ? 'bg-emerald-500 text-white border-emerald-400 shadow'
+                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
                       : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
                   }`}
-                  title="View Once"
+                  title="View Once (Photo or video can only be viewed once)"
                 >
                   ①
                 </button>
+
+                {mediaType === 'video' && mediaDuration && (
+                  <span className="text-xs text-[#8696a0] px-2 py-0.5 rounded-full bg-white/5 flex items-center gap-1">
+                    <Video className="w-3 h-3 text-emerald-400" />
+                    <span>{mediaDuration}</span>
+                  </span>
+                )}
               </div>
 
               <button
-                onClick={() => setPhotoModalOpen(false)}
+                onClick={() => {
+                  setMediaModalOpen(false);
+                  setMediaUrl('');
+                  setMediaThumbnail('');
+                }}
                 className="p-1 rounded-full text-[#8696a0] hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Photo Preview from user's gallery */}
-            <div className="rounded-2xl overflow-hidden bg-black/50 max-h-80 flex items-center justify-center">
-              <img src={photoUrl} alt="Gallery Preview" className="max-h-80 w-auto object-contain" />
+            {/* Media Preview (Video Player or Photo Viewer) */}
+            <div className="rounded-2xl overflow-hidden bg-black/60 max-h-80 flex items-center justify-center relative">
+              {mediaType === 'video' ? (
+                <video
+                  src={mediaUrl}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-80 w-auto rounded-2xl mx-auto"
+                />
+              ) : (
+                <img
+                  src={mediaUrl}
+                  alt="Media Preview"
+                  className="max-h-80 w-auto object-contain rounded-2xl"
+                />
+              )}
             </div>
 
             {/* Caption & Send */}
             <div className="space-y-3">
               <input
                 type="text"
-                value={photoCaption}
-                onChange={(e) => setPhotoCaption(e.target.value)}
+                value={mediaCaption}
+                onChange={(e) => setMediaCaption(e.target.value)}
                 placeholder="Add a caption..."
                 className="w-full bg-[#2a3942] text-sm text-white px-4 py-2.5 rounded-xl border border-transparent focus:outline-none focus:border-[#00a884]"
               />
 
               <div className="flex justify-between items-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Choose Another Photo</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Gallery</span>
+                  </button>
+                  <span className="text-[#8696a0] text-xs">•</span>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Camera</span>
+                  </button>
+                </div>
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPhotoModalOpen(false)}
+                    onClick={() => {
+                      setMediaModalOpen(false);
+                      setMediaUrl('');
+                      setMediaThumbnail('');
+                    }}
                     className="px-4 py-2 rounded-xl bg-white/5 text-xs text-[#8696a0] hover:text-white"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleSendPhoto}
+                    onClick={handleSendMedia}
                     className="px-6 py-2 rounded-xl bg-[#00a884] hover:bg-[#029071] text-white text-xs font-bold shadow flex items-center gap-1.5"
                   >
                     <span>Send</span>
@@ -1816,6 +2058,86 @@ export const WhatsAppChatView: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── FULLSCREEN WHATSAPP LIGHTBOX / MEDIA VIEWER ── */}
+      {lightboxMedia && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-lg flex flex-col justify-between select-none">
+          {/* Top Bar */}
+          <div className="p-4 bg-black/60 backdrop-blur-md flex items-center justify-between border-b border-white/10 z-10">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setLightboxMedia(null)}
+                className="p-1.5 rounded-full hover:bg-white/10 text-white transition-colors"
+                title="Close"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  {lightboxMedia.sender === currentUser ? 'You' : partnerName}
+                </h3>
+                <p className="text-[11px] text-[#8696a0]">
+                  {lightboxMedia.time} {lightboxMedia.isViewOnce ? '• View Once' : ''}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!lightboxMedia.isViewOnce && (
+                <a
+                  href={lightboxMedia.url}
+                  download={`dharya-whatsapp-${Date.now()}.${lightboxMedia.type === 'video' ? 'mp4' : 'jpg'}`}
+                  className="p-2 rounded-full hover:bg-white/10 text-[#8696a0] hover:text-white transition-colors"
+                  title="Download"
+                >
+                  <HardDrive className="w-5 h-5" />
+                </a>
+              )}
+              <button
+                onClick={() => setLightboxMedia(null)}
+                className="p-2 rounded-full hover:bg-white/10 text-[#8696a0] hover:text-white transition-colors"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Content */}
+          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+            {lightboxMedia.type === 'video' ? (
+              <video
+                src={lightboxMedia.url}
+                controls
+                autoPlay
+                playsInline
+                className="max-h-[75vh] max-w-full rounded-xl shadow-2xl object-contain"
+              />
+            ) : (
+              <img
+                src={lightboxMedia.url}
+                alt="Fullscreen"
+                className="max-h-[75vh] max-w-full object-contain rounded-xl shadow-2xl"
+              />
+            )}
+          </div>
+
+          {/* Bottom Bar / Caption */}
+          <div className="p-4 bg-black/60 backdrop-blur-md text-center border-t border-white/10">
+            {lightboxMedia.isViewOnce ? (
+              <p className="text-xs text-amber-400 font-medium">
+                ① View-once message — media disappears when you exit.
+              </p>
+            ) : lightboxMedia.caption && lightboxMedia.caption !== 'Photo' && lightboxMedia.caption !== 'Video' && lightboxMedia.caption !== 'High Definition Photo' ? (
+              <p className="text-sm text-white max-w-xl mx-auto leading-relaxed">
+                {lightboxMedia.caption}
+              </p>
+            ) : (
+              <p className="text-xs text-[#8696a0]">End-to-end encrypted</p>
+            )}
           </div>
         </div>
       )}

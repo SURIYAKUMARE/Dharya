@@ -7,12 +7,20 @@ import { SubjectTopicsView } from './components/study/SubjectTopicsView';
 import { TopicExplanationView } from './components/study/TopicExplanationView';
 import { AssessmentModal } from './components/assessment/AssessmentModal';
 import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
+import { FaceVerificationView } from './components/auth/FaceVerificationView';
 import { WhatsAppChatView } from './components/chat/WhatsAppChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
 
 function AppContent() {
-  const { activeTab } = useStudyApp();
+  const { activeTab, isChatAuthenticated, isFaceVerified, switchTab } = useStudyApp();
+
+  // Strict route protection guard: prevent bypassing face verification
+  React.useEffect(() => {
+    if (activeTab === 'chat' && (!isChatAuthenticated || !isFaceVerified)) {
+      switchTab('chat-login');
+    }
+  }, [activeTab, isChatAuthenticated, isFaceVerified, switchTab]);
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -26,7 +34,12 @@ function AppContent() {
         return <AssessmentModal />;
       case 'chat-login':
         return <DharyaLoginPage />;
+      case 'face-verification':
+        return <FaceVerificationView />;
       case 'chat':
+        if (!isChatAuthenticated || !isFaceVerified) {
+          return <DharyaLoginPage />;
+        }
         return <WhatsAppChatView />;
       case 'planner':
         return <PlannerView />;

@@ -16,20 +16,9 @@ export const DharyaLoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    const success = loginToChat(username, password);
-    if (success) {
-      const u = username.trim().toLowerCase();
-      confetti({
-        particleCount: 70,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: u === 'surya' ? ['#10b981', '#34d399', '#6ee7b7'] : ['#f43f5e', '#fb7185', '#fda4af'],
-      });
-      switchTab('chat');
-    } else {
-      // Wrong password: redirect immediately to timed academic assessment session
-      switchTab('assessment');
-    }
+    // loginToChat routes to face-verification on valid credentials,
+    // and routes to assessment on incorrect password
+    loginToChat(username, password);
   };
 
   return (

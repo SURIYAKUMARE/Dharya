@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti';
 const TOTAL_ASSESSMENT_TIME = 20 * 60; // 20 minutes in seconds
 
 export const AssessmentModal: React.FC = () => {
-  const { selectedTopic, selectedSubject, completeAssessment, openChatLogin, switchTab } = useStudyApp();
+  const { selectedTopic, selectedSubject, completeAssessment, openChatLogin, switchTab, assessmentNotice } = useStudyApp();
 
   const currentTopic = selectedTopic || SUBJECTS_DATA[0].topics[0];
   const currentSubject = selectedSubject || SUBJECTS_DATA[0];
@@ -97,6 +97,16 @@ export const AssessmentModal: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6 pb-20">
+      {/* Redirection Alert Notice */}
+      {assessmentNotice && (
+        <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-900 flex items-start sm:items-center gap-3 shadow-md">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+          <div className="flex-1 text-xs sm:text-sm font-bold leading-relaxed">
+            {assessmentNotice}
+          </div>
+        </div>
+      )}
+
       {/* Assessment Header with Live Timer */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
         <div>

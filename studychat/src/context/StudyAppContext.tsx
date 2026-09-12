@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData';
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'planner' | 'profile';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'face-verification' | 'chat' | 'planner' | 'profile';
 
 export interface AssessmentRecord {
   topicId: string;
@@ -37,6 +37,13 @@ interface StudyAppContextType {
   isAssessmentCompleted: boolean;
   isChatUnlocked: boolean;
   isChatAuthenticated: boolean;
+  isFaceVerified: boolean;
+  pendingUser: 'surya' | 'sadhana' | null;
+  assessmentNotice: string | null;
+  setAssessmentNotice: (notice: string | null) => void;
+  startFaceVerification: (user: 'surya' | 'sadhana') => void;
+  completeFaceVerification: () => void;
+  failFaceVerification: (reason?: string) => void;
   openChatLogin: () => void;
   loginToChat: (usernameInput: string, passwordInput: string) => boolean;
   quickLogin: (user: 'surya' | 'sadhana') => boolean;
@@ -81,6 +88,24 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return false;
     }
   });
+
+  const [isFaceVerified, setIsFaceVerified] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('study_face_verified') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [pendingUser, setPendingUser] = useState<'surya' | 'sadhana' | null>(() => {
+    try {
+      return (sessionStorage.getItem('study_pending_user') as 'surya' | 'sadhana') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [assessmentNotice, setAssessmentNotice] = useState<string | null>(null);
 
   const [student, setStudent] = useState<StudentProfile | null>(() => {
     try {
@@ -191,7 +216,20 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     openDharyaLogin();
   };
 
-  const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
+  const startFaceVerification = (user: 'surya' | 'sadhana') => {
+    setPendingUser(user);
+    sessionStorage.setItem('study_pending_user', user);
+    setActiveTab('face-verification');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const completeFaceVerification = () => {
+    const user = pendingUser || 'surya';
+    setIsFaceVerified(true);
+    setIsChatAuthenticated(true);
+    sessionStorage.setItem('study_face_verified', 'true');
+    sessionStorage.setItem('study_chat_auth', 'true');
+
     if (user === 'surya') {
       const prof: StudentProfile = {
         username: 'surya',
@@ -201,15 +239,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         semester: '4th Semester',
       };
       setStudent(prof);
-      setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'surya');
-      setActiveTab('chat');
-      return true;
-    }
-
-    if (user === 'sadhana') {
+    } else {
       const prof: StudentProfile = {
         username: 'sadhana',
         name: 'Sadhana',
@@ -218,15 +250,32 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         semester: '4th Semester',
       };
       setStudent(prof);
-      setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'sadhana');
-      setActiveTab('chat');
-      return true;
     }
 
-    return false;
+    setAssessmentNotice(null);
+    setActiveTab('chat');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const failFaceVerification = (reason?: string) => {
+    setPendingUser(null);
+    setIsFaceVerified(false);
+    setIsChatAuthenticated(false);
+    sessionStorage.removeItem('study_pending_user');
+    sessionStorage.removeItem('study_face_verified');
+    sessionStorage.removeItem('study_chat_auth');
+
+    const msg = reason || 'Face verification failed. You have been redirected to the assessment.';
+    setAssessmentNotice(msg);
+    setActiveTab('assessment');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
+    startFaceVerification(user);
+    return true;
   };
 
   const loginToChat = (usernameInput: string, passwordInput: string): boolean => {
@@ -240,53 +289,48 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       (u === 'dharya' || u === 'surya' || u === '' || u.startsWith('sec') || u.includes('sec') || u === 'sec2511xx') &&
       (p === '09/10/2007' || p === '09102007' || p === 'surya' || p === 'password')
     ) {
-      return quickLogin('surya');
+      startFaceVerification('surya');
+      return true;
     }
 
     if (
       (u === 'dharya' || u === 'sadhana' || u === '' || u.startsWith('sec') || u.includes('sec') || u === 'sec2511xx') &&
       (p === '29/02/2008' || p === '29022008' || p === 'sadhana' || p === 'password')
     ) {
-      return quickLogin('sadhana');
+      startFaceVerification('sadhana');
+      return true;
     }
 
     // Direct password fallback
     if (p === '09/10/2007' || p === '09102007') {
-      return quickLogin('surya');
+      startFaceVerification('surya');
+      return true;
     }
     if (p === '29/02/2008' || p === '29022008') {
-      return quickLogin('sadhana');
-    }
-
-    // Default student demo credential
-    if (u === 'student' && (p === 'study123' || p === 'password' || p === '123456')) {
-      const prof: StudentProfile = {
-        username: 'student',
-        name: 'Alex Kumar',
-        studentId: 'ENG-2026-8841',
-        department: 'Computer Science',
-        semester: '4th Semester',
-      };
-      setStudent(prof);
-      setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
-      sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
-      setActiveTab('chat');
+      startFaceVerification('sadhana');
       return true;
     }
 
+    // Incorrect password: redirect directly to assessment and set notice
+    setAssessmentNotice('Incorrect password. You have been redirected to the assessment.');
+    setActiveTab('assessment');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     return false;
   };
 
   const logoutChat = () => {
     setIsChatAuthenticated(false);
+    setIsFaceVerified(false);
+    setPendingUser(null);
     sessionStorage.removeItem('study_chat_auth');
+    sessionStorage.removeItem('study_face_verified');
+    sessionStorage.removeItem('study_pending_user');
     setActiveTab('home');
   };
 
   const switchTab = (tab: AppNavTab) => {
     if (tab === 'chat') {
-      if (!isChatAuthenticated) {
+      if (!isChatAuthenticated || !isFaceVerified) {
         openDharyaLogin();
         return;
       }
@@ -327,6 +371,13 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isAssessmentCompleted,
         isChatUnlocked,
         isChatAuthenticated,
+        isFaceVerified,
+        pendingUser,
+        assessmentNotice,
+        setAssessmentNotice,
+        startFaceVerification,
+        completeFaceVerification,
+        failFaceVerification,
         openChatLogin,
         loginToChat,
         quickLogin,

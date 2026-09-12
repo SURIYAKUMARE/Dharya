@@ -36,8 +36,12 @@ import {
   Camera,
   Copy,
   BookOpen,
-  Key
+  Key,
+  Keyboard,
+  Plus
 } from 'lucide-react';
+import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
+import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 
 interface ExtendedChatMessage extends ChatMessage {
   isHd?: boolean;
@@ -131,6 +135,8 @@ export const WhatsAppChatView: React.FC = () => {
   const [showChatLists, setShowChatLists] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
+  const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
 
   // ── SECURITY SECTION STATES ──
   const [showSecurityModal, setShowSecurityModal] = useState(false);
@@ -1019,8 +1025,35 @@ export const WhatsAppChatView: React.FC = () => {
     setTimeout(() => setCopiedSafetyCode(false), 2500);
   };
 
-  // Text formatting parser (*bold*, _italic_, ~strike~, `code`)
+  // Text formatting parser (*bold*, _italic_, ~strike~, `code`, and Vector SVG emojis!)
   const renderFormattedText = (content: string) => {
+    // Check if message contains strictly 1 to 3 emojis without other text -> render large like WhatsApp!
+    const trimmed = content.trim();
+    const pureEmojiMatches = trimmed.match(EMOJI_REGEX);
+    if (
+      pureEmojiMatches &&
+      pureEmojiMatches.join('') === trimmed.replace(/\s+/g, '') &&
+      pureEmojiMatches.length <= 3
+    ) {
+      const sizeClass =
+        pureEmojiMatches.length === 1
+          ? 'w-14 h-14 sm:w-16 sm:h-16'
+          : pureEmojiMatches.length === 2
+          ? 'w-10 h-10 sm:w-12 sm:h-12'
+          : 'w-8 h-8 sm:w-10 sm:h-10';
+      return (
+        <div className="flex items-center gap-2 py-1 flex-wrap">
+          {pureEmojiMatches.map((em, idx) => (
+            <EmojiSvg
+              key={`pure-em-${idx}`}
+              emoji={em}
+              className={`${sizeClass} object-contain transition-transform hover:scale-110 drop-shadow-md`}
+            />
+          ))}
+        </div>
+      );
+    }
+
     const boldRegex = /\*([^*]+)\*/g;
     const italicRegex = /_([^_]+)_/g;
     const strikeRegex = /~([^~]+)~/g;
@@ -1058,6 +1091,24 @@ export const WhatsAppChatView: React.FC = () => {
           sub
         )
       );
+    });
+
+    // Render all emojis as crisp Twemoji vector SVGs!
+    parts = parts.flatMap((part, pIdx) => {
+      if (typeof part !== 'string') return part;
+      const subParts = part.split(EMOJI_REGEX);
+      return subParts.map((sub, i) => {
+        if (sub.match(EMOJI_REGEX)) {
+          return (
+            <EmojiSvg
+              key={`em-${pIdx}-${i}`}
+              emoji={sub}
+              className="w-5 h-5 inline-block align-middle mx-0.5"
+            />
+          );
+        }
+        return sub;
+      });
     });
 
     return <>{parts}</>;
@@ -1742,9 +1793,13 @@ export const WhatsAppChatView: React.FC = () => {
 
                 {/* Reaction Counter Pill */}
                 {totalReactions > 0 && (
-                  <div className="absolute -bottom-2 right-2 bg-[#233138] border border-white/10 rounded-full px-1.5 py-0.5 shadow-md flex items-center gap-1 text-xs">
+                  <div className="absolute -bottom-2.5 right-2 bg-[#233138] border border-white/10 rounded-full px-1.5 py-0.5 shadow-md flex items-center gap-1 text-xs">
                     {Object.entries(reactions).map(([emoji, users]) =>
-                      users.length > 0 ? <span key={emoji}>{emoji}</span> : null
+                      users.length > 0 ? (
+                        <span key={emoji} className="inline-flex items-center">
+                          <EmojiSvg emoji={emoji} className="w-3.5 h-3.5 object-contain inline-block" />
+                        </span>
+                      ) : null
                     )}
                     <span className="text-[10px] text-white/80 font-bold">{totalReactions}</span>
                   </div>
@@ -1778,19 +1833,31 @@ export const WhatsAppChatView: React.FC = () => {
 
               {/* Expanded Emoji Reactions Popover */}
               {reactionBubbleId === msg.id && (
-                <div className="absolute z-30 -top-10 bg-[#233138] border border-[#2a3942] rounded-full p-1 shadow-2xl flex items-center gap-1 text-lg">
+                <div className="absolute z-30 -top-11 bg-[#233138] border border-[#2a3942] rounded-full px-2 py-1 shadow-2xl flex items-center gap-1.5 animate-in fade-in zoom-in-90 duration-150">
                   {['❤️', '👍', '😂', '😮', '😢', '🙏', '🔥', '✨'].map((emoji) => (
                     <button
                       key={emoji}
                       onClick={() => handleApplyReaction(msg.id, emoji)}
-                      className="hover:scale-125 transition-transform p-1"
+                      className="hover:scale-130 transition-transform p-1 rounded-full hover:bg-white/10 flex items-center justify-center"
+                      title={emoji}
                     >
-                      {emoji}
+                      <EmojiSvg emoji={emoji} className="w-6 h-6 object-contain" />
                     </button>
                   ))}
                   <button
+                    onClick={() => {
+                      setReactionTargetMsgId(msg.id);
+                      setShowEmojiPicker(true);
+                      setReactionBubbleId(null);
+                    }}
+                    className="p-1 rounded-full text-[#8696a0] hover:text-[#00a884] hover:bg-white/10 transition-colors flex items-center justify-center"
+                    title="More emojis"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
                     onClick={() => setReactionBubbleId(null)}
-                    className="text-xs text-[#8696a0] hover:text-white px-1.5"
+                    className="text-xs text-[#8696a0] hover:text-white px-1"
                   >
                     ✕
                   </button>
@@ -1807,11 +1874,19 @@ export const WhatsAppChatView: React.FC = () => {
       <div className="bg-[#202c33] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
         <button
-          onClick={() => setInputText((prev) => prev + ' 😊 ')}
-          className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
-          title="Emojis"
+          type="button"
+          onClick={() => {
+            setShowEmojiPicker((prev) => !prev);
+            setReactionTargetMsgId(null);
+          }}
+          className={`p-2 rounded-full transition-colors ${
+            showEmojiPicker
+              ? 'text-[#00a884] bg-white/10'
+              : 'text-[#8696a0] hover:text-[#d1d7db] hover:bg-white/5'
+          }`}
+          title={showEmojiPicker ? 'Close Emojis (Keyboard)' : 'Open Emoji Picker'}
         >
-          <Smile className="w-5 h-5" />
+          {showEmojiPicker ? <Keyboard className="w-5 h-5" /> : <Smile className="w-5 h-5" />}
         </button>
 
         {/* Quick Camera Capture (Photo or Video) */}
@@ -1928,6 +2003,32 @@ export const WhatsAppChatView: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* ── WHATSAPP VECTOR SVG EMOJI PICKER DRAWER ── */}
+      {showEmojiPicker && (
+        <WhatsAppEmojiPicker
+          onSelectEmoji={(em) => {
+            if (reactionTargetMsgId) {
+              handleApplyReaction(reactionTargetMsgId, em);
+              setReactionTargetMsgId(null);
+              setShowEmojiPicker(false);
+            } else {
+              setInputText((prev) => prev + em);
+            }
+          }}
+          onBackspace={() => {
+            setInputText((prev) => {
+              const chars = Array.from(prev);
+              chars.pop();
+              return chars.join('');
+            });
+          }}
+          onClose={() => {
+            setShowEmojiPicker(false);
+            setReactionTargetMsgId(null);
+          }}
+        />
+      )}
 
       {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos from Gallery or Camera) ── */}
       {mediaModalOpen && (

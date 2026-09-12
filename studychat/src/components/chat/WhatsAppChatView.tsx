@@ -290,6 +290,23 @@ export const WhatsAppChatView: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  const handleLogout = () => {
+    const now = Date.now();
+    try {
+      localStorage.removeItem(`whatsapp_active_${currentUser}`);
+      localStorage.setItem(`whatsapp_last_seen_${currentUser}`, String(now));
+      if (channelRef.current) {
+        channelRef.current.send({
+          type: 'broadcast',
+          event: 'user_offline',
+          payload: { user: currentUser, lastSeen: now },
+        });
+        channelRef.current.untrack();
+      }
+    } catch {}
+    logoutChat();
+  };
+
   // Emergency Panic Camouflage hotkey: Press Escape anywhere to camouflage
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -309,31 +326,49 @@ export const WhatsAppChatView: React.FC = () => {
       } catch {}
     };
     markActive();
-    const interval = setInterval(markActive, 3000);
+    const interval = setInterval(markActive, 2500);
 
     const checkPartner = () => {
       try {
         const partnerActive = localStorage.getItem(`whatsapp_active_${partnerUser}`);
+        let onlineLocally = false;
         if (partnerActive) {
           const diff = Date.now() - Number(partnerActive);
-          if (diff < 9000) {
-            setIsPartnerOnline(true);
-            return;
+          if (diff < 5000) {
+            onlineLocally = true;
           }
         }
-        // If presence state in Supabase channel exists, partner is online
+
+        // Check Supabase presence state as well
         const presenceState = channelRef.current?.presenceState?.() || {};
         const partnerPresences = presenceState[partnerUser];
-        if (partnerPresences && partnerPresences.length > 0) {
-          setIsPartnerOnline(true);
-        } else {
-          setIsPartnerOnline(false);
+        const onlineRemotely = Boolean(partnerPresences && partnerPresences.length > 0);
+
+        const isNowOnline = onlineLocally || onlineRemotely;
+        setIsPartnerOnline(isNowOnline);
+
+        if (!isNowOnline) {
           const savedLastSeen = localStorage.getItem(`whatsapp_last_seen_${partnerUser}`);
           if (savedLastSeen) setPartnerLastSeen(Number(savedLastSeen));
         }
       } catch {}
     };
-    const partnerCheckInterval = setInterval(checkPartner, 3500);
+    const partnerCheckInterval = setInterval(checkPartner, 2000);
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === `whatsapp_active_${partnerUser}`) {
+        if (e.newValue) {
+          const diff = Date.now() - Number(e.newValue);
+          setIsPartnerOnline(diff < 5000);
+        } else {
+          setIsPartnerOnline(false);
+        }
+      }
+      if (e.key === `whatsapp_last_seen_${partnerUser}` && e.newValue) {
+        setPartnerLastSeen(Number(e.newValue));
+      }
+    };
+    window.addEventListener('storage', handleStorage);
 
     const handleBeforeUnload = () => {
       const now = Date.now();
@@ -354,6 +389,7 @@ export const WhatsAppChatView: React.FC = () => {
     return () => {
       clearInterval(interval);
       clearInterval(partnerCheckInterval);
+      window.removeEventListener('storage', handleStorage);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       handleBeforeUnload();
     };
@@ -1038,7 +1074,7 @@ export const WhatsAppChatView: React.FC = () => {
               <span>Camouflage</span>
             </button>
             <button
-              onClick={logoutChat}
+              onClick={handleLogout}
               className="hover:text-rose-400 text-[11px]"
             >
               Switch Account
@@ -1050,7 +1086,7 @@ export const WhatsAppChatView: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 md:relative md:inset-auto md:z-auto max-w-5xl mx-auto w-full h-[100dvh] md:h-[86vh] flex flex-col md:rounded-2xl overflow-hidden md:border md:border-[#2a3942] shadow-2xl bg-[#0b141a] text-[#e9edef] select-none">
+    <div className="fixed inset-0 z-50 w-full h-full flex flex-col overflow-hidden bg-[#0c1317] text-[#e9edef] select-none">
       {/* Hidden File Input for Gallery Photo Selection */}
       <input
         type="file"
@@ -1274,7 +1310,7 @@ export const WhatsAppChatView: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    logoutChat();
+                    handleLogout();
                     setShowMenu(false);
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-[#182229] text-slate-400 transition-colors"
@@ -1332,8 +1368,8 @@ export const WhatsAppChatView: React.FC = () => {
       <div
         className="flex-1 overflow-y-auto px-4 py-3 space-y-2 relative scroll-smooth"
         style={{
-          backgroundColor: '#0b141a',
-          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(11, 20, 26, 0.88), #0b141a), url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.035' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundColor: '#0c1317',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2353bdeb' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
         }}
       >
         {/* End-to-End Encryption Banner - Clickable to open Security Section */}

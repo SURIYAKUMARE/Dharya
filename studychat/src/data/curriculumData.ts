@@ -124,14 +124,14 @@ export const SUBJECTS_DATA: Subject[] = [
             question: 'What is the characteristic equation used to determine the eigenvalues of an n×n matrix A?',
             options: ['det(A + λI) = 0', 'det(A - λI) = 0', 'trace(A) · λ = 0', 'Av = 0'],
             correctIndex: 1,
-            explanation: 'The characteristic equation is derived from (A - λI)v = 0 having non-trivial solutions, which requires det(A - λI) = 0.'
+            explanation: 'The characteristic equation is derived from (A - λI)v = 0 having non-trivial solutions (v ≠ 0), which requires det(A - λI) = 0.'
           },
           {
             id: 'q2',
             question: 'If the eigenvalues of a 2×2 matrix are 3 and 7, what is the determinant of the matrix?',
             options: ['10', '21', '4', '0'],
             correctIndex: 1,
-            explanation: 'The determinant of a matrix is equal to the product of its eigenvalues: 3 × 7 = 21.'
+            explanation: 'The determinant of any square matrix is equal to the product of its eigenvalues: 3 × 7 = 21.'
           },
           {
             id: 'q3',
@@ -139,6 +139,160 @@ export const SUBJECTS_DATA: Subject[] = [
             options: ['Cramer’s Rule', 'Rolle’s Theorem', 'Cayley-Hamilton Theorem', 'Gauss-Jordan Theorem'],
             correctIndex: 2,
             explanation: 'The Cayley-Hamilton Theorem states that substituting matrix A into its own characteristic polynomial P(λ) gives P(A) = 0.'
+          },
+          {
+            id: 'q4',
+            question: 'If the trace of a 3×3 matrix is 12 and two of its eigenvalues are 4 and 5, what is the third eigenvalue?',
+            options: ['3', '1', '7', '20'],
+            correctIndex: 0,
+            explanation: 'The sum of all eigenvalues equals the trace of the matrix: λ₁ + λ₂ + λ₃ = trace(A). Here, 4 + 5 + λ₃ = 12, so λ₃ = 3.'
+          },
+          {
+            id: 'q5',
+            question: 'By definition, which of the following is true regarding an eigenvector v corresponding to an eigenvalue λ?',
+            options: ['v can be the zero vector [0, 0, ... 0]ᵀ', 'v must be a non-zero vector', 'v must always have unit length ||v|| = 1', 'v is always orthogonal to itself'],
+            correctIndex: 1,
+            explanation: 'An eigenvector is strictly defined as a non-zero vector (v ≠ 0) satisfying Av = λv. The zero vector trivially satisfies A·0 = λ·0 for any scalar and is therefore excluded.'
+          },
+          {
+            id: 'q6',
+            question: 'If λ is an eigenvalue of an invertible matrix A, what is the corresponding eigenvalue of its inverse A⁻¹?',
+            options: ['-λ', '1 / λ', 'λ²', '1 - λ'],
+            correctIndex: 1,
+            explanation: 'From Av = λv, multiplying both sides by A⁻¹ yields v = λ A⁻¹v, which gives A⁻¹v = (1/λ)v for any non-zero eigenvalue λ.'
+          },
+          {
+            id: 'q7',
+            question: 'If λ is an eigenvalue of matrix A with eigenvector v, what is the eigenvalue of the matrix power A⁴?',
+            options: ['4λ', 'λ⁴', 'λ / 4', 'λ + 4'],
+            correctIndex: 1,
+            explanation: 'Repeated application of Av = λv yields A²v = λ²v, A³v = λ³v, and A⁴v = λ⁴v. Thus, the eigenvalue of A⁴ is λ⁴.'
+          },
+          {
+            id: 'q8',
+            question: 'What are the eigenvalues of an upper triangular, lower triangular, or diagonal matrix?',
+            options: ['The entries along its main diagonal', 'The sum of all entries in each row', 'The product of all off-diagonal entries', 'Always 0, 1, and -1'],
+            correctIndex: 0,
+            explanation: 'For triangular or diagonal matrices, det(A - λI) is the product of (aᵢᵢ - λ) along the diagonal. Thus, the diagonal elements are precisely the eigenvalues.'
+          },
+          {
+            id: 'q9',
+            question: 'Which fundamental property is always guaranteed for any real symmetric matrix (A = Aᵀ)?',
+            options: ['All its eigenvalues are purely imaginary', 'All its eigenvalues are real numbers', 'Its determinant is always negative', 'It cannot be diagonalized'],
+            correctIndex: 1,
+            explanation: 'By the Spectral Theorem, all eigenvalues of a real symmetric matrix are guaranteed to be real numbers, and eigenvectors corresponding to distinct eigenvalues are mutually orthogonal.'
+          },
+          {
+            id: 'q10',
+            question: 'If λ = 0 is an eigenvalue of a square matrix A, what does this imply about the matrix?',
+            options: ['A is invertible and non-singular', 'A is singular (det(A) = 0) and not invertible', 'A is the identity matrix', 'A has no eigenvectors'],
+            correctIndex: 1,
+            explanation: 'Since det(A) equals the product of its eigenvalues, having λ = 0 implies det(A) = 0. Therefore, the matrix is singular and cannot be inverted.'
+          },
+          {
+            id: 'q11',
+            question: 'How do the eigenvalues of matrix Aᵀ (the transpose of A) compare to the eigenvalues of A?',
+            options: ['They are the reciprocals of the eigenvalues of A', 'They are identical to the eigenvalues of A', 'They are the negatives (-λ) of the eigenvalues of A', 'They are always the square roots of the eigenvalues of A'],
+            correctIndex: 1,
+            explanation: 'Because det(Mᵀ) = det(M), det(Aᵀ - λI) = det((A - λI)ᵀ) = det(A - λI). Consequently, A and Aᵀ have the exact same characteristic equation and eigenvalues.'
+          },
+          {
+            id: 'q12',
+            question: 'An n×n matrix A is diagonalizable (A = PDP⁻¹) if and only if:',
+            options: ['It is strictly symmetric', 'It possesses n linearly independent eigenvectors', 'Its determinant is equal to zero', 'All of its diagonal entries are non-zero'],
+            correctIndex: 1,
+            explanation: 'A matrix A can be factored as PDP⁻¹ if and only if there are n linearly independent eigenvectors to populate the columns of the modal matrix P.'
+          },
+          {
+            id: 'q13',
+            question: 'If λ is an eigenvalue of matrix A, what is the eigenvalue of the shifted matrix (A - cI), where c is a scalar?',
+            options: ['λ / c', 'λ - c', 'c - λ', 'c · λ'],
+            correctIndex: 1,
+            explanation: 'Since (A - cI)v = Av - cv = λv - cv = (λ - c)v, the eigenvalue of the shifted matrix (A - cI) is (λ - c).'
+          },
+          {
+            id: 'q14',
+            question: 'What is the relationship between the geometric multiplicity (GM) and algebraic multiplicity (AM) of an eigenvalue λ?',
+            options: ['GM is always strictly greater than AM', '1 ≤ GM ≤ AM', 'GM is always equal to 2 · AM', 'GM has no mathematical relation to AM'],
+            correctIndex: 1,
+            explanation: 'The dimension of the eigenspace (geometric multiplicity) is at least 1 and cannot exceed the multiplicity of the root in the characteristic polynomial (algebraic multiplicity): 1 ≤ GM ≤ AM.'
+          },
+          {
+            id: 'q15',
+            question: 'What is a square matrix called if its geometric multiplicity is strictly less than its algebraic multiplicity for at least one eigenvalue?',
+            options: ['Orthogonal matrix', 'Defective matrix', 'Unitary matrix', 'Nilpotent matrix'],
+            correctIndex: 1,
+            explanation: 'A defective matrix lacks a full set of n linearly independent eigenvectors because GM < AM for at least one eigenvalue, preventing standard diagonalization.'
+          },
+          {
+            id: 'q16',
+            question: 'A real symmetric matrix A is defined as positive definite if and only if:',
+            options: ['All its eigenvalues are strictly positive (λᵢ > 0)', 'The sum of its diagonal elements is zero', 'At least one eigenvalue is negative', 'All eigenvalues are equal to 1'],
+            correctIndex: 0,
+            explanation: 'A symmetric matrix is positive definite if quadratic form xᵀAx > 0 for all non-zero vectors x, which is mathematically equivalent to having all eigenvalues strictly positive (λᵢ > 0).'
+          },
+          {
+            id: 'q17',
+            question: 'For a real symmetric matrix, if v₁ and v₂ are eigenvectors corresponding to distinct eigenvalues λ₁ ≠ λ₂, what is their dot product v₁ · v₂?',
+            options: ['1', '0 (they are mutually orthogonal)', '-1', 'λ₁ · λ₂'],
+            correctIndex: 1,
+            explanation: 'Eigenvectors of any real symmetric matrix corresponding to distinct eigenvalues are guaranteed to be orthogonal, meaning v₁ · v₂ = 0.'
+          },
+          {
+            id: 'q18',
+            question: 'In Singular Value Decomposition (SVD), how are the singular values σᵢ of matrix A related to the eigenvalues of AᵀA?',
+            options: ['σᵢ = λᵢ(AᵀA)', 'σᵢ = √(λᵢ(AᵀA))', 'σᵢ = (λᵢ(AᵀA))²', 'σᵢ = 1 / λᵢ(AᵀA)'],
+            correctIndex: 1,
+            explanation: 'The singular values of any matrix A are defined as the non-negative square roots of the eigenvalues of the symmetric positive semi-definite matrix AᵀA: σᵢ = √(λᵢ(AᵀA)).'
+          },
+          {
+            id: 'q19',
+            question: 'In Principal Component Analysis (PCA) for data analysis, what do the eigenvectors of the data covariance matrix represent?',
+            options: ['The principal directions of maximum variance', 'The total number of missing data points', 'The mean values of each individual feature', 'The cluster centroids of the dataset'],
+            correctIndex: 0,
+            explanation: 'The eigenvectors of the covariance matrix point in the orthogonal directions of maximum data dispersion (principal components), ordered by decreasing eigenvalue magnitudes.'
+          },
+          {
+            id: 'q20',
+            question: 'According to the Perron-Frobenius theorem, what is the dominant eigenvalue of a column-stochastic Markov transition probability matrix used in PageRank?',
+            options: ['0', '1', '∞', '-1'],
+            correctIndex: 1,
+            explanation: 'For any stochastic transition matrix where columns sum to 1, the largest magnitude eigenvalue is λ₁ = 1, and its corresponding steady-state eigenvector represents the stationary distribution.'
+          },
+          {
+            id: 'q21',
+            question: 'For a Hermitian matrix A, the Rayleigh quotient R(x) = (xᴴAx) / (xᴴx) satisfies which bound for all non-zero vectors x?',
+            options: ['0 ≤ R(x) ≤ 1', 'λ_min ≤ R(x) ≤ λ_max', 'R(x) = trace(A)', 'R(x) ≥ λ_max²'],
+            correctIndex: 1,
+            explanation: 'The Rayleigh quotient is bounded between the minimum and maximum eigenvalues of the Hermitian matrix A: λ_min ≤ R(x) ≤ λ_max, achieving extreme values at the eigenvectors.'
+          },
+          {
+            id: 'q22',
+            question: 'For a linear dynamic system dx/dt = Ax, the equilibrium point x = 0 is asymptotically stable if and only if:',
+            options: ['All eigenvalues of A have strictly negative real parts (Re(λᵢ) < 0)', 'All eigenvalues are purely imaginary', 'The determinant of A is negative', 'At least one eigenvalue is zero'],
+            correctIndex: 0,
+            explanation: 'System solutions evolve as e^(λᵢt). When the real parts of all eigenvalues are negative (Re(λᵢ) < 0), all states decay exponentially towards zero as t → ∞.'
+          },
+          {
+            id: 'q23',
+            question: 'If a matrix A is idempotent (satisfying A² = A), what are the only possible values for its eigenvalues?',
+            options: ['Only 0 and 1', 'Any positive real number', 'Only -1 and 1', 'Only imaginary numbers ±i'],
+            correctIndex: 0,
+            explanation: 'Av = λv implies A²v = λ²v. Since A² = A, we have λ²v = λv, yielding (λ² - λ)v = 0. Because v ≠ 0, λ(λ - 1) = 0, meaning eigenvalues can only be 0 or 1.'
+          },
+          {
+            id: 'q24',
+            question: 'A matrix A is called nilpotent if Aᵏ = 0 for some positive integer k. What are all the eigenvalues of any nilpotent matrix?',
+            options: ['All eigenvalues are strictly 0', 'All eigenvalues are strictly 1', 'All eigenvalues are ±1', 'Eigenvalues can be any arbitrary scalar'],
+            correctIndex: 0,
+            explanation: 'From Av = λv, Aᵏv = λᵏv. Since Aᵏ = 0, 0 = λᵏv, requiring λᵏ = 0. Therefore, every eigenvalue of a nilpotent matrix is strictly 0.'
+          },
+          {
+            id: 'q25',
+            question: 'What are the eigenvalues of the 2×2 matrix A = [[2, 1], [1, 2]]?',
+            options: ['λ = 1 and λ = 3', 'λ = 2 and λ = 4', 'λ = 0 and λ = 2', 'λ = -1 and λ = 3'],
+            correctIndex: 0,
+            explanation: 'The characteristic polynomial is det([[2-λ, 1], [1, 2-λ]]) = (2-λ)² - 1 = λ² - 4λ + 3 = (λ - 1)(λ - 3) = 0. Thus, the eigenvalues are λ = 1 and λ = 3.'
           }
         ]
       },

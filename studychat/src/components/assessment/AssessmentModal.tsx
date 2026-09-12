@@ -1,17 +1,38 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { SUBJECTS_DATA } from '../../data/curriculumData';
 import { CheckCircle2, XCircle, Award, ArrowRight, HelpCircle, RefreshCw, X, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const TOTAL_ASSESSMENT_TIME = 15 * 60; // 15 minutes in seconds
+const TOTAL_ASSESSMENT_TIME = 20 * 60; // 20 minutes in seconds
 
 export const AssessmentModal: React.FC = () => {
   const { selectedTopic, selectedSubject, completeAssessment, openChatLogin, switchTab } = useStudyApp();
 
   const currentTopic = selectedTopic || SUBJECTS_DATA[0].topics[0];
   const currentSubject = selectedSubject || SUBJECTS_DATA[0];
-  const questions = currentTopic.assessmentQuestions;
+
+  // Guarantee that every assessment session has more than 20 questions (25 questions)
+  const questions = useMemo(() => {
+    if (currentTopic?.assessmentQuestions && currentTopic.assessmentQuestions.length >= 20) {
+      return currentTopic.assessmentQuestions;
+    }
+    // Aggregate questions from all topics within currentSubject
+    const subjectQuestions = (currentSubject?.topics || []).flatMap((t) => t.assessmentQuestions || []);
+    if (subjectQuestions.length >= 20) {
+      return subjectQuestions;
+    }
+    // Supplement from the comprehensive 25-question engineering bank
+    const fallbackBank = SUBJECTS_DATA[0]?.topics[0]?.assessmentQuestions || [];
+    const combined = [...subjectQuestions];
+    for (const q of fallbackBank) {
+      if (!combined.some((item) => item.id === q.id)) {
+        combined.push(q);
+      }
+      if (combined.length >= 25) break;
+    }
+    return combined;
+  }, [currentTopic, currentSubject]);
 
   // Track selected options: { questionId: selectedOptionIndex }
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
@@ -196,6 +217,42 @@ export const AssessmentModal: React.FC = () => {
         </div>
       )}
 
+      {/* Question Navigation Palette (1..N) */}
+      {!isSubmitted && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-[#475569]">
+            <span className="font-mono font-bold uppercase tracking-wider text-[#1273C4]">
+              Question Palette ({Object.keys(selectedAnswers).length}/{questions.length} Answered)
+            </span>
+            <span className="text-[11px] text-[#64748B]">Click any number to jump directly to that question</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {questions.map((q, idx) => {
+              const isAnswered = selectedAnswers[q.id] !== undefined;
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById(`question-card-${q.id}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                  className={`w-8 h-8 rounded-xl text-xs font-mono font-bold transition-all flex items-center justify-center border shadow-2xs ${
+                    isAnswered
+                      ? 'bg-[#10B981] text-white border-[#059669]'
+                      : 'bg-[#FAF8F5] text-[#64748B] hover:text-[#1E293B] hover:bg-[#F3EFE9] border-[#DDD5C7]'
+                  }`}
+                  title={`Question ${idx + 1}: ${isAnswered ? 'Answered' : 'Not Answered'}`}
+                >
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Questions List */}
       <div className="space-y-6">
         {questions.map((q, qIndex) => {
@@ -206,6 +263,7 @@ export const AssessmentModal: React.FC = () => {
           return (
             <div
               key={q.id}
+              id={`question-card-${q.id}`}
               className={`p-6 rounded-2xl border transition-all shadow-sm ${
                 isSubmitted
                   ? isCorrect

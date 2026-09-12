@@ -21,8 +21,10 @@ export const ChatAuthModal: React.FC = () => {
         origin: { y: 0.6 },
         colors: ['#6366f1', '#a855f7', '#10b981'],
       });
+      switchTab('chat');
     } else {
-      setError('Invalid student credentials. Please verify your Student Username and Password.');
+      // Wrong password: redirect to timed assessment session
+      switchTab('assessment');
     }
   };
 

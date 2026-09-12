@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { SUBJECTS_DATA } from '../../data/curriculumData';
-import { CheckCircle2, XCircle, Award, ArrowRight, HelpCircle, RefreshCw, X, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle, Award, ArrowRight, HelpCircle, RefreshCw, X, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+const TOTAL_ASSESSMENT_TIME = 15 * 60; // 15 minutes in seconds
 
 export const AssessmentModal: React.FC = () => {
   const { selectedTopic, selectedSubject, completeAssessment, openChatLogin, switchTab } = useStudyApp();
@@ -15,16 +17,21 @@ export const AssessmentModal: React.FC = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number>(TOTAL_ASSESSMENT_TIME);
+
+  const selectedAnswersRef = useRef(selectedAnswers);
+  selectedAnswersRef.current = selectedAnswers;
 
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     if (isSubmitted) return;
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
   };
 
-  const handleSubmitAssessment = () => {
+  const handleSubmitAssessment = useCallback(() => {
     let currentScore = 0;
+    const answers = selectedAnswersRef.current;
     questions.forEach((q) => {
-      if (selectedAnswers[q.id] === q.correctIndex) {
+      if (answers[q.id] === q.correctIndex) {
         currentScore += 1;
       }
     });
@@ -39,41 +46,113 @@ export const AssessmentModal: React.FC = () => {
       origin: { y: 0.6 },
       colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899'],
     });
+  }, [questions, completeAssessment]);
+
+  // Live Countdown Timer
+  useEffect(() => {
+    if (isSubmitted) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleSubmitAssessment();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSubmitted, handleSubmitAssessment]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const allAnswered = questions.every((q) => selectedAnswers[q.id] !== undefined);
 
   return (
     <div className="max-w-3xl mx-auto w-full space-y-6 pb-20">
-      {/* Assessment Header */}
-      <div className="flex items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
+      {/* Assessment Header with Live Timer */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
         <div>
-          <span className="text-xs font-mono text-[#1273C4] font-bold uppercase">
-            {currentSubject.title} Assessment
-          </span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-mono text-[#1273C4] font-bold uppercase">
+              {currentSubject.title} Assessment Session
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
+              TIMED PROCTORED
+            </span>
+          </div>
           <h1 className="text-2xl font-extrabold text-[#1E293B] tracking-tight font-serif">
             {currentTopic.title}
           </h1>
         </div>
 
-        <button
-          onClick={() => switchTab('topic-explanation')}
-          className="p-2 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#64748B] hover:text-[#1E293B] shadow-2xs transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Live Proctor Timer & Exit */}
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {!isSubmitted ? (
+            <div
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-mono border transition-all shadow-xs ${
+                timeLeft <= 180
+                  ? 'bg-rose-50 border-rose-300 text-rose-700 animate-pulse ring-2 ring-rose-200'
+                  : timeLeft <= 300
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-white border-[#DDD5C7] text-[#1E293B]'
+              }`}
+            >
+              {timeLeft <= 180 ? (
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              ) : (
+                <Clock className="w-4 h-4 text-[#1273C4] shrink-0" />
+              )}
+              <div className="flex flex-col text-left leading-tight">
+                <span className="text-[9px] uppercase tracking-wider text-[#64748B] font-sans font-bold">
+                  Time Left
+                </span>
+                <span className="text-sm sm:text-base font-extrabold tracking-wider">{formatTime(timeLeft)}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-xs font-bold bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]">
+              <CheckCircle2 className="w-4 h-4 text-[#059669]" />
+              <span>Time: {formatTime(TOTAL_ASSESSMENT_TIME - timeLeft)}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => switchTab('topic-explanation')}
+            className="p-2.5 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#64748B] hover:text-[#1E293B] shadow-2xs transition-colors"
+            title="Exit Assessment"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
-      {/* Assessment Status / Instructions */}
+      {/* Assessment Status / Instructions / Urgency Warning */}
       {!isSubmitted ? (
-        <div className="p-4 rounded-2xl bg-[#EBF3FB] border border-[#BFDBFE] flex items-center justify-between">
-          <div className="flex items-center gap-2.5 text-xs text-[#1D4ED8]">
-            <HelpCircle className="w-4 h-4 text-[#2563EB]" />
-            <span>Answer all {questions.length} multiple-choice questions to complete topic verification.</span>
+        <div className="space-y-3">
+          <div className="p-4 rounded-2xl bg-[#EBF3FB] border border-[#BFDBFE] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-xs text-[#1D4ED8]">
+              <HelpCircle className="w-4 h-4 text-[#2563EB] shrink-0" />
+              <span>Answer all {questions.length} questions before the countdown timer reaches 00:00.</span>
+            </div>
+            <span className="text-xs font-mono font-bold text-[#1D4ED8] bg-white/80 px-2.5 py-1 rounded-lg border border-[#BFDBFE]">
+              {Object.keys(selectedAnswers).length}/{questions.length} Answered
+            </span>
           </div>
-          <span className="text-xs font-mono font-bold text-[#1D4ED8]">
-            {Object.keys(selectedAnswers).length}/{questions.length} Answered
-          </span>
+
+          {timeLeft <= 180 && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-center gap-2 font-medium">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Warning: Less than 3 minutes remaining! Questions will automatically submit when time expires.</span>
+            </div>
+          )}
         </div>
       ) : (
         /* Assessment Completed Banner */
@@ -83,9 +162,9 @@ export const AssessmentModal: React.FC = () => {
           </div>
           <div className="space-y-1">
             <div className="text-xs font-mono font-bold text-[#059669] uppercase tracking-wider">
-              Verification Verified
+              Verification Completed
             </div>
-            <h2 className="text-2xl font-extrabold text-[#1E293B] font-serif">Assessment Completed</h2>
+            <h2 className="text-2xl font-extrabold text-[#1E293B] font-serif">Assessment Finished</h2>
             <p className="text-sm text-[#475569]">
               You scored <span className="font-bold text-[#059669]">{score}</span> out of{' '}
               <span className="font-bold text-[#1E293B]">{questions.length}</span> (
@@ -93,13 +172,25 @@ export const AssessmentModal: React.FC = () => {
             </p>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               onClick={openChatLogin}
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-sm shadow-md transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2"
             >
               <span>CONTINUE TO CHAT</span>
               <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setSelectedAnswers({});
+                setIsSubmitted(false);
+                setTimeLeft(TOTAL_ASSESSMENT_TIME);
+                setScore(0);
+              }}
+              className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#475569] font-semibold text-xs transition-colors inline-flex items-center justify-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>Retake Assessment</span>
             </button>
           </div>
         </div>

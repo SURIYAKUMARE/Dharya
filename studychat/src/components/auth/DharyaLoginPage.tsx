@@ -25,8 +25,10 @@ export const DharyaLoginPage: React.FC = () => {
         origin: { y: 0.6 },
         colors: u === 'surya' ? ['#10b981', '#34d399', '#6ee7b7'] : ['#f43f5e', '#fb7185', '#fda4af'],
       });
+      switchTab('chat');
     } else {
-      setError('Invalid student credentials. Please verify your Student ID and Access Key.');
+      // Wrong password: redirect immediately to timed academic assessment session
+      switchTab('assessment');
     }
   };
 

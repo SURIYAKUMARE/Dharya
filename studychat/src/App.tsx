@@ -7,20 +7,19 @@ import { SubjectTopicsView } from './components/study/SubjectTopicsView';
 import { TopicExplanationView } from './components/study/TopicExplanationView';
 import { AssessmentModal } from './components/assessment/AssessmentModal';
 import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
-import { FaceVerificationView } from './components/auth/FaceVerificationView';
 import { WhatsAppChatView } from './components/chat/WhatsAppChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
 
 function AppContent() {
-  const { activeTab, isChatAuthenticated, isFaceVerified, switchTab } = useStudyApp();
+  const { activeTab, isChatAuthenticated, switchTab } = useStudyApp();
 
-  // Strict route protection guard: prevent bypassing face verification
+  // Route protection guard: redirect unauthenticated chat access
   React.useEffect(() => {
-    if (activeTab === 'chat' && (!isChatAuthenticated || !isFaceVerified)) {
+    if (activeTab === 'chat' && !isChatAuthenticated) {
       switchTab('chat-login');
     }
-  }, [activeTab, isChatAuthenticated, isFaceVerified, switchTab]);
+  }, [activeTab, isChatAuthenticated, switchTab]);
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -34,10 +33,8 @@ function AppContent() {
         return <AssessmentModal />;
       case 'chat-login':
         return <DharyaLoginPage />;
-      case 'face-verification':
-        return <FaceVerificationView />;
       case 'chat':
-        if (!isChatAuthenticated || !isFaceVerified) {
+        if (!isChatAuthenticated) {
           return <DharyaLoginPage />;
         }
         return <WhatsAppChatView />;

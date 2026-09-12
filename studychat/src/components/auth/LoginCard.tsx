@@ -117,7 +117,8 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess, onOpenSecretMod
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••"
+                placeholder="Enter access key"
+                autoComplete="new-password"
                 className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all pr-12"
               />
               <button

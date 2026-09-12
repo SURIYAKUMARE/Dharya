@@ -1261,7 +1261,8 @@ export const WhatsAppChatView: React.FC = () => {
               maxLength={4}
               value={enteredPin}
               onChange={(e) => setEnteredPin(e.target.value)}
-              placeholder="••••"
+              placeholder=""
+              autoComplete="new-password"
               autoFocus
               className="w-36 mx-auto text-center tracking-[1em] text-2xl font-mono py-2 rounded-xl bg-[#2a3942] border border-[#3b4a54] text-white focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
             />

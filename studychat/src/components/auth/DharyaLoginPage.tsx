@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti';
 export const DharyaLoginPage: React.FC = () => {
   const { loginToChat, switchTab, selectedTopic, selectedSubject } = useStudyApp();
 
-  const [username, setUsername] = useState('DHARYA');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -107,7 +107,8 @@ export const DharyaLoginPage: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••"
+                  placeholder="Enter access key"
+                  autoComplete="new-password"
                   required
                   className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#DDD5C7] text-[#1E293B] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#1273C4] focus:ring-2 focus:ring-[#1273C4]/20 transition-all font-sans pr-11"
                 />

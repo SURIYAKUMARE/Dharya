@@ -104,6 +104,116 @@ export const WhatsAppChatView: React.FC = () => {
     }
   });
 
+  // Read Receipts State (WhatsApp Standard)
+  const [readReceiptsEnabled, setReadReceiptsEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('whatsapp_read_receipts_enabled');
+      return saved === null ? true : saved === 'true';
+    } catch {
+      return true;
+    }
+  });
+  const readReceiptsEnabledRef = useRef(readReceiptsEnabled);
+  useEffect(() => {
+    readReceiptsEnabledRef.current = readReceiptsEnabled;
+  }, [readReceiptsEnabled]);
+
+  const handleToggleReadReceipts = () => {
+    const next = !readReceiptsEnabled;
+    setReadReceiptsEnabled(next);
+    try {
+      localStorage.setItem('whatsapp_read_receipts_enabled', String(next));
+    } catch {}
+  };
+
+  // Trigger Realistic WhatsApp Delivery Progression (Single grey -> Double grey)
+  const triggerDeliverySimulation = (msgId: string) => {
+    // Step 2: Double grey tick: reached other person's phone (600ms)
+    setTimeout(() => {
+      setMessages((prev) => {
+        const target = prev.find((m) => m.id === msgId);
+        if (!target || target.status === 'read') return prev;
+        const updated = prev.map((m) =>
+          m.id === msgId && m.status === 'sent' ? { ...m, status: 'delivered' as const } : m
+        );
+        try {
+          localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+    }, 600);
+  };
+
+  // WhatsApp Message Status Ticks Renderer
+  const renderMessageTicks = (msg: ExtendedChatMessage) => {
+    if (msg.sender !== currentUser) return null;
+
+    let status: 'sending' | 'sent' | 'delivered' | 'read' = 'delivered';
+
+    if (msg.status) {
+      status = msg.status;
+    } else {
+      // Legacy messages without explicit status:
+      // If the partner has sent any message after this message, partner saw and read it.
+      const partnerRepliedAfter = messages.some(
+        (m) => m.sender !== currentUser && (m.timestamp > msg.timestamp || m.id > msg.id)
+      );
+      status = partnerRepliedAfter ? 'read' : 'delivered';
+    }
+
+    if (status === 'sending') {
+      return (
+        <span className="text-white/60 inline-flex items-center ml-0.5" title="Sending...">
+          <Clock className="w-3 h-3" />
+        </span>
+      );
+    }
+
+    if (status === 'sent') {
+      return (
+        <span
+          className="text-[#8696a0] inline-flex items-center ml-0.5"
+          title="One grey tick: The message was sent to the server."
+        >
+          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+        </span>
+      );
+    }
+
+    if (status === 'delivered') {
+      return (
+        <span
+          className="text-[#8696a0] inline-flex items-center ml-0.5"
+          title="Two grey ticks: The message was delivered to the recipient's phone."
+        >
+          <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+        </span>
+      );
+    }
+
+    // status === 'read'
+    if (!readReceiptsEnabled) {
+      // Turning it off: Go to Settings > Privacy and turn off Read Receipts to hide when you read messages
+      return (
+        <span
+          className="text-[#8696a0] inline-flex items-center ml-0.5"
+          title="Two grey ticks: Delivered (Read receipts turned off in Settings > Privacy)"
+        >
+          <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className="text-[#53bdeb] inline-flex items-center ml-0.5"
+        title="Two blue ticks: The recipient opened the chat and read your message."
+      >
+        <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+      </span>
+    );
+  };
+
   // Photo & Gallery state
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
@@ -120,6 +230,7 @@ export const WhatsAppChatView: React.FC = () => {
   const [reactionBubbleId, setReactionBubbleId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const channelRef = useRef<any>(null);
 
   // Save messages permanently to localStorage and broadcast
   const persistMessages = (newMessages: ExtendedChatMessage[]) => {
@@ -160,8 +271,10 @@ export const WhatsAppChatView: React.FC = () => {
   useEffect(() => {
     try {
       const supabase = getSupabase();
-      const channel = supabase
-        .channel('whatsapp-one-on-one-room')
+      const channel = supabase.channel('whatsapp-one-on-one-room');
+      channelRef.current = channel;
+
+      channel
         .on('broadcast', { event: 'new_message' }, (payload) => {
           if (payload?.payload) {
             const incoming = payload.payload as ExtendedChatMessage;
@@ -170,6 +283,54 @@ export const WhatsAppChatView: React.FC = () => {
               const next = [...prev, incoming];
               localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
               return next;
+            });
+
+            // If we are the recipient, acknowledge delivery and read receipts
+            if (incoming.sender !== currentUser) {
+              try {
+                channel.send({
+                  type: 'broadcast',
+                  event: 'message_status_update',
+                  payload: {
+                    msgId: incoming.id,
+                    status: 'delivered',
+                  },
+                });
+
+                if (readReceiptsEnabledRef.current) {
+                  setTimeout(() => {
+                    try {
+                      channel.send({
+                        type: 'broadcast',
+                        event: 'message_status_update',
+                        payload: {
+                          msgId: incoming.id,
+                          status: 'read',
+                        },
+                      });
+                    } catch {}
+                  }, 1200);
+                }
+              } catch {}
+            }
+          }
+        })
+        .on('broadcast', { event: 'message_status_update' }, (payload) => {
+          if (payload?.payload) {
+            const { msgId, status } = payload.payload;
+            setMessages((prev) => {
+              const updated = prev.map((m) => {
+                if (m.id !== msgId) return m;
+                return {
+                  ...m,
+                  status: status as 'delivered' | 'read',
+                  read: status === 'read' ? true : m.read,
+                };
+              });
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+              } catch {}
+              return updated;
             });
           }
         })
@@ -248,7 +409,8 @@ export const WhatsAppChatView: React.FC = () => {
       text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
-      read: true,
+      read: false,
+      status: 'sent',
       type: 'text',
       fileSizeKb: Math.max(1, Math.round(text.length * 0.05)),
     };
@@ -256,9 +418,11 @@ export const WhatsAppChatView: React.FC = () => {
     const next = [...messages, newMsg];
     persistMessages(next);
     setInputText('');
+    triggerDeliverySimulation(newMsg.id);
 
     try {
-      getSupabase().channel('whatsapp-one-on-one-room').send({
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: newMsg,
@@ -276,7 +440,8 @@ export const WhatsAppChatView: React.FC = () => {
       text: photoCaption.trim() || (isHdSelected ? 'High Definition Photo' : 'Photo'),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
-      read: true,
+      read: false,
+      status: 'sent',
       type: 'image',
       mediaUrl: photoUrl,
       isHd: isHdSelected,
@@ -292,9 +457,11 @@ export const WhatsAppChatView: React.FC = () => {
     setPhotoCaption('');
     setIsHdSelected(false);
     setIsViewOnceSelected(false);
+    triggerDeliverySimulation(newMsg.id);
 
     try {
-      getSupabase().channel('whatsapp-one-on-one-room').send({
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: newMsg,
@@ -317,7 +484,8 @@ export const WhatsAppChatView: React.FC = () => {
       text: 'Voice Note (0:12)',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
-      read: true,
+      read: false,
+      status: 'sent',
       type: 'voice',
       transcript: randomTranscript,
       isViewOnce: false,
@@ -327,9 +495,11 @@ export const WhatsAppChatView: React.FC = () => {
 
     const next = [...messages, newMsg];
     persistMessages(next);
+    triggerDeliverySimulation(newMsg.id);
 
     try {
-      getSupabase().channel('whatsapp-one-on-one-room').send({
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
         type: 'broadcast',
         event: 'new_message',
         payload: newMsg,
@@ -369,7 +539,8 @@ export const WhatsAppChatView: React.FC = () => {
 
     if (broadcast) {
       try {
-        getSupabase().channel('whatsapp-one-on-one-room').send({
+        const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+        activeChannel.send({
           type: 'broadcast',
           event: 'reaction',
           payload: { msgId, emoji, user },
@@ -803,6 +974,24 @@ export const WhatsAppChatView: React.FC = () => {
                   </span>
                 </button>
 
+                {/* Read Receipts Toggle */}
+                <button
+                  onClick={() => {
+                    handleToggleReadReceipts();
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between"
+                  title="Toggle WhatsApp Read Receipts (Blue Ticks)"
+                >
+                  <span className="flex items-center gap-2">
+                    <CheckCheck className={`w-3.5 h-3.5 ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-[#8696a0]'}`} />
+                    <span>Read Receipts</span>
+                  </span>
+                  <span className={`text-[10px] font-semibold ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-slate-400'}`}>
+                    {readReceiptsEnabled ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
                 {chatPinEnabled && (
                   <button
                     onClick={() => {
@@ -1074,11 +1263,7 @@ export const WhatsAppChatView: React.FC = () => {
                 {/* Bubble Footer: Timestamp & Checkmarks */}
                 <div className="flex items-center justify-end gap-1 mt-1 -mb-0.5 text-[10px] text-white/70 select-none">
                   <span>{msg.time}</span>
-                  {isMe && (
-                    <span className="text-sky-300">
-                      <CheckCheck className="w-3.5 h-3.5" />
-                    </span>
-                  )}
+                  {renderMessageTicks(msg)}
                 </div>
 
                 {/* Reaction Counter Pill */}
@@ -1482,6 +1667,65 @@ export const WhatsAppChatView: React.FC = () => {
                 </button>
               </div>
 
+              {/* Read Receipts Switch (WhatsApp Standard) */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] flex items-center justify-between">
+                <div className="pr-3">
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                    <CheckCheck className={`w-4 h-4 ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-[#8696a0]'}`} />
+                    <span>Read Receipts</span>
+                  </div>
+                  <p className="text-[11px] text-[#8696a0] mt-0.5 leading-relaxed">
+                    If turned off, you won't send or receive Read receipts (double blue ticks). Message ticks will remain double grey.
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleReadReceipts}
+                  className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${
+                    readReceiptsEnabled ? 'bg-[#00a884]' : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                      readReceiptsEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* WhatsApp Tick Delivery & Read Receipts Guide */}
+              <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="font-bold text-sm text-white flex items-center gap-1.5">
+                    <CheckCheck className="w-4 h-4 text-[#53bdeb]" />
+                    <span>WhatsApp Tick Guide</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#00a884] bg-[#00a884]/15 px-2 py-0.5 rounded">Active</span>
+                </div>
+                <div className="space-y-2 text-[11px] text-[#8696a0] pt-1">
+                  <div className="flex items-start gap-2.5">
+                    <Check className="w-3.5 h-3.5 text-[#8696a0] stroke-[2.5] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-white font-semibold">One grey tick:</span> The message was sent to the server.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckCheck className="w-3.5 h-3.5 text-[#8696a0] stroke-[2.5] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-white font-semibold">Two grey ticks:</span> The message was delivered to the recipient's phone.
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] stroke-[2.5] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-white font-semibold">Two blue ticks:</span> The recipient opened the chat and read your message.
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-[#8696a0]/80 pt-1.5 border-t border-white/5 leading-relaxed">
+                    <span className="text-slate-300 font-semibold">Turning it off:</span> Go to Settings &gt; Privacy and turn off Read Receipts to hide when you read messages (note that you will also stop seeing others' read receipts). Group chats: Two blue ticks only appear when every person in the group has received and read the message.
+                  </div>
+                </div>
+              </div>
+
               {/* Storage & Local Persistence Status */}
               <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-2">
                 <div className="flex items-center justify-between text-xs">
@@ -1668,6 +1912,31 @@ export const WhatsAppChatView: React.FC = () => {
                 <div
                   className={`w-4 h-4 rounded-full bg-white transition-transform ${
                     advancedPrivacy ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Read Receipts Toggle */}
+            <div className="p-3.5 rounded-2xl bg-[#202c33] border border-[#2a3942] text-left flex items-center justify-between">
+              <div>
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <CheckCheck className={`w-3.5 h-3.5 ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-[#8696a0]'}`} />
+                  <span>Read Receipts</span>
+                </div>
+                <div className="text-[10px] text-[#8696a0] mt-0.5">
+                  Blue ticks on message read
+                </div>
+              </div>
+              <button
+                onClick={handleToggleReadReceipts}
+                className={`w-10 h-6 rounded-full transition-colors relative ${
+                  readReceiptsEnabled ? 'bg-[#00a884]' : 'bg-slate-700'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    readReceiptsEnabled ? 'translate-x-5' : 'translate-x-1'
                   }`}
                 />
               </button>

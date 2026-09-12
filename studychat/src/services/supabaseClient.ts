@@ -25,6 +25,7 @@ export interface ChatMessage {
   time: string;
   timestamp: number;
   read: boolean;
+  status?: 'sending' | 'sent' | 'delivered' | 'read';
   type?: 'text' | 'image' | 'voice';
   mediaUrl?: string;
   reactions?: Record<string, string[]>;

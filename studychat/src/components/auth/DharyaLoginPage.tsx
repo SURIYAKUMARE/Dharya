@@ -91,7 +91,7 @@ export const DharyaLoginPage: React.FC = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter Student ID (e.g. DHARYA)"
+                placeholder="Enter Student ID (e.g. sec2511xx)"
                 required
                 className="w-full px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#DDD5C7] text-[#1E293B] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#1273C4] focus:ring-2 focus:ring-[#1273C4]/20 transition-all font-sans"
               />

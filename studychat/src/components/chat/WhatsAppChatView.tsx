@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
+import { WhatsAppCallModal } from './WhatsAppCallModal';
 
 interface ExtendedChatMessage extends ChatMessage {
   isHd?: boolean;
@@ -135,6 +136,7 @@ export const WhatsAppChatView: React.FC = () => {
   const [showChatLists, setShowChatLists] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video' } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
 
@@ -615,6 +617,22 @@ export const WhatsAppChatView: React.FC = () => {
             handleApplyReaction(msgId, emoji, user, false);
           }
         })
+        .on('broadcast', { event: 'call_offer' }, (payload) => {
+          if (payload?.payload?.recipient === currentUser) {
+            setIncomingCall({
+              caller: payload.payload.caller,
+              type: payload.payload.callType,
+            });
+          }
+        })
+        .on('broadcast', { event: 'call_declined' }, () => {
+          setShowCallModal(null);
+          setIncomingCall(null);
+        })
+        .on('broadcast', { event: 'call_ended' }, () => {
+          setShowCallModal(null);
+          setIncomingCall(null);
+        })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             await channel.track({
@@ -963,6 +981,45 @@ export const WhatsAppChatView: React.FC = () => {
   const handleDeleteMessage = (msgId: string) => {
     const next = messages.filter((m) => m.id !== msgId);
     persistMessages(next);
+  };
+
+  // Handle call completion / close and log call summary message into chat
+  const handleCallFinished = (durationSecs: number, status: 'completed' | 'missed' | 'declined') => {
+    const activeType = showCallModal || incomingCall?.type || 'video';
+    setShowCallModal(null);
+    setIncomingCall(null);
+
+    let callText = '';
+    if (status === 'completed' && durationSecs > 0) {
+      const mins = Math.floor(durationSecs / 60);
+      const secs = durationSecs % 60;
+      const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      callText = `📞 WhatsApp ${activeType === 'video' ? 'Video' : 'Voice'} Call • ${durStr}`;
+    } else if (status === 'missed') {
+      callText = `📞 Missed WhatsApp ${activeType === 'video' ? 'Video' : 'Voice'} Call`;
+    }
+
+    if (callText) {
+      const newMsg: ExtendedChatMessage = {
+        id: 'msg-call-' + Date.now(),
+        sender: currentUser,
+        text: callText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        read: false,
+        status: isPartnerOnlineRef.current ? 'delivered' : 'sent',
+        type: 'text',
+      };
+      const next = [...messages, newMsg];
+      persistMessages(next);
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: newMsg,
+        });
+      } catch {}
+    }
   };
 
   // Pinned Messages list
@@ -2669,29 +2726,17 @@ export const WhatsAppChatView: React.FC = () => {
         </div>
       )}
 
-      {/* ── CALL SIMULATION MODAL ── */}
-      {showCallModal && (
-        <div className="fixed inset-0 z-50 bg-[#0b141a]/95 flex flex-col items-center justify-between p-8 text-center">
-          <div className="pt-12 space-y-2">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-4xl flex items-center justify-center mx-auto shadow-2xl animate-pulse">
-              {partnerName[0]}
-            </div>
-            <h2 className="text-2xl font-bold text-white">{partnerName}</h2>
-            <p className="text-sm text-emerald-400 font-medium capitalize">
-              WhatsApp {showCallModal} Call • End-to-End Encrypted
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowCallModal(null)}
-              className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-2xl mx-auto hover:scale-105 active:scale-95 transition-transform"
-            >
-              <Phone className="w-7 h-7 rotate-[135deg]" />
-            </button>
-            <p className="text-xs text-[#8696a0]">Tap red button to end call</p>
-          </div>
-        </div>
+      {/* ── WHATSAPP AUDIO & VIDEO CALL MODAL ── */}
+      {(showCallModal || incomingCall) && (
+        <WhatsAppCallModal
+          callType={incomingCall ? incomingCall.type : (showCallModal || 'video')}
+          partnerName={partnerName}
+          partnerUser={partnerUser}
+          currentUser={currentUser}
+          isIncoming={Boolean(incomingCall)}
+          onClose={handleCallFinished}
+          channelRef={channelRef}
+        />
       )}
     </div>
   );

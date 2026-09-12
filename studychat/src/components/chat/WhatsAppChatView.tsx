@@ -69,7 +69,56 @@ export const WhatsAppChatView: React.FC = () => {
   });
 
   const [inputText, setInputText] = useState('');
-  const [partnerStatus, setPartnerStatus] = useState<'online' | 'typing...'>('online');
+  
+  // Dynamic Presence & Last Seen State
+  const [isPartnerOnline, setIsPartnerOnline] = useState<boolean>(() => {
+    try {
+      const activeTime = localStorage.getItem(`whatsapp_active_${partnerUser}`);
+      if (activeTime && Date.now() - Number(activeTime) < 9000) {
+        return true;
+      }
+    } catch {}
+    return false;
+  });
+
+  const [partnerLastSeen, setPartnerLastSeen] = useState<number | null>(() => {
+    try {
+      const saved = localStorage.getItem(`whatsapp_last_seen_${partnerUser}`);
+      if (saved) return Number(saved);
+    } catch {}
+    // Realistic default if not yet recorded: today earlier
+    return Date.now() - 3600 * 1000 * 2.5;
+  });
+
+  const formatLastSeen = (timestamp: number | null): string => {
+    if (!timestamp) return 'last seen recently';
+    const date = new Date(timestamp);
+    const now = new Date();
+
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (isToday) {
+      return `last seen today at ${timeStr}`;
+    } else if (isYesterday) {
+      return `last seen yesterday at ${timeStr}`;
+    } else {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `last seen ${day}/${month}/${year} at ${timeStr}`;
+    }
+  };
+
+  const isPartnerOnlineRef = useRef(isPartnerOnline);
+  useEffect(() => {
+    isPartnerOnlineRef.current = isPartnerOnline;
+  }, [isPartnerOnline]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -126,90 +175,75 @@ export const WhatsAppChatView: React.FC = () => {
     } catch {}
   };
 
-  // Trigger Realistic WhatsApp Delivery Progression (Single grey -> Double grey)
-  const triggerDeliverySimulation = (msgId: string) => {
-    // Step 2: Double grey tick: reached other person's phone (600ms)
-    setTimeout(() => {
-      setMessages((prev) => {
-        const target = prev.find((m) => m.id === msgId);
-        if (!target || target.status === 'read') return prev;
-        const updated = prev.map((m) =>
-          m.id === msgId && m.status === 'sent' ? { ...m, status: 'delivered' as const } : m
-        );
-        try {
-          localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-    }, 600);
-  };
-
   // WhatsApp Message Status Ticks Renderer
   const renderMessageTicks = (msg: ExtendedChatMessage) => {
     if (msg.sender !== currentUser) return null;
 
-    let status: 'sending' | 'sent' | 'delivered' | 'read' = 'delivered';
+    let status: 'sending' | 'sent' | 'delivered' | 'read' = msg.status || 'sent';
 
-    if (msg.status) {
-      status = msg.status;
-    } else {
-      // Legacy messages without explicit status:
-      // If the partner has sent any message after this message, partner saw and read it.
-      const partnerRepliedAfter = messages.some(
-        (m) => m.sender !== currentUser && (m.timestamp > msg.timestamp || m.id > msg.id)
-      );
-      status = partnerRepliedAfter ? 'read' : 'delivered';
+    if (!msg.status) {
+      if (msg.read) {
+        status = 'read';
+      } else {
+        const partnerRepliedAfter = messages.some(
+          (m) => m.sender !== currentUser && (m.timestamp > msg.timestamp || m.id > msg.id)
+        );
+        status = partnerRepliedAfter ? 'read' : isPartnerOnline ? 'delivered' : 'sent';
+      }
     }
 
     if (status === 'sending') {
       return (
-        <span className="text-white/60 inline-flex items-center ml-0.5" title="Sending...">
+        <span className="text-white/60 inline-flex items-center ml-1" title="Sending...">
           <Clock className="w-3 h-3" />
         </span>
       );
     }
 
+    // Single grey tick: recipient offline / reached server
     if (status === 'sent') {
       return (
         <span
-          className="text-[#8696a0] inline-flex items-center ml-0.5"
-          title="One grey tick: The message was sent to the server."
+          className="text-[#8696a0] inline-flex items-center ml-1"
+          title="One grey tick: Sent to server (Recipient is offline)"
         >
-          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+          <Check className="w-3.5 h-3.5 stroke-[2.3]" />
         </span>
       );
     }
 
+    // Double grey tick: recipient online / delivered to phone
     if (status === 'delivered') {
       return (
         <span
-          className="text-[#8696a0] inline-flex items-center ml-0.5"
-          title="Two grey ticks: The message was delivered to the recipient's phone."
+          className="text-[#8696a0] inline-flex items-center ml-1"
+          title="Two grey ticks: Delivered to recipient's phone"
         >
-          <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+          <CheckCheck className="w-3.5 h-3.5 stroke-[2.3]" />
         </span>
       );
     }
 
     // status === 'read'
     if (!readReceiptsEnabled) {
-      // Turning it off: Go to Settings > Privacy and turn off Read Receipts to hide when you read messages
+      // Turning it off: Hide read receipts (remains double grey)
       return (
         <span
-          className="text-[#8696a0] inline-flex items-center ml-0.5"
+          className="text-[#8696a0] inline-flex items-center ml-1"
           title="Two grey ticks: Delivered (Read receipts turned off in Settings > Privacy)"
         >
-          <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+          <CheckCheck className="w-3.5 h-3.5 stroke-[2.3]" />
         </span>
       );
     }
 
+    // Double blue tick: recipient opened and read the message
     return (
       <span
-        className="text-[#53bdeb] inline-flex items-center ml-0.5"
-        title="Two blue ticks: The recipient opened the chat and read your message."
+        className="text-[#53bdeb] inline-flex items-center ml-1"
+        title="Two blue ticks: Recipient opened the chat and read your message."
       >
-        <CheckCheck className="w-3.5 h-3.5 stroke-[2.5]" />
+        <CheckCheck className="w-3.5 h-3.5 stroke-[2.3]" />
       </span>
     );
   };
@@ -267,25 +301,184 @@ export const WhatsAppChatView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Supabase Realtime channel setup
+  // Local heartbeat for instant same-browser & cross-tab detection
+  useEffect(() => {
+    const markActive = () => {
+      try {
+        localStorage.setItem(`whatsapp_active_${currentUser}`, String(Date.now()));
+      } catch {}
+    };
+    markActive();
+    const interval = setInterval(markActive, 3000);
+
+    const checkPartner = () => {
+      try {
+        const partnerActive = localStorage.getItem(`whatsapp_active_${partnerUser}`);
+        if (partnerActive) {
+          const diff = Date.now() - Number(partnerActive);
+          if (diff < 9000) {
+            setIsPartnerOnline(true);
+            return;
+          }
+        }
+        // If presence state in Supabase channel exists, partner is online
+        const presenceState = channelRef.current?.presenceState?.() || {};
+        const partnerPresences = presenceState[partnerUser];
+        if (partnerPresences && partnerPresences.length > 0) {
+          setIsPartnerOnline(true);
+        } else {
+          setIsPartnerOnline(false);
+          const savedLastSeen = localStorage.getItem(`whatsapp_last_seen_${partnerUser}`);
+          if (savedLastSeen) setPartnerLastSeen(Number(savedLastSeen));
+        }
+      } catch {}
+    };
+    const partnerCheckInterval = setInterval(checkPartner, 3500);
+
+    const handleBeforeUnload = () => {
+      const now = Date.now();
+      try {
+        localStorage.removeItem(`whatsapp_active_${currentUser}`);
+        localStorage.setItem(`whatsapp_last_seen_${currentUser}`, String(now));
+        if (channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'user_offline',
+            payload: { user: currentUser, lastSeen: now },
+          });
+        }
+      } catch {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(partnerCheckInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      handleBeforeUnload();
+    };
+  }, [currentUser, partnerUser]);
+
+  // Supabase Realtime channel setup with Presence Tracking
   useEffect(() => {
     try {
       const supabase = getSupabase();
-      const channel = supabase.channel('whatsapp-one-on-one-room');
+      const channel = supabase.channel('whatsapp-one-on-one-room', {
+        config: {
+          presence: {
+            key: currentUser,
+          },
+        },
+      });
       channelRef.current = channel;
 
       channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          const partnerPresences = state[partnerUser];
+          if (partnerPresences && partnerPresences.length > 0) {
+            setIsPartnerOnline(true);
+            // Upgrade any sent messages to delivered
+            setMessages((prev) => {
+              let updatedAny = false;
+              const next = prev.map((m) => {
+                if (m.sender === currentUser && m.status === 'sent') {
+                  updatedAny = true;
+                  return { ...m, status: 'delivered' as const };
+                }
+                return m;
+              });
+              if (updatedAny) {
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+              }
+              return next;
+            });
+          } else {
+            const partnerActive = localStorage.getItem(`whatsapp_active_${partnerUser}`);
+            if (!partnerActive || Date.now() - Number(partnerActive) >= 9000) {
+              setIsPartnerOnline(false);
+              const savedLastSeen = localStorage.getItem(`whatsapp_last_seen_${partnerUser}`);
+              if (savedLastSeen) setPartnerLastSeen(Number(savedLastSeen));
+            }
+          }
+        })
+        .on('presence', { event: 'join' }, ({ key }) => {
+          if (key === partnerUser) {
+            setIsPartnerOnline(true);
+            setMessages((prev) => {
+              let updatedAny = false;
+              const next = prev.map((m) => {
+                if (m.sender === currentUser && m.status === 'sent') {
+                  updatedAny = true;
+                  return { ...m, status: 'delivered' as const };
+                }
+                return m;
+              });
+              if (updatedAny) {
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+              }
+              return next;
+            });
+          }
+        })
+        .on('presence', { event: 'leave' }, ({ key }) => {
+          if (key === partnerUser) {
+            setIsPartnerOnline(false);
+            const now = Date.now();
+            setPartnerLastSeen(now);
+            try {
+              localStorage.setItem(`whatsapp_last_seen_${partnerUser}`, String(now));
+            } catch {}
+          }
+        })
+        .on('broadcast', { event: 'user_online' }, (payload) => {
+          if (payload?.payload?.user === partnerUser) {
+            setIsPartnerOnline(true);
+            setMessages((prev) => {
+              let updatedAny = false;
+              const next = prev.map((m) => {
+                if (m.sender === currentUser && m.status === 'sent') {
+                  updatedAny = true;
+                  return { ...m, status: 'delivered' as const };
+                }
+                return m;
+              });
+              if (updatedAny) {
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+              }
+              return next;
+            });
+          }
+        })
+        .on('broadcast', { event: 'user_offline' }, (payload) => {
+          if (payload?.payload?.user === partnerUser) {
+            setIsPartnerOnline(false);
+            const ts = payload?.payload?.lastSeen || Date.now();
+            setPartnerLastSeen(ts);
+            try {
+              localStorage.setItem(`whatsapp_last_seen_${partnerUser}`, String(ts));
+            } catch {}
+          }
+        })
         .on('broadcast', { event: 'new_message' }, (payload) => {
           if (payload?.payload) {
             const incoming = payload.payload as ExtendedChatMessage;
             setMessages((prev) => {
               if (prev.some((m) => m.id === incoming.id)) return prev;
               const next = [...prev, incoming];
-              localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
               return next;
             });
 
-            // If we are the recipient, acknowledge delivery and read receipts
+            // If we are the recipient and currently in the chat view:
             if (incoming.sender !== currentUser) {
               try {
                 channel.send({
@@ -296,22 +489,23 @@ export const WhatsAppChatView: React.FC = () => {
                     status: 'delivered',
                   },
                 });
-
-                if (readReceiptsEnabledRef.current) {
-                  setTimeout(() => {
-                    try {
-                      channel.send({
-                        type: 'broadcast',
-                        event: 'message_status_update',
-                        payload: {
-                          msgId: incoming.id,
-                          status: 'read',
-                        },
-                      });
-                    } catch {}
-                  }, 1200);
-                }
               } catch {}
+
+              // If chat is open, user immediately views it -> mark as 'read' (double blue tick)
+              if (readReceiptsEnabledRef.current) {
+                setTimeout(() => {
+                  try {
+                    channel.send({
+                      type: 'broadcast',
+                      event: 'message_status_update',
+                      payload: {
+                        msgId: incoming.id,
+                        status: 'read',
+                      },
+                    });
+                  } catch {}
+                }, 400);
+              }
             }
           }
         })
@@ -334,19 +528,66 @@ export const WhatsAppChatView: React.FC = () => {
             });
           }
         })
+        .on('broadcast', { event: 'all_messages_read' }, (payload) => {
+          if (payload?.payload?.reader === partnerUser) {
+            setMessages((prev) => {
+              let changed = false;
+              const updated = prev.map((m) => {
+                if (m.sender === currentUser && m.status !== 'read') {
+                  changed = true;
+                  return { ...m, status: 'read' as const, read: true };
+                }
+                return m;
+              });
+              if (changed) {
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                } catch {}
+              }
+              return updated;
+            });
+          }
+        })
         .on('broadcast', { event: 'reaction' }, (payload) => {
           if (payload?.payload) {
             const { msgId, emoji, user } = payload.payload;
             handleApplyReaction(msgId, emoji, user, false);
           }
         })
-        .subscribe();
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await channel.track({
+              user: currentUser,
+              online: true,
+              lastSeen: Date.now(),
+            });
+
+            // Announce presence online
+            channel.send({
+              type: 'broadcast',
+              event: 'user_online',
+              payload: { user: currentUser },
+            });
+
+            // If we have read receipts enabled, mark all incoming unread messages as read
+            if (readReceiptsEnabledRef.current) {
+              channel.send({
+                type: 'broadcast',
+                event: 'all_messages_read',
+                payload: { reader: currentUser, readUpTo: Date.now() },
+              });
+            }
+          }
+        });
 
       return () => {
+        try {
+          channel.untrack();
+        } catch {}
         supabase.removeChannel(channel);
       };
     } catch {}
-  }, []);
+  }, [currentUser, partnerUser]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -403,6 +644,8 @@ export const WhatsAppChatView: React.FC = () => {
     const text = inputText.trim();
     if (!text) return;
 
+    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+
     const newMsg: ExtendedChatMessage = {
       id: 'msg-' + Date.now(),
       sender: currentUser,
@@ -410,7 +653,7 @@ export const WhatsAppChatView: React.FC = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
-      status: 'sent',
+      status: initialStatus,
       type: 'text',
       fileSizeKb: Math.max(1, Math.round(text.length * 0.05)),
     };
@@ -418,7 +661,6 @@ export const WhatsAppChatView: React.FC = () => {
     const next = [...messages, newMsg];
     persistMessages(next);
     setInputText('');
-    triggerDeliverySimulation(newMsg.id);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -434,6 +676,8 @@ export const WhatsAppChatView: React.FC = () => {
   const handleSendPhoto = () => {
     if (!photoUrl) return;
 
+    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+
     const newMsg: ExtendedChatMessage = {
       id: 'msg-img-' + Date.now(),
       sender: currentUser,
@@ -441,7 +685,7 @@ export const WhatsAppChatView: React.FC = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
-      status: 'sent',
+      status: initialStatus,
       type: 'image',
       mediaUrl: photoUrl,
       isHd: isHdSelected,
@@ -457,7 +701,6 @@ export const WhatsAppChatView: React.FC = () => {
     setPhotoCaption('');
     setIsHdSelected(false);
     setIsViewOnceSelected(false);
-    triggerDeliverySimulation(newMsg.id);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -478,6 +721,8 @@ export const WhatsAppChatView: React.FC = () => {
     ];
     const randomTranscript = transcriptsList[Math.floor(Math.random() * transcriptsList.length)];
 
+    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+
     const newMsg: ExtendedChatMessage = {
       id: 'msg-voice-' + Date.now(),
       sender: currentUser,
@@ -485,7 +730,7 @@ export const WhatsAppChatView: React.FC = () => {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
-      status: 'sent',
+      status: initialStatus,
       type: 'voice',
       transcript: randomTranscript,
       isViewOnce: false,
@@ -495,7 +740,6 @@ export const WhatsAppChatView: React.FC = () => {
 
     const next = [...messages, newMsg];
     persistMessages(next);
-    triggerDeliverySimulation(newMsg.id);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -817,7 +1061,7 @@ export const WhatsAppChatView: React.FC = () => {
       />
 
       {/* ── 1. WHATSAPP HEADER ── */}
-      <div className="bg-[#1f2c34] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0">
+      <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
           {/* Back to Study Portal Button */}
           <button
@@ -828,26 +1072,37 @@ export const WhatsAppChatView: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* Contact Avatar */}
+          {/* Contact Avatar with Live Online Badge */}
           <div
             onClick={() => setShowContactInfo(true)}
-            className="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold shadow"
+            className="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-base shadow-sm ring-1 ring-white/10"
           >
             <span>{partnerName[0]}</span>
-            <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#1f2c34]" />
+            {isPartnerOnline && (
+              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#00a884] border-2 border-[#202c33] shadow-[0_0_8px_#00a884]" />
+            )}
           </div>
 
-          {/* Contact Name & Status */}
+          {/* Contact Name & Live Status */}
           <div onClick={() => setShowContactInfo(true)} className="cursor-pointer">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold text-white tracking-tight">{partnerName}</h2>
+              <h2 className="text-[15px] font-medium text-[#e9edef] tracking-tight">{partnerName}</h2>
               {advancedPrivacy && (
                 <span title="Advanced Chat Privacy Enabled">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#00a884]" />
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-[#00a884] font-medium">{partnerStatus}</p>
+            {isPartnerOnline ? (
+              <p className="text-[12px] text-[#00a884] font-medium flex items-center gap-1.5 leading-tight">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
+                <span>online</span>
+              </p>
+            ) : (
+              <p className="text-[11.5px] text-[#8696a0] font-normal leading-tight">
+                {formatLastSeen(partnerLastSeen)}
+              </p>
+            )}
           </div>
         </div>
 
@@ -1075,12 +1330,10 @@ export const WhatsAppChatView: React.FC = () => {
 
       {/* ── 3. CHAT MESSAGES CANVAS ── */}
       <div
-        className="flex-1 overflow-y-auto p-4 space-y-3 relative"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-2 relative scroll-smooth"
         style={{
           backgroundColor: '#0b141a',
-          backgroundImage:
-            'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 0)',
-          backgroundSize: '24px 24px',
+          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(11, 20, 26, 0.88), #0b141a), url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.035' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
         }}
       >
         {/* End-to-End Encryption Banner - Clickable to open Security Section */}
@@ -1099,7 +1352,7 @@ export const WhatsAppChatView: React.FC = () => {
 
         {/* Date Divider */}
         <div className="flex justify-center my-3">
-          <span className="px-3 py-1 rounded-lg bg-[#182229] text-[11px] font-medium text-[#8696a0] shadow-sm uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-lg bg-[#182229] border border-[#2a3942]/60 text-[11px] font-medium text-[#8696a0] shadow-sm uppercase tracking-wider">
             Today
           </span>
         </div>
@@ -1137,12 +1390,12 @@ export const WhatsAppChatView: React.FC = () => {
               key={msg.id}
               className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}
             >
-              {/* Message Bubble */}
+              {/* Message Bubble with Authentic WhatsApp Corner Tail */}
               <div
-                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-2 shadow-md transition-all ${
+                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-1.5 shadow-[0_1px_1px_rgba(0,0,0,0.2)] transition-all ${
                   isMe
-                    ? 'bg-[#005c4b] text-white rounded-tr-none'
-                    : 'bg-[#202c33] text-[#e9edef] rounded-tl-none'
+                    ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-[2px] border border-[#005c4b]'
+                    : 'bg-[#202c33] text-[#e9edef] rounded-tl-[2px] border border-[#2a3942]/50'
                 }`}
                 onContextMenu={(e) => {
                   e.preventDefault();
@@ -1255,13 +1508,13 @@ export const WhatsAppChatView: React.FC = () => {
 
                 {/* ── REGULAR TEXT MESSAGE ── */}
                 {msg.type === 'text' && (
-                  <p className="text-sm leading-relaxed break-words">
+                  <p className="text-[14.5px] leading-[20px] break-words text-[#e9edef] pr-1 pt-0.5">
                     {renderFormattedText(msg.text)}
                   </p>
                 )}
 
                 {/* Bubble Footer: Timestamp & Checkmarks */}
-                <div className="flex items-center justify-end gap-1 mt-1 -mb-0.5 text-[10px] text-white/70 select-none">
+                <div className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5 text-[11px] text-white/65 select-none font-sans">
                   <span>{msg.time}</span>
                   {renderMessageTicks(msg)}
                 </div>
@@ -1330,11 +1583,11 @@ export const WhatsAppChatView: React.FC = () => {
       </div>
 
       {/* ── 4. CHAT INPUT BAR ── */}
-      <div className="bg-[#1f2c34] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
+      <div className="bg-[#202c33] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
         <button
           onClick={() => setInputText((prev) => prev + ' 😊 ')}
-          className="p-2 text-[#8696a0] hover:text-white rounded-full hover:bg-white/5 transition-colors"
+          className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
           title="Emojis"
         >
           <Smile className="w-5 h-5" />
@@ -1343,7 +1596,7 @@ export const WhatsAppChatView: React.FC = () => {
         {/* Quick Camera/Gallery Photo Picker */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-[#8696a0] hover:text-white rounded-full hover:bg-white/5 transition-colors"
+          className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
           title="Send Photo from Gallery"
         >
           <Camera className="w-5 h-5" />
@@ -1353,7 +1606,7 @@ export const WhatsAppChatView: React.FC = () => {
         <div className="relative">
           <button
             onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className="p-2 text-[#8696a0] hover:text-white rounded-full hover:bg-white/5 transition-colors"
+            className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
             title="Attach"
           >
             <Paperclip className="w-5 h-5" />
@@ -1406,7 +1659,7 @@ export const WhatsAppChatView: React.FC = () => {
         </div>
 
         {/* Input Pill */}
-        <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center gap-2">
+        <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 focus-within:ring-[#00a884]/40 transition-all">
           <input
             type="text"
             value={inputText}
@@ -1415,7 +1668,7 @@ export const WhatsAppChatView: React.FC = () => {
               if (e.key === 'Enter') handleSendText();
             }}
             placeholder="Type a message (*bold*, _italic_, ~strike~)"
-            className="w-full bg-transparent text-sm text-white placeholder-[#8696a0] focus:outline-none"
+            className="w-full bg-transparent text-[14.5px] text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
           />
         </div>
 
@@ -1423,7 +1676,7 @@ export const WhatsAppChatView: React.FC = () => {
         {inputText.trim() ? (
           <button
             onClick={handleSendText}
-            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
             title="Send"
           >
             <Send className="w-4 h-4 ml-0.5" />
@@ -1431,7 +1684,7 @@ export const WhatsAppChatView: React.FC = () => {
         ) : (
           <button
             onClick={handleSendVoiceNote}
-            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 active:scale-95 flex-shrink-0"
+            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
             title="Record Voice Note"
           >
             <Mic className="w-4 h-4" />

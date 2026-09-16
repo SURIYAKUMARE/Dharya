@@ -11,7 +11,8 @@ import {
   Award,
   FileCheck2,
   BookmarkCheck,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
 export const SubjectTopicsView: React.FC = () => {
@@ -26,46 +27,46 @@ export const SubjectTopicsView: React.FC = () => {
   }, [currentSubject, filterDifficulty]);
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-7 pb-24 -mt-1">
       {/* 1. Academic Header & Breadcrumbs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E5DFD5] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2D9CC] pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={() => switchTab('home')}
-            className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-xs font-semibold text-[#334155] hover:text-[#0F172A] shadow-sm transition-all flex items-center gap-2"
-            title="Back to All Courses"
+            className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-xs font-semibold text-[#334155] hover:text-[#0F172A] shadow-2xs hover:shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            title="Back to Library"
           >
             <ArrowLeft className="w-4 h-4 text-[#64748B]" />
-            <span className="hidden sm:inline">All Courses</span>
+            <span>Library</span>
           </button>
 
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-[#1273C4] font-semibold">
+            <div className="flex items-center gap-2 text-xs font-mono text-[#2563EB] font-bold">
               <span>{currentSubject.code}</span>
               <span className="text-[#CBD5E1]">•</span>
-              <span className="text-[#64748B]">{currentSubject.department}</span>
+              <span className="text-[#64748B] font-medium">{currentSubject.department}</span>
               <span className="text-[#CBD5E1]">•</span>
-              <span className="text-[#64748B]">{currentSubject.credits} Credits</span>
+              <span className="text-[#64748B] font-medium">{currentSubject.credits} Credits</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E293B] tracking-tight font-serif">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight font-serif">
               {currentSubject.title}
             </h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
-          <span className="px-3 py-1 rounded-lg text-xs font-mono font-medium bg-[#EBF3FB] text-[#1D4ED8] border border-[#BFDBFE]">
-            Syllabus: AICTE &amp; GATE Model
+          <span className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-[#EBF3FB] text-[#1D4ED8] border border-[#BFDBFE] shadow-2xs">
+            AICTE &amp; GATE Standard
           </span>
         </div>
       </div>
 
-      {/* 2. Course Syllabus Banner */}
-      <div className="rounded-2xl p-6 sm:p-7 bg-white border border-[#E5DFD5] shadow-sm relative overflow-hidden">
+      {/* 2. Course Syllabus Banner Card */}
+      <div className="rounded-3xl p-6 sm:p-7 bg-white border border-[#E5DFD5] shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
             <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold border shrink-0 shadow-sm"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold border shrink-0 shadow-xs"
               style={{
                 backgroundColor: `${currentSubject.accent}15`,
                 borderColor: `${currentSubject.accent}30`,
@@ -75,7 +76,9 @@ export const SubjectTopicsView: React.FC = () => {
               {currentSubject.icon}
             </div>
             <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-[#1E293B] font-serif">Course Curriculum &amp; Modular Syllabus</h2>
+              <h2 className="text-base sm:text-lg font-bold text-[#0F172A] font-serif">
+                Modular Curriculum &amp; Chapters
+              </h2>
               <p className="text-xs sm:text-sm text-[#64748B] max-w-2xl leading-relaxed">
                 {currentSubject.description}
               </p>
@@ -83,13 +86,13 @@ export const SubjectTopicsView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 self-stretch sm:self-auto shrink-0">
-            <div className="px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E2D8] text-center flex-1 sm:flex-none">
-              <div className="text-[10px] font-mono text-[#64748B] uppercase">Modular Units</div>
-              <div className="text-base font-bold text-[#1E293B] font-mono">{currentSubject.topics.length} Units</div>
+            <div className="px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#E8E2D8] text-center flex-1 sm:flex-none">
+              <div className="text-[10px] font-mono text-[#64748B] uppercase font-bold">Modular Units</div>
+              <div className="text-base font-extrabold text-[#0F172A] font-mono">{currentSubject.topics.length} Units</div>
             </div>
-            <div className="px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E8E2D8] text-center flex-1 sm:flex-none">
-              <div className="text-[10px] font-mono text-[#64748B] uppercase">Estimated Study</div>
-              <div className="text-base font-bold text-[#059669] font-mono">
+            <div className="px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#E8E2D8] text-center flex-1 sm:flex-none">
+              <div className="text-[10px] font-mono text-[#64748B] uppercase font-bold">Est. Study</div>
+              <div className="text-base font-extrabold text-[#059669] font-mono">
                 {currentSubject.topics.reduce((acc, t) => acc + t.estimatedMinutes, 0)} Mins
               </div>
             </div>
@@ -105,7 +108,7 @@ export const SubjectTopicsView: React.FC = () => {
             <button
               key={sub.id}
               onClick={() => openSubject(sub.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                 isSelected
                   ? 'bg-[#1273C4] text-white shadow-sm border border-[#1273C4]'
                   : 'bg-white text-[#475569] hover:text-[#0F172A] hover:bg-[#F8F6F1] border border-[#DDD5C7] shadow-2xs'
@@ -122,21 +125,21 @@ export const SubjectTopicsView: React.FC = () => {
       {/* 4. Syllabus Units List */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h3 className="text-base font-bold text-[#1E293B] font-serif flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#1273C4]" />
+          <h3 className="text-base font-bold text-[#0F172A] font-serif flex items-center gap-2">
+            <Layers className="w-4.5 h-4.5 text-[#1273C4]" />
             <span>Syllabus Units &amp; Textbook Chapters</span>
           </h3>
 
           {/* Difficulty Filter Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-white border border-[#DDD5C7] self-start sm:self-auto text-xs shadow-2xs">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-white border border-[#DDD5C7] self-start sm:self-auto text-xs shadow-2xs">
             {['all', 'beginner', 'intermediate', 'advanced'].map((lvl) => (
               <button
                 key={lvl}
                 onClick={() => setFilterDifficulty(lvl)}
-                className={`px-3 py-1 rounded capitalize font-medium transition-all ${
+                className={`px-3 py-1 rounded-lg capitalize font-semibold transition-all cursor-pointer ${
                   filterDifficulty === lvl
-                    ? 'bg-[#1273C4] text-white shadow-sm'
-                    : 'text-[#64748B] hover:text-[#1E293B]'
+                    ? 'bg-[#1273C4] text-white shadow-2xs'
+                    : 'text-[#64748B] hover:text-[#0F172A]'
                 }`}
               >
                 {lvl}
@@ -151,20 +154,20 @@ export const SubjectTopicsView: React.FC = () => {
             <div
               key={topic.id}
               onClick={() => openTopic(topic.id)}
-              className="group p-5 sm:p-6 rounded-2xl bg-white hover:bg-[#FDFBF7] border border-[#E5DFD5] hover:border-[#1273C4]/60 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
+              className="group p-5 sm:p-6 rounded-2xl bg-white hover:bg-[#FDFBF7] border border-[#E5DFD5] hover:border-[#1273C4]/60 transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
             >
               <div className="space-y-2.5 flex-1">
                 {/* Header Meta: Unit Number + Title + Level + Reading Time */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-md bg-[#EBF3FB] text-[#1D4ED8] font-mono text-[11px] font-bold border border-[#BFDBFE]">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-[#EBF3FB] text-[#1D4ED8] font-mono text-[11px] font-bold border border-[#BFDBFE]">
                     Unit {topic.unitNumber || index + 1}
                   </span>
-                  <span className="text-xs font-mono text-[#64748B]">
+                  <span className="text-xs font-mono text-[#64748B] font-medium">
                     {topic.unitTitle}
                   </span>
                   <span className="text-[#CBD5E1]">•</span>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider font-mono border ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider font-mono border ${
                       topic.difficulty === 'Beginner'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : topic.difficulty === 'Intermediate'
@@ -181,7 +184,7 @@ export const SubjectTopicsView: React.FC = () => {
                 </div>
 
                 {/* Topic Title */}
-                <h4 className="text-lg font-bold text-[#1E293B] group-hover:text-[#1273C4] font-serif transition-colors">
+                <h4 className="text-lg font-bold text-[#0F172A] group-hover:text-[#1273C4] font-serif transition-colors">
                   {topic.title}
                 </h4>
 
@@ -192,7 +195,7 @@ export const SubjectTopicsView: React.FC = () => {
 
                 {/* Formula / Code Snippet Preview Pill */}
                 {topic.formulasOrCode && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#FAF8F5] border border-[#E8E2D8] text-[11px] font-mono text-[#334155]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF8F5] border border-[#E8E2D8] text-[11px] font-mono text-[#334155]">
                     <span className="text-[#1273C4] font-bold">
                       {topic.formulasOrCode.type === 'formula' ? 'Key Formula:' : 'Code Pattern:'}
                     </span>
@@ -205,13 +208,13 @@ export const SubjectTopicsView: React.FC = () => {
               </div>
 
               {/* Right Action & Assessment Badge */}
-              <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-2 shrink-0 self-stretch md:self-center pt-3 md:pt-0 border-t md:border-t-0 border-[#E5DFD5]">
-                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#047857] bg-[#ECFDF5] px-2.5 py-1 rounded-md border border-[#A7F3D0]">
+              <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-start gap-2.5 shrink-0 self-stretch md:self-center pt-3 md:pt-0 border-t md:border-t-0 border-[#E5DFD5]">
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#047857] bg-[#ECFDF5] px-3 py-1 rounded-lg border border-[#A7F3D0]">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#059669]" />
                   <span>Assessment Ready</span>
                 </div>
 
-                <div className="flex items-center gap-1 text-xs font-bold text-[#1273C4] group-hover:translate-x-0.5 transition-transform">
+                <div className="flex items-center gap-1 text-xs font-bold text-[#1273C4] group-hover:translate-x-1 transition-transform">
                   <span>Read Chapter &amp; Notes</span>
                   <ChevronRight className="w-4 h-4" />
                 </div>

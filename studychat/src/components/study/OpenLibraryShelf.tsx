@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { LibraryShelfData, LibraryBook } from '../../data/libraryShelves';
 import { BookCoverRenderer } from './BookCoverRenderer';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, BookOpen } from 'lucide-react';
 
 interface OpenLibraryShelfProps {
   shelf: LibraryShelfData;
@@ -37,7 +37,7 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
           </>
         );
       case 'preview':
-        return <span>Preview Only</span>;
+        return <span>Preview</span>;
       case 'borrow':
       default:
         return <span>Borrow</span>;
@@ -45,29 +45,35 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
   };
 
   return (
-    <div className="space-y-2.5">
-      {/* 1. Category Title (Open Library blue underlined style) */}
-      <div className="px-3 sm:px-4">
-        <h2 className="text-xl sm:text-2xl font-bold font-serif text-[#0F60B6] hover:underline cursor-pointer inline-block underline-offset-4 decoration-2 tracking-tight">
-          {shelf.title}
-        </h2>
+    <div className="space-y-3">
+      {/* Category Shelf Header */}
+      <div className="px-2 sm:px-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-[#0F60B6]" />
+          <h2 className="text-lg sm:text-2xl font-bold font-serif text-[#0F60B6] hover:underline cursor-pointer inline-block underline-offset-4 decoration-2 tracking-tight">
+            {shelf.title}
+          </h2>
+        </div>
+        <span className="text-xs font-mono text-[#64748B] bg-white/70 px-2.5 py-1 rounded-full border border-[#E5DFD5]">
+          {shelf.books.length} Textbooks
+        </span>
       </div>
 
-      {/* 2. Horizontal Shelf Row with Warm Cream Surface */}
-      <div className="relative bg-[#F4EEE8] border-y border-[#E8E1D7] py-5 sm:py-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)] group">
-        {/* Left Circular Scroll Button (Visible on desktop web application) */}
+      {/* Horizontal Shelf with Realistic Wood Shelf Ledge */}
+      <div className="relative bg-[#F4EEE8] border-t border-[#E8E1D7] border-b-4 border-b-[#D8C7B0] py-5 sm:py-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.03)] group rounded-xl overflow-hidden">
+        {/* Left Circular Scroll Button */}
         <button
           onClick={() => scroll('left')}
           aria-label="Scroll left"
-          className="hidden md:flex absolute left-2 sm:left-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#E5EEF5] hover:bg-[#D6E5F2] text-[#3D698F] items-center justify-center shadow-md transition-all border border-[#CCDCE9] hover:scale-105 active:scale-95"
+          className="hidden md:flex absolute left-2 sm:left-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 hover:bg-white text-[#1E293B] items-center justify-center shadow-lg transition-all border border-[#CCDCE9] hover:scale-105 active:scale-95 cursor-pointer backdrop-blur"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>
 
-        {/* Scrollable Books Container: Smooth Touch Swiping on Mobile, Mouse Scroll on Laptop */}
+        {/* Scrollable Books Container */}
         <div
           ref={scrollRef}
-          className="flex items-start gap-4 sm:gap-6 overflow-x-auto scrollbar-none px-4 sm:px-16 scroll-smooth snap-x snap-mandatory touch-pan-x"
+          className="flex items-start gap-4 sm:gap-6 overflow-x-auto scrollbar-none px-4 sm:px-14 scroll-smooth snap-x snap-mandatory touch-pan-x"
         >
           {shelf.books.map((book) => (
             <div
@@ -78,14 +84,14 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
               onClick={() => openTopic(book.topicId)}
             >
               {/* Physical Vertical Book Cover */}
-              <div className="w-full h-[208px] sm:h-[238px] transition-transform duration-200 group-hover/book:-translate-y-1">
+              <div className="w-full h-[208px] sm:h-[238px] transition-transform duration-200 group-hover/book:-translate-y-1.5 group-hover/book:scale-[1.02] drop-shadow-md group-hover/book:drop-shadow-xl">
                 <BookCoverRenderer
                   book={book}
                   isHovered={hoveredBookId === book.id}
                 />
               </div>
 
-              {/* Blue Action Button Beneath the Book */}
+              {/* Action Button Beneath the Book */}
               <div className="w-full mt-2.5 sm:mt-3">
                 <button
                   type="button"
@@ -93,7 +99,7 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
                     e.stopPropagation();
                     openTopic(book.topicId);
                   }}
-                  className="w-full h-8 sm:h-9 rounded-lg bg-[#1273C4] hover:bg-[#0F60A8] active:bg-[#0C4E83] text-white font-medium text-xs sm:text-[13px] flex items-center justify-center gap-1.5 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full h-8 sm:h-9 rounded-xl bg-[#1273C4] hover:bg-[#0F60A8] active:bg-[#0C4E83] text-white font-medium text-xs sm:text-[13px] flex items-center justify-center gap-1.5 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 group-hover/book:shadow-md cursor-pointer"
                 >
                   {getButtonContent(book.buttonType)}
                 </button>
@@ -102,11 +108,11 @@ export const OpenLibraryShelf: React.FC<OpenLibraryShelfProps> = ({ shelf }) => 
           ))}
         </div>
 
-        {/* Right Circular Scroll Button (Visible on desktop web application) */}
+        {/* Right Circular Scroll Button */}
         <button
           onClick={() => scroll('right')}
           aria-label="Scroll right"
-          className="hidden md:flex absolute right-2 sm:right-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#1273C4] hover:bg-[#0D62A5] text-white items-center justify-center shadow-md transition-all border border-[#0F60A8] hover:scale-105 active:scale-95"
+          className="hidden md:flex absolute right-2 sm:right-4 top-[130px] -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#1273C4] hover:bg-[#0D62A5] text-white items-center justify-center shadow-lg transition-all border border-[#0F60A8] hover:scale-105 active:scale-95 cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>

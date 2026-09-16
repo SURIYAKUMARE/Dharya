@@ -33,6 +33,18 @@ export interface ChatMessage {
   isSecret?: boolean;
 }
 
+export interface ExtendedChatMessage extends ChatMessage {
+  isHd?: boolean;
+  isViewOnce?: boolean;
+  isOpened?: boolean;
+  transcript?: string;
+  isPinned?: boolean;
+  fileSizeKb?: number;
+  duration?: string;
+  thumbnailUrl?: string;
+  mediaType?: 'image' | 'video';
+}
+
 export const LOCAL_MESSAGES_KEY = 'studyportal_messages_v1';
 export const LOCAL_STREAK_KEY = 'studyportal_streak_v1';
 export const LOCAL_GALLERY_KEY = 'studyportal_gallery_v1';

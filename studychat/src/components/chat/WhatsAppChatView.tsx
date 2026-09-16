@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { getSupabase, ChatMessage, LOCAL_MESSAGES_KEY } from '../../services/supabaseClient';
+import { getSupabase, ChatMessage, ExtendedChatMessage, LOCAL_MESSAGES_KEY } from '../../services/supabaseClient';
+import {
+  fetchRemoteMessages,
+  saveRemoteMessage,
+  updateRemoteStatus,
+  markAllIncomingAsRead,
+  updateRemoteReactions,
+  updateRemotePin,
+  deleteRemoteMessage,
+  mergeMessages,
+  rowToMessage,
+  CHAT_ID,
+} from '../../services/chatSyncService';
 import {
   ArrowLeft,
   Phone,
@@ -43,18 +55,6 @@ import {
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
-
-interface ExtendedChatMessage extends ChatMessage {
-  isHd?: boolean;
-  isViewOnce?: boolean;
-  isOpened?: boolean;
-  transcript?: string;
-  isPinned?: boolean;
-  fileSizeKb?: number;
-  duration?: string;
-  thumbnailUrl?: string;
-  mediaType?: 'image' | 'video';
-}
 
 export const WhatsAppChatView: React.FC = () => {
   const { student, logoutChat, switchTab } = useStudyApp();
@@ -317,6 +317,80 @@ export const WhatsAppChatView: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  // Continuous bi-directional synchronization with Supabase backend
+  const syncWithRemote = useRef<() => Promise<void>>(async () => {});
+
+  syncWithRemote.current = async () => {
+    try {
+      const remote = await fetchRemoteMessages();
+      if (remote && remote.length > 0) {
+        setMessages((prev) => {
+          const merged = mergeMessages(prev, remote);
+          // Check if any change exists
+          if (
+            merged.length !== prev.length ||
+            merged.some((m, idx) => {
+              const p = prev[idx];
+              if (!p) return true;
+              return (
+                m.id !== p.id ||
+                m.status !== p.status ||
+                m.isPinned !== p.isPinned ||
+                m.isOpened !== p.isOpened ||
+                JSON.stringify(m.reactions || {}) !== JSON.stringify(p.reactions || {})
+              );
+            })
+          ) {
+            try {
+              localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(merged));
+            } catch {}
+            return merged;
+          }
+          return prev;
+        });
+      }
+    } catch (err) {
+      console.warn('Sync failed:', err);
+    }
+  };
+
+  // Initial load from Supabase on mount
+  useEffect(() => {
+    syncWithRemote.current();
+  }, []);
+
+  // Continuous smart background sync (every 2.5s) to guarantee phone and laptop stay 100% in sync
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      syncWithRemote.current();
+    }, 2500);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncWithRemote.current();
+      }
+    };
+
+    const handleFocus = () => {
+      syncWithRemote.current();
+    };
+
+    const handleOnline = () => {
+      syncWithRemote.current();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      clearInterval(syncInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
   const handleLogout = () => {
     const now = Date.now();
     try {
@@ -428,6 +502,7 @@ export const WhatsAppChatView: React.FC = () => {
       const supabase = getSupabase();
       const channel = supabase.channel('whatsapp-one-on-one-room', {
         config: {
+          broadcast: { self: true },
           presence: {
             key: currentUser,
           },
@@ -543,6 +618,7 @@ export const WhatsAppChatView: React.FC = () => {
 
             // If we are the recipient and currently in the chat view:
             if (incoming.sender !== currentUser) {
+              updateRemoteStatus(incoming.id, 'delivered');
               try {
                 channel.send({
                   type: 'broadcast',
@@ -557,6 +633,7 @@ export const WhatsAppChatView: React.FC = () => {
               // If chat is open, user immediately views it -> mark as 'read' (double blue tick)
               if (readReceiptsEnabledRef.current) {
                 setTimeout(() => {
+                  updateRemoteStatus(incoming.id, 'read');
                   try {
                     channel.send({
                       type: 'broadcast',
@@ -617,6 +694,30 @@ export const WhatsAppChatView: React.FC = () => {
             handleApplyReaction(msgId, emoji, user, false);
           }
         })
+        .on('broadcast', { event: 'message_deleted' }, (payload) => {
+          if (payload?.payload?.msgId) {
+            const delId = payload.payload.msgId;
+            setMessages((prev) => {
+              const next = prev.filter((m) => m.id !== delId);
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          }
+        })
+        .on('broadcast', { event: 'pin_update' }, (payload) => {
+          if (payload?.payload) {
+            const { msgId, isPinned } = payload.payload;
+            setMessages((prev) => {
+              const next = prev.map((m) => (m.id === msgId ? { ...m, isPinned } : m));
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          }
+        })
         .on('broadcast', { event: 'call_offer' }, (payload) => {
           if (payload?.payload?.recipient === currentUser) {
             setIncomingCall({
@@ -633,6 +734,69 @@ export const WhatsAppChatView: React.FC = () => {
           setShowCallModal(null);
           setIncomingCall(null);
         })
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${CHAT_ID}`,
+          },
+          (payload) => {
+            if (payload?.new) {
+              const incoming = rowToMessage(payload.new);
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === incoming.id)) return prev;
+                const next = [...prev, incoming];
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages',
+            filter: `chat_id=eq.${CHAT_ID}`,
+          },
+          (payload) => {
+            if (payload?.new) {
+              const updated = rowToMessage(payload.new);
+              setMessages((prev) => {
+                const next = prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m));
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'messages',
+          },
+          (payload) => {
+            if (payload?.old?.id) {
+              const delId = payload.old.id;
+              setMessages((prev) => {
+                const next = prev.filter((m) => m.id !== delId);
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            }
+          }
+        )
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             await channel.track({
@@ -650,12 +814,16 @@ export const WhatsAppChatView: React.FC = () => {
 
             // If we have read receipts enabled, mark all incoming unread messages as read
             if (readReceiptsEnabledRef.current) {
+              markAllIncomingAsRead(currentUser);
               channel.send({
                 type: 'broadcast',
                 event: 'all_messages_read',
                 payload: { reader: currentUser, readUpTo: Date.now() },
               });
             }
+
+            // Sync with Supabase on connect
+            syncWithRemote.current();
           }
         });
 
@@ -793,6 +961,9 @@ export const WhatsAppChatView: React.FC = () => {
     persistMessages(next);
     setInputText('');
 
+    // Persist to central Supabase DB for cross-device sync
+    saveRemoteMessage(newMsg);
+
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
       activeChannel.send({
@@ -836,6 +1007,9 @@ export const WhatsAppChatView: React.FC = () => {
     setMediaCaption('');
     setIsHdSelected(false);
     setIsViewOnceSelected(false);
+
+    // Persist to central Supabase DB for cross-device sync
+    saveRemoteMessage(newMsg);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -907,6 +1081,9 @@ export const WhatsAppChatView: React.FC = () => {
     const next = [...messages, newMsg];
     persistMessages(next);
 
+    // Persist to central Supabase DB for cross-device sync
+    saveRemoteMessage(newMsg);
+
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
       activeChannel.send({
@@ -924,6 +1101,7 @@ export const WhatsAppChatView: React.FC = () => {
     user: 'surya' | 'sadhana' = currentUser,
     broadcast = true
   ) => {
+    let updatedReactionsForMsg: Record<string, string[]> = {};
     setMessages((prev) => {
       const updated = prev.map((m) => {
         if (m.id !== msgId) return m;
@@ -933,12 +1111,13 @@ export const WhatsAppChatView: React.FC = () => {
           ? usersForEmoji.filter((u) => u !== user)
           : [...usersForEmoji, user];
 
+        updatedReactionsForMsg = {
+          ...currentReactions,
+          [emoji]: nextUsers,
+        };
         return {
           ...m,
-          reactions: {
-            ...currentReactions,
-            [emoji]: nextUsers,
-          },
+          reactions: updatedReactionsForMsg,
         };
       });
       localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
@@ -946,6 +1125,9 @@ export const WhatsAppChatView: React.FC = () => {
     });
 
     setReactionBubbleId(null);
+
+    // Persist reaction update to Supabase DB
+    updateRemoteReactions(msgId, updatedReactionsForMsg);
 
     if (broadcast) {
       try {
@@ -961,6 +1143,7 @@ export const WhatsAppChatView: React.FC = () => {
 
   // Pin Message (Up to 3)
   const handleTogglePin = (msgId: string) => {
+    let nextPinnedState = false;
     setMessages((prev) => {
       const target = prev.find((m) => m.id === msgId);
       if (!target) return prev;
@@ -971,16 +1154,41 @@ export const WhatsAppChatView: React.FC = () => {
         return prev;
       }
 
-      const next = prev.map((m) => (m.id === msgId ? { ...m, isPinned: !m.isPinned } : m));
+      nextPinnedState = !target.isPinned;
+      const next = prev.map((m) => (m.id === msgId ? { ...m, isPinned: nextPinnedState } : m));
       localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
       return next;
     });
+
+    // Persist pin update to Supabase DB
+    updateRemotePin(msgId, nextPinnedState);
+
+    try {
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
+        type: 'broadcast',
+        event: 'pin_update',
+        payload: { msgId, isPinned: nextPinnedState },
+      });
+    } catch {}
   };
 
   // Delete message
   const handleDeleteMessage = (msgId: string) => {
     const next = messages.filter((m) => m.id !== msgId);
     persistMessages(next);
+
+    // Delete message from Supabase DB
+    deleteRemoteMessage(msgId);
+
+    try {
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
+        type: 'broadcast',
+        event: 'message_deleted',
+        payload: { msgId },
+      });
+    } catch {}
   };
 
   // Handle call completion / close and log call summary message into chat
@@ -1012,6 +1220,10 @@ export const WhatsAppChatView: React.FC = () => {
       };
       const next = [...messages, newMsg];
       persistMessages(next);
+
+      // Persist call log to Supabase DB
+      saveRemoteMessage(newMsg);
+
       try {
         channelRef.current?.send({
           type: 'broadcast',

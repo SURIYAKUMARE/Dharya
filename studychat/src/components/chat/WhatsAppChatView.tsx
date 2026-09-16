@@ -8,6 +8,8 @@ import {
   markAllIncomingAsRead,
   updateRemoteReactions,
   updateRemotePin,
+  updateRemoteStar,
+  updateRemotePoll,
   deleteRemoteMessage,
   mergeMessages,
   rowToMessage,
@@ -50,7 +52,13 @@ import {
   BookOpen,
   Key,
   Keyboard,
-  Plus
+  Plus,
+  Star,
+  CornerUpLeft,
+  BarChart2,
+  CheckSquare,
+  Download,
+  Palette
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
@@ -136,9 +144,45 @@ export const WhatsAppChatView: React.FC = () => {
   const [showChatLists, setShowChatLists] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video' } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video'; offer?: any } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
+
+  // ── FULL WHATSAPP FEATURE SUITE STATES ──
+  const [replyingToMessage, setReplyingToMessage] = useState<ExtendedChatMessage | null>(null);
+  const [isPartnerTyping, setIsPartnerTyping] = useState<boolean>(false);
+  const partnerTypingTimerRef = useRef<number | null>(null);
+  const lastTypingBroadcastRef = useRef<number>(0);
+
+  // Starred messages modal
+  const [showStarredModal, setShowStarredModal] = useState<boolean>(false);
+
+  // Poll creation modal & form
+  const [showPollModal, setShowPollModal] = useState<boolean>(false);
+  const [pollQuestion, setPollQuestion] = useState<string>('');
+  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
+  const [pollAllowMultiple, setPollAllowMultiple] = useState<boolean>(false);
+
+  // Chat Wallpaper modal & state
+  const [showWallpaperModal, setShowWallpaperModal] = useState<boolean>(false);
+  const [activeWallpaper, setActiveWallpaper] = useState<string>(() => {
+    try {
+      return localStorage.getItem('whatsapp_custom_wallpaper') || 'doodle';
+    } catch {
+      return 'doodle';
+    }
+  });
+
+  // Real Audio Recording with MediaRecorder
+  const [isRecordingAudio, setIsRecordingAudio] = useState<boolean>(false);
+  const [recordingTimeSecs, setRecordingTimeSecs] = useState<number>(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<number | null>(null);
+  const [audioPlaybackRates, setAudioPlaybackRates] = useState<Record<string, number>>({});
+
+  // Document file input ref
+  const docInputRef = useRef<HTMLInputElement | null>(null);
 
   // ── SECURITY SECTION STATES ──
   const [showSecurityModal, setShowSecurityModal] = useState(false);
@@ -718,11 +762,45 @@ export const WhatsAppChatView: React.FC = () => {
             });
           }
         })
+        .on('broadcast', { event: 'user_typing' }, (payload) => {
+          if (payload?.payload?.user === partnerUser) {
+            setIsPartnerTyping(true);
+            if (partnerTypingTimerRef.current) clearTimeout(partnerTypingTimerRef.current);
+            partnerTypingTimerRef.current = window.setTimeout(() => {
+              setIsPartnerTyping(false);
+            }, 2500);
+          }
+        })
+        .on('broadcast', { event: 'message_starred' }, (payload) => {
+          if (payload?.payload) {
+            const { msgId, isStarred } = payload.payload;
+            setMessages((prev) => {
+              const next = prev.map((m) => (m.id === msgId ? { ...m, isStarred } : m));
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          }
+        })
+        .on('broadcast', { event: 'poll_vote' }, (payload) => {
+          if (payload?.payload) {
+            const { msgId, poll } = payload.payload;
+            setMessages((prev) => {
+              const next = prev.map((m) => (m.id === msgId ? { ...m, poll } : m));
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          }
+        })
         .on('broadcast', { event: 'call_offer' }, (payload) => {
           if (payload?.payload?.recipient === currentUser) {
             setIncomingCall({
               caller: payload.payload.caller,
               type: payload.payload.callType,
+              offer: payload.payload.offer,
             });
           }
         })
@@ -938,6 +1016,376 @@ export const WhatsAppChatView: React.FC = () => {
     e.target.value = '';
   };
 
+
+  // Typing Debouncer
+  const handleInputTextChange = (val: string) => {
+    setInputText(val);
+    const now = Date.now();
+    if (now - lastTypingBroadcastRef.current > 1800) {
+      lastTypingBroadcastRef.current = now;
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'user_typing',
+          payload: { user: currentUser },
+        });
+      } catch {}
+    }
+  };
+
+  // Reply Quoting
+  const handleStartReply = (msg: ExtendedChatMessage) => {
+    setReplyingToMessage(msg);
+  };
+
+  // Toggle Starred Message
+  const handleToggleStarMessage = (msgId: string) => {
+    let nextStarred = false;
+    setMessages((prev) => {
+      const target = prev.find((m) => m.id === msgId);
+      if (!target) return prev;
+      nextStarred = !target.isStarred;
+      const next = prev.map((m) => (m.id === msgId ? { ...m, isStarred: nextStarred } : m));
+      try {
+        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    updateRemoteStar(msgId, nextStarred);
+
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'message_starred',
+        payload: { msgId, isStarred: nextStarred },
+      });
+    } catch {}
+  };
+
+  // Vote on Interactive Poll
+  const handleVotePoll = (msgId: string, optionId: string) => {
+    let updatedPoll: ExtendedChatMessage['poll'] = undefined;
+    setMessages((prev) => {
+      const target = prev.find((m) => m.id === msgId);
+      if (!target || !target.poll) return prev;
+
+      const currentPoll = target.poll;
+      const isMulti = currentPoll.pollType === 'multi';
+
+      const updatedOptions = currentPoll.options.map((opt) => {
+        const hasVoted = opt.votes.includes(currentUser);
+        if (opt.id === optionId) {
+          return {
+            ...opt,
+            votes: hasVoted ? opt.votes.filter((u) => u !== currentUser) : [...opt.votes, currentUser],
+          };
+        } else if (!isMulti) {
+          return {
+            ...opt,
+            votes: opt.votes.filter((u) => u !== currentUser),
+          };
+        }
+        return opt;
+      });
+
+      updatedPoll = {
+        ...currentPoll,
+        options: updatedOptions,
+      };
+
+      const next = prev.map((m) => (m.id === msgId ? { ...m, poll: updatedPoll } : m));
+      try {
+        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    if (updatedPoll) {
+      updateRemotePoll(msgId, updatedPoll);
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'poll_vote',
+          payload: { msgId, poll: updatedPoll },
+        });
+      } catch {}
+    }
+  };
+
+  // Create Interactive Poll
+  const handleCreatePoll = () => {
+    const q = pollQuestion.trim();
+    const validOpts = pollOptions.map((o) => o.trim()).filter(Boolean);
+    if (!q) {
+      alert('Please enter a poll question.');
+      return;
+    }
+    if (validOpts.length < 2) {
+      alert('Please provide at least 2 options.');
+      return;
+    }
+
+    const pollObj: ExtendedChatMessage['poll'] = {
+      question: q,
+      options: validOpts.map((opt, idx) => ({
+        id: `opt-${idx}-${Date.now()}`,
+        text: opt,
+        votes: [],
+      })),
+      pollType: pollAllowMultiple ? 'multi' : 'single',
+    };
+
+    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+    const newMsg: ExtendedChatMessage = {
+      id: 'msg-poll-' + Date.now(),
+      sender: currentUser,
+      text: q,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      read: false,
+      status: initialStatus,
+      type: 'poll',
+      poll: pollObj,
+      replyTo: replyingToMessage
+        ? {
+            id: replyingToMessage.id,
+            sender: replyingToMessage.sender,
+            text: replyingToMessage.text || replyingToMessage.type || 'Message',
+          }
+        : undefined,
+    };
+
+    const next = [...messages, newMsg];
+    persistMessages(next);
+    saveRemoteMessage(newMsg);
+    setReplyingToMessage(null);
+    setShowPollModal(false);
+    setPollQuestion('');
+    setPollOptions(['', '']);
+
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'new_message',
+        payload: newMsg,
+      });
+    } catch {}
+  };
+
+  // Real Audio Recording with MediaRecorder
+  const handleStartAudioRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.start(100);
+      setIsRecordingAudio(true);
+      setRecordingTimeSecs(0);
+
+      recordingIntervalRef.current = window.setInterval(() => {
+        setRecordingTimeSecs((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.warn('[Audio] Mic access denied; using standard voice note', err);
+      handleSendVoiceNote();
+    }
+  };
+
+  const handleCancelAudioRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+      mediaRecorderRef.current = null;
+    }
+    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    audioChunksRef.current = [];
+    setIsRecordingAudio(false);
+    setRecordingTimeSecs(0);
+  };
+
+  const handleSendRealAudioRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
+    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    const totalSecs = Math.max(1, recordingTimeSecs);
+
+    recorder.onstop = () => {
+      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Audio = reader.result as string;
+        const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+        const durStr = `${Math.floor(totalSecs / 60)}:${totalSecs % 60 < 10 ? '0' : ''}${totalSecs % 60}`;
+
+        const newMsg: ExtendedChatMessage = {
+          id: 'msg-voice-' + Date.now(),
+          sender: currentUser,
+          text: `Voice Note (${durStr})`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now(),
+          read: false,
+          status: initialStatus,
+          type: 'voice',
+          audioUrl: base64Audio,
+          mediaUrl: base64Audio,
+          audioDuration: totalSecs,
+          duration: durStr,
+          replyTo: replyingToMessage
+            ? {
+                id: replyingToMessage.id,
+                sender: replyingToMessage.sender,
+                text: replyingToMessage.text || replyingToMessage.type || 'Message',
+              }
+            : undefined,
+        };
+
+        const next = [...messages, newMsg];
+        persistMessages(next);
+        saveRemoteMessage(newMsg);
+        setReplyingToMessage(null);
+
+        try {
+          channelRef.current?.send({
+            type: 'broadcast',
+            event: 'new_message',
+            payload: newMsg,
+          });
+        } catch {}
+      };
+      reader.readAsDataURL(audioBlob);
+      recorder.stream.getTracks().forEach((t) => t.stop());
+    };
+
+    recorder.stop();
+    setIsRecordingAudio(false);
+    setRecordingTimeSecs(0);
+  };
+
+  // Document File Upload
+  const handleDocumentFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeStr =
+      file.size > 1048576
+        ? `${(file.size / 1048576).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const rawData = event.target?.result as string;
+      if (!rawData) return;
+
+      const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+      const newMsg: ExtendedChatMessage = {
+        id: 'msg-doc-' + Date.now(),
+        sender: currentUser,
+        text: file.name,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        read: false,
+        status: initialStatus,
+        type: 'document',
+        documentName: file.name,
+        documentSize: sizeStr,
+        documentUrl: rawData,
+        mediaUrl: rawData,
+        replyTo: replyingToMessage
+          ? {
+              id: replyingToMessage.id,
+              sender: replyingToMessage.sender,
+              text: replyingToMessage.text || replyingToMessage.type || 'Message',
+            }
+          : undefined,
+      };
+
+      const next = [...messages, newMsg];
+      persistMessages(next);
+      saveRemoteMessage(newMsg);
+      setReplyingToMessage(null);
+
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: newMsg,
+        });
+      } catch {}
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+    setShowAttachMenu(false);
+  };
+
+  // Export Chat to Text File
+  const handleExportChat = () => {
+    const lines = messages.map((m) => {
+      const senderName = m.sender === 'sadhana' ? 'Sadhana' : 'Surya';
+      const timeStr = m.time || new Date(m.timestamp).toLocaleTimeString();
+      let content = m.text || '';
+      if (m.type === 'image') content = '[Photo] ' + content;
+      else if (m.type === 'video') content = '[Video] ' + content;
+      else if (m.type === 'voice') content = '[Voice Note] ' + content;
+      else if (m.type === 'poll' && m.poll) content = `[Poll: ${m.poll.question}]`;
+      else if (m.type === 'document') content = `[Document: ${m.documentName || m.text}]`;
+      return `[${timeStr}] ${senderName}: ${content}`;
+    });
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `WhatsApp_Chat_with_${partnerName}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowMenu(false);
+  };
+
+  // Clear Chat for Everyone
+  const handleClearAllChat = () => {
+    if (confirm('Clear all messages in this chat? This cannot be undone.')) {
+      messages.forEach((m) => deleteRemoteMessage(m.id));
+      persistMessages([]);
+      setShowMenu(false);
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'chat_cleared',
+          payload: { user: currentUser },
+        });
+      } catch {}
+    }
+  };
+
+  // Wallpaper Style Provider
+  const getWallpaperStyle = () => {
+    if (activeWallpaper === 'obsidian') {
+      return { backgroundColor: '#0a0f12', backgroundImage: 'none' };
+    }
+    if (activeWallpaper === 'emerald') {
+      return { backgroundColor: '#071a14', backgroundImage: 'none' };
+    }
+    if (activeWallpaper === 'teal') {
+      return { backgroundColor: '#0b191e', backgroundImage: 'none' };
+    }
+    if (activeWallpaper === 'coffee') {
+      return { backgroundColor: '#181512', backgroundImage: 'none' };
+    }
+    return {
+      backgroundColor: '#0c1317',
+      backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2353bdeb' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
+    };
+  };
+
   // Send a Text Message
   const handleSendText = () => {
     const text = inputText.trim();
@@ -955,7 +1403,9 @@ export const WhatsAppChatView: React.FC = () => {
       status: initialStatus,
       type: 'text',
       fileSizeKb: Math.max(1, Math.round(text.length * 0.05)),
+      replyTo: replyingToMessage ? { id: replyingToMessage.id, sender: replyingToMessage.sender, text: replyingToMessage.text || replyingToMessage.type || 'Message' } : undefined,
     };
+    setReplyingToMessage(null);
 
     const next = [...messages, newMsg];
     persistMessages(next);
@@ -997,7 +1447,9 @@ export const WhatsAppChatView: React.FC = () => {
       isViewOnce: isViewOnceSelected,
       isOpened: false,
       fileSizeKb: mediaFileSizeKb || (isVideo ? 2450 : isHdSelected ? 1200 : 420),
+      replyTo: replyingToMessage ? { id: replyingToMessage.id, sender: replyingToMessage.sender, text: replyingToMessage.text || replyingToMessage.type || 'Media' } : undefined,
     };
+    setReplyingToMessage(null);
 
     const next = [...messages, newMsg];
     persistMessages(next);
@@ -1514,6 +1966,13 @@ export const WhatsAppChatView: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 w-full h-full flex flex-col overflow-hidden bg-[#0c1317] text-[#e9edef] select-none">
+      {/* Hidden File Input for Documents */}
+      <input
+        type="file"
+        ref={docInputRef}
+        onChange={handleDocumentFileSelect}
+        className="hidden"
+      />
       {/* Hidden File Input for Gallery Photos & Videos */}
       <input
         type="file"
@@ -1565,7 +2024,11 @@ export const WhatsAppChatView: React.FC = () => {
                 </span>
               )}
             </div>
-            {isPartnerOnline ? (
+            {isPartnerTyping ? (
+              <p className="text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse">
+                <span>typing...</span>
+              </p>
+            ) : isPartnerOnline ? (
               <p className="text-[12px] text-[#00a884] font-medium flex items-center gap-1.5 leading-tight">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
                 <span>online</span>
@@ -1679,6 +2142,47 @@ export const WhatsAppChatView: React.FC = () => {
 
                 <button
                   onClick={() => {
+                    setShowStarredModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-amber-300"
+                >
+                  <span className="flex items-center gap-2">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>Starred Messages</span>
+                  </span>
+                  <span className="text-[10px] text-[#8696a0] font-mono">
+                    {messages.filter((m) => m.isStarred).length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowWallpaperModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-teal-300"
+                >
+                  <span className="flex items-center gap-2">
+                    <Palette className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Chat Wallpaper</span>
+                  </span>
+                  <span className="text-[10px] text-teal-400 font-mono capitalize">{activeWallpaper}</span>
+                </button>
+
+                <button
+                  onClick={handleExportChat}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-[#d1d7db]"
+                >
+                  <span className="flex items-center gap-2">
+                    <Download className="w-3.5 h-3.5 text-[#8696a0]" />
+                    <span>Export Chat</span>
+                  </span>
+                  <span className="text-[10px] text-[#8696a0]">.txt</span>
+                </button>
+
+                <button
+                  onClick={() => {
                     setShowStorageModal(true);
                     setShowMenu(false);
                   }}
@@ -1735,9 +2239,7 @@ export const WhatsAppChatView: React.FC = () => {
                 <div className="h-px bg-white/10 my-1" />
                 <button
                   onClick={() => {
-                    if (confirm('Clear chat history?')) {
-                      persistMessages([]);
-                    }
+                    handleClearAllChat();
                     setShowMenu(false);
                   }}
                   className="w-full text-left px-4 py-2 hover:bg-[#182229] text-rose-400 transition-colors"
@@ -1803,10 +2305,7 @@ export const WhatsAppChatView: React.FC = () => {
       {/* ── 3. CHAT MESSAGES CANVAS ── */}
       <div
         className="flex-1 overflow-y-auto px-4 py-3 space-y-2 relative scroll-smooth"
-        style={{
-          backgroundColor: '#0c1317',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2353bdeb' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
-        }}
+        style={getWallpaperStyle()}
       >
         {/* End-to-End Encryption Banner - Clickable to open Security Section */}
         <div
@@ -1879,6 +2378,16 @@ export const WhatsAppChatView: React.FC = () => {
                   <div className="flex items-center gap-1 text-[10px] text-[#ffd279] font-semibold mb-1">
                     <Pin className="w-2.5 h-2.5" />
                     <span>Pinned Message</span>
+                  </div>
+                )}
+
+                {/* Quoted Reply Preview on Bubble */}
+                {msg.replyTo && (
+                  <div className="mb-2 p-2 rounded-lg bg-black/25 border-l-4 border-emerald-400 text-xs select-none">
+                    <span className="font-semibold text-emerald-400 block text-[11px] mb-0.5">
+                      {msg.replyTo.sender === currentUser ? 'You' : partnerName}
+                    </span>
+                    <span className="text-[#8696a0] line-clamp-1 text-[11px]">{msg.replyTo.text}</span>
                   </div>
                 )}
 
@@ -1982,15 +2491,130 @@ export const WhatsAppChatView: React.FC = () => {
                   </div>
                 )}
 
+                {/* ── INTERACTIVE POLL MESSAGE ── */}
+                {msg.type === 'poll' && msg.poll && (
+                  <div className="py-2 min-w-[240px] sm:min-w-[280px] space-y-3">
+                    <div className="flex items-start justify-between gap-2 border-b border-white/10 pb-2">
+                      <h4 className="font-semibold text-[15px] text-white leading-snug">
+                        {msg.poll.question}
+                      </h4>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium flex-shrink-0">
+                        {msg.poll.pollType === 'multi' ? 'Multiple' : 'Single'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {msg.poll.options.map((opt) => {
+                        const totalVotes = msg.poll?.options.reduce((acc, o) => acc + o.votes.length, 0) || 0;
+                        const optVotes = opt.votes.length;
+                        const pct = totalVotes > 0 ? Math.round((optVotes / totalVotes) * 100) : 0;
+                        const isVotedByMe = opt.votes.includes(currentUser);
+
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => handleVotePoll(msg.id, opt.id)}
+                            className="w-full text-left relative overflow-hidden rounded-xl border border-white/10 hover:border-emerald-500/40 p-2.5 transition-all bg-black/20 group"
+                          >
+                            {/* Vote percentage bar fill */}
+                            <div
+                              className="absolute inset-y-0 left-0 bg-emerald-500/20 transition-all duration-300"
+                              style={{ width: `${pct}%` }}
+                            />
+
+                            <div className="relative flex items-center justify-between z-10">
+                              <div className="flex items-center gap-2.5">
+                                <div
+                                  className={`w-4 h-4 rounded-${msg.poll?.pollType === 'multi' ? 'sm' : 'full'} border flex items-center justify-center transition-colors ${
+                                    isVotedByMe
+                                      ? 'border-emerald-400 bg-emerald-500 text-white'
+                                      : 'border-[#8696a0]'
+                                  }`}
+                                >
+                                  {isVotedByMe && (
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                  )}
+                                </div>
+                                <span className="text-sm font-medium text-white group-hover:text-emerald-300 transition-colors">
+                                  {opt.text}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 text-xs text-[#8696a0] font-mono">
+                                <span>{optVotes}</span>
+                                {totalVotes > 0 && <span className="text-[10px]">({pct}%)</span>}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-[#8696a0] pt-1">
+                      <span>
+                        {(msg.poll.options.reduce((acc, o) => acc + o.votes.length, 0))} vote(s)
+                      </span>
+                      <span className="italic text-[10px]">Tap to vote</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── DOCUMENT ATTACHMENT MESSAGE ── */}
+                {msg.type === 'document' && (
+                  <div className="py-1 min-w-[220px]">
+                    <a
+                      href={msg.documentUrl || msg.mediaUrl || '#'}
+                      download={msg.documentName || 'Document'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-2.5 rounded-xl bg-black/25 hover:bg-black/35 border border-white/10 transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <p className="text-sm font-semibold text-white truncate group-hover:text-purple-300 transition-colors">
+                          {msg.documentName || msg.text || 'Attached Document'}
+                        </p>
+                        <p className="text-[11px] text-[#8696a0] font-mono">
+                          {msg.documentSize || 'Document'} • Click to download
+                        </p>
+                      </div>
+                      <Download className="w-4 h-4 text-[#8696a0] group-hover:text-white flex-shrink-0" />
+                    </a>
+                  </div>
+                )}
+
                 {/* ── VOICE NOTE MESSAGE ── */}
                 {msg.type === 'voice' && (
-                  <div className="space-y-2 py-1 min-w-[220px]">
+                  <div className="space-y-2 py-1 min-w-[230px] sm:min-w-[260px]">
+                    {/* Audio Element for real sound playback */}
+                    {(msg.audioUrl || msg.mediaUrl) && (
+                      <audio
+                        id={`audio-el-${msg.id}`}
+                        src={msg.audioUrl || msg.mediaUrl}
+                        preload="none"
+                        onEnded={() => setIsPlayingAudioId(null)}
+                      />
+                    )}
+
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() =>
-                          setIsPlayingAudioId(isPlayingAudioId === msg.id ? null : msg.id)
-                        }
-                        className="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow flex-shrink-0 transition-transform hover:scale-105 active:scale-95"
+                        onClick={() => {
+                          const audioEl = document.getElementById(`audio-el-${msg.id}`) as HTMLAudioElement | null;
+                          if (isPlayingAudioId === msg.id) {
+                            audioEl?.pause();
+                            setIsPlayingAudioId(null);
+                          } else {
+                            if (audioEl) {
+                              audioEl.playbackRate = audioPlaybackRates[msg.id] || 1;
+                              audioEl.play().catch(() => {});
+                            }
+                            setIsPlayingAudioId(msg.id);
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow flex-shrink-0 transition-transform hover:scale-105 active:scale-95"
                       >
                         {isPlayingAudioId === msg.id ? (
                           <Pause className="w-4 h-4 fill-current" />
@@ -2014,9 +2638,22 @@ export const WhatsAppChatView: React.FC = () => {
                             )
                           )}
                         </div>
-                        <div className="flex justify-between text-[10px] text-white/70 font-mono">
-                          <span>0:12</span>
-                          <span>Voice Note</span>
+                        <div className="flex justify-between items-center text-[10px] text-white/70 font-mono">
+                          <span>{msg.duration || (msg.audioDuration ? `${Math.floor(msg.audioDuration / 60)}:${msg.audioDuration % 60 < 10 ? '0' : ''}${msg.audioDuration % 60}` : '0:12')}</span>
+                          {/* Speed Toggle Button (1x, 1.5x, 2x) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentRate = audioPlaybackRates[msg.id] || 1;
+                              const nextRate = currentRate === 1 ? 1.5 : currentRate === 1.5 ? 2 : 1;
+                              setAudioPlaybackRates((prev) => ({ ...prev, [msg.id]: nextRate }));
+                              const audioEl = document.getElementById(`audio-el-${msg.id}`) as HTMLAudioElement | null;
+                              if (audioEl) audioEl.playbackRate = nextRate;
+                            }}
+                            className="px-1.5 py-0.5 rounded-full bg-black/30 hover:bg-black/50 text-[9px] font-bold text-emerald-400 border border-emerald-500/30 transition-colors"
+                          >
+                            {(audioPlaybackRates[msg.id] || 1)}x
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2057,6 +2694,9 @@ export const WhatsAppChatView: React.FC = () => {
 
                 {/* Bubble Footer: Timestamp & Checkmarks */}
                 <div className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5 text-[11px] text-white/65 select-none font-sans">
+                  {msg.isStarred && (
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400 mr-0.5" />
+                  )}
                   <span>{msg.time}</span>
                   {renderMessageTicks(msg)}
                 </div>
@@ -2076,25 +2716,39 @@ export const WhatsAppChatView: React.FC = () => {
                 )}
               </div>
 
-              {/* Message Context Controls (Pin, React, Delete) */}
+              {/* Message Context Controls (Reply, Star, React, Pin, Delete) */}
               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 mt-1 px-1 text-xs text-[#8696a0]">
                 <button
+                  onClick={() => handleStartReply(msg)}
+                  className="p-1 hover:text-white hover:bg-white/10 rounded"
+                  title="Reply"
+                >
+                  <CornerUpLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleToggleStarMessage(msg.id)}
+                  className={`p-1 hover:text-white hover:bg-white/10 rounded ${msg.isStarred ? 'text-amber-400' : ''}`}
+                  title={msg.isStarred ? 'Unstar message' : 'Star message'}
+                >
+                  <Star className={`w-3.5 h-3.5 ${msg.isStarred ? 'fill-amber-400' : ''}`} />
+                </button>
+                <button
                   onClick={() => setReactionBubbleId(reactionBubbleId === msg.id ? null : msg.id)}
-                  className="p-1 hover:text-white"
+                  className="p-1 hover:text-white hover:bg-white/10 rounded"
                   title="React"
                 >
                   <Smile className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleTogglePin(msg.id)}
-                  className={`p-1 hover:text-white ${msg.isPinned ? 'text-amber-400' : ''}`}
+                  className={`p-1 hover:text-white hover:bg-white/10 rounded ${msg.isPinned ? 'text-amber-400' : ''}`}
                   title={msg.isPinned ? 'Unpin message' : 'Pin message (up to 3)'}
                 >
                   <Pin className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => handleDeleteMessage(msg.id)}
-                  className="p-1 hover:text-rose-400"
+                  className="p-1 hover:text-rose-400 hover:bg-rose-500/10 rounded"
                   title="Delete message"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -2140,6 +2794,26 @@ export const WhatsAppChatView: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* ── QUOTED REPLY PREVIEW BANNER ── */}
+      {replyingToMessage && (
+        <div className="bg-[#182229] border-t border-[#2a3942] px-4 py-2 flex items-center justify-between z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="border-l-4 border-[#00a884] pl-2.5 overflow-hidden">
+            <span className="text-xs font-semibold text-[#00a884] block">
+              Replying to {replyingToMessage.sender === currentUser ? 'yourself' : partnerName}
+            </span>
+            <span className="text-xs text-[#8696a0] line-clamp-1">
+              {replyingToMessage.text || replyingToMessage.type || 'Media'}
+            </span>
+          </div>
+          <button
+            onClick={() => setReplyingToMessage(null)}
+            className="p-1 rounded-full text-[#8696a0] hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* ── 4. CHAT INPUT BAR ── */}
       <div className="bg-[#202c33] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
@@ -2180,7 +2854,21 @@ export const WhatsAppChatView: React.FC = () => {
 
           {/* WhatsApp Attachment Sheet */}
           {showAttachMenu && (
-            <div className="absolute bottom-12 left-0 w-72 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-4 gap-2 text-center">
+            <div className="absolute bottom-12 left-0 w-80 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-2.5 text-center">
+              {/* Document Option */}
+              <button
+                onClick={() => {
+                  docInputRef.current?.click();
+                  setShowAttachMenu(false);
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+              >
+                <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium">Document</span>
+              </button>
+
               {/* Gallery Photos & Videos Option */}
               <button
                 onClick={() => {
@@ -2189,10 +2877,10 @@ export const WhatsAppChatView: React.FC = () => {
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
               >
-                <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-purple-600 text-white flex items-center justify-center shadow">
                   <ImageIcon className="w-5 h-5" />
                 </div>
-                <span className="text-[10px]">Gallery</span>
+                <span className="text-[11px] font-medium">Gallery</span>
               </button>
 
               {/* Camera Option */}
@@ -2203,24 +2891,38 @@ export const WhatsAppChatView: React.FC = () => {
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
               >
-                <div className="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-rose-600 text-white flex items-center justify-center shadow">
                   <Camera className="w-5 h-5" />
                 </div>
-                <span className="text-[10px]">Camera</span>
+                <span className="text-[11px] font-medium">Camera</span>
+              </button>
+
+              {/* Interactive Poll Option */}
+              <button
+                onClick={() => {
+                  setShowPollModal(true);
+                  setShowAttachMenu(false);
+                }}
+                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+              >
+                <div className="w-11 h-11 rounded-full bg-teal-600 text-white flex items-center justify-center shadow">
+                  <BarChart2 className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium">Poll</span>
               </button>
 
               {/* Audio Note Option */}
               <button
                 onClick={() => {
-                  handleSendVoiceNote();
+                  handleStartAudioRecording();
                   setShowAttachMenu(false);
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
               >
-                <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-amber-600 text-white flex items-center justify-center shadow">
                   <FileAudio className="w-5 h-5" />
                 </div>
-                <span className="text-[10px]">Audio Note</span>
+                <span className="text-[11px] font-medium">Audio</span>
               </button>
 
               {/* Location Option */}
@@ -2231,46 +2933,80 @@ export const WhatsAppChatView: React.FC = () => {
                 }}
                 className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
               >
-                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow">
-                  <span className="text-sm">📍</span>
+                <div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow">
+                  <span className="text-base">📍</span>
                 </div>
-                <span className="text-[10px]">Location</span>
+                <span className="text-[11px] font-medium">Location</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Input Pill */}
-        <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 focus-within:ring-[#00a884]/40 transition-all">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSendText();
-            }}
-            placeholder="Type a message (*bold*, _italic_, ~strike~)"
-            className="w-full bg-transparent text-[14.5px] text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
-          />
-        </div>
-
-        {/* Mic / Send Button */}
-        {inputText.trim() ? (
-          <button
-            onClick={handleSendText}
-            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-            title="Send"
-          >
-            <Send className="w-4 h-4 ml-0.5" />
-          </button>
+        {/* Input Pill OR Live Recording Pill */}
+        {isRecordingAudio ? (
+          <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+              <span className="text-sm font-semibold text-white font-mono">
+                {Math.floor(recordingTimeSecs / 60)}:
+                {recordingTimeSecs % 60 < 10 ? '0' : ''}
+                {recordingTimeSecs % 60}
+              </span>
+              <span className="text-xs text-[#8696a0] italic">Recording...</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCancelAudioRecording}
+                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors"
+                title="Discard voice note"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSendRealAudioRecording}
+                className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105"
+                title="Send voice note"
+              >
+                <Send className="w-3.5 h-3.5 ml-0.5" />
+              </button>
+            </div>
+          </div>
         ) : (
-          <button
-            onClick={handleSendVoiceNote}
-            className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-            title="Record Voice Note"
-          >
-            <Mic className="w-4 h-4" />
-          </button>
+          <>
+            <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 focus-within:ring-[#00a884]/40 transition-all">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => handleInputTextChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSendText();
+                }}
+                placeholder="Type a message (*bold*, _italic_, ~strike~)"
+                className="w-full bg-transparent text-[14.5px] text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
+              />
+            </div>
+
+            {/* Mic / Send Button */}
+            {inputText.trim() ? (
+              <button
+                onClick={handleSendText}
+                className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
+                title="Send"
+              >
+                <Send className="w-4 h-4 ml-0.5" />
+              </button>
+            ) : (
+              <button
+                onClick={handleStartAudioRecording}
+                className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
+                title="Hold or tap to Record Voice Note"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -2939,6 +3675,239 @@ export const WhatsAppChatView: React.FC = () => {
         </div>
       )}
 
+      {/* ── CREATE POLL MODAL ── */}
+      {showPollModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
+              <div className="flex items-center gap-2 text-white font-bold text-base">
+                <BarChart2 className="w-5 h-5 text-emerald-400" />
+                <span>Create Poll</span>
+              </div>
+              <button
+                onClick={() => setShowPollModal(false)}
+                className="p-1 rounded-full text-[#8696a0] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-[#8696a0] font-medium block mb-1">Question</label>
+                <input
+                  type="text"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="Ask a question..."
+                  className="w-full bg-[#202c33] border border-[#2a3942] focus:border-[#00a884] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-[#8696a0] font-medium block mb-1">Options</label>
+                <div className="space-y-2">
+                  {pollOptions.map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={opt}
+                        onChange={(e) => {
+                          const updated = [...pollOptions];
+                          updated[idx] = e.target.value;
+                          setPollOptions(updated);
+                        }}
+                        placeholder={`Option ${idx + 1}`}
+                        className="flex-1 bg-[#202c33] border border-[#2a3942] focus:border-[#00a884] rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none transition-colors"
+                      />
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== idx))}
+                          className="p-2 text-[#8696a0] hover:text-rose-400"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {pollOptions.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setPollOptions([...pollOptions, ''])}
+                    className="mt-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Option</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Allow Multiple Answers Toggle */}
+              <div className="p-3 rounded-xl bg-[#202c33] border border-[#2a3942] flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-white">Allow multiple answers</div>
+                  <div className="text-[10px] text-[#8696a0]">Voters can select more than one option</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPollAllowMultiple(!pollAllowMultiple)}
+                  className={`w-10 h-6 rounded-full transition-colors relative ${
+                    pollAllowMultiple ? 'bg-[#00a884]' : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                      pollAllowMultiple ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPollModal(false)}
+                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-[#8696a0] hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreatePoll}
+                className="flex-1 py-2.5 rounded-xl bg-[#00a884] hover:bg-[#029071] text-xs font-bold text-white transition-all shadow-md"
+              >
+                Create Poll
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STARRED MESSAGES MODAL ── */}
+      {showStarredModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
+              <div className="flex items-center gap-2 text-white font-bold text-base">
+                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                <span>Starred Messages</span>
+              </div>
+              <button
+                onClick={() => setShowStarredModal(false)}
+                className="p-1 rounded-full text-[#8696a0] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {messages.filter((m) => m.isStarred).length === 0 ? (
+                <div className="text-center py-10 space-y-2 text-[#8696a0]">
+                  <Star className="w-8 h-8 stroke-1 mx-auto text-[#8696a0]/40" />
+                  <p className="text-sm font-medium">No Starred Messages</p>
+                  <p className="text-xs">Hover over any message and click the star icon to keep important notes handy.</p>
+                </div>
+              ) : (
+                messages
+                  .filter((m) => m.isStarred)
+                  .map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-3 rounded-2xl bg-[#202c33] border border-[#2a3942] space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-emerald-400">
+                          {m.sender === currentUser ? 'You' : partnerName}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-[#8696a0]">{m.time}</span>
+                          <button
+                            onClick={() => handleToggleStarMessage(m.id)}
+                            className="text-amber-400 hover:text-white"
+                            title="Unstar"
+                          >
+                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-white break-words">
+                        {m.type === 'poll' && m.poll
+                          ? `📊 Poll: ${m.poll.question}`
+                          : m.type === 'document'
+                          ? `📄 Document: ${m.documentName || m.text}`
+                          : m.type === 'voice'
+                          ? `🎤 Voice Note (${m.duration || '0:12'})`
+                          : m.text}
+                      </p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CHAT WALLPAPER SELECTOR MODAL ── */}
+      {showWallpaperModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
+              <div className="flex items-center gap-2 text-white font-bold text-base">
+                <Palette className="w-5 h-5 text-teal-400" />
+                <span>Chat Wallpaper</span>
+              </div>
+              <button
+                onClick={() => setShowWallpaperModal(false)}
+                className="p-1 rounded-full text-[#8696a0] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#8696a0]">
+              Select a background theme for your WhatsApp chat conversation:
+            </p>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              {[
+                { id: 'doodle', label: 'Doodle (Classic)', bg: 'bg-[#0c1317] border-[#00a884]' },
+                { id: 'obsidian', label: 'Obsidian Dark', bg: 'bg-[#0a0f12] border-slate-700' },
+                { id: 'emerald', label: 'Emerald Green', bg: 'bg-[#071a14] border-emerald-800' },
+                { id: 'teal', label: 'Deep Teal', bg: 'bg-[#0b191e] border-teal-800' },
+                { id: 'coffee', label: 'Warm Coffee', bg: 'bg-[#181512] border-amber-900' },
+              ].map((wp) => (
+                <button
+                  key={wp.id}
+                  onClick={() => {
+                    setActiveWallpaper(wp.id);
+                    try {
+                      localStorage.setItem('whatsapp_custom_wallpaper', wp.id);
+                    } catch {}
+                    setShowWallpaperModal(false);
+                  }}
+                  className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all ${wp.bg} ${
+                    activeWallpaper === wp.id
+                      ? 'ring-2 ring-emerald-400 scale-[1.02]'
+                      : 'hover:border-white/40'
+                  }`}
+                >
+                  <span className="text-xs font-semibold text-white">{wp.label}</span>
+                  {activeWallpaper === wp.id && (
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Active
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── WHATSAPP AUDIO & VIDEO CALL MODAL ── */}
       {(showCallModal || incomingCall) && (
         <WhatsAppCallModal
@@ -2947,6 +3916,7 @@ export const WhatsAppChatView: React.FC = () => {
           partnerUser={partnerUser}
           currentUser={currentUser}
           isIncoming={Boolean(incomingCall)}
+          incomingOffer={incomingCall?.offer}
           onClose={handleCallFinished}
           channelRef={channelRef}
         />

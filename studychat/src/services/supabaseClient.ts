@@ -26,7 +26,7 @@ export interface ChatMessage {
   timestamp: number;
   read: boolean;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
-  type?: 'text' | 'image' | 'video' | 'voice';
+  type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document';
   mediaUrl?: string;
   reactions?: Record<string, string[]>;
   replyTo?: { id: string; sender: string; text: string };
@@ -39,10 +39,21 @@ export interface ExtendedChatMessage extends ChatMessage {
   isOpened?: boolean;
   transcript?: string;
   isPinned?: boolean;
+  isStarred?: boolean;
   fileSizeKb?: number;
   duration?: string;
   thumbnailUrl?: string;
   mediaType?: 'image' | 'video';
+  documentName?: string;
+  documentSize?: string;
+  documentUrl?: string;
+  audioUrl?: string;
+  audioDuration?: number;
+  poll?: {
+    question: string;
+    options: { id: string; text: string; votes: string[] }[];
+    pollType?: 'single' | 'multi';
+  };
 }
 
 export const LOCAL_MESSAGES_KEY = 'studyportal_messages_v1';

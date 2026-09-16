@@ -15,10 +15,12 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     minute: '2-digit',
   });
 
-  let msgType: 'text' | 'image' | 'video' | 'voice' = 'text';
-  if (row.media_type === 'image') msgType = 'image';
+  let msgType: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' = 'text';
+  if (row.poll_question) msgType = 'poll';
+  else if (row.media_type === 'image') msgType = 'image';
   else if (row.media_type === 'video') msgType = 'video';
   else if (row.media_type === 'voice' || row.media_type === 'audio') msgType = 'voice';
+  else if (row.media_type === 'document') msgType = 'document';
 
   let replyToObj: { id: string; sender: string; text: string } | undefined = undefined;
   if (row.reply_to) {
@@ -31,6 +33,17 @@ export function rowToMessage(row: any): ExtendedChatMessage {
         replyToObj = { id: row.reply_to, sender: '', text: '' };
       }
     }
+  } else if (row.formatted_content?.replyTo) {
+    replyToObj = row.formatted_content.replyTo;
+  }
+
+  let pollObj: ExtendedChatMessage['poll'] = undefined;
+  if (row.poll_question && Array.isArray(row.poll_options)) {
+    pollObj = {
+      question: row.poll_question,
+      options: row.poll_options,
+      pollType: (row.poll_type as any) || 'single',
+    };
   }
 
   const status: 'sending' | 'sent' | 'delivered' | 'read' =
@@ -41,6 +54,8 @@ export function rowToMessage(row: any): ExtendedChatMessage {
       : row.status === 'sending'
       ? 'sending'
       : 'sent';
+
+  const isStarred = Array.isArray(row.starred_by) && row.starred_by.length > 0;
 
   return {
     id: String(row.id),
@@ -60,8 +75,19 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     isOpened: Array.isArray(row.viewed_by) && row.viewed_by.length > 0,
     transcript: row.formatted_content?.transcript || undefined,
     isPinned: !!row.pinned,
+    isStarred,
     fileSizeKb: row.media_size ? Math.round(row.media_size / 1024) : undefined,
     duration: row.media_duration ? String(row.media_duration) : undefined,
+    documentName: row.media_name || undefined,
+    documentSize: row.media_size
+      ? row.media_size > 1048576
+        ? `${(row.media_size / 1048576).toFixed(1)} MB`
+        : `${Math.round(row.media_size / 1024)} KB`
+      : undefined,
+    documentUrl: msgType === 'document' ? row.media_url : undefined,
+    audioUrl: msgType === 'voice' ? row.media_url : undefined,
+    audioDuration: row.media_duration || undefined,
+    poll: pollObj,
   };
 }
 
@@ -74,21 +100,29 @@ export function messageToRow(msg: ExtendedChatMessage): any {
     chat_id: CHAT_ID,
     sender_id: msg.sender,
     content: msg.text || '',
-    formatted_content: msg.transcript ? { transcript: msg.transcript } : null,
-    media_url: msg.mediaUrl || null,
+    formatted_content: {
+      transcript: msg.transcript || null,
+      replyTo: msg.replyTo || null,
+    },
+    media_url: msg.mediaUrl || msg.documentUrl || msg.audioUrl || null,
     media_type: msg.type || 'text',
+    media_name: msg.documentName || null,
     media_thumb: msg.thumbnailUrl || null,
     media_size: msg.fileSizeKb ? msg.fileSizeKb * 1024 : null,
-    media_duration: msg.duration ? parseInt(msg.duration) || null : null,
+    media_duration: msg.audioDuration || (msg.duration ? parseInt(msg.duration) || null : null),
     view_once: !!msg.isViewOnce,
     viewed_by: msg.isOpened ? [msg.sender === 'surya' ? 'sadhana' : 'surya'] : [],
-    reply_to: null, // safely avoid FK constraint violations
+    reply_to: null, // safely avoid FK constraint violations; preserved in formatted_content
     status: msg.status || 'sent',
     delivered_at:
       msg.status === 'delivered' || msg.status === 'read' ? new Date().toISOString() : null,
     read_at: msg.status === 'read' ? new Date().toISOString() : null,
     reactions: msg.reactions || {},
+    starred_by: msg.isStarred ? ['all'] : [],
     pinned: !!msg.isPinned,
+    poll_question: msg.poll?.question || null,
+    poll_options: msg.poll?.options || null,
+    poll_type: msg.poll?.pollType || 'single',
     created_at: new Date(msg.timestamp || Date.now()).toISOString(),
   };
 }
@@ -245,6 +279,60 @@ export async function updateRemotePin(
 }
 
 /**
+ * Update message starred state in Supabase
+ */
+export async function updateRemoteStar(
+  msgId: string,
+  isStarred: boolean
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from('messages')
+      .update({
+        starred_by: isStarred ? ['all'] : [],
+      })
+      .eq('id', msgId);
+    if (error) {
+      console.warn('[chatSync] updateRemoteStar error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] updateRemoteStar failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Update poll options / votes in Supabase
+ */
+export async function updateRemotePoll(
+  msgId: string,
+  poll: ExtendedChatMessage['poll']
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from('messages')
+      .update({
+        poll_question: poll?.question || null,
+        poll_options: poll?.options || null,
+        poll_type: poll?.pollType || 'single',
+      })
+      .eq('id', msgId);
+    if (error) {
+      console.warn('[chatSync] updateRemotePoll error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] updateRemotePoll failed:', err);
+    return false;
+  }
+}
+
+/**
  * Delete a message from Supabase
  */
 export async function deleteRemoteMessage(msgId: string): Promise<boolean> {
@@ -308,7 +396,15 @@ export function mergeMessages(
         read: higherStatus === 'read' || existing.read || lm.read,
         reactions: mergedReactions,
         isPinned: existing.isPinned !== undefined ? existing.isPinned : lm.isPinned,
+        isStarred: existing.isStarred !== undefined ? existing.isStarred : lm.isStarred,
         isOpened: existing.isOpened || lm.isOpened,
+        poll: existing.poll || lm.poll,
+        replyTo: existing.replyTo || lm.replyTo,
+        documentName: existing.documentName || lm.documentName,
+        documentSize: existing.documentSize || lm.documentSize,
+        documentUrl: existing.documentUrl || lm.documentUrl,
+        audioUrl: existing.audioUrl || lm.audioUrl,
+        audioDuration: existing.audioDuration || lm.audioDuration,
       });
     }
   }

@@ -840,21 +840,39 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           }
         })
         .on('broadcast', { event: 'call_offer' }, (payload) => {
-          if (payload?.payload?.recipient === currentUser) {
+          const data = payload?.payload;
+          if (data && (data.recipient === currentUser || data.to === currentUser)) {
             setIncomingCall({
-              caller: payload.payload.caller,
-              type: payload.payload.callType,
-              offer: payload.payload.offer,
+              caller: data.caller || data.from,
+              type: data.callType || data.type || 'video',
+              offer: data.offer,
             });
+            window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_offer', payload: data } }));
           }
         })
-        .on('broadcast', { event: 'call_declined' }, () => {
-          setShowCallModal(null);
-          setIncomingCall(null);
+        .on('broadcast', { event: 'call_accepted' }, (payload) => {
+          const data = payload?.payload;
+          if (data) {
+            window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_accepted', payload: data } }));
+          }
         })
-        .on('broadcast', { event: 'call_ended' }, () => {
+        .on('broadcast', { event: 'webrtc_ice_candidate' }, (payload) => {
+          const data = payload?.payload;
+          if (data) {
+            window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'webrtc_ice_candidate', payload: data } }));
+          }
+        })
+        .on('broadcast', { event: 'call_declined' }, (payload) => {
+          const data = payload?.payload;
           setShowCallModal(null);
           setIncomingCall(null);
+          window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_declined', payload: data } }));
+        })
+        .on('broadcast', { event: 'call_ended' }, (payload) => {
+          const data = payload?.payload;
+          setShowCallModal(null);
+          setIncomingCall(null);
+          window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_ended', payload: data } }));
         })
         .on(
           'postgres_changes',

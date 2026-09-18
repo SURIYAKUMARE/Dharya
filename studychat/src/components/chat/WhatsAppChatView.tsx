@@ -143,8 +143,31 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   }, [isPartnerOnline]);
 
   const [activeMainView, setActiveMainView] = useState<'chat' | 'garden'>(initialTab);
-  const [mobileView, setMobileView] = useState<'list' | 'conversation'>('conversation');
+  const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  });
+
+  const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return initialTab === 'garden' ? 'conversation' : 'list';
+    }
+    return 'conversation';
+  });
+
+  const [showMobileSearch, setShowMobileSearch] = useState<boolean>(false);
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMob = window.innerWidth < 768;
+      setIsMobileScreen(isMob);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [showSidebarMenu, setShowSidebarMenu] = useState(false);
 
   useEffect(() => {
@@ -1986,7 +2009,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   }
 
   return (
-    <div className="fixed inset-0 z-50 w-screen h-screen flex flex-row overflow-hidden bg-[#0c1317] text-[#e9edef] select-none font-sans">
+    <div className="fixed inset-0 z-50 w-screen h-[100dvh] md:h-screen flex flex-row overflow-hidden bg-[#0c1317] text-[#e9edef] select-none font-sans">
       {/* Hidden File Input for Documents */}
       <input
         type="file"
@@ -2129,14 +2152,126 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           mobileView === 'conversation' ? 'hidden md:flex' : 'flex'
         }`}
       >
-        {/* Sidebar Header Bar */}
-        <div className="h-[60px] px-4 bg-[#202c33] flex items-center justify-between border-b border-[#222e35] shrink-0">
+        {/* Mobile WhatsApp App Bar (Visible on phone screens < md) */}
+        <div className="md:hidden h-[56px] px-4 bg-[#1f2c34] flex items-center justify-between border-b border-[#2a3942]/60 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-[21px] font-bold text-[#e9edef] tracking-wide font-sans">WhatsApp</span>
+          </div>
+
+          <div className="flex items-center gap-1 text-[#aebac1]">
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+              title="Camera"
+            >
+              <Camera className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setShowMobileSearch(!showMobileSearch)}
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+              title="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            {/* Mobile 3-dots Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSidebarMenu(!showSidebarMenu)}
+                className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+                title="More options"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {showSidebarMenu && (
+                <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
+                  <button
+                    onClick={() => {
+                      setActiveMainView('garden');
+                      setShowSidebarMenu(false);
+                      setMobileView('conversation');
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-400 font-medium"
+                  >
+                    <Sprout className="w-4 h-4" />
+                    <span>Botanical Garden (12 Varieties)</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowStarredModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <Star className="w-4 h-4 text-amber-400" />
+                    <span>Starred Messages</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowWallpaperModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <Palette className="w-4 h-4 text-teal-400" />
+                    <span>Chat Wallpaper</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSecurityModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-300"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Security &amp; Privacy</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowStorageModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <HardDrive className="w-4 h-4 text-slate-300" />
+                    <span>Manage Storage</span>
+                  </button>
+                  <div className="h-[1px] bg-[#2a3942] my-1" />
+                  <button
+                    onClick={() => {
+                      switchTab('home');
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-sky-400"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Study Curriculum Portal</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      logoutChat();
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors text-red-400 flex items-center gap-2.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Log out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop WhatsApp Web Header Bar (Visible on laptop/desktop screens >= md) */}
+        <div className="hidden md:flex h-[60px] px-4 bg-[#202c33] items-center justify-between border-b border-[#222e35] shrink-0">
           <div className="flex items-center gap-2">
             <span className="text-[20px] font-bold text-[#e9edef] tracking-tight">Chats</span>
           </div>
 
           <div className="flex items-center gap-1 text-[#aebac1]">
-            {/* Garden jump button */}
             <button
               onClick={() => {
                 setActiveMainView('garden');
@@ -2148,7 +2283,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               <Sprout className="w-5 h-5 text-emerald-400" />
             </button>
 
-            {/* New Chat Button */}
             <button
               onClick={() => {
                 setActiveMainView('chat');
@@ -2160,7 +2294,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               <Plus className="w-5 h-5" />
             </button>
 
-            {/* Sidebar 3-dots Menu */}
+            {/* Desktop 3-dots Menu */}
             <div className="relative">
               <button
                 onClick={() => setShowSidebarMenu(!showSidebarMenu)}
@@ -2250,8 +2384,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
         </div>
 
-        {/* Search Bar Row */}
-        <div className="px-3 py-2 bg-[#111b21] flex items-center gap-2 border-b border-[#222e35]/40 shrink-0">
+        {/* Search Bar Row (Desktop always visible, mobile toggleable or inline) */}
+        <div className={`px-3 py-2 bg-[#111b21] items-center gap-2 border-b border-[#222e35]/40 shrink-0 ${
+          showMobileSearch ? 'flex' : 'hidden md:flex'
+        }`}>
           <div className="flex-1 bg-[#202c33] rounded-lg px-3 py-1.5 flex items-center gap-2.5 focus-within:ring-1 focus-within:ring-[#00a884] transition-all">
             <Search className="w-4 h-4 text-[#8696a0] shrink-0" />
             <input
@@ -2337,6 +2473,86 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
           )}
         </div>
+
+        {/* Mobile Floating Action Button (FAB) */}
+        <button
+          onClick={() => {
+            setActiveMainView('chat');
+            setMobileView('conversation');
+          }}
+          className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 rounded-full bg-[#00a884] active:bg-[#029071] text-[#111b21] flex items-center justify-center shadow-2xl shadow-emerald-950/80 active:scale-95 transition-transform"
+          title="Open Conversation"
+        >
+          <MessageSquare className="w-6 h-6 fill-current text-[#111b21]" />
+        </button>
+
+        {/* Mobile Bottom Navigation Bar (WhatsApp Mobile 2024-2026 Android & iOS UI) */}
+        <nav className="md:hidden h-[64px] bg-[#1f2c34] border-t border-[#2a3942]/60 flex items-center justify-around px-2 z-30 shrink-0 select-none pb-[calc(env(safe-area-inset-bottom,0px))]">
+          <button
+            onClick={() => {
+              setActiveMainView('chat');
+              setMobileView('list');
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+              activeMainView === 'chat' && mobileView === 'list'
+                ? 'text-[#00a884]'
+                : 'text-[#8696a0] hover:text-white'
+            }`}
+          >
+            <div className={`px-4 py-0.5 rounded-full ${activeMainView === 'chat' && mobileView === 'list' ? 'bg-[#00a884]/20' : ''}`}>
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-semibold">Chats</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveMainView('garden');
+              setMobileView('conversation');
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+              activeMainView === 'garden'
+                ? 'text-emerald-400'
+                : 'text-[#8696a0] hover:text-emerald-400'
+            }`}
+          >
+            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'garden' ? 'bg-emerald-500/20' : ''}`}>
+              <Sprout className="w-5 h-5" />
+              <span className="absolute -top-1 right-2 w-2 h-2 rounded-full bg-emerald-400" />
+            </div>
+            <span className="text-[11px] font-semibold">Garden</span>
+          </button>
+
+          <button
+            onClick={() => setShowCallModal('video')}
+            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
+          >
+            <div className="px-4 py-0.5 rounded-full">
+              <Phone className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-semibold">Calls</span>
+          </button>
+
+          <button
+            onClick={() => switchTab('home')}
+            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-sky-400 transition-all"
+          >
+            <div className="px-4 py-0.5 rounded-full">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-semibold">Portal</span>
+          </button>
+
+          <button
+            onClick={() => setShowSecurityModal(true)}
+            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
+          >
+            <div className="px-4 py-0.5 rounded-full">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            </div>
+            <span className="text-[11px] font-semibold">Settings</span>
+          </button>
+        </nav>
       </section>
 
       {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Garden) ══════ */}
@@ -2349,18 +2565,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Garden View with WhatsApp Web styling */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
             {/* Top Garden Header */}
-            <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 shrink-0 shadow-sm h-[60px]">
-              <div className="flex items-center gap-3">
+            <div className="bg-[#1f2c34] md:bg-[#202c33] px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 shrink-0 shadow-sm h-[56px] md:h-[60px]">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => {
                     setActiveMainView('chat');
-                    setMobileView('conversation');
+                    setMobileView(isMobileScreen ? 'list' : 'conversation');
                   }}
                   className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1.5"
-                  title="Back to Chat"
+                  title="Back to Chats"
                 >
                   <ArrowLeft className="w-5 h-5" />
-                  <span className="text-xs font-medium text-[#00a884] hidden sm:inline">Back to Chat</span>
+                  <span className="text-xs font-medium text-[#00a884] hidden sm:inline">Back</span>
                 </button>
 
                 <div className="flex items-center gap-2.5">
@@ -2403,7 +2619,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Active Chat Conversation */
           <>
 {/* ── 1. WHATSAPP HEADER ── */}
-      <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm">
+      <div className="bg-[#1f2c34] md:bg-[#202c33] px-2 sm:px-4 py-2 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm h-[56px] md:h-[60px]">
         <div className="flex items-center gap-3">
           {/* Mobile Back to Chats List Button */}
           <button
@@ -3234,8 +3450,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
       )}
 
-      {/* ── 4. CHAT INPUT BAR ── */}
-      <div className="bg-[#202c33] px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-[#2a3942] z-30 flex-shrink-0 relative">
+      {/* ── 4. CHAT INPUT BAR (WhatsApp Mobile floating pill + action button, WhatsApp Web flat bar) ── */}
+      <div className="bg-transparent md:bg-[#202c33] px-2 sm:px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-transparent md:border-[#2a3942] z-30 flex-shrink-0 relative">
         {/* Emoji Button */}
         <button
           type="button"

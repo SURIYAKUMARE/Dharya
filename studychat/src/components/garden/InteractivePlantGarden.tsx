@@ -6,8 +6,6 @@ import {
   Droplets,
   Sun,
   Heart,
-  Plus,
-  Trash2,
   Sparkles,
   Award,
   RefreshCw,
@@ -24,21 +22,25 @@ import {
   Wind,
   Info,
   ChevronRight,
-  Maximize2
+  ChevronLeft,
+  FastForward,
+  Play,
+  Pause,
+  Zap,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-// ── 1. BOTANICAL SPECIES CATALOG (12 Varieties) ──
+// ── 1. BOTANICAL SPECIES CATALOG (12 Daily Varieties) ──
 export interface PlantSpecies {
   id: string;
   name: string;
   category: 'Flower' | 'Tree' | 'Herb' | 'Succulent' | 'Fruit';
   emoji: string;
-  seedEmoji: string;
   color: string;
   secondaryColor: string;
   description: string;
-  bloomingQuote: string;
+  quote: string;
 }
 
 export const PLANT_SPECIES: PlantSpecies[] = [
@@ -47,168 +49,144 @@ export const PLANT_SPECIES: PlantSpecies[] = [
     name: 'Red Velvet Rose',
     category: 'Flower',
     emoji: '🌹',
-    seedEmoji: '🌰',
     color: '#ef4444',
     secondaryColor: '#991b1b',
-    description: 'Romantic crimson rose with velvety layered petals and sweet fragrance.',
-    bloomingQuote: 'A rose blossoms in warmth and devoted love.',
+    description: 'Romantic crimson rose with velvety layered petals and sweet honey scent.',
+    quote: 'Day 1: A blossom of love and devotion planted in fertile earth.',
   },
   {
     id: 'sunflower',
     name: 'Sunburst Sunflower',
     category: 'Flower',
     emoji: '🌻',
-    seedEmoji: '🌻',
     color: '#eab308',
     secondaryColor: '#78350f',
-    description: 'Radiant golden blossom with a textured seed disc that turns to greet the sunshine.',
-    bloomingQuote: 'Standing tall and proud, always seeking the light.',
+    description: 'Joyous golden flower with a seed disc that tracks the sun across the sky.',
+    quote: 'Day 2: Standing tall and bright, always reaching for the light.',
   },
   {
     id: 'sakura',
     name: 'Sakura Cherry Blossom',
     category: 'Tree',
     emoji: '🌸',
-    seedEmoji: '🌰',
     color: '#f472b6',
     secondaryColor: '#db2777',
-    description: 'Graceful pastel pink blossom cluster symbolizing cherished timeless moments.',
-    bloomingQuote: 'Soft pink petals dancing on the gentle spring wind.',
-  },
-  {
-    id: 'lavender',
-    name: 'French Lavender',
-    category: 'Herb',
-    emoji: '🪻',
-    seedEmoji: '🌱',
-    color: '#a855f7',
-    secondaryColor: '#6b21a8',
-    description: 'Tall aromatic purple floral spikes that release a tranquil, calming aroma.',
-    bloomingQuote: 'Breathe in the calm and soothing purple fragrance.',
-  },
-  {
-    id: 'tulip',
-    name: 'Silk Dutch Tulip',
-    category: 'Flower',
-    emoji: '🌷',
-    seedEmoji: '🌰',
-    color: '#f43f5e',
-    secondaryColor: '#be123c',
-    description: 'Graceful cup blossom with silky overlapping petals heralding fresh spring mornings.',
-    bloomingQuote: 'An elegant chalice celebrating a brand new day.',
+    description: 'Graceful pastel pink blossom cluster symbolizing cherished moments.',
+    quote: 'Day 3: Soft pink petals dancing on the warm spring wind.',
   },
   {
     id: 'bamboo',
     name: 'Lucky Emerald Bamboo',
     category: 'Tree',
     emoji: '🎋',
-    seedEmoji: '🌱',
     color: '#22c55e',
     secondaryColor: '#15803d',
-    description: 'Evergreen segmented stalks representing resilience, harmony, and good fortune.',
-    bloomingQuote: 'Bending gracefully with the wind, never breaking.',
+    description: 'Evergreen segmented stalks representing strength, harmony, and resilience.',
+    quote: 'Day 4: Bending gracefully with the wind, steadfast and unbroken.',
+  },
+  {
+    id: 'lavender',
+    name: 'French Lavender',
+    category: 'Herb',
+    emoji: '🪻',
+    color: '#a855f7',
+    secondaryColor: '#6b21a8',
+    description: 'Aromatic purple floral spikes that release a calming, tranquil fragrance.',
+    quote: 'Day 5: Breathe in peace and gentle purple calm.',
+  },
+  {
+    id: 'tulip',
+    name: 'Silk Dutch Tulip',
+    category: 'Flower',
+    emoji: '🌷',
+    color: '#f43f5e',
+    secondaryColor: '#be123c',
+    description: 'Graceful cup bloom with silky overlapping petals heralding fresh mornings.',
+    quote: 'Day 6: An elegant chalice celebrating a brand new sunrise.',
   },
   {
     id: 'bonsai',
     name: 'Zen Juniper Bonsai',
     category: 'Tree',
     emoji: '🪴',
-    seedEmoji: '🌰',
     color: '#10b981',
     secondaryColor: '#047857',
-    description: 'Ancient miniature tree sculpted with patience, serenity, and mindful care.',
-    bloomingQuote: 'Patience and peace woven into weathered bark and evergreen leaves.',
+    description: 'Ancient miniature tree sculpted with patience, peace, and mindful care.',
+    quote: 'Day 7: Patience and wisdom woven into weathered bark and evergreen leaves.',
   },
   {
     id: 'lotus',
     name: 'Sacred Water Lotus',
     category: 'Flower',
     emoji: '🪷',
-    seedEmoji: '🌰',
     color: '#ec4899',
     secondaryColor: '#be185d',
     description: 'Pure, radiant aquatic blossom rising above clean waters in pristine beauty.',
-    bloomingQuote: 'Purity rising from the depths with serenity and grace.',
+    quote: 'Day 8: Serenity rising from the depths with poise and grace.',
   },
   {
     id: 'strawberry',
     name: 'Sweet Berry Shrub',
     category: 'Fruit',
     emoji: '🍓',
-    seedEmoji: '🌰',
     color: '#e11d48',
     secondaryColor: '#9f1239',
-    description: 'Garden shrub with delicate white blossoms that ripen into luscious red berries.',
-    bloomingQuote: 'Sweet treats harvested from daily nurturing and sun.',
+    description: 'Garden shrub with delicate white blooms that ripen into luscious red berries.',
+    quote: 'Day 9: Sweet rewards harvested from continuous daily care.',
   },
   {
     id: 'cactus',
     name: 'Desert Bloom Cactus',
     category: 'Succulent',
     emoji: '🌵',
-    seedEmoji: '🌰',
     color: '#14b8a6',
     secondaryColor: '#0f766e',
-    description: 'Sturdy desert succulent crowned with vibrant magenta flowers.',
-    bloomingQuote: 'Thriving in any condition, blooming with unexpected radiance.',
+    description: 'Sturdy desert succulent crowned with radiant magenta flowers.',
+    quote: 'Day 10: Thriving everywhere, blooming with unexpected radiance.',
   },
   {
     id: 'chamomile',
     name: 'Golden Chamomile',
     category: 'Herb',
     emoji: '🌼',
-    seedEmoji: '🌱',
     color: '#f59e0b',
     secondaryColor: '#b45309',
-    description: 'Daisy-like cheerful flowers with golden centres and healing herbal aroma.',
-    bloomingQuote: 'Small cheerful petals bringing comfort and warmth.',
+    description: 'Cheerful white daisy petals with golden centers and soothing aroma.',
+    quote: 'Day 11: Gentle petals bringing warmth, joy, and peace.',
   },
   {
     id: 'clover',
-    name: 'Four-Leaf Emerald Clover',
+    name: 'Four-Leaf Lucky Clover',
     category: 'Herb',
     emoji: '🍀',
-    seedEmoji: '🌱',
     color: '#16a34a',
     secondaryColor: '#14532d',
     description: 'Rare lucky clover with four heart-shaped emerald leaflets bringing good luck.',
-    bloomingQuote: 'Every leaf represents faith, hope, love, and sweet good luck.',
+    quote: 'Day 12: A lucky charm of faith, hope, love, and happiness.',
   },
 ];
 
-// ── 2. PLANTED ITEM INTERFACE ──
-export interface PlantedItem {
-  id: string;
+// ── 2. DAILY PLANT INSTANCE ──
+export interface DailyPlantItem {
+  dayNumber: number; // 1 to 12
   speciesId: string;
   nickname: string;
   plantedBy: 'surya' | 'sadhana';
-  plantedAt: number;
-  waterLevel: number; // 0 - 100
-  sunlightLevel: number; // 0 - 100
+  growthPoints: number; // 0 to 100 (automatically grows)
+  waterLevel: number;
+  sunlightLevel: number;
   loveCount: number;
-  growthPoints: number; // 0 - 100 (0: seed in soil, 25: sprout, 55: stem/leaves, 80: bud, 100: full bloom)
-  lastCaredAt: number;
-  potStyle: 'terracotta' | 'ceramic' | 'moss' | 'golden' | 'earth';
+  isUnlocked: boolean;
+  bloomedAt?: number;
 }
 
-// ── 3. DAILY GARDEN STREAK INTERFACE ──
-export interface GardenStreak {
-  currentStreak: number;
-  bestStreak: number;
-  lastActiveDate: string; // 'YYYY-MM-DD'
-  plantedToday: boolean;
-  caredToday: boolean;
-  history: string[];
-}
+const LOCAL_DAILY_GARDEN_KEY = 'dharya_daily_garden_v4';
+const LOCAL_STREAK_KEY = 'dharya_daily_streak_v4';
 
-const LOCAL_GARDEN_KEY = 'dharya_panoramic_garden_plants_v3';
-const LOCAL_STREAK_KEY = 'dharya_panoramic_streak_v3';
-
-// ── 4. BOTANICAL SVG GRAPHIC: PHYSICAL GROWTH ENGINE ──
+// ── 3. BOTANICAL SVG GRAPHIC: PHYSICAL GROWTH ENGINE ──
 interface BotanicalPlantGraphicProps {
   species: PlantSpecies;
   growthPoints: number; // 0 - 100
-  potStyle: PlantedItem['potStyle'];
   waterLevel: number;
   isWatering?: boolean;
   isSunlit?: boolean;
@@ -219,7 +197,6 @@ interface BotanicalPlantGraphicProps {
 export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
   species,
   growthPoints,
-  potStyle,
   waterLevel,
   isWatering = false,
   isSunlit = false,
@@ -236,47 +213,6 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
 
   const isSoilMoist = waterLevel >= 40;
   const stemApexY = Math.max(55, 165 - (growth / 100) * 110);
-
-  const potColors = useMemo(() => {
-    switch (potStyle) {
-      case 'ceramic':
-        return {
-          rimGrad: ['#f8fafc', '#cbd5e1'],
-          bodyGrad: ['#ffffff', '#e2e8f0'],
-          accent: '#00a884',
-          highlight: 'rgba(255,255,255,0.7)',
-        };
-      case 'moss':
-        return {
-          rimGrad: ['#3f4f38', '#2d3827'],
-          bodyGrad: ['#33422d', '#1f2b1c'],
-          accent: '#84cc16',
-          highlight: 'rgba(132,204,22,0.3)',
-        };
-      case 'golden':
-        return {
-          rimGrad: ['#fde047', '#ca8a04'],
-          bodyGrad: ['#eab308', '#854d0e'],
-          accent: '#fef08a',
-          highlight: 'rgba(254,240,138,0.6)',
-        };
-      case 'earth':
-      default:
-        return {
-          rimGrad: ['#452a1a', '#2b180d'],
-          bodyGrad: ['#331e11', '#1f1007'],
-          accent: '#22c55e',
-          highlight: 'rgba(34,197,94,0.3)',
-        };
-      case 'terracotta':
-        return {
-          rimGrad: ['#ea580c', '#9a3412'],
-          bodyGrad: ['#c2410c', '#7c2d12'],
-          accent: '#fdba74',
-          highlight: 'rgba(254,215,170,0.4)',
-        };
-    }
-  }, [potStyle]);
 
   const soilColor = isSoilMoist ? '#1a100a' : '#3d2516';
   const soilHighlight = isSoilMoist ? '#2d1b10' : '#573722';
@@ -320,21 +256,12 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
       {/* ── THE LIVING BOTANICAL SVG SCENE ── */}
       <svg
         viewBox={`0 0 200 ${viewBoxHeight}`}
-        className={`w-full max-w-[190px] sm:max-w-[220px] drop-shadow-2xl transition-transform duration-500 ${
+        className={`w-full max-w-[200px] sm:max-w-[230px] drop-shadow-2xl transition-transform duration-500 ${
           isLoved ? 'scale-105' : ''
         }`}
         style={{ overflow: 'visible' }}
       >
         <defs>
-          <linearGradient id={`pot-rim-${potStyle}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={potColors.rimGrad[0]} />
-            <stop offset="100%" stopColor={potColors.rimGrad[1]} />
-          </linearGradient>
-          <linearGradient id={`pot-body-${potStyle}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={potColors.bodyGrad[0]} />
-            <stop offset="100%" stopColor={potColors.bodyGrad[1]} />
-          </linearGradient>
-
           <linearGradient id="plantStemGrad" x1="0%" y1="100%" x2="0%" y2="0%">
             <stop offset="0%" stopColor="#15803d" />
             <stop offset="60%" stopColor="#22c55e" />
@@ -361,59 +288,17 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
         {/* Ground Shadow in Soil Bed */}
         <ellipse cx="100" cy="232" rx="68" ry="12" fill="#000000" opacity="0.45" filter="blur(4px)" />
 
-        {/* Pot or Garden Soil Mound */}
-        {potStyle !== 'earth' ? (
-          <g id="flower-pot">
-            <polygon
-              points="42,176 158,176 142,228 58,228"
-              fill={`url(#pot-body-${potStyle})`}
-              stroke="rgba(0,0,0,0.15)"
-              strokeWidth="1"
-            />
-            <polygon
-              points="46,176 56,226 62,226 50,176"
-              fill={potColors.highlight}
-              opacity="0.25"
-            />
-            <rect
-              x="36"
-              y="162"
-              width="128"
-              height="15"
-              rx="4"
-              fill={`url(#pot-rim-${potStyle})`}
-              stroke="rgba(0,0,0,0.2)"
-              strokeWidth="1"
-            />
-            <line x1="42" y1="177" x2="158" y2="177" stroke="#000000" strokeWidth="2" opacity="0.25" />
-
-            {potStyle === 'ceramic' && (
-              <circle cx="100" cy="202" r="14" fill="#00a884" opacity="0.2" stroke="#00a884" strokeWidth="1" />
-            )}
-            {potStyle === 'golden' && (
-              <path d="M75,200 Q100,215 125,200" fill="none" stroke="#fef08a" strokeWidth="2" opacity="0.7" />
-            )}
-            {potStyle === 'moss' && (
-              <>
-                <circle cx="56" cy="195" r="7" fill="#84cc16" opacity="0.6" />
-                <circle cx="138" cy="208" r="9" fill="#65a30d" opacity="0.7" />
-              </>
-            )}
-          </g>
-        ) : (
-          /* Natural Fertile Earth Garden Soil Bed Mound */
-          <g id="earth-mound">
-            <ellipse cx="100" cy="210" rx="78" ry="24" fill="#1b0f07" />
-            <path
-              d="M28 214 Q100 156 172 214 Q100 234 28 214 Z"
-              fill="#2e190d"
-              stroke="#150b05"
-              strokeWidth="1.5"
-            />
-            {/* Grassy Tufts on Soil Border */}
-            <path d="M42,204 L38,194 L45,206 M156,206 L160,196 L158,208 M92,224 L96,216 L100,225" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
-          </g>
-        )}
+        {/* Natural Fertile Earth Garden Soil Bed Mound */}
+        <g id="earth-mound">
+          <ellipse cx="100" cy="210" rx="78" ry="24" fill="#1b0f07" />
+          <path
+            d="M28 214 Q100 156 172 214 Q100 234 28 214 Z"
+            fill="#2e190d"
+            stroke="#150b05"
+            strokeWidth="1.5"
+          />
+          <path d="M42,204 L38,194 L45,206 M156,206 L160,196 L158,208 M92,224 L96,216 L100,225" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
+        </g>
 
         {/* Soil Bed Surface */}
         <ellipse cx="100" cy="165" rx="58" ry="12" fill={soilColor} />
@@ -448,7 +333,7 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
               )}
             </g>
             <text x="100" y="136" textAnchor="middle" fill="#86efac" fontSize="9" fontWeight="bold" opacity="0.95">
-              {growth < 8 ? '🌱 Seed in Garden Soil' : '🌱 Germinating Shoot!'}
+              {growth < 8 ? '🌱 Seed Germinating in Earth' : '🌱 Shoot Emerging!'}
             </text>
           </g>
         )}
@@ -626,18 +511,6 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
                 </g>
               )}
 
-              {/* 🌷 TULIP */}
-              {species.id === 'tulip' && (
-                <g id="blossom-tulip">
-                  <ellipse cx="-10" cy="-14" rx="10" ry="18" fill="#be123c" />
-                  <ellipse cx="10" cy="-14" rx="10" ry="18" fill="#be123c" />
-                  <ellipse cx="-5" cy="-8" rx="12" ry="20" fill="#f43f5e" />
-                  <ellipse cx="5" cy="-8" rx="12" ry="20" fill="#e11d48" />
-                  <ellipse cx="0" cy="-6" rx="9" ry="18" fill="#fb7185" />
-                  <ellipse cx="0" cy="6" rx="7" ry="4" fill="#fef08a" opacity="0.8" />
-                </g>
-              )}
-
               {/* 🎋 BAMBOO */}
               {species.id === 'bamboo' && (
                 <g id="blossom-bamboo" transform="translate(0, 10)">
@@ -649,6 +522,18 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
                   <line x1="6" y1="-10" x2="14" y2="-10" stroke="#fef08a" strokeWidth="2" />
                   <path d="M-10,-45 Q-28,-60 -24,-72 Q-14,-62 -10,-45" fill="#4ade80" />
                   <path d="M10,-55 Q28,-70 24,-82 Q14,-72 10,-55" fill="#4ade80" />
+                </g>
+              )}
+
+              {/* 🌷 TULIP */}
+              {species.id === 'tulip' && (
+                <g id="blossom-tulip">
+                  <ellipse cx="-10" cy="-14" rx="10" ry="18" fill="#be123c" />
+                  <ellipse cx="10" cy="-14" rx="10" ry="18" fill="#be123c" />
+                  <ellipse cx="-5" cy="-8" rx="12" ry="20" fill="#f43f5e" />
+                  <ellipse cx="5" cy="-8" rx="12" ry="20" fill="#e11d48" />
+                  <ellipse cx="0" cy="-6" rx="9" ry="18" fill="#fb7185" />
+                  <ellipse cx="0" cy="6" rx="7" ry="4" fill="#fef08a" opacity="0.8" />
                 </g>
               )}
 
@@ -738,118 +623,165 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
   );
 };
 
-// ── 5. MAIN PANORAMIC LIVING GARDEN COMPONENT ──
+// ── 4. MAIN INTERACTIVE PLANT GARDEN COMPONENT ──
 export const InteractivePlantGarden: React.FC = () => {
   const { student } = useStudyApp();
   const currentUser = (student?.username === 'sadhana' ? 'sadhana' : 'surya') as 'surya' | 'sadhana';
   const partnerName = currentUser === 'sadhana' ? 'Surya' : 'Sadhana';
 
-  // Plants Collection (Planted in the garden ground)
-  const [plants, setPlants] = useState<PlantedItem[]>(() => {
+  // 1. Daily Garden State: 12 Consecutive Days
+  const [dailyPlants, setDailyPlants] = useState<DailyPlantItem[]>(() => {
     try {
-      const saved = localStorage.getItem(LOCAL_GARDEN_KEY);
+      const saved = localStorage.getItem(LOCAL_DAILY_GARDEN_KEY);
       if (saved) return JSON.parse(saved);
     } catch {}
+
+    // Default: Day 5 is Today's active auto-growing plant
     return [
       {
-        id: 'plant-1',
+        dayNumber: 1,
         speciesId: 'rose',
-        nickname: 'Our Red Velvet Rose',
+        nickname: "Day 1: Our Red Velvet Rose",
         plantedBy: 'surya',
-        plantedAt: Date.now() - 86400000 * 5,
+        growthPoints: 100, // Bloomed
         waterLevel: 85,
         sunlightLevel: 90,
-        loveCount: 18,
-        growthPoints: 100, // Full Bloom
-        lastCaredAt: Date.now() - 3600000,
-        potStyle: 'earth',
+        loveCount: 16,
+        isUnlocked: true,
       },
       {
-        id: 'plant-2',
+        dayNumber: 2,
         speciesId: 'sunflower',
-        nickname: 'Morning Golden Rays',
+        nickname: "Day 2: Morning Golden Rays",
         plantedBy: 'sadhana',
-        plantedAt: Date.now() - 86400000 * 3,
-        waterLevel: 75,
+        growthPoints: 100, // Bloomed
+        waterLevel: 80,
         sunlightLevel: 95,
-        loveCount: 14,
-        growthPoints: 85, // Budding to bloom
-        lastCaredAt: Date.now() - 7200000,
-        potStyle: 'earth',
+        loveCount: 12,
+        isUnlocked: true,
       },
       {
-        id: 'plant-3',
+        dayNumber: 3,
         speciesId: 'sakura',
-        nickname: 'Cherry Blossom Dreams',
+        nickname: "Day 3: Cherry Blossom Dreams",
         plantedBy: 'surya',
-        plantedAt: Date.now() - 86400000 * 2,
-        waterLevel: 65,
-        sunlightLevel: 70,
-        loveCount: 9,
-        growthPoints: 55, // Foliage
-        lastCaredAt: Date.now() - 10800000,
-        potStyle: 'earth',
-      },
-      {
-        id: 'plant-4',
-        speciesId: 'bamboo',
-        nickname: 'Lucky Emerald Bamboo',
-        plantedBy: 'surya',
-        plantedAt: Date.now() - 86400000 * 1,
-        waterLevel: 90,
+        growthPoints: 100, // Bloomed
+        waterLevel: 75,
         sunlightLevel: 85,
-        loveCount: 6,
-        growthPoints: 35, // Sprout
-        lastCaredAt: Date.now() - 14400000,
-        potStyle: 'earth',
+        loveCount: 9,
+        isUnlocked: true,
       },
       {
-        id: 'plant-5',
+        dayNumber: 4,
+        speciesId: 'bamboo',
+        nickname: "Day 4: Lucky Emerald Bamboo",
+        plantedBy: 'surya',
+        growthPoints: 100, // Bloomed
+        waterLevel: 90,
+        sunlightLevel: 80,
+        loveCount: 7,
+        isUnlocked: true,
+      },
+      {
+        dayNumber: 5,
         speciesId: 'lavender',
-        nickname: 'Tranquil French Lavender',
+        nickname: "Day 5: French Lavender (Today)",
         plantedBy: 'sadhana',
-        plantedAt: Date.now(),
-        waterLevel: 55,
-        sunlightLevel: 60,
-        loveCount: 3,
-        growthPoints: 15, // Seed in soil
-        lastCaredAt: Date.now(),
-        potStyle: 'earth',
-      }
+        growthPoints: 35, // Actively growing automatically!
+        waterLevel: 70,
+        sunlightLevel: 75,
+        loveCount: 5,
+        isUnlocked: true,
+      },
+      {
+        dayNumber: 6,
+        speciesId: 'tulip',
+        nickname: "Day 6: Dutch Silk Tulip",
+        plantedBy: 'surya',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 7,
+        speciesId: 'bonsai',
+        nickname: "Day 7: Zen Juniper Bonsai",
+        plantedBy: 'sadhana',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 8,
+        speciesId: 'lotus',
+        nickname: "Day 8: Sacred Water Lotus",
+        plantedBy: 'surya',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 9,
+        speciesId: 'strawberry',
+        nickname: "Day 9: Sweet Berry Shrub",
+        plantedBy: 'sadhana',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 10,
+        speciesId: 'cactus',
+        nickname: "Day 10: Desert Bloom Cactus",
+        plantedBy: 'surya',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 11,
+        speciesId: 'chamomile',
+        nickname: "Day 11: Golden Chamomile",
+        plantedBy: 'sadhana',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
+      {
+        dayNumber: 12,
+        speciesId: 'clover',
+        nickname: "Day 12: Lucky Four-Leaf Clover",
+        plantedBy: 'surya',
+        growthPoints: 0,
+        waterLevel: 50,
+        sunlightLevel: 50,
+        loveCount: 0,
+        isUnlocked: false,
+      },
     ];
   });
 
-  // Daily Streak
-  const [streak, setStreak] = useState<GardenStreak>(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    try {
-      const saved = localStorage.getItem(LOCAL_STREAK_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const isToday = parsed.lastActiveDate === today;
-        const isYesterday = parsed.lastActiveDate === yesterday;
-        return {
-          currentStreak: isToday || isYesterday ? parsed.currentStreak : 1,
-          bestStreak: parsed.bestStreak || 1,
-          lastActiveDate: parsed.lastActiveDate || today,
-          plantedToday: isToday ? parsed.plantedToday : false,
-          caredToday: isToday ? parsed.caredToday : false,
-          history: Array.isArray(parsed.history) ? parsed.history : [today],
-        };
-      }
-    } catch {}
-    return {
-      currentStreak: 5,
-      bestStreak: 8,
-      lastActiveDate: today,
-      plantedToday: true,
-      caredToday: true,
-      history: [yesterday, today],
-    };
-  });
+  // 2. Active Day Selected (Default Day 5 = Today)
+  const [activeDayNumber, setActiveDayNumber] = useState<number>(5);
 
-  // Sky Theme Mode: Day ☀️, Night 🌙, or Auto 🔄
+  // 3. Automatic Growth Engine Controls
+  // Speeds: 'normal' (+1% every 2s), 'fast' (+2% every 0.8s), 'instant' (+15% burst)
+  const [isAutoGrowing, setIsAutoGrowing] = useState<boolean>(true);
+  const [growthSpeed, setGrowthSpeed] = useState<'normal' | 'fast'>('normal');
+
+  // 4. Sky Mode: Day ☀️, Night 🌙, Auto 🔄
   const [skyThemeMode, setSkyThemeMode] = useState<'auto' | 'day' | 'night'>(() => {
     try {
       return (localStorage.getItem('dharya_garden_sky_mode') as any) || 'auto';
@@ -866,61 +798,42 @@ export const InteractivePlantGarden: React.FC = () => {
   };
   const isNight = isNightTime();
 
-  // Active Selected Plant in Garden (shows floating care popover)
-  const [selectedPlantId, setSelectedPlantId] = useState<string | null>('plant-1');
+  // Streak state
+  const [streakDays, setStreakDays] = useState<number>(5);
 
   // Animation triggers
-  const [animatingWaterId, setAnimatingWaterId] = useState<string | null>(null);
-  const [animatingSunId, setAnimatingSunId] = useState<string | null>(null);
-  const [animatingLoveId, setAnimatingLoveId] = useState<string | null>(null);
+  const [isWatering, setIsWatering] = useState<boolean>(false);
+  const [isSunlit, setIsSunlit] = useState<boolean>(false);
+  const [isLoved, setIsLoved] = useState<boolean>(false);
 
-  // Modals
-  const [isPlantModalOpen, setIsPlantModalOpen] = useState(false);
-  const [selectedSpeciesId, setSelectedSpeciesId] = useState<string>('tulip');
-  const [plantNickname, setPlantNickname] = useState<string>('');
-  const [selectedPot, setSelectedPot] = useState<PlantedItem['potStyle']>('earth');
-
-  const [focusedPlantId, setFocusedPlantId] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [editingPlantId, setEditingPlantId] = useState<string | null>(null);
-  const [editNickname, setEditNickname] = useState<string>('');
+  // Focus modal
+  const [isInspectModalOpen, setIsInspectModalOpen] = useState<boolean>(false);
 
   const channelRef = useRef<any>(null);
 
-  // Persistence
+  // Save to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(LOCAL_GARDEN_KEY, JSON.stringify(plants));
+      localStorage.setItem(LOCAL_DAILY_GARDEN_KEY, JSON.stringify(dailyPlants));
     } catch {}
-  }, [plants]);
+  }, [dailyPlants]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STREAK_KEY, JSON.stringify(streak));
-    } catch {}
-  }, [streak]);
-
-  // Realtime synchronization across devices (laptop & phone)
+  // Realtime Supabase broadcast
   useEffect(() => {
     const supabase = getSupabase();
-    const channel = supabase.channel('dharya_panoramic_garden_sync', {
+    const channel = supabase.channel('dharya_daily_garden_sync', {
       config: { broadcast: { self: false } },
     });
 
     channel
-      .on('broadcast', { event: 'garden_updated' }, ({ payload }) => {
-        if (payload?.plants && Array.isArray(payload.plants)) {
-          setPlants(payload.plants);
+      .on('broadcast', { event: 'garden_sync' }, ({ payload }) => {
+        if (payload?.dailyPlants) {
+          setDailyPlants(payload.dailyPlants);
           try {
-            localStorage.setItem(LOCAL_GARDEN_KEY, JSON.stringify(payload.plants));
+            localStorage.setItem(LOCAL_DAILY_GARDEN_KEY, JSON.stringify(payload.dailyPlants));
           } catch {}
         }
-        if (payload?.streak) {
-          setStreak(payload.streak);
-          try {
-            localStorage.setItem(LOCAL_STREAK_KEY, JSON.stringify(payload.streak));
-          } catch {}
-        }
+        if (payload?.streakDays) setStreakDays(payload.streakDays);
       })
       .subscribe();
 
@@ -931,218 +844,178 @@ export const InteractivePlantGarden: React.FC = () => {
     };
   }, []);
 
-  const broadcastGarden = (updatedPlants: PlantedItem[], updatedStreak?: GardenStreak) => {
+  const broadcastState = (updatedPlants: DailyPlantItem[], updatedStreak?: number) => {
     try {
       channelRef.current?.send({
         type: 'broadcast',
-        event: 'garden_updated',
+        event: 'garden_sync',
         payload: {
-          plants: updatedPlants,
-          streak: updatedStreak || streak,
+          dailyPlants: updatedPlants,
+          streakDays: updatedStreak || streakDays,
         },
       });
     } catch {}
   };
 
-  const recordStreakActivity = (isNewPlant = false): GardenStreak => {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  // ── AUTOMATIC CONTINUOUS GROWTH ENGINE (ONE PLANT AT ONE DAY) ──
+  // The active day's plant grows AUTOMATICALLY without requiring manual button clicks!
+  useEffect(() => {
+    if (!isAutoGrowing) return;
 
-    let updatedStreak: GardenStreak;
-    if (streak.lastActiveDate === today) {
-      updatedStreak = {
-        ...streak,
-        plantedToday: streak.plantedToday || isNewPlant,
-        caredToday: true,
-      };
-    } else if (streak.lastActiveDate === yesterday) {
-      const nextStreak = streak.currentStreak + 1;
-      updatedStreak = {
-        currentStreak: nextStreak,
-        bestStreak: Math.max(streak.bestStreak, nextStreak),
-        lastActiveDate: today,
-        plantedToday: isNewPlant,
-        caredToday: true,
-        history: [...streak.history, today],
-      };
-    } else {
-      updatedStreak = {
-        currentStreak: 1,
-        bestStreak: Math.max(streak.bestStreak, 1),
-        lastActiveDate: today,
-        plantedToday: isNewPlant,
-        caredToday: true,
-        history: [...streak.history, today],
-      };
-    }
-    setStreak(updatedStreak);
-    return updatedStreak;
-  };
+    const intervalMs = growthSpeed === 'fast' ? 700 : 1800;
+    const increment = growthSpeed === 'fast' ? 2 : 1;
 
-  const handleWaterPlant = (plantId: string) => {
-    const nextStreak = recordStreakActivity(false);
-    setAnimatingWaterId(plantId);
-    setTimeout(() => setAnimatingWaterId(null), 1800);
+    const timer = setInterval(() => {
+      setDailyPlants((prev) => {
+        const activePlant = prev.find((p) => p.dayNumber === activeDayNumber);
+        if (!activePlant || !activePlant.isUnlocked || activePlant.growthPoints >= 100) {
+          return prev;
+        }
 
-    setPlants((prev) => {
-      const next = prev.map((p) => {
-        if (p.id !== plantId) return p;
-        const newWater = Math.min(100, p.waterLevel + 25);
-        const newGrowth = Math.min(100, p.growthPoints + 15);
-        return {
-          ...p,
-          waterLevel: newWater,
-          growthPoints: newGrowth,
-          lastCaredAt: Date.now(),
-        };
+        const newGrowth = Math.min(100, activePlant.growthPoints + increment);
+        const next = prev.map((p) =>
+          p.dayNumber === activeDayNumber
+            ? {
+                ...p,
+                growthPoints: newGrowth,
+                waterLevel: Math.max(30, p.waterLevel - 0.08), // Gentle moisture consumption
+                sunlightLevel: Math.min(100, p.sunlightLevel + 0.05),
+                bloomedAt: newGrowth >= 100 && !p.bloomedAt ? Date.now() : p.bloomedAt,
+              }
+            : p
+        );
+
+        if (newGrowth === 100 && activePlant.growthPoints < 100) {
+          confetti({
+            particleCount: 90,
+            spread: 90,
+            origin: { y: 0.6 },
+            colors: ['#10b981', '#f59e0b', '#ec4899', '#38bdf8', '#fbbf24'],
+          });
+        }
+
+        return next;
       });
-      broadcastGarden(next, nextStreak);
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [isAutoGrowing, growthSpeed, activeDayNumber]);
+
+  // Current active plant & species
+  const currentPlant = dailyPlants.find((p) => p.dayNumber === activeDayNumber) || dailyPlants[0];
+  const currentSpecies = PLANT_SPECIES.find((s) => s.id === currentPlant.speciesId) || PLANT_SPECIES[0];
+
+  // ── CARE ACTIONS: WATER, SUNLIGHT, LOVE ──
+  const handleWater = () => {
+    setIsWatering(true);
+    setTimeout(() => setIsWatering(false), 1600);
+
+    setDailyPlants((prev) => {
+      const next = prev.map((p) =>
+        p.dayNumber === activeDayNumber
+          ? {
+              ...p,
+              waterLevel: Math.min(100, p.waterLevel + 25),
+              growthPoints: Math.min(100, p.growthPoints + 8),
+            }
+          : p
+      );
+      broadcastState(next);
       return next;
     });
 
     confetti({
-      particleCount: 45,
+      particleCount: 40,
       spread: 60,
       origin: { y: 0.7 },
       colors: ['#38bdf8', '#0ea5e9', '#0284c7', '#10b981'],
     });
   };
 
-  const handleSunlightPlant = (plantId: string) => {
-    const nextStreak = recordStreakActivity(false);
-    setAnimatingSunId(plantId);
-    setTimeout(() => setAnimatingSunId(null), 1800);
+  const handleSunlight = () => {
+    setIsSunlit(true);
+    setTimeout(() => setIsSunlit(false), 1600);
 
-    setPlants((prev) => {
-      const next = prev.map((p) => {
-        if (p.id !== plantId) return p;
-        const newSun = Math.min(100, p.sunlightLevel + 20);
-        const newGrowth = Math.min(100, p.growthPoints + 12);
-        return {
-          ...p,
-          sunlightLevel: newSun,
-          growthPoints: newGrowth,
-          lastCaredAt: Date.now(),
-        };
-      });
-      broadcastGarden(next, nextStreak);
+    setDailyPlants((prev) => {
+      const next = prev.map((p) =>
+        p.dayNumber === activeDayNumber
+          ? {
+              ...p,
+              sunlightLevel: Math.min(100, p.sunlightLevel + 20),
+              growthPoints: Math.min(100, p.growthPoints + 6),
+            }
+          : p
+      );
+      broadcastState(next);
       return next;
     });
 
     confetti({
-      particleCount: 40,
+      particleCount: 35,
       spread: 55,
       origin: { y: 0.65 },
       colors: ['#f59e0b', '#fbbf24', '#fde047', '#10b981'],
     });
   };
 
-  const handleLovePlant = (plantId: string) => {
-    const nextStreak = recordStreakActivity(false);
-    setAnimatingLoveId(plantId);
-    setTimeout(() => setAnimatingLoveId(null), 2000);
+  const handleLove = () => {
+    setIsLoved(true);
+    setTimeout(() => setIsLoved(false), 1800);
 
-    setPlants((prev) => {
-      const next = prev.map((p) => {
-        if (p.id !== plantId) return p;
-        const newLove = p.loveCount + 1;
-        const newGrowth = Math.min(100, p.growthPoints + 15);
-        return {
-          ...p,
-          loveCount: newLove,
-          growthPoints: newGrowth,
-          lastCaredAt: Date.now(),
-        };
-      });
-      broadcastGarden(next, nextStreak);
+    setDailyPlants((prev) => {
+      const next = prev.map((p) =>
+        p.dayNumber === activeDayNumber
+          ? {
+              ...p,
+              loveCount: p.loveCount + 1,
+              growthPoints: Math.min(100, p.growthPoints + 8),
+            }
+          : p
+      );
+      broadcastState(next);
       return next;
     });
 
     confetti({
-      particleCount: 55,
+      particleCount: 50,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#f43f5e', '#ec4899', '#f472b6', '#fda4af'],
     });
   };
 
-  const handlePlantNewSeed = (e: React.FormEvent) => {
-    e.preventDefault();
-    const species = PLANT_SPECIES.find((s) => s.id === selectedSpeciesId) || PLANT_SPECIES[0];
-
-    const newPlant: PlantedItem = {
-      id: 'plant-' + Date.now(),
-      speciesId: species.id,
-      nickname: plantNickname.trim() || species.name,
-      plantedBy: currentUser,
-      plantedAt: Date.now(),
-      waterLevel: 60,
-      sunlightLevel: 65,
-      loveCount: 1,
-      growthPoints: 8, // Begins as real seed germinating in the garden soil!
-      lastCaredAt: Date.now(),
-      potStyle: selectedPot,
-    };
-
-    const nextStreak = recordStreakActivity(true);
-
-    setPlants((prev) => {
-      const next = [...prev, newPlant];
-      broadcastGarden(next, nextStreak);
+  // Advance to next day plant
+  const handleAdvanceNextDay = () => {
+    const nextDay = Math.min(12, activeDayNumber + 1);
+    setDailyPlants((prev) => {
+      const next = prev.map((p) => (p.dayNumber === nextDay ? { ...p, isUnlocked: true } : p));
+      broadcastState(next, Math.max(streakDays, nextDay));
       return next;
     });
-
-    setSelectedPlantId(newPlant.id);
+    setStreakDays((prev) => Math.max(prev, nextDay));
+    setActiveDayNumber(nextDay);
 
     confetti({
-      particleCount: 90,
-      spread: 95,
-      origin: { y: 0.6 },
+      particleCount: 75,
+      spread: 85,
+      origin: { y: 0.55 },
       colors: ['#10b981', '#34d399', '#f59e0b', '#ec4899', '#38bdf8'],
     });
-
-    setIsPlantModalOpen(false);
-    setPlantNickname('');
   };
 
-  const handleRemovePlant = (plantId: string) => {
-    if (confirm('Are you sure you want to harvest and clear this plant from the garden?')) {
-      setPlants((prev) => {
-        const next = prev.filter((p) => p.id !== plantId);
-        broadcastGarden(next);
-        return next;
-      });
-      if (selectedPlantId === plantId) setSelectedPlantId(null);
-      if (focusedPlantId === plantId) setFocusedPlantId(null);
-    }
-  };
-
+  // Growth Stage info
   const getGrowthStageInfo = (growth: number) => {
-    if (growth <= 20) return { name: 'Seed in Garden Soil', icon: '🌰', tip: 'Buried in rich loam. Water to help germinate!' };
-    if (growth <= 45) return { name: 'Tender Green Sprout', icon: '🌱', tip: 'Baby shoot rising through soil with two cotyledons.' };
-    if (growth <= 70) return { name: 'Vegetative Foliage', icon: '🌿', tip: 'Stem thickens and produces lush green leaves.' };
-    if (growth < 90) return { name: 'Swollen Floral Bud', icon: '🌷', tip: 'Floral bud enclosed in sepals, ready to burst open.' };
-    return { name: 'Full Magnificent Bloom', icon: '✨', tip: 'Gorgeous layered petals in full bloom, swaying gently!' };
+    if (growth <= 20) return { name: 'Seed in Earth', icon: '🌰', tip: 'Seed nestled in dark soil, germinating automatically.' };
+    if (growth <= 45) return { name: 'Tender Sprout', icon: '🌱', tip: 'Shoot rising through earth with baby leaves unfurling.' };
+    if (growth <= 70) return { name: 'Foliage & Stem', icon: '🌿', tip: 'Stem thickens and produces lush green leaves.' };
+    if (growth < 90) return { name: 'Floral Bud', icon: '🌷', tip: 'Floral bud enclosed in sepals, preparing to blossom.' };
+    return { name: 'Full Magnificent Bloom', icon: '✨', tip: 'Splendid layered petals blooming in the garden breeze!' };
   };
 
-  const filteredPlants = plants.filter((p) => {
-    if (filterCategory === 'all') return true;
-    const sp = PLANT_SPECIES.find((s) => s.id === p.speciesId);
-    return sp?.category.toLowerCase() === filterCategory.toLowerCase();
-  });
-
-  const selectedPlant = plants.find((p) => p.id === selectedPlantId) || plants[0] || null;
-  const selectedSpecies = selectedPlant
-    ? PLANT_SPECIES.find((s) => s.id === selectedPlant.speciesId) || PLANT_SPECIES[0]
-    : null;
-
-  const focusedPlant = plants.find((p) => p.id === focusedPlantId);
-  const focusedSpecies = focusedPlant
-    ? PLANT_SPECIES.find((s) => s.id === focusedPlant.speciesId) || PLANT_SPECIES[0]
-    : null;
+  const stageInfo = getGrowthStageInfo(currentPlant.growthPoints);
 
   return (
-    <div className="relative w-full h-full min-h-[640px] flex flex-col justify-between select-none overflow-x-hidden overflow-y-auto">
+    <div className="relative w-full h-full min-h-[660px] flex flex-col justify-between select-none overflow-x-hidden overflow-y-auto">
       {/* ── CSS KEYFRAMES ── */}
       <style>{`
         @keyframes gentleSway {
@@ -1156,26 +1029,19 @@ export const InteractivePlantGarden: React.FC = () => {
         }
 
         @keyframes butterflyFly1 {
-          0% { transform: translate(6vw, 25vh) rotate(-8deg); }
-          25% { transform: translate(32vw, 10vh) rotate(14deg); }
-          50% { transform: translate(68vw, 24vh) rotate(-10deg); }
-          75% { transform: translate(45vw, 8vh) rotate(16deg); }
-          100% { transform: translate(6vw, 25vh) rotate(-8deg); }
+          0% { transform: translate(6vw, 22vh) rotate(-8deg); }
+          25% { transform: translate(32vw, 8vh) rotate(14deg); }
+          50% { transform: translate(68vw, 20vh) rotate(-10deg); }
+          75% { transform: translate(45vw, 6vh) rotate(16deg); }
+          100% { transform: translate(6vw, 22vh) rotate(-8deg); }
         }
 
         @keyframes butterflyFly2 {
-          0% { transform: translate(80vw, 30vh) rotate(12deg); }
-          30% { transform: translate(50vw, 14vh) rotate(-14deg); }
-          60% { transform: translate(20vw, 26vh) rotate(12deg); }
-          85% { transform: translate(55vw, 8vh) rotate(-8deg); }
-          100% { transform: translate(80vw, 30vh) rotate(12deg); }
-        }
-
-        @keyframes butterflyFly3 {
-          0% { transform: translate(15vw, 8vh) rotate(18deg); }
-          35% { transform: translate(60vw, 18vh) rotate(-16deg); }
-          70% { transform: translate(88vw, 12vh) rotate(8deg); }
-          100% { transform: translate(15vw, 8vh) rotate(18deg); }
+          0% { transform: translate(80vw, 26vh) rotate(12deg); }
+          30% { transform: translate(50vw, 12vh) rotate(-14deg); }
+          60% { transform: translate(20vw, 22vh) rotate(12deg); }
+          85% { transform: translate(55vw, 6vh) rotate(-8deg); }
+          100% { transform: translate(80vw, 26vh) rotate(12deg); }
         }
 
         @keyframes cloudDriftSlow {
@@ -1216,9 +1082,9 @@ export const InteractivePlantGarden: React.FC = () => {
       {/* ── 1. LIVING SKY LAYER (DAYLIGHT ☀️ OR STARRY NIGHT 🌙) ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {!isNight ? (
-          /* DAY SKY: Azure atmosphere, golden sun, drifting clouds, butterflies */
+          /* DAY SKY: Azure atmosphere, golden sun, clouds & fluttering butterflies */
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#38bdf8]/40 via-[#7dd3fc]/20 via-40% to-[#15803d]/40" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#38bdf8]/45 via-[#7dd3fc]/20 via-45% to-[#15803d]/45" />
 
             {/* Glowing Golden Sun */}
             <div className="absolute top-8 right-12 sm:right-24">
@@ -1231,19 +1097,19 @@ export const InteractivePlantGarden: React.FC = () => {
               </div>
             </div>
 
-            {/* Drifting Clouds */}
-            <div className="absolute top-10 left-[-160px] opacity-60 animate-[cloudDriftSlow_45s_linear_infinite]">
+            {/* Clouds */}
+            <div className="absolute top-10 left-[-160px] opacity-65 animate-[cloudDriftSlow_45s_linear_infinite]">
               <svg width="160" height="55" viewBox="0 0 160 55" fill="none">
-                <path d="M20 45 Q10 45 10 32 Q10 18 30 18 Q38 8 55 8 Q72 8 80 18 Q90 12 100 18 Q115 12 125 22 Q140 18 145 32 Q155 32 155 45 Z" fill="white" opacity="0.75"/>
+                <path d="M20 45 Q10 45 10 32 Q10 18 30 18 Q38 8 55 8 Q72 8 80 18 Q90 12 100 18 Q115 12 125 22 Q140 18 145 32 Q155 32 155 45 Z" fill="white" opacity="0.8"/>
               </svg>
             </div>
-            <div className="absolute top-24 left-[-220px] opacity-50 animate-[cloudDriftSlow_70s_linear_infinite_18s]">
+            <div className="absolute top-22 left-[-220px] opacity-55 animate-[cloudDriftSlow_70s_linear_infinite_18s]">
               <svg width="200" height="65" viewBox="0 0 200 65" fill="none">
-                <path d="M25 55 Q12 55 12 40 Q12 25 38 25 Q45 12 68 12 Q90 12 98 25 Q115 16 128 25 Q142 18 155 30 Q178 25 185 40 Q198 40 198 55 Z" fill="white" opacity="0.65"/>
+                <path d="M25 55 Q12 55 12 40 Q12 25 38 25 Q45 12 68 12 Q90 12 98 25 Q115 16 128 25 Q142 18 155 30 Q178 25 185 40 Q198 40 198 55 Z" fill="white" opacity="0.7"/>
               </svg>
             </div>
 
-            {/* 🦋 3D Butterflies Fluttering Over the Garden */}
+            {/* 🦋 Butterflies */}
             <div className="absolute animate-[butterflyFly1_24s_easeInOutQuad_infinite]">
               <div className="flex items-center transform -rotate-12 hover:scale-125 transition-transform">
                 <span className="text-3xl filter drop-shadow-[0_0_12px_#38bdf8] animate-[wingFlap_0.16s_linear_infinite_alternate]">🦋</span>
@@ -1256,20 +1122,13 @@ export const InteractivePlantGarden: React.FC = () => {
                 <span className="text-2xl filter drop-shadow-[0_0_12px_#fbbf24] animate-[wingFlap_0.20s_linear_infinite_alternate]">🦋</span>
               </div>
             </div>
-
-            <div className="absolute animate-[butterflyFly3_22s_easeInOutQuad_infinite_9s]">
-              <div className="flex items-center transform -rotate-25">
-                <span className="text-3xl filter drop-shadow-[0_0_12px_#f472b6] animate-[wingFlap_0.15s_linear_infinite_alternate]">🦋</span>
-                <span className="text-[10px] opacity-90">🌸</span>
-              </div>
-            </div>
           </div>
         ) : (
-          /* NIGHT SKY: Deep indigo celestial atmosphere, moon, stars, shooting stars & fireflies */
+          /* NIGHT SKY: Deep celestial indigo, crescent moon, stars, shooting stars & fireflies */
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#091124]/90 via-40% to-[#052e16]/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#091124]/90 via-45% to-[#052e16]/60" />
 
-            {/* Glowing Crescent Moon */}
+            {/* Glowing Moon */}
             <div className="absolute top-8 right-12 sm:right-24">
               <div className="w-36 h-36 rounded-full bg-cyan-200/20 blur-3xl animate-pulse" />
               <div className="relative w-20 h-20 rounded-full shadow-[inset_-14px_-14px_0px_0px_#fef08a] filter drop-shadow-[0_0_26px_rgba(254,240,138,0.9)] flex items-center justify-center">
@@ -1277,7 +1136,7 @@ export const InteractivePlantGarden: React.FC = () => {
               </div>
             </div>
 
-            {/* 40+ Twinkling Stars */}
+            {/* Stars */}
             <div className="absolute inset-0">
               {[...Array(42)].map((_, idx) => {
                 const top = (idx * 17) % 65;
@@ -1333,7 +1192,6 @@ export const InteractivePlantGarden: React.FC = () => {
 
         {/* ── 2. DISTANT GARDEN HORIZON & HILLS ── */}
         <div className="absolute inset-x-0 bottom-36 h-48 pointer-events-none">
-          {/* Distant Rolling Meadow Hills */}
           <svg viewBox="0 0 1200 200" preserveAspectRatio="none" className="w-full h-full opacity-60">
             <path d="M0,120 Q300,50 600,100 T1200,80 L1200,200 L0,200 Z" fill={isNight ? '#064e3b' : '#15803d'} />
             <path d="M0,140 Q450,80 900,130 T1200,110 L1200,200 L0,200 Z" fill={isNight ? '#022c22' : '#166534'} opacity="0.8" />
@@ -1341,10 +1199,10 @@ export const InteractivePlantGarden: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 3. FLOATING TOP GARDEN HUD (CLEAN & NON-INTRUSIVE) ── */}
-      <div className="relative z-20 w-full max-w-5xl mx-auto px-3 sm:px-6 pt-3">
-        <div className="p-3 sm:p-4 rounded-3xl bg-[#111b21]/80 backdrop-blur-md border border-[#2a3942]/80 shadow-2xl flex flex-wrap items-center justify-between gap-3">
-          {/* Garden Title & Streak */}
+      {/* ── 3. TOP GARDEN HUD: TITLE & STREAK & CONTROLS ── */}
+      <div className="relative z-20 w-full max-w-5xl mx-auto px-3 sm:px-6 pt-3 space-y-2">
+        <div className="p-3 sm:p-4 rounded-3xl bg-[#111b21]/85 backdrop-blur-md border border-[#2a3942]/80 shadow-2xl flex flex-wrap items-center justify-between gap-3">
+          {/* Garden Title */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center text-xl shadow-lg shadow-amber-500/25">
               🔥
@@ -1354,19 +1212,44 @@ export const InteractivePlantGarden: React.FC = () => {
                 <span className="text-sm sm:text-base font-extrabold text-white">
                   Surya &amp; Sadhana's Living Garden
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/40">
-                  {streak.currentStreak}-Day Streak
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/40 font-mono">
+                  Day {streakDays} Streak
                 </span>
               </div>
               <p className="text-[11px] text-[#8696a0]">
-                {plants.length} plants living in the garden soil • Click any plant to water &amp; nurture
+                One plant per day • Growing automatically from fertile earth to bloom
               </p>
             </div>
           </div>
 
-          {/* Controls: Sky Switcher & Plant Button */}
+          {/* Sky Switcher & Auto-Grow Engine Toggle */}
           <div className="flex items-center gap-2">
-            {/* Sky Switcher */}
+            {/* Auto Growth Status Indicator */}
+            <button
+              onClick={() => setIsAutoGrowing(!isAutoGrowing)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                isAutoGrowing
+                  ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300'
+                  : 'bg-amber-500/20 border border-amber-500/50 text-amber-300'
+              }`}
+              title="Click to Pause or Resume Automatic Growth"
+            >
+              <span className={`w-2 h-2 rounded-full ${isAutoGrowing ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span>{isAutoGrowing ? 'Auto-Growing' : 'Paused'}</span>
+              {isAutoGrowing ? <Play className="w-3 h-3 fill-current" /> : <Pause className="w-3 h-3 fill-current" />}
+            </button>
+
+            {/* Growth Speed Toggle */}
+            <button
+              onClick={() => setGrowthSpeed(growthSpeed === 'normal' ? 'fast' : 'normal')}
+              className="px-2.5 py-1.5 rounded-full bg-[#182229] border border-[#2a3942] text-xs font-bold text-[#8696a0] hover:text-white flex items-center gap-1 transition-all"
+              title="Toggle Growth Speed"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>{growthSpeed === 'fast' ? 'Speed: 2x' : 'Speed: 1x'}</span>
+            </button>
+
+            {/* Sky Theme (Day / Night / Auto) */}
             <div className="inline-flex items-center p-0.5 rounded-full bg-[#182229] border border-[#2a3942]">
               <button
                 onClick={() => {
@@ -1379,7 +1262,7 @@ export const InteractivePlantGarden: React.FC = () => {
                     : 'text-[#8696a0] hover:text-white'
                 }`}
               >
-                <span>☀️ Day</span>
+                <span>☀️</span>
               </button>
 
               <button
@@ -1393,273 +1276,247 @@ export const InteractivePlantGarden: React.FC = () => {
                     : 'text-[#8696a0] hover:text-white'
                 }`}
               >
-                <span>🌙 Night</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setSkyThemeMode('auto');
-                  try { localStorage.setItem('dharya_garden_sky_mode', 'auto'); } catch {}
-                }}
-                className={`px-2 py-1 rounded-full text-[10px] font-semibold transition-all ${
-                  skyThemeMode === 'auto'
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono'
-                    : 'text-[#8696a0] hover:text-white'
-                }`}
-              >
-                <span>Auto</span>
-              </button>
-            </div>
-
-            {/* Plant in Garden CTA */}
-            <button
-              onClick={() => setIsPlantModalOpen(true)}
-              className="px-4 py-2 rounded-2xl bg-[#00a884] hover:bg-[#029071] text-[#111b21] font-extrabold text-xs sm:text-sm shadow-lg shadow-[#00a884]/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Plant in Garden</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 4. FLOATING CARE DRAWER / POPUP FOR SELECTED PLANT ── */}
-      {selectedPlant && selectedSpecies && (
-        <div className="relative z-20 w-full max-w-3xl mx-auto px-4 mt-2">
-          <div className="p-3 sm:p-4 rounded-3xl bg-[#111b21]/90 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top duration-300">
-            {/* Plant Identity & Stage */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="w-11 h-11 rounded-2xl bg-[#182229] border border-white/10 flex items-center justify-center text-2xl shadow-inner">
-                {selectedSpecies.emoji}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-white tracking-tight">{selectedPlant.nickname}</h3>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-bold">
-                    {getGrowthStageInfo(selectedPlant.growthPoints).name} ({selectedPlant.growthPoints}%)
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#8696a0]">
-                  {selectedSpecies.name} • Planted in soil by {selectedPlant.plantedBy === 'surya' ? 'Surya' : 'Sadhana'}
-                </p>
-              </div>
-            </div>
-
-            {/* 3 Interactive Care Buttons for this Plant */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <button
-                onClick={() => handleWaterPlant(selectedPlant.id)}
-                className="py-1.5 px-3 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 border border-sky-500/40 text-sky-400 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm"
-                title="Water Soil (+15% Growth)"
-              >
-                <Droplets className="w-3.5 h-3.5" />
-                <span>Water</span>
-              </button>
-
-              <button
-                onClick={() => handleSunlightPlant(selectedPlant.id)}
-                className="py-1.5 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm"
-                title="Shine Sunbeam (+12% Growth)"
-              >
-                <Sun className="w-3.5 h-3.5" />
-                <span>Sunlight</span>
-              </button>
-
-              <button
-                onClick={() => handleLovePlant(selectedPlant.id)}
-                className="py-1.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-sm"
-                title="Give Love (+15% Growth)"
-              >
-                <Heart className="w-3.5 h-3.5" />
-                <span>Love</span>
-              </button>
-
-              <button
-                onClick={() => setFocusedPlantId(selectedPlant.id)}
-                className="p-2 rounded-xl bg-[#182229] hover:bg-emerald-600/30 text-emerald-400 hover:text-white transition-colors border border-[#2a3942]"
-                title="Inspect Close-up &amp; Time-Lapse"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => handleRemovePlant(selectedPlant.id)}
-                className="p-2 rounded-xl bg-[#182229] text-[#8696a0] hover:text-rose-400 hover:bg-white/5 transition-colors border border-[#2a3942]"
-                title="Harvest / Clear Plot"
-              >
-                <Trash2 className="w-4 h-4" />
+                <span>🌙</span>
               </button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* ── 5. THE LIVING GARDEN LANDSCAPE GROUND (PLANTS GROWING IN SOIL) ── */}
-      <div className="relative z-10 w-full mt-auto pt-6">
-
-        {/* Horizontal Garden Walkway & Plots */}
-        <div className="relative w-full overflow-x-auto scrollbar-none pb-6 px-4 sm:px-8">
-          <div className="min-w-max mx-auto flex items-end justify-center gap-8 sm:gap-12 pt-16">
-
-            {/* All Plants Planted in the Garden Soil */}
-            {filteredPlants.map((plant) => {
-              const species = PLANT_SPECIES.find((s) => s.id === plant.speciesId) || PLANT_SPECIES[0];
-              const isSelected = selectedPlantId === plant.id;
-              const isWatering = animatingWaterId === plant.id;
-              const isSunlit = animatingSunId === plant.id;
-              const isLoved = animatingLoveId === plant.id;
+        {/* ── 4. DAILY CALENDAR TIMELINE: ONE PLANT AT ONE DAY ── */}
+        <div className="p-2.5 rounded-2xl bg-[#111b21]/80 backdrop-blur-md border border-[#2a3942]/60 overflow-x-auto scrollbar-none shadow-lg">
+          <div className="flex items-center gap-2 min-w-max px-1">
+            {dailyPlants.map((plant) => {
+              const sp = PLANT_SPECIES.find((s) => s.id === plant.speciesId) || PLANT_SPECIES[0];
+              const isSelected = plant.dayNumber === activeDayNumber;
+              const isToday = plant.dayNumber === streakDays;
+              const isPast = plant.dayNumber < streakDays;
+              const isFuture = plant.dayNumber > streakDays;
 
               return (
-                <div
-                  key={plant.id}
-                  onClick={() => setSelectedPlantId(plant.id)}
-                  className="group relative flex flex-col items-center cursor-pointer transition-all duration-300"
+                <button
+                  key={plant.dayNumber}
+                  onClick={() => {
+                    if (plant.isUnlocked || isToday) {
+                      setActiveDayNumber(plant.dayNumber);
+                    }
+                  }}
+                  className={`px-3 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105'
+                      : plant.isUnlocked
+                      ? 'bg-[#182229] border border-[#2a3942] text-[#8696a0] hover:text-white hover:border-emerald-500/40'
+                      : 'bg-[#111b21]/50 border border-[#2a3942]/40 text-[#8696a0]/50 opacity-60 cursor-not-allowed'
+                  }`}
                 >
-                  {/* Floating Indicator when Hovered or Selected */}
-                  <div
-                    className={`absolute -top-10 px-2.5 py-1 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-1 shadow-lg ${
-                      isSelected
-                        ? 'bg-emerald-500 text-white scale-110'
-                        : 'bg-[#111b21]/90 text-emerald-300 border border-[#2a3942] opacity-80 group-hover:opacity-100 group-hover:-translate-y-1'
-                    }`}
-                  >
-                    <span>{plant.nickname}</span>
-                    {plant.growthPoints >= 90 && <span>🌸</span>}
+                  <span className="text-base">{sp.emoji}</span>
+                  <div className="text-left">
+                    <div className="text-[10px] uppercase font-bold tracking-wider leading-none">
+                      Day {plant.dayNumber} {isToday && '• Today'}
+                    </div>
+                    <div className="text-xs font-bold leading-tight truncate max-w-[90px]">
+                      {plant.isUnlocked ? (plant.growthPoints >= 100 ? 'Bloomed 🌸' : `${plant.growthPoints}%`) : 'Locked 🔒'}
+                    </div>
                   </div>
-
-                  {/* Botanical Graphic Rooted in Garden Earth */}
-                  <div className="transform transition-transform duration-300 group-hover:scale-105">
-                    <BotanicalPlantGraphic
-                      species={species}
-                      growthPoints={plant.growthPoints}
-                      potStyle={plant.potStyle}
-                      waterLevel={plant.waterLevel}
-                      isWatering={isWatering}
-                      isSunlit={isSunlit}
-                      isLoved={isLoved}
-                      size="md"
-                    />
-                  </div>
-
-                  {/* Wooden Garden Plant Tag on the Soil */}
-                  <div className="mt-1 px-3 py-0.5 rounded-md bg-[#2b180d] border border-[#52301a] text-[10px] font-mono font-bold text-[#fed7aa] shadow-md flex items-center gap-1">
-                    <span>{species.name}</span>
-                    <span className="text-[#86efac]">• {plant.growthPoints}%</span>
-                  </div>
-                </div>
+                </button>
               );
             })}
-
-            {/* Empty Garden Soil Bed Spot: "+ Plant Here" */}
-            <div
-              onClick={() => setIsPlantModalOpen(true)}
-              className="group flex flex-col items-center justify-end cursor-pointer pb-2"
-            >
-              <div className="w-32 h-32 rounded-full border-2 border-dashed border-emerald-400/50 hover:border-emerald-400 flex flex-col items-center justify-center bg-emerald-950/20 hover:bg-emerald-900/40 transition-all hover:scale-105 shadow-inner">
-                <span className="text-3xl mb-1 group-hover:scale-125 transition-transform">🌱</span>
-                <span className="text-[11px] font-extrabold text-emerald-300 text-center">
-                  + Plant Here
-                </span>
-                <span className="text-[9px] text-[#8696a0]">Empty Soil Bed</span>
-              </div>
-              <div className="mt-2 px-3 py-0.5 rounded-md bg-[#2b180d] border border-[#52301a] text-[10px] font-mono text-emerald-400 font-bold">
-                Fertile Loam
-              </div>
-            </div>
-
           </div>
         </div>
-
-        {/* ── RICH GARDEN GROUND / EARTH BED (STRETCHES ACROSS ENTIRE BOTTOM) ── */}
-        <div className="relative w-full h-24 sm:h-28 bg-gradient-to-b from-[#241309] via-[#1b0e06] to-[#0c0603] border-t-4 border-[#166534] shadow-[inset_0_12px_24px_rgba(0,0,0,0.6)]">
-          {/* Grassy Garden Lawn Edge with blades and stones */}
-          <div className="absolute -top-4 inset-x-0 h-4 flex items-center justify-around pointer-events-none overflow-hidden opacity-90">
-            {[...Array(36)].map((_, i) => (
-              <div
-                key={i}
-                className="w-1.5 h-4 bg-emerald-600 rounded-t-full transform rotate-3"
-                style={{
-                  height: `${10 + (i % 4) * 3}px`,
-                  backgroundColor: i % 2 === 0 ? '#15803d' : '#22c55e',
-                }}
-              />
-            ))}
-          </div>
-
-          <div className="max-w-5xl mx-auto px-4 h-full flex items-center justify-between text-xs text-[#8696a0] font-mono">
-            <span className="flex items-center gap-1.5">
-              <Sprout className="w-4 h-4 text-emerald-400" />
-              <span>Surya &amp; Sadhana's Fertile Soil Bed</span>
-            </span>
-            <span className="hidden sm:inline">
-              Tap any plant to care • Day &amp; Night living cycle
-            </span>
-          </div>
-        </div>
-
       </div>
 
-      {/* ── 6. MODAL: FOCUS INSPECTOR & BOTANICAL TIME LAPSE ── */}
-      {focusedPlant && focusedSpecies && (
+      {/* ── 5. THE CENTERPIECE: TODAY'S ACTIVE LIVING PLANT GROWING IN SOIL ── */}
+      <div className="relative z-10 max-w-3xl mx-auto w-full px-4 flex flex-col items-center justify-center my-auto py-2">
+        {/* Plant Identity Badge */}
+        <div className="flex flex-col items-center text-center space-y-1 mb-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111b21]/90 border border-emerald-500/40 text-xs font-bold text-emerald-300 shadow-md">
+            <span>Day {currentPlant.dayNumber} Variety:</span>
+            <span className="text-white font-extrabold">{currentSpecies.name}</span>
+            <span className="text-base">{currentSpecies.emoji}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-[#8696a0]">{stageInfo.name}</span>
+            <span className="text-xs font-mono font-black text-emerald-400">({currentPlant.growthPoints}%)</span>
+            {isAutoGrowing && currentPlant.growthPoints < 100 && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono animate-pulse">
+                <span>🌱 Growing automatically</span>
+              </span>
+            )}
+          </div>
+
+          {/* Growth Progress Bar */}
+          <div className="w-56 sm:w-72 h-2.5 rounded-full bg-[#182229] overflow-hidden p-0.5 border border-[#2a3942] shadow-inner">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 rounded-full transition-all duration-700 shadow-sm"
+              style={{ width: `${currentPlant.growthPoints}%` }}
+            />
+          </div>
+        </div>
+
+        {/* ── VISIBLE BOTANICAL GRAPHIC ROOTED IN GARDEN EARTH ── */}
+        <div
+          onClick={() => setIsInspectModalOpen(true)}
+          className="relative my-1 cursor-pointer group"
+          title="Click to Inspect in High Definition"
+        >
+          <BotanicalPlantGraphic
+            species={currentSpecies}
+            growthPoints={currentPlant.growthPoints}
+            waterLevel={currentPlant.waterLevel}
+            isWatering={isWatering}
+            isSunlit={isSunlit}
+            isLoved={isLoved}
+            size="lg"
+          />
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsInspectModalOpen(true);
+            }}
+            className="absolute bottom-6 right-2 p-1.5 rounded-full bg-[#111b21]/80 text-[#8696a0] hover:text-white border border-[#2a3942] opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Inspect Close Up"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Species Daily Quote */}
+        <p className="text-xs text-[#aebac1] italic text-center max-w-sm px-2 mt-0.5">
+          "{currentSpecies.quote}"
+        </p>
+      </div>
+
+      {/* ── 6. FLOATING INTERACTIVE NURTURE ISLAND (BOTTOM CONTROLS) ── */}
+      <div className="relative z-20 w-full max-w-xl mx-auto px-4 mb-2">
+        <div className="p-2.5 rounded-3xl bg-[#111b21]/90 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center justify-between gap-2">
+          {/* Water */}
+          <button
+            onClick={handleWater}
+            className="flex-1 py-2.5 px-2 rounded-2xl bg-sky-500/15 hover:bg-sky-500/30 border border-sky-500/40 text-sky-400 font-bold text-xs flex flex-col items-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-sm"
+            title="Pour Water onto Soil (+8% Growth Boost)"
+          >
+            <Droplets className="w-4 h-4" />
+            <span>Water Soil</span>
+          </button>
+
+          {/* Sunlight */}
+          <button
+            onClick={handleSunlight}
+            className="flex-1 py-2.5 px-2 rounded-2xl bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-sm"
+            title="Bask in Warm Sunlight (+6% Growth Boost)"
+          >
+            <Sun className="w-4 h-4" />
+            <span>Sunbeam</span>
+          </button>
+
+          {/* Love */}
+          <button
+            onClick={handleLove}
+            className="flex-1 py-2.5 px-2 rounded-2xl bg-rose-500/15 hover:bg-rose-500/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex flex-col items-center gap-0.5 transition-all active:scale-90 cursor-pointer shadow-sm"
+            title="Send Affection & Love (+8% Growth Boost)"
+          >
+            <Heart className="w-4 h-4" />
+            <span>Give Love</span>
+          </button>
+
+          {/* Advance Day (For testing & journey progression) */}
+          <button
+            onClick={handleAdvanceNextDay}
+            className="py-2.5 px-3.5 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-[#111b21] font-extrabold text-xs flex items-center gap-1 shadow-lg shadow-emerald-500/25 transition-all active:scale-95 cursor-pointer"
+            title="Advance to Next Day's Plant"
+          >
+            <span>Next Day</span>
+            <ChevronRight className="w-3.5 h-3.5 stroke-[3]" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── 7. FERTILE GARDEN GROUND BED (FOOTER) ── */}
+      <div className="relative z-10 w-full h-16 sm:h-20 bg-gradient-to-b from-[#241309] via-[#1b0e06] to-[#0c0603] border-t-4 border-[#166534] shadow-[inset_0_12px_24px_rgba(0,0,0,0.6)]">
+        {/* Grass edge */}
+        <div className="absolute -top-3.5 inset-x-0 h-3.5 flex items-center justify-around pointer-events-none overflow-hidden opacity-90">
+          {[...Array(38)].map((_, i) => (
+            <div
+              key={i}
+              className="w-1.5 h-4 bg-emerald-600 rounded-t-full transform rotate-3"
+              style={{
+                height: `${10 + (i % 4) * 3}px`,
+                backgroundColor: i % 2 === 0 ? '#15803d' : '#22c55e',
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="max-w-5xl mx-auto px-4 h-full flex items-center justify-between text-[11px] text-[#8696a0] font-mono">
+          <span className="flex items-center gap-1.5">
+            <Sprout className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Surya &amp; Sadhana's Botanical Earth • Day {currentPlant.dayNumber} of 12</span>
+          </span>
+          <span>
+            {currentPlant.growthPoints >= 100
+              ? '🌸 Fully Bloomed and Living Forever'
+              : '🌱 Automatically growing right now'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── 8. MODAL: FULL-SCREEN BOTANICAL TIME LAPSE INSPECTOR ── */}
+      {isInspectModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[95vh] overflow-y-auto">
+          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">{focusedSpecies.emoji}</span>
-                  <h2 className="text-lg font-bold text-white">{focusedPlant.nickname}</h2>
+                  <span className="text-xl">{currentSpecies.emoji}</span>
+                  <h2 className="text-lg font-bold text-white">{currentPlant.nickname}</h2>
                 </div>
-                <p className="text-xs text-[#8696a0]">{focusedSpecies.name} • Planted in soil by {focusedPlant.plantedBy === 'surya' ? 'Surya' : 'Sadhana'}</p>
+                <p className="text-xs text-[#8696a0]">{currentSpecies.name} • Planted with love by {currentPlant.plantedBy === 'surya' ? 'Surya' : 'Sadhana'}</p>
               </div>
 
               <button
-                onClick={() => setFocusedPlantId(null)}
+                onClick={() => setIsInspectModalOpen(false)}
                 className="p-1.5 rounded-full text-[#8696a0] hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="relative py-4 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#182229]/60 to-[#0c1317] border border-[#2a3942]/60">
+            {/* High-Definition Graphic */}
+            <div className="py-2 flex flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-[#182229]/60 to-[#0c1317] border border-[#2a3942]/60">
               <BotanicalPlantGraphic
-                species={focusedSpecies}
-                growthPoints={focusedPlant.growthPoints}
-                potStyle={focusedPlant.potStyle}
-                waterLevel={focusedPlant.waterLevel}
-                isWatering={animatingWaterId === focusedPlant.id}
-                isSunlit={animatingSunId === focusedPlant.id}
-                isLoved={animatingLoveId === focusedPlant.id}
+                species={currentSpecies}
+                growthPoints={currentPlant.growthPoints}
+                waterLevel={currentPlant.waterLevel}
+                isWatering={isWatering}
+                isSunlit={isSunlit}
+                isLoved={isLoved}
                 size="lg"
               />
-
               <div className="mt-2 text-center">
-                <div className="text-sm font-bold text-emerald-400">
-                  {getGrowthStageInfo(focusedPlant.growthPoints).name}
-                </div>
-                <p className="text-xs text-[#8696a0] max-w-xs mt-1">
-                  {getGrowthStageInfo(focusedPlant.growthPoints).tip}
-                </p>
+                <div className="text-sm font-bold text-emerald-400">{stageInfo.name}</div>
+                <p className="text-xs text-[#8696a0] max-w-xs mt-1">{stageInfo.tip}</p>
               </div>
             </div>
 
-            {/* Growth Time-Lapse Slider */}
-            <div className="space-y-2 p-4 rounded-2xl bg-[#182229]/70 border border-[#2a3942]">
+            {/* Interactive Growth Slider (For curiosity & manual testing) */}
+            <div className="space-y-2 p-3.5 rounded-2xl bg-[#182229]/70 border border-[#2a3942]">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white font-bold flex items-center gap-1.5">
                   <Sliders className="w-4 h-4 text-emerald-400" />
-                  <span>Growth Time-Lapse (Seed to Bloom)</span>
+                  <span>Manual Time-Lapse Slider</span>
                 </span>
-                <span className="text-emerald-400 font-mono font-bold">{focusedPlant.growthPoints}%</span>
+                <span className="text-emerald-400 font-mono font-bold">{currentPlant.growthPoints}%</span>
               </div>
               <input
                 type="range"
                 min="0"
                 max="100"
-                value={focusedPlant.growthPoints}
+                value={currentPlant.growthPoints}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  setPlants((prev) =>
-                    prev.map((p) => (p.id === focusedPlant.id ? { ...p, growthPoints: val } : p))
+                  setDailyPlants((prev) =>
+                    prev.map((p) => (p.dayNumber === activeDayNumber ? { ...p, growthPoints: val } : p))
                   );
                 }}
                 className="w-full accent-emerald-500 cursor-pointer h-2 bg-[#111b21] rounded-lg"
@@ -1673,129 +1530,32 @@ export const InteractivePlantGarden: React.FC = () => {
               </div>
             </div>
 
-            {/* Care Actions within Focus Modal */}
-            <div className="grid grid-cols-3 gap-2.5">
+            {/* Care Actions inside modal */}
+            <div className="grid grid-cols-3 gap-2">
               <button
-                onClick={() => handleWaterPlant(focusedPlant.id)}
-                className="py-3 px-2 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-400 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+                onClick={handleWater}
+                className="py-2.5 px-2 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-400 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
               >
-                <Droplets className="w-5 h-5" />
-                <span>Water (+15%)</span>
+                <Droplets className="w-4 h-4" />
+                <span>Water</span>
               </button>
 
               <button
-                onClick={() => handleSunlightPlant(focusedPlant.id)}
-                className="py-3 px-2 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+                onClick={handleSunlight}
+                className="py-2.5 px-2 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
               >
-                <Sun className="w-5 h-5" />
-                <span>Sunlight (+12%)</span>
+                <Sun className="w-4 h-4" />
+                <span>Sunlight</span>
               </button>
 
               <button
-                onClick={() => handleLovePlant(focusedPlant.id)}
-                className="py-3 px-2 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
+                onClick={handleLove}
+                className="py-2.5 px-2 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-400 font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95"
               >
-                <Heart className="w-5 h-5" />
-                <span>Give Love (+15%)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 7. MODAL: PLANT IN GARDEN (VARIETY CATALOG) ── */}
-      {isPlantModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
-              <div className="flex items-center gap-2 text-white font-bold text-base">
-                <Sprout className="w-5 h-5 text-emerald-400" />
-                <span>Plant in Garden Soil</span>
-              </div>
-              <button
-                onClick={() => setIsPlantModalOpen(false)}
-                className="p-1 rounded-full text-[#8696a0] hover:text-white"
-              >
-                <X className="w-5 h-5" />
+                <Heart className="w-4 h-4" />
+                <span>Give Love</span>
               </button>
             </div>
-
-            <form onSubmit={handlePlantNewSeed} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#8696a0] mb-2">
-                  1. Choose Botanical Variety to Plant (12 Available)
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto p-1 scrollbar-none">
-                  {PLANT_SPECIES.map((species) => {
-                    const isSelected = selectedSpeciesId === species.id;
-                    return (
-                      <div
-                        key={species.id}
-                        onClick={() => setSelectedSpeciesId(species.id)}
-                        className={`p-2.5 rounded-2xl border flex flex-col items-center text-center cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-emerald-500/20 border-emerald-400 shadow-md'
-                            : 'bg-[#182229] border-[#2a3942] hover:border-emerald-500/40 text-[#8696a0]'
-                        }`}
-                      >
-                        <span className="text-3xl mb-1">{species.emoji}</span>
-                        <span className="text-xs font-bold text-white truncate w-full">{species.name}</span>
-                        <span className="text-[10px] text-emerald-400 font-mono mt-0.5">{species.category}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#8696a0] mb-2">
-                  2. Choose Planting Vessel or Soil Bed
-                </label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                  {[
-                    { id: 'earth', name: 'Garden Soil Bed', icon: '🌱' },
-                    { id: 'terracotta', name: 'Terracotta Clay', icon: '🏺' },
-                    { id: 'ceramic', name: 'Glazed Ceramic', icon: '🪴' },
-                    { id: 'moss', name: 'Forest Moss', icon: '🪨' },
-                    { id: 'golden', name: 'Golden Urn', icon: '👑' },
-                  ].map((pot) => (
-                    <div
-                      key={pot.id}
-                      onClick={() => setSelectedPot(pot.id as any)}
-                      className={`p-2 rounded-xl border text-center cursor-pointer transition-all ${
-                        selectedPot === pot.id
-                          ? 'bg-emerald-500/20 border-emerald-400 text-white'
-                          : 'bg-[#182229] border-[#2a3942] text-[#8696a0] hover:text-white'
-                      }`}
-                    >
-                      <div className="text-xl mb-0.5">{pot.icon}</div>
-                      <div className="text-[10px] font-bold truncate">{pot.name}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#8696a0] mb-1">
-                  3. Plant Nickname / Note
-                </label>
-                <input
-                  type="text"
-                  value={plantNickname}
-                  onChange={(e) => setPlantNickname(e.target.value)}
-                  placeholder="e.g., Surya &amp; Sadhana's Sweet Blossom"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#182229] border border-[#2a3942] text-white text-xs placeholder-[#8696a0] focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 rounded-2xl bg-[#00a884] hover:bg-[#029071] text-[#111b21] font-extrabold text-sm shadow-xl shadow-[#00a884]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Sprout className="w-5 h-5 stroke-[2.5]" />
-                <span>Bury Seed in Garden Soil &amp; Start Growing</span>
-              </button>
-            </form>
           </div>
         </div>
       )}

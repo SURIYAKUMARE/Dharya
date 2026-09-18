@@ -16,6 +16,8 @@ import {
   CHAT_ID,
 } from '../../services/chatSyncService';
 import {
+  MessageSquare,
+  Sprout,
   ArrowLeft,
   Phone,
   Video,
@@ -63,8 +65,13 @@ import {
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
+import { InteractivePlantGarden } from '../garden/InteractivePlantGarden';
 
-export const WhatsAppChatView: React.FC = () => {
+interface WhatsAppChatViewProps {
+  initialTab?: 'chat' | 'garden';
+}
+
+export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
   const { student, logoutChat, switchTab } = useStudyApp();
 
   // Active user and partner details
@@ -134,6 +141,20 @@ export const WhatsAppChatView: React.FC = () => {
   useEffect(() => {
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
+
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'garden'>(initialTab);
+  const [mobileView, setMobileView] = useState<'list' | 'conversation'>('conversation');
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
+  const [showSidebarMenu, setShowSidebarMenu] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveMainView(initialTab);
+      if (initialTab === 'garden') {
+        setMobileView('conversation');
+      }
+    }
+  }, [initialTab]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -1965,7 +1986,7 @@ export const WhatsAppChatView: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 w-full h-full flex flex-col overflow-hidden bg-[#0c1317] text-[#e9edef] select-none">
+    <div className="fixed inset-0 z-50 w-screen h-screen flex flex-row overflow-hidden bg-[#0c1317] text-[#e9edef] select-none font-sans">
       {/* Hidden File Input for Documents */}
       <input
         type="file"
@@ -1991,14 +2012,477 @@ export const WhatsAppChatView: React.FC = () => {
         className="hidden"
       />
 
-      {/* ── 1. WHATSAPP HEADER ── */}
-      <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          {/* Back to Study Portal Button */}
+      
+      {/* ══════ COLUMN 1: LEFT NAVIGATION RAIL (WhatsApp Web Desktop Rail) ══════ */}
+      <aside className="hidden md:flex flex-col justify-between items-center w-[64px] bg-[#202c33] border-r border-[#222e35] py-3.5 px-2 z-30 shrink-0 select-none">
+        {/* Top Navigation Icons */}
+        <div className="flex flex-col items-center gap-3 w-full">
+          {/* Chats Tab Button */}
+          <button
+            onClick={() => {
+              setActiveMainView('chat');
+              setMobileView('conversation');
+            }}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              activeMainView === 'chat'
+                ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/30'
+                : 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white'
+            }`}
+            title="Chats"
+          >
+            <MessageSquare className="w-5 h-5" />
+            {activeMainView === 'chat' && (
+              <span className="absolute left-[-8px] top-2.5 bottom-2.5 w-1 bg-[#00a884] rounded-r-full" />
+            )}
+          </button>
+
+          {/* Botanical Garden Button */}
+          <button
+            onClick={() => {
+              setActiveMainView('garden');
+              setMobileView('conversation');
+            }}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              activeMainView === 'garden'
+                ? 'bg-[#374248] text-emerald-400 shadow-inner ring-1 ring-emerald-500/40'
+                : 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400'
+            }`}
+            title="Botanical Garden (Multi-Plant Nurturing)"
+          >
+            <Sprout className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-[#00a884] text-[#111b21] text-[10px] font-black rounded-full shadow font-mono">
+              12
+            </span>
+            {activeMainView === 'garden' && (
+              <span className="absolute left-[-8px] top-2.5 bottom-2.5 w-1 bg-emerald-400 rounded-r-full" />
+            )}
+          </button>
+
+          {/* Voice & Video Calls Button */}
+          <button
+            onClick={() => setShowCallModal('video')}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-white transition-all"
+            title="Voice &amp; Video Calls"
+          >
+            <Phone className="w-5 h-5" />
+          </button>
+
+          {/* Starred Messages Button */}
+          <button
+            onClick={() => setShowStarredModal(true)}
+            className="relative w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400 transition-all"
+            title="Starred messages"
+          >
+            <Star className="w-5 h-5" />
+            {messages.filter((m) => m.isStarred).length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-[#202c33]" />
+            )}
+          </button>
+        </div>
+
+        {/* Bottom System & Profile Icons */}
+        <div className="flex flex-col items-center gap-3 w-full">
+          {/* Study Curriculum Portal Button */}
           <button
             onClick={() => switchTab('home')}
-            className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1"
-            title="Back to Study Portal"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-[#53bdeb] transition-all"
+            title="Return to Study Portal &amp; Curriculum Library"
+          >
+            <BookOpen className="w-5 h-5" />
+          </button>
+
+          {/* Chat Wallpaper Switcher */}
+          <button
+            onClick={() => setShowWallpaperModal(true)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-white transition-all"
+            title="Chat Wallpaper"
+          >
+            <Palette className="w-5 h-5" />
+          </button>
+
+          {/* Security & Privacy Settings */}
+          <button
+            onClick={() => setShowSecurityModal(true)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400 transition-all"
+            title="Security &amp; Privacy (E2EE 256-bit)"
+          >
+            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+          </button>
+
+          <div className="w-8 h-[1px] bg-[#2a3942]" />
+
+          {/* Current User Profile Avatar */}
+          <button
+            onClick={() => setShowContactInfo(true)}
+            className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-500 text-white font-bold text-sm flex items-center justify-center ring-1 ring-white/20 hover:ring-2 hover:ring-emerald-400 transition-all"
+            title={`${currentUser === 'surya' ? 'Surya' : 'Sadhana'} (Online Profile)`}
+          >
+            <span>{currentUser[0].toUpperCase()}</span>
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00a884] border-2 border-[#202c33]" />
+          </button>
+        </div>
+      </aside>
+
+      {/* ══════ COLUMN 2: LEFT CHATS SIDEBAR (WhatsApp Web Chats List) ══════ */}
+      <section
+        className={`w-full md:w-[380px] lg:w-[400px] xl:w-[420px] bg-[#111b21] flex flex-col border-r border-[#222e35] shrink-0 h-full z-20 ${
+          mobileView === 'conversation' ? 'hidden md:flex' : 'flex'
+        }`}
+      >
+        {/* Sidebar Header Bar */}
+        <div className="h-[60px] px-4 bg-[#202c33] flex items-center justify-between border-b border-[#222e35] shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[20px] font-bold text-[#e9edef] tracking-tight">Chats</span>
+          </div>
+
+          <div className="flex items-center gap-1 text-[#aebac1]">
+            {/* Garden jump button */}
+            <button
+              onClick={() => {
+                setActiveMainView('garden');
+                setMobileView('conversation');
+              }}
+              className="p-2 rounded-full hover:bg-white/10 hover:text-emerald-400 transition-colors"
+              title="Botanical Garden"
+            >
+              <Sprout className="w-5 h-5 text-emerald-400" />
+            </button>
+
+            {/* New Chat Button */}
+            <button
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+              title="New Chat"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+
+            {/* Sidebar 3-dots Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSidebarMenu(!showSidebarMenu)}
+                className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+                title="Menu"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {showSidebarMenu && (
+                <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
+                  <button
+                    onClick={() => {
+                      setActiveMainView('garden');
+                      setShowSidebarMenu(false);
+                      setMobileView('conversation');
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-400 font-medium"
+                  >
+                    <Sprout className="w-4 h-4" />
+                    <span>Botanical Garden</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowStarredModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <Star className="w-4 h-4 text-amber-400" />
+                    <span>Starred Messages</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowWallpaperModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <Palette className="w-4 h-4 text-teal-400" />
+                    <span>Chat Wallpaper</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSecurityModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-300"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Security &amp; Privacy</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowStorageModal(true);
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
+                  >
+                    <HardDrive className="w-4 h-4 text-slate-300" />
+                    <span>Manage Storage</span>
+                  </button>
+                  <div className="h-[1px] bg-[#2a3942] my-1" />
+                  <button
+                    onClick={() => {
+                      switchTab('home');
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-sky-400"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Study Curriculum Portal</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      logoutChat();
+                      setShowSidebarMenu(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors text-red-400 flex items-center gap-2.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Log out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar Row */}
+        <div className="px-3 py-2 bg-[#111b21] flex items-center gap-2 border-b border-[#222e35]/40 shrink-0">
+          <div className="flex-1 bg-[#202c33] rounded-lg px-3 py-1.5 flex items-center gap-2.5 focus-within:ring-1 focus-within:ring-[#00a884] transition-all">
+            <Search className="w-4 h-4 text-[#8696a0] shrink-0" />
+            <input
+              type="text"
+              placeholder="Search or start new chat"
+              value={sidebarSearchQuery}
+              onChange={(e) => setSidebarSearchQuery(e.target.value)}
+              className="bg-transparent text-xs sm:text-[13px] text-[#e9edef] placeholder-[#8696a0] outline-none w-full"
+            />
+            {sidebarSearchQuery && (
+              <button onClick={() => setSidebarSearchQuery('')} className="text-[#8696a0] hover:text-white">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => setChatFilter(chatFilter === 'unread' ? 'all' : 'unread')}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              chatFilter === 'unread' ? 'bg-[#00a884] text-[#111b21]' : 'hover:bg-white/10 text-[#8696a0]'
+            }`}
+            title="Filter unread chats"
+          >
+            <Filter className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Filter Chips Row */}
+        <div className="px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#222e35]/30 shrink-0">
+          {(['all', 'unread', 'favorites', 'groups'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setChatFilter(tab)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-all ${
+                chatFilter === tab
+                  ? 'bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/40'
+                  : 'bg-[#202c33] text-[#8696a0] hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Chats List Area */}
+        <div className="flex-1 overflow-y-auto divide-y divide-[#222e35]/30">
+          {/* Chat 1: Sadhana / Partner (Active & Pinned) */}
+          <div
+            onClick={() => {
+              setActiveMainView('chat');
+              setMobileView('conversation');
+            }}
+            className={`px-3 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
+              activeMainView === 'chat' ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'
+            }`}
+          >
+            <div className="relative shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold flex items-center justify-center text-base shadow">
+                {partnerName[0]}
+              </div>
+              {isPartnerOnline && (
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 border-[#111b21] shadow-[0_0_6px_#00a884]" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-medium text-[#e9edef] truncate">{partnerName}</span>
+                <span className="text-[11px] text-[#00a884] font-medium shrink-0 ml-1">
+                  {messages[messages.length - 1]?.time || 'Now'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
+                <div className="flex items-center gap-1 truncate max-w-[220px]">
+                  <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] shrink-0" />
+                  <span className="truncate">
+                    {messages[messages.length - 1]?.text || 'Tap to start conversation'}
+                  </span>
+                </div>
+                <Pin className="w-3.5 h-3.5 text-[#8696a0] rotate-45 shrink-0 ml-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Chat 2: Engineering Study Group */}
+          {chatFilter !== 'unread' && chatFilter !== 'favorites' && (
+            <div
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-600 to-blue-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
+                📚
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-medium text-[#e9edef] truncate">Engineering Study Group</span>
+                  <span className="text-[11px] text-[#00a884] shrink-0 font-medium ml-1">10:14 AM</span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
+                  <span className="truncate max-w-[220px]">Surya: Check the notes for module 4</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-bold min-w-[18px] text-center">
+                    3
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Chat 3: B.Tech CSE 2026 */}
+          {chatFilter !== 'unread' && (
+            <div
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
+                🎓
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-medium text-[#e9edef] truncate">B.Tech CSE 2026</span>
+                  <span className="text-[11px] text-[#8696a0] shrink-0 ml-1">Yesterday</span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
+                  <span className="truncate max-w-[220px]">HOD: Semester assessment schedule updated</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Chat 4: Campus Library Updates */}
+          {chatFilter !== 'unread' && (
+            <div
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-600 to-orange-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
+                📖
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[15px] font-medium text-[#e9edef] truncate">Campus Library Updates</span>
+                  <span className="text-[11px] text-[#8696a0] shrink-0 ml-1">12/09/2026</span>
+                </div>
+                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
+                  <span className="truncate max-w-[220px]">Digital library credentials active</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Garden) ══════ */}
+      <main
+        className={`flex-1 flex flex-col h-full bg-[#0b141a] relative overflow-hidden ${
+          mobileView === 'list' ? 'hidden md:flex' : 'flex'
+        }`}
+      >
+        {activeMainView === 'garden' ? (
+          /* Garden View with WhatsApp Web styling */
+          <div className="w-full h-full flex flex-col bg-[#0c1317]">
+            {/* Top Garden Header */}
+            <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 shrink-0 shadow-sm h-[60px]">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setActiveMainView('chat');
+                    setMobileView('conversation');
+                  }}
+                  className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1.5"
+                  title="Back to Chat"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span className="text-xs font-medium text-[#00a884] hidden sm:inline">Back to Chat</span>
+                </button>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold shadow-sm">
+                    🌱
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-semibold text-[#e9edef] flex items-center gap-2 leading-tight">
+                      <span>Botanical Garden</span>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-medium">12 Varieties</span>
+                    </h2>
+                    <p className="text-[11px] text-[#00a884] flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
+                      <span>Live Synced across Phone &amp; Laptop</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setActiveMainView('chat');
+                    setMobileView('conversation');
+                  }}
+                  className="px-3.5 py-1.5 rounded-full bg-[#00a884] hover:bg-[#029071] text-white text-xs font-semibold flex items-center gap-1.5 shadow transition-all"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Open {partnerName}'s Chat</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Garden Scroll Container */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+              <InteractivePlantGarden />
+            </div>
+          </div>
+        ) : (
+          /* Active Chat Conversation */
+          <>
+{/* ── 1. WHATSAPP HEADER ── */}
+      <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm">
+        <div className="flex items-center gap-3">
+          {/* Mobile Back to Chats List Button */}
+          <button
+            onClick={() => setMobileView('list')}
+            className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1 md:hidden"
+            title="Back to Chats List"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -2043,6 +2527,15 @@ export const WhatsAppChatView: React.FC = () => {
 
         {/* Action Icons */}
         <div className="flex items-center gap-1 sm:gap-2 text-[#aebac1]">
+          {/* Botanical Garden Quick Button */}
+          <button
+            onClick={() => setActiveMainView('garden')}
+            className="p-2 rounded-full hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition-colors"
+            title="Botanical Garden"
+          >
+            <Sprout className="w-4 h-4 text-emerald-400" />
+          </button>
+
           {/* Security & Privacy Section Quick Button */}
           <button
             onClick={() => setShowSecurityModal(true)}
@@ -3035,6 +3528,9 @@ export const WhatsAppChatView: React.FC = () => {
           }}
         />
       )}
+          </>
+        )}
+      </main>
 
       {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos from Gallery or Camera) ── */}
       {mediaModalOpen && (

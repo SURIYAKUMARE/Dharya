@@ -2298,6 +2298,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {/* Chats List Area */}
         <div className="flex-1 overflow-y-auto divide-y divide-[#222e35]/30">
           {/* Chat 1: Sadhana / Partner (Active & Pinned) */}
+          {(!sidebarSearchQuery || partnerName.toLowerCase().includes(sidebarSearchQuery.toLowerCase())) && (
           <div
             onClick={() => {
               setActiveMainView('chat');
@@ -2334,80 +2335,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               </div>
             </div>
           </div>
-
-          {/* Chat 2: Engineering Study Group */}
-          {chatFilter !== 'unread' && chatFilter !== 'favorites' && (
-            <div
-              onClick={() => {
-                setActiveMainView('chat');
-                setMobileView('conversation');
-              }}
-              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-600 to-blue-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
-                📚
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-medium text-[#e9edef] truncate">Engineering Study Group</span>
-                  <span className="text-[11px] text-[#00a884] shrink-0 font-medium ml-1">10:14 AM</span>
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
-                  <span className="truncate max-w-[220px]">Surya: Check the notes for module 4</span>
-                  <span className="px-1.5 py-0.2 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-bold min-w-[18px] text-center">
-                    3
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Chat 3: B.Tech CSE 2026 */}
-          {chatFilter !== 'unread' && (
-            <div
-              onClick={() => {
-                setActiveMainView('chat');
-                setMobileView('conversation');
-              }}
-              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
-                🎓
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-medium text-[#e9edef] truncate">B.Tech CSE 2026</span>
-                  <span className="text-[11px] text-[#8696a0] shrink-0 ml-1">Yesterday</span>
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
-                  <span className="truncate max-w-[220px]">HOD: Semester assessment schedule updated</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Chat 4: Campus Library Updates */}
-          {chatFilter !== 'unread' && (
-            <div
-              onClick={() => {
-                setActiveMainView('chat');
-                setMobileView('conversation');
-              }}
-              className="px-3 py-3 flex items-center gap-3 cursor-pointer hover:bg-[#202c33] transition-colors"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-600 to-orange-700 text-white font-bold flex items-center justify-center text-lg shrink-0 shadow">
-                📖
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-[15px] font-medium text-[#e9edef] truncate">Campus Library Updates</span>
-                  <span className="text-[11px] text-[#8696a0] shrink-0 ml-1">12/09/2026</span>
-                </div>
-                <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
-                  <span className="truncate max-w-[220px]">Digital library credentials active</span>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </section>

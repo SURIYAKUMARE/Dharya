@@ -583,36 +583,45 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   // ── 1. INCOMING CALL SCREEN ──
   if (callStatus === 'incoming') {
     return (
-      <div className="fixed inset-0 z-50 bg-gradient-to-b from-[#0b141a] via-[#111b21] to-[#0c1317] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200">
-        {/* Top Info */}
-        <div className="pt-8 space-y-2">
-          <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-400 font-medium">
+      <div className="fixed inset-0 z-50 bg-[#091516] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200 overflow-hidden">
+        {/* Subtle WhatsApp Calling Watermark Pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 16c2.5 0 4.5-2 4.5-4.5S16.5 7 14 7s-4.5 2-4.5 4.5 2 4.5 4.5 4.5zm40 20c2.5 0 4.5-2 4.5-4.5S56.5 27 54 27s-4.5 2-4.5 4.5 2 4.5 4.5 4.5zm-30 24c2.5 0 4.5-2 4.5-4.5S26.5 51 24 51s-4.5 2-4.5 4.5 2 4.5 4.5 4.5z' fill='%23ffffff'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Top Branding & Status */}
+        <div className="pt-8 space-y-2.5 relative z-10">
+          <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-[#25d366] font-medium backdrop-blur-md">
             <Lock className="w-3.5 h-3.5" />
             <span>WhatsApp End-to-End Encrypted</span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight">{partnerName}</h2>
-          <p className="text-sm font-medium text-emerald-400 animate-pulse">
-            Incoming WhatsApp {callType === 'video' ? 'Video' : 'Voice'} Call...
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{partnerName}</h2>
+          <p className="text-sm font-medium text-[#25d366] animate-pulse flex items-center justify-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#25d366] animate-ping" />
+            <span>Incoming WhatsApp {callType === 'video' ? 'Video' : 'Voice'} Call...</span>
           </p>
         </div>
 
-        {/* Center Animated Avatar */}
-        <div className="relative my-auto flex items-center justify-center">
-          <div className="absolute w-48 h-48 rounded-full bg-emerald-500/20 animate-ping" />
-          <div className="absolute w-36 h-36 rounded-full bg-emerald-500/30 animate-pulse" />
-          <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-4xl flex items-center justify-center shadow-2xl border-4 border-emerald-400/40">
+        {/* Center Animated Avatar with Pulsing Waves */}
+        <div className="relative my-auto flex items-center justify-center z-10">
+          <div className="absolute w-56 h-56 rounded-full bg-[#25d366]/10 animate-ping" style={{ animationDuration: '2.5s' }} />
+          <div className="absolute w-44 h-44 rounded-full bg-[#25d366]/20 animate-pulse" />
+          <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-[#25d366]/40 ring-8 ring-white/5">
             {partnerName[0]}
           </div>
         </div>
 
-        {/* Bottom Accept / Decline Buttons */}
-        <div className="pb-12 space-y-6">
-          <div className="flex items-center justify-center gap-12 sm:gap-16">
-            {/* Decline */}
+        {/* Bottom Accept / Decline Controls */}
+        <div className="pb-10 space-y-6 relative z-10">
+          <div className="flex items-center justify-center gap-12 sm:gap-20">
+            {/* Decline Button */}
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleDeclineIncomingCall}
-                className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95"
+                className="w-16 h-16 rounded-full bg-[#ea0038] hover:bg-[#d00030] active:scale-90 text-white flex items-center justify-center shadow-[0_0_24px_rgba(234,0,56,0.5)] transition-all"
                 title="Decline"
               >
                 <PhoneOff className="w-7 h-7" />
@@ -620,19 +629,19 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
               <span className="text-xs text-[#8696a0] font-medium">Decline</span>
             </div>
 
-            {/* Accept */}
+            {/* Accept Button */}
             <div className="flex flex-col items-center gap-2">
               <button
                 onClick={handleAcceptIncomingCall}
-                className="w-16 h-16 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95 animate-bounce"
+                className="w-16 h-16 rounded-full bg-[#25d366] hover:bg-[#20ba59] active:scale-90 text-white flex items-center justify-center shadow-[0_0_28px_rgba(37,211,102,0.6)] transition-all animate-bounce"
                 title="Accept"
               >
                 <Phone className="w-7 h-7" />
               </button>
-              <span className="text-xs text-emerald-400 font-medium">Accept</span>
+              <span className="text-xs text-[#25d366] font-medium">Accept</span>
             </div>
           </div>
-          <p className="text-[11px] text-[#8696a0]">End-to-end encrypted private call</p>
+          <p className="text-[11px] text-[#8696a0]">Secured with WhatsApp 256-bit cryptography</p>
         </div>
       </div>
     );
@@ -641,12 +650,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   // ── 2. ACTIVE VIDEO CALL SCREEN ──
   if (callType === 'video') {
     return (
-      <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between overflow-hidden select-none">
+      <div className="fixed inset-0 z-50 bg-[#070e10] flex flex-col justify-between overflow-hidden select-none">
         {/* Hidden audio element for remote stream */}
         <audio ref={remoteAudioRef} autoPlay playsInline />
 
         {/* Full-Screen Remote Video Stream or High-Tech Avatar Screen */}
-        <div className="absolute inset-0 z-0 bg-[#0c1317] flex items-center justify-center">
+        <div className="absolute inset-0 z-0 bg-[#070e10] flex items-center justify-center">
           {callStatus === 'connected' ? (
             <div className="relative w-full h-full flex items-center justify-center">
               {/* Actual WebRTC Remote Camera Video */}
@@ -659,24 +668,24 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
               {/* Ambient Avatar fallback when remote camera is starting or off */}
               {!hasRemoteVideo && (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-[#111b21] via-[#1a2e35] to-[#0d1f22]">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-emerald-400/30 animate-pulse">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-[#091516] via-[#112423] to-[#071312]">
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-[#25d366]/30 animate-pulse">
                     {partnerName[0]}
                   </div>
                   <div className="mt-4 text-center z-20">
                     <h3 className="text-xl font-bold text-white">{partnerName}</h3>
-                    <p className="text-xs text-emerald-400 font-medium">Connected • Live Audio &amp; Video</p>
+                    <p className="text-xs text-[#25d366] font-medium">Connected • Live Audio &amp; Video</p>
                   </div>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-4xl flex items-center justify-center shadow-2xl animate-pulse">
+              <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-4xl flex items-center justify-center shadow-2xl animate-pulse ring-4 ring-[#25d366]/30">
                 {partnerName[0]}
               </div>
               <h2 className="text-2xl font-bold text-white">{partnerName}</h2>
-              <p className="text-sm text-emerald-400 capitalize animate-pulse font-medium">
+              <p className="text-sm text-[#25d366] capitalize animate-pulse font-medium">
                 {callStatus === 'ringing' ? 'Ringing...' : 'Calling...'}
               </p>
             </div>
@@ -684,12 +693,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         </div>
 
         {/* Top Header Bar */}
-        <div className="relative z-20 p-4 sm:p-6 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between text-white">
+        <div className="relative z-20 p-4 sm:p-6 bg-gradient-to-b from-black/80 via-black/40 to-transparent flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
             <div className="flex flex-col text-left">
               <h3 className="text-base font-bold text-white drop-shadow">{partnerName}</h3>
               <div className="flex items-center gap-1.5 text-xs text-white/80">
-                <Lock className="w-3 h-3 text-emerald-400" />
+                <Lock className="w-3 h-3 text-[#25d366]" />
                 <span>
                   {callStatus === 'connected' ? formatDuration(durationSecs) : `${callStatus}...`}
                 </span>
@@ -697,8 +706,8 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             </div>
           </div>
 
-          <div className="px-2.5 py-1 rounded-full bg-black/40 backdrop-blur border border-white/20 text-[10px] font-black tracking-widest text-emerald-400 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
+          <div className="px-3 py-1 rounded-full bg-black/50 backdrop-blur border border-white/20 text-[10px] font-black tracking-widest text-[#25d366] flex items-center gap-1 shadow-lg">
+            <Sparkles className="w-3 h-3 text-[#25d366]" />
             <span>HD VIDEO</span>
           </div>
         </div>
@@ -723,7 +732,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           {/* Camera Flip Button on Self Preview */}
           <button
             onClick={handleFlipCamera}
-            className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors shadow"
+            className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black/90 transition-colors shadow"
             title="Flip Camera"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -731,12 +740,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         </div>
 
         {/* Bottom Call Control Action Pill Bar */}
-        <div className="relative z-20 pb-8 sm:pb-10 pt-4 bg-gradient-to-t from-black/90 to-transparent flex flex-col items-center gap-4">
-          <div className="flex items-center gap-4 sm:gap-6 bg-[#182229]/80 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full shadow-2xl">
+        <div className="relative z-20 pb-8 sm:pb-10 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-5 bg-[#182229]/90 backdrop-blur-xl border border-white/15 px-6 py-3 rounded-full shadow-2xl">
             {/* Flip Camera */}
             <button
               onClick={handleFlipCamera}
-              className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-transform hover:scale-105"
+              className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all"
               title="Flip Camera"
             >
               <RotateCcw className="w-5 h-5" />
@@ -745,7 +754,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             {/* Video Camera On/Off */}
             <button
               onClick={handleToggleVideo}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 ${
                 isVideoOff ? 'bg-rose-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
               title={isVideoOff ? 'Turn Camera On' : 'Turn Camera Off'}
@@ -756,7 +765,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             {/* Mic Mute/Unmute */}
             <button
               onClick={handleToggleMute}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 ${
                 isMuted ? 'bg-rose-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
               title={isMuted ? 'Unmute Mic' : 'Mute Mic'}
@@ -772,7 +781,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
                 }
                 setIsSpeakerOn(!isSpeakerOn);
               }}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-95 ${
                 !isSpeakerOn ? 'bg-amber-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
               title={isSpeakerOn ? 'Mute Speaker' : 'Turn On Speaker'}
@@ -783,7 +792,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             {/* Red End Call Button */}
             <button
               onClick={() => handleEndCall(false)}
-              className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.6)] transition-transform hover:scale-110 active:scale-95 ml-2"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#ea0038] hover:bg-[#d00030] active:scale-90 text-white flex items-center justify-center shadow-[0_0_24px_rgba(234,0,56,0.6)] transition-all ml-2"
               title="End Call"
             >
               <Phone className="w-6 h-6 rotate-[135deg]" />
@@ -796,33 +805,41 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
   // ── 3. ACTIVE AUDIO CALL SCREEN ──
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-b from-[#0b141a] via-[#111b21] to-[#0c1317] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-[#091516] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200 overflow-hidden">
+      {/* Subtle WhatsApp Calling Watermark Pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 16c2.5 0 4.5-2 4.5-4.5S16.5 7 14 7s-4.5 2-4.5 4.5 2 4.5 4.5 4.5zm40 20c2.5 0 4.5-2 4.5-4.5S56.5 27 54 27s-4.5 2-4.5 4.5 2 4.5 4.5 4.5zm-30 24c2.5 0 4.5-2 4.5-4.5S26.5 51 24 51s-4.5 2-4.5 4.5 2 4.5 4.5 4.5z' fill='%23ffffff'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       {/* Hidden audio element for remote stream */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
       {/* Top Header Bar */}
-      <div className="pt-6 space-y-2">
-        <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-400 font-medium">
+      <div className="pt-6 space-y-2 relative z-10">
+        <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-[#25d366] font-medium backdrop-blur-md">
           <Lock className="w-3.5 h-3.5" />
           <span>WhatsApp Voice Call • End-to-End Encrypted</span>
         </div>
-        <h2 className="text-3xl font-bold tracking-tight">{partnerName}</h2>
-        <p className="text-sm font-medium text-emerald-400">
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{partnerName}</h2>
+        <p className="text-sm font-medium text-[#25d366]">
           {callStatus === 'connected' ? formatDuration(durationSecs) : `${callStatus}...`}
         </p>
       </div>
 
       {/* Center Animated Profile Avatar & Soundwaves */}
-      <div className="relative my-auto flex flex-col items-center justify-center">
+      <div className="relative my-auto flex flex-col items-center justify-center z-10">
         {/* Ripple Wave Rings */}
         <div className="relative flex items-center justify-center">
           {callStatus === 'connected' && (
             <>
-              <div className="absolute w-56 h-56 rounded-full bg-emerald-500/10 animate-ping" />
-              <div className="absolute w-44 h-44 rounded-full bg-emerald-500/20 animate-pulse" />
+              <div className="absolute w-56 h-56 rounded-full bg-[#25d366]/10 animate-ping" style={{ animationDuration: '2.5s' }} />
+              <div className="absolute w-44 h-44 rounded-full bg-[#25d366]/20 animate-pulse" />
             </>
           )}
-          <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-emerald-400/40">
+          <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-[#25d366]/40 ring-8 ring-white/5">
             {partnerName[0]}
           </div>
         </div>
@@ -833,7 +850,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             {[40, 75, 55, 90, 60, 100, 70, 85, 45, 95, 65, 80, 50].map((height, idx) => (
               <div
                 key={idx}
-                className="w-1 bg-emerald-400/80 rounded-full animate-pulse"
+                className="w-1.5 bg-[#25d366] rounded-full animate-pulse shadow-[0_0_6px_#25d366]"
                 style={{
                   height: `${isMuted ? 15 : height}%`,
                   animationDuration: `${0.4 + (idx % 4) * 0.2}s`,
@@ -845,8 +862,8 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       </div>
 
       {/* Bottom Audio Call Controls */}
-      <div className="pb-8 space-y-6">
-        <div className="flex items-center justify-center gap-6 bg-[#1f2c34]/80 backdrop-blur-xl border border-white/10 px-8 py-3.5 rounded-full max-w-sm mx-auto shadow-2xl">
+      <div className="pb-8 space-y-6 relative z-10">
+        <div className="flex items-center justify-center gap-6 bg-[#182229]/90 backdrop-blur-xl border border-white/10 px-8 py-3.5 rounded-full max-w-sm mx-auto shadow-2xl">
           {/* Speaker Toggle */}
           <button
             onClick={() => {
@@ -855,7 +872,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
               }
               setIsSpeakerOn(!isSpeakerOn);
             }}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 ${
               !isSpeakerOn ? 'bg-amber-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
             title={isSpeakerOn ? 'Speaker On' : 'Speaker Off'}
@@ -866,7 +883,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           {/* Mic Mute/Unmute */}
           <button
             onClick={handleToggleMute}
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 ${
               isMuted ? 'bg-rose-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
             title={isMuted ? 'Unmute Mic' : 'Mute Mic'}
@@ -877,7 +894,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           {/* Red End Call Button */}
           <button
             onClick={() => handleEndCall(false)}
-            className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-[0_0_20px_rgba(225,29,72,0.6)] transition-transform hover:scale-110 active:scale-95"
+            className="w-14 h-14 rounded-full bg-[#ea0038] hover:bg-[#d00030] active:scale-90 text-white flex items-center justify-center shadow-[0_0_24px_rgba(234,0,56,0.6)] transition-all"
             title="End Call"
           >
             <Phone className="w-6 h-6 rotate-[135deg]" />

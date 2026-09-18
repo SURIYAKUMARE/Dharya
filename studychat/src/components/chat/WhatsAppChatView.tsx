@@ -60,7 +60,9 @@ import {
   BarChart2,
   CheckSquare,
   Download,
-  Palette
+  Palette,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
@@ -216,6 +218,27 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       return 'doodle';
     }
   });
+
+  // Theme state: 'dark' | 'light' (Official WhatsApp Native Themes)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('whatsapp_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch {}
+    return 'dark';
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('whatsapp_theme', next);
+      } catch {}
+      return next;
+    });
+  };
+
+  const isDark = theme === 'dark';
 
   // Real Audio Recording with MediaRecorder
   const [isRecordingAudio, setIsRecordingAudio] = useState<boolean>(false);
@@ -1428,19 +1451,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
   };
 
-  // Wallpaper Style Provider
+  // Wallpaper Style Provider with Light & Dark WhatsApp themes
   const getWallpaperStyle = () => {
     if (activeWallpaper === 'obsidian') {
-      return { backgroundColor: '#0a0f12', backgroundImage: 'none' };
+      return { backgroundColor: isDark ? '#0a0f12' : '#e4e7ea', backgroundImage: 'none' };
     }
     if (activeWallpaper === 'emerald') {
-      return { backgroundColor: '#071a14', backgroundImage: 'none' };
+      return { backgroundColor: isDark ? '#071a14' : '#e2f4eb', backgroundImage: 'none' };
     }
     if (activeWallpaper === 'teal') {
-      return { backgroundColor: '#0b191e', backgroundImage: 'none' };
+      return { backgroundColor: isDark ? '#0b191e' : '#e3eff2', backgroundImage: 'none' };
     }
     if (activeWallpaper === 'coffee') {
-      return { backgroundColor: '#181512', backgroundImage: 'none' };
+      return { backgroundColor: isDark ? '#181512' : '#f2ede6', backgroundImage: 'none' };
+    }
+    if (!isDark) {
+      return {
+        backgroundColor: '#efeae2',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
+      };
     }
     return {
       backgroundColor: '#0c1317',
@@ -2027,7 +2056,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   }
 
   return (
-    <div className="fixed inset-0 z-50 w-screen h-[100dvh] md:h-screen flex flex-row overflow-hidden bg-[#0c1317] text-[#e9edef] select-none font-sans">
+    <div className={`fixed inset-0 z-50 w-screen h-[100dvh] md:h-screen flex flex-row overflow-hidden select-none font-sans transition-colors duration-150 ${isDark ? "bg-[#0c1317] text-[#e9edef]" : "bg-[#f0f2f5] text-[#111b21]"}`}>
+      {/* Authentic WhatsApp Web desktop decorative top strip */}
+      <div className={`hidden md:block fixed top-0 left-0 right-0 h-[127px] pointer-events-none -z-10 ${isDark ? "bg-[#00a884]/20" : "bg-[#00a884]"}`} />
       {/* Hidden File Input for Documents */}
       <input
         type="file"
@@ -2055,7 +2086,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       
       {/* ══════ COLUMN 1: LEFT NAVIGATION RAIL (WhatsApp Web Desktop Rail) ══════ */}
-      <aside className="hidden md:flex flex-col justify-between items-center w-[64px] bg-[#202c33] border-r border-[#222e35] py-3.5 px-2 z-30 shrink-0 select-none">
+      <aside className={`hidden md:flex flex-col justify-between items-center w-[64px] border-r py-3.5 px-2 z-30 shrink-0 select-none transition-colors ${
+        isDark ? 'bg-[#202c33] border-[#222e35]' : 'bg-[#f0f2f5] border-[#d1d7db]'
+      }`}>
         {/* Top Navigation Icons */}
         <div className="flex flex-col items-center gap-3 w-full">
           {/* Chats Tab Button */}
@@ -2066,14 +2099,20 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             }}
             className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               activeMainView === 'chat'
-                ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/30'
-                : 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white'
+                ? isDark
+                  ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/30'
+                  : 'bg-[#d9fdd3] text-[#008069] shadow-sm ring-1 ring-[#008069]/30 font-semibold'
+                : isDark
+                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white'
+                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21]'
             }`}
             title="Chats"
           >
             <MessageSquare className="w-5 h-5" />
             {activeMainView === 'chat' && (
-              <span className="absolute left-[-8px] top-2.5 bottom-2.5 w-1 bg-[#00a884] rounded-r-full" />
+              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
+                isDark ? 'bg-[#00a884]' : 'bg-[#008069]'
+              }`} />
             )}
           </button>
 
@@ -2085,24 +2124,34 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             }}
             className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               activeMainView === 'garden'
-                ? 'bg-[#374248] text-emerald-400 shadow-inner ring-1 ring-emerald-500/40'
-                : 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400'
+                ? isDark
+                  ? 'bg-[#374248] text-emerald-400 shadow-inner ring-1 ring-emerald-500/40'
+                  : 'bg-[#d9fdd3] text-[#008069] shadow-sm ring-1 ring-[#008069]/30'
+                : isDark
+                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400'
+                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
             }`}
-            title="Botanical Garden (Multi-Plant Nurturing)"
+            title="Botanical Garden (12 Specimen Streak)"
           >
             <Sprout className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-[#00a884] text-[#111b21] text-[10px] font-black rounded-full shadow font-mono">
+            <span className={`absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black rounded-full shadow font-mono ${
+              isDark ? 'bg-[#00a884] text-[#111b21]' : 'bg-[#008069] text-white'
+            }`}>
               12
             </span>
             {activeMainView === 'garden' && (
-              <span className="absolute left-[-8px] top-2.5 bottom-2.5 w-1 bg-emerald-400 rounded-r-full" />
+              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
+                isDark ? 'bg-emerald-400' : 'bg-[#008069]'
+              }`} />
             )}
           </button>
 
           {/* Voice & Video Calls Button */}
           <button
             onClick={() => setShowCallModal('video')}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-white transition-all"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21]'
+            }`}
             title="Voice &amp; Video Calls"
           >
             <Phone className="w-5 h-5" />
@@ -2111,13 +2160,30 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Starred Messages Button */}
           <button
             onClick={() => setShowStarredModal(true)}
-            className="relative w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400 transition-all"
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-amber-600'
+            }`}
             title="Starred messages"
           >
             <Star className="w-5 h-5" />
             {messages.filter((m) => m.isStarred).length > 0 && (
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-[#202c33]" />
+              <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ${
+                isDark ? 'ring-[#202c33]' : 'ring-[#f0f2f5]'
+              }`} />
             )}
+          </button>
+
+          {/* ☀️ / 🌙 THEME SWITCHER BUTTON */}
+          <button
+            onClick={toggleTheme}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark
+                ? 'text-amber-400 hover:bg-[#2a3942]'
+                : 'text-indigo-600 hover:bg-[#e9edef]'
+            }`}
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
         </div>
 
@@ -2126,7 +2192,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Study Curriculum Portal Button */}
           <button
             onClick={() => switchTab('home')}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-[#53bdeb] transition-all"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-[#53bdeb]' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-blue-600'
+            }`}
             title="Return to Study Portal &amp; Curriculum Library"
           >
             <BookOpen className="w-5 h-5" />
@@ -2135,7 +2203,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Chat Wallpaper Switcher */}
           <button
             onClick={() => setShowWallpaperModal(true)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-white transition-all"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-teal-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-teal-600'
+            }`}
             title="Chat Wallpaper"
           >
             <Palette className="w-5 h-5" />
@@ -2144,42 +2214,59 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Security & Privacy Settings */}
           <button
             onClick={() => setShowSecurityModal(true)}
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400 transition-all"
+            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
+            }`}
             title="Security &amp; Privacy (E2EE 256-bit)"
           >
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            <ShieldCheck className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-[#008069]'}`} />
           </button>
 
-          <div className="w-8 h-[1px] bg-[#2a3942]" />
+          <div className={`w-8 h-[1px] ${isDark ? 'bg-[#2a3942]' : 'bg-[#d1d7db]'}`} />
 
           {/* Current User Profile Avatar */}
           <button
             onClick={() => setShowContactInfo(true)}
-            className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-teal-600 to-emerald-500 text-white font-bold text-sm flex items-center justify-center ring-1 ring-white/20 hover:ring-2 hover:ring-emerald-400 transition-all"
+            className={`relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-sm flex items-center justify-center shadow-sm transition-all ${
+              isDark ? 'ring-1 ring-white/20 hover:ring-2 hover:ring-emerald-400' : 'ring-1 ring-black/10 hover:ring-2 hover:ring-[#008069]'
+            }`}
             title={`${currentUser === 'surya' ? 'Surya' : 'Sadhana'} (Online Profile)`}
           >
             <span>{currentUser[0].toUpperCase()}</span>
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00a884] border-2 border-[#202c33]" />
+            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00a884] border-2 ${
+              isDark ? 'border-[#202c33]' : 'border-[#f0f2f5]'
+            }`} />
           </button>
         </div>
       </aside>
 
       {/* ══════ COLUMN 2: LEFT CHATS SIDEBAR (WhatsApp Web Chats List) ══════ */}
       <section
-        className={`w-full md:w-[380px] lg:w-[400px] xl:w-[420px] bg-[#111b21] flex flex-col border-r border-[#222e35] shrink-0 h-full z-20 ${
-          mobileView === 'conversation' ? 'hidden md:flex' : 'flex'
-        }`}
+        className={`w-full md:w-[380px] lg:w-[400px] xl:w-[420px] flex flex-col border-r shrink-0 h-full z-20 transition-colors ${
+          isDark ? 'bg-[#111b21] border-[#222e35]' : 'bg-[#ffffff] border-[#d1d7db]'
+        } ${mobileView === 'conversation' ? 'hidden md:flex' : 'flex'}`}
       >
         {/* Mobile WhatsApp App Bar (Visible on phone screens < md) */}
-        <div className="md:hidden h-[56px] px-4 bg-[#1f2c34] flex items-center justify-between border-b border-[#2a3942]/60 shrink-0 shadow-sm">
+        <div className={`md:hidden h-[56px] px-4 flex items-center justify-between border-b shrink-0 shadow-sm transition-colors ${
+          isDark ? 'bg-[#1f2c34] border-[#2a3942]/60 text-[#e9edef]' : 'bg-[#008069] border-transparent text-white'
+        }`}>
           <div className="flex items-center gap-2">
-            <span className="text-[21px] font-bold text-[#e9edef] tracking-wide font-sans">WhatsApp</span>
+            <span className="text-[21px] font-bold tracking-wide font-sans">WhatsApp</span>
           </div>
 
-          <div className="flex items-center gap-1 text-[#aebac1]">
+          <div className={`flex items-center gap-1 ${isDark ? 'text-[#aebac1]' : 'text-white'}`}>
+            {/* Theme Toggle Button on Mobile */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-white" />}
+            </button>
+
             <button
               onClick={() => cameraInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
               title="Camera"
             >
               <Camera className="w-5 h-5" />
@@ -2187,7 +2274,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             <button
               onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
               title="Search"
             >
               <Search className="w-5 h-5" />
@@ -2197,7 +2284,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <div className="relative">
               <button
                 onClick={() => setShowSidebarMenu(!showSidebarMenu)}
-                className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 text-[#aebac1] hover:text-white transition-colors"
+                className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
                 title="More options"
               >
                 <MoreVertical className="w-5 h-5" />
@@ -2284,12 +2371,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
 
         {/* Desktop WhatsApp Web Header Bar (Visible on laptop/desktop screens >= md) */}
-        <div className="hidden md:flex h-[60px] px-4 bg-[#202c33] items-center justify-between border-b border-[#222e35] shrink-0">
+        <div className={`hidden md:flex h-[60px] px-4 items-center justify-between border-b shrink-0 transition-colors ${
+          isDark ? 'bg-[#202c33] border-[#222e35] text-[#e9edef]' : 'bg-[#f0f2f5] border-[#d1d7db] text-[#111b21]'
+        }`}>
           <div className="flex items-center gap-2">
-            <span className="text-[20px] font-bold text-[#e9edef] tracking-tight">Chats</span>
+            <span className="text-[20px] font-bold tracking-tight">Chats</span>
           </div>
 
-          <div className="flex items-center gap-1 text-[#aebac1]">
+          <div className={`flex items-center gap-1 ${isDark ? 'text-[#aebac1]' : 'text-[#54656f]'}`}>
             <button
               onClick={() => {
                 setActiveMainView('garden');
@@ -2403,20 +2492,24 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
 
         {/* Search Bar Row (Desktop always visible, mobile toggleable or inline) */}
-        <div className={`px-3 py-2 bg-[#111b21] items-center gap-2 border-b border-[#222e35]/40 shrink-0 ${
-          showMobileSearch ? 'flex' : 'hidden md:flex'
-        }`}>
-          <div className="flex-1 bg-[#202c33] rounded-lg px-3 py-1.5 flex items-center gap-2.5 focus-within:ring-1 focus-within:ring-[#00a884] transition-all">
-            <Search className="w-4 h-4 text-[#8696a0] shrink-0" />
+        <div className={`px-3 py-2 items-center gap-2 border-b shrink-0 transition-colors ${
+          isDark ? 'bg-[#111b21] border-[#222e35]/40' : 'bg-[#ffffff] border-[#d1d7db]/50'
+        } ${showMobileSearch ? 'flex' : 'hidden md:flex'}`}>
+          <div className={`flex-1 rounded-lg px-3 py-1.5 flex items-center gap-2.5 focus-within:ring-1 transition-all ${
+            isDark ? 'bg-[#202c33] focus-within:ring-[#00a884]' : 'bg-[#f0f2f5] focus-within:ring-[#008069]'
+          }`}>
+            <Search className={`w-4 h-4 shrink-0 ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`} />
             <input
               type="text"
               placeholder="Search or start new chat"
               value={sidebarSearchQuery}
               onChange={(e) => setSidebarSearchQuery(e.target.value)}
-              className="bg-transparent text-xs sm:text-[13px] text-[#e9edef] placeholder-[#8696a0] outline-none w-full"
+              className={`bg-transparent text-xs sm:text-[13px] outline-none w-full ${
+                isDark ? 'text-[#e9edef] placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#54656f]'
+              }`}
             />
             {sidebarSearchQuery && (
-              <button onClick={() => setSidebarSearchQuery('')} className="text-[#8696a0] hover:text-white">
+              <button onClick={() => setSidebarSearchQuery('')} className={isDark ? "text-[#8696a0] hover:text-white" : "text-[#54656f] hover:text-[#111b21]"}>
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -2424,7 +2517,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           <button
             onClick={() => setChatFilter(chatFilter === 'unread' ? 'all' : 'unread')}
             className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              chatFilter === 'unread' ? 'bg-[#00a884] text-[#111b21]' : 'hover:bg-white/10 text-[#8696a0]'
+              chatFilter === 'unread'
+                ? (isDark ? 'bg-[#00a884] text-[#111b21]' : 'bg-[#008069] text-white')
+                : (isDark ? 'hover:bg-white/10 text-[#8696a0]' : 'hover:bg-black/5 text-[#54656f]')
             }`}
             title="Filter unread chats"
           >
@@ -2433,15 +2528,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
 
         {/* Filter Chips Row */}
-        <div className="px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-[#222e35]/30 shrink-0">
+        <div className={`px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b shrink-0 ${
+          isDark ? 'border-[#222e35]/30' : 'border-[#d1d7db]/30'
+        }`}>
           {(['all', 'unread', 'favorites', 'groups'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setChatFilter(tab)}
               className={`px-3 py-1 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-all ${
                 chatFilter === tab
-                  ? 'bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/40'
-                  : 'bg-[#202c33] text-[#8696a0] hover:text-white'
+                  ? isDark
+                    ? 'bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/40'
+                    : 'bg-[#e7fce3] text-[#008069] border border-[#008069]/30 font-bold'
+                  : isDark
+                  ? 'bg-[#202c33] text-[#8696a0] hover:text-white'
+                  : 'bg-[#f0f2f5] text-[#54656f] hover:text-[#111b21]'
               }`}
             >
               {tab}
@@ -2450,7 +2551,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
 
         {/* Chats List Area */}
-        <div className="flex-1 overflow-y-auto divide-y divide-[#222e35]/30">
+        <div className={`flex-1 overflow-y-auto divide-y ${isDark ? 'divide-[#222e35]/30' : 'divide-[#f0f2f5]'}`}>
           {/* Chat 1: Sadhana / Partner (Active & Pinned) */}
           {(!sidebarSearchQuery || partnerName.toLowerCase().includes(sidebarSearchQuery.toLowerCase())) && (
           <div
@@ -2459,7 +2560,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               setMobileView('conversation');
             }}
             className={`px-3 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
-              activeMainView === 'chat' ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'
+              activeMainView === 'chat'
+                ? isDark ? 'bg-[#2a3942]' : 'bg-[#f0f2f5]'
+                : isDark ? 'hover:bg-[#202c33]' : 'hover:bg-[#f5f6f6]'
             }`}
           >
             <div className="relative shrink-0">
@@ -2467,25 +2570,27 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 {partnerName[0]}
               </div>
               {isPartnerOnline && (
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 border-[#111b21] shadow-[0_0_6px_#00a884]" />
+                <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 shadow-[0_0_6px_#00a884] ${
+                  isDark ? 'border-[#111b21]' : 'border-white'
+                }`} />
               )}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-[15px] font-medium text-[#e9edef] truncate">{partnerName}</span>
-                <span className="text-[11px] text-[#00a884] font-medium shrink-0 ml-1">
+                <span className={`text-[15px] font-semibold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>{partnerName}</span>
+                <span className={`text-[11px] font-medium shrink-0 ml-1 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
                   {messages[messages.length - 1]?.time || 'Now'}
                 </span>
               </div>
-              <div className="flex items-center justify-between mt-1 text-[13px] text-[#8696a0]">
+              <div className={`flex items-center justify-between mt-1 text-[13px] ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`}>
                 <div className="flex items-center gap-1 truncate max-w-[220px]">
                   <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] shrink-0" />
                   <span className="truncate">
                     {messages[messages.length - 1]?.text || 'Tap to start conversation'}
                   </span>
                 </div>
-                <Pin className="w-3.5 h-3.5 text-[#8696a0] rotate-45 shrink-0 ml-1" />
+                <Pin className={`w-3.5 h-3.5 rotate-45 shrink-0 ml-1 ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`} />
               </div>
             </div>
           </div>
@@ -2505,7 +2610,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </button>
 
         {/* Mobile Bottom Navigation Bar (WhatsApp Mobile 2024-2026 Android & iOS UI) */}
-        <nav className="md:hidden h-[64px] bg-[#1f2c34] border-t border-[#2a3942]/60 flex items-center justify-around px-2 z-30 shrink-0 select-none pb-[calc(env(safe-area-inset-bottom,0px))]">
+        <nav className={`md:hidden h-[64px] flex items-center justify-around px-2 z-30 shrink-0 select-none pb-[calc(env(safe-area-inset-bottom,0px))] border-t transition-colors ${
+          isDark ? 'bg-[#1f2c34] border-[#2a3942]/60' : 'bg-[#ffffff] border-[#d1d7db]/60 shadow-lg'
+        }`}>
           <button
             onClick={() => {
               setActiveMainView('chat');
@@ -2575,9 +2682,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Garden) ══════ */}
       <main
-        className={`flex-1 flex flex-col h-full bg-[#0b141a] relative overflow-hidden ${
-          mobileView === 'list' ? 'hidden md:flex' : 'flex'
-        }`}
+        className={`flex-1 flex flex-col h-full relative overflow-hidden transition-colors ${
+          isDark ? 'bg-[#0b141a]' : 'bg-[#efeae2]'
+        } ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}
       >
         {activeMainView === 'garden' ? (
           /* Garden View with WhatsApp Web styling */
@@ -2637,7 +2744,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Active Chat Conversation */
           <>
 {/* ── 1. WHATSAPP HEADER ── */}
-      <div className="bg-[#1f2c34] md:bg-[#202c33] px-2 sm:px-4 py-2 flex items-center justify-between border-b border-[#2a3942] z-30 flex-shrink-0 shadow-sm h-[56px] md:h-[60px]">
+      <div className={`px-2 sm:px-4 py-2 flex items-center justify-between border-b z-30 flex-shrink-0 shadow-sm h-[56px] md:h-[60px] transition-colors ${
+        isDark ? 'bg-[#1f2c34] md:bg-[#202c33] border-[#2a3942]' : 'bg-[#f0f2f5] border-[#d1d7db]'
+      }`}>
         <div className="flex items-center gap-3">
           {/* Mobile Back to Chats List Button */}
           <button
@@ -2662,7 +2771,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Contact Name & Live Status */}
           <div onClick={() => setShowContactInfo(true)} className="cursor-pointer">
             <div className="flex items-center gap-2">
-              <h2 className="text-[15px] font-medium text-[#e9edef] tracking-tight">{partnerName}</h2>
+              <h2 className={`text-[15px] font-semibold tracking-tight ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>{partnerName}</h2>
               {advancedPrivacy && (
                 <span title="Advanced Chat Privacy Enabled">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#00a884]" />
@@ -2687,7 +2796,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
 
         {/* Action Icons */}
-        <div className="flex items-center gap-1 sm:gap-2 text-[#aebac1]">
+        <div className={`flex items-center gap-1 sm:gap-2 ${isDark ? "text-[#aebac1]" : "text-[#54656f]"}`}>
+          {/* Theme Switcher in Conversation Header */}
+          <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-white/10 hover:text-amber-400" : "hover:bg-black/5 hover:text-indigo-600"}`} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}</button>
           {/* Botanical Garden Quick Button */}
           <button
             onClick={() => setActiveMainView('garden')}
@@ -2917,22 +3028,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       {/* ── IN-CHAT SEARCH BAR ── */}
       {showSearch && (
-        <div className="bg-[#182229] px-4 py-2 border-b border-[#2a3942] flex items-center gap-2 z-20">
-          <Search className="w-4 h-4 text-[#8696a0]" />
+        <div className={`px-4 py-2 border-b flex items-center gap-2 z-20 transition-colors ${
+          isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-[#ffffff] border-[#d1d7db] shadow-sm'
+        }`}>
+          <Search className={`w-4 h-4 ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search in chat..."
-            className="flex-1 bg-transparent text-sm text-white placeholder-[#8696a0] focus:outline-none"
+            className={`flex-1 bg-transparent text-sm focus:outline-none ${
+              isDark ? 'text-white placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#54656f]'
+            }`}
             autoFocus
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="text-xs text-[#8696a0] hover:text-white">
+            <button onClick={() => setSearchQuery('')} className={`text-xs ${isDark ? 'text-[#8696a0] hover:text-white' : 'text-[#54656f] hover:text-[#111b21]'}`}>
               ✕
             </button>
           )}
-          <button onClick={() => setShowSearch(false)} className="text-xs text-[#00a884] font-medium ml-2">
+          <button onClick={() => setShowSearch(false)} className={`text-xs font-semibold ml-2 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
             Done
           </button>
         </div>
@@ -2940,17 +3055,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       {/* ── 2. PINNED MESSAGES BANNER (Up to 3 pinned messages) ── */}
       {pinnedMessages.length > 0 && (
-        <div className="bg-[#182229] px-4 py-2 border-b border-[#2a3942] flex items-center justify-between gap-3 text-xs text-[#8696a0] z-20">
+        <div className={`px-4 py-2 border-b flex items-center justify-between gap-3 text-xs z-20 transition-colors ${
+          isDark ? 'bg-[#182229] border-[#2a3942] text-[#8696a0]' : 'bg-[#ffffff] border-[#d1d7db] text-[#54656f] shadow-sm'
+        }`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Pin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+            <Pin className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
             <div className="truncate">
-              <span className="text-[#00a884] font-bold mr-1">
+              <span className={`font-bold mr-1 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
                 {pinnedMessages[0].sender === currentUser ? 'You' : partnerName}:
               </span>
-              <span className="text-white truncate">{pinnedMessages[0].text}</span>
+              <span className={`truncate ${isDark ? 'text-white' : 'text-[#111b21]'}`}>{pinnedMessages[0].text}</span>
             </div>
           </div>
-          <span className="text-[10px] font-mono text-[#00a884] bg-[#00a884]/15 px-2 py-0.5 rounded-full flex-shrink-0">
+          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full flex-shrink-0 ${
+            isDark ? 'text-[#00a884] bg-[#00a884]/15' : 'text-[#008069] bg-[#e7fce3]'
+          }`}>
             {pinnedMessages.length}/3 Pinned
           </span>
         </div>
@@ -2964,20 +3083,30 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {/* End-to-End Encryption Banner - Clickable to open Security Section */}
         <div
           onClick={() => setShowSecurityModal(true)}
-          className="mx-auto max-w-sm p-3 rounded-xl bg-[#182229] border border-[#ffb800]/20 text-center shadow-lg my-2 cursor-pointer hover:border-[#ffb800]/40 transition-colors"
+          className={`mx-auto max-w-sm p-3 rounded-xl text-center shadow my-2 cursor-pointer transition-colors ${
+            isDark
+              ? 'bg-[#182229] border border-[#ffb800]/20 hover:border-[#ffb800]/40'
+              : 'bg-[#ffeecd] border border-[#f5c677] hover:bg-[#fff2d6]'
+          }`}
         >
-          <div className="flex items-center justify-center gap-1.5 text-[#ffd279] text-xs font-semibold mb-0.5">
+          <div className={`flex items-center justify-center gap-1.5 text-xs font-semibold mb-0.5 ${
+            isDark ? 'text-[#ffd279]' : 'text-[#7d5600]'
+          }`}>
             <Lock className="w-3.5 h-3.5" />
             <span>End-to-End Encrypted</span>
           </div>
-          <p className="text-[11px] text-[#8696a0] leading-tight">
+          <p className={`text-[11px] leading-tight ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`}>
             Messages and calls are end-to-end encrypted. Tap to verify security &amp; safety numbers.
           </p>
         </div>
 
         {/* Date Divider */}
         <div className="flex justify-center my-3">
-          <span className="px-3 py-1 rounded-lg bg-[#182229] border border-[#2a3942]/60 text-[11px] font-medium text-[#8696a0] shadow-sm uppercase tracking-wider">
+          <span className={`px-3 py-1 rounded-lg text-[11px] font-medium shadow-sm uppercase tracking-wider ${
+            isDark
+              ? 'bg-[#182229] border border-[#2a3942]/60 text-[#8696a0]'
+              : 'bg-[#ffffff] border border-[#d1d7db] text-[#54656f]'
+          }`}>
             Today
           </span>
         </div>
@@ -3015,18 +3144,32 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               key={msg.id}
               className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}
             >
-              {/* Message Bubble with Authentic WhatsApp Corner Tail */}
+              {/* Message Bubble with Authentic WhatsApp Speech Tail */}
               <div
-                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-1.5 shadow-[0_1px_1px_rgba(0,0,0,0.2)] transition-all ${
+                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-1.5 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] transition-all select-none ${
                   isMe
-                    ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-[2px] border border-[#005c4b]'
-                    : 'bg-[#202c33] text-[#e9edef] rounded-tl-[2px] border border-[#2a3942]/50'
+                    ? isDark
+                      ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-[2px]'
+                      : 'bg-[#d9fdd3] text-[#111b21] rounded-tr-[2px]'
+                    : isDark
+                    ? 'bg-[#202c33] text-[#e9edef] rounded-tl-[2px]'
+                    : 'bg-[#ffffff] text-[#111b21] rounded-tl-[2px]'
                 }`}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setReactionBubbleId(msg.id);
                 }}
               >
+                {/* Authentic Speech Bubble Tail SVG */}
+                {isMe ? (
+                  <svg className="absolute -top-[0px] -right-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
+                    <path d="M0 0 C3 2, 7 4, 8 13 L0 13 Z" fill={isDark ? '#005c4b' : '#d9fdd3'} />
+                  </svg>
+                ) : (
+                  <svg className="absolute -top-[0px] -left-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
+                    <path d="M8 0 C5 2, 1 4, 0 13 L8 13 Z" fill={isDark ? '#202c33' : '#ffffff'} />
+                  </svg>
+                )}
                 {/* Pinned Indicator on Bubble */}
                 {msg.isPinned && (
                   <div className="flex items-center gap-1 text-[10px] text-[#ffd279] font-semibold mb-1">
@@ -3037,7 +3180,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
                 {/* Quoted Reply Preview on Bubble */}
                 {msg.replyTo && (
-                  <div className="mb-2 p-2 rounded-lg bg-black/25 border-l-4 border-emerald-400 text-xs select-none">
+                  <div className={`mb-2 p-2 rounded-lg border-l-4 border-emerald-500 text-xs select-none ${
+                    isDark ? 'bg-black/25' : 'bg-black/5'
+                  }`}>
                     <span className="font-semibold text-emerald-400 block text-[11px] mb-0.5">
                       {msg.replyTo.sender === currentUser ? 'You' : partnerName}
                     </span>
@@ -3450,7 +3595,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       {/* ── QUOTED REPLY PREVIEW BANNER ── */}
       {replyingToMessage && (
-        <div className="bg-[#182229] border-t border-[#2a3942] px-4 py-2 flex items-center justify-between z-30 animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className={`border-t px-4 py-2 flex items-center justify-between z-30 animate-in fade-in slide-in-from-bottom-2 duration-150 transition-colors ${
+          isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-[#f0f2f5] border-[#d1d7db]'
+        }`}>
           <div className="border-l-4 border-[#00a884] pl-2.5 overflow-hidden">
             <span className="text-xs font-semibold text-[#00a884] block">
               Replying to {replyingToMessage.sender === currentUser ? 'yourself' : partnerName}
@@ -3469,7 +3616,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       )}
 
       {/* ── 4. CHAT INPUT BAR (WhatsApp Mobile floating pill + action button, WhatsApp Web flat bar) ── */}
-      <div className="bg-transparent md:bg-[#202c33] px-2 sm:px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t border-transparent md:border-[#2a3942] z-30 flex-shrink-0 relative">
+      <div className={`px-2 sm:px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t z-30 flex-shrink-0 relative transition-colors ${
+        isDark ? 'bg-[#111b21] md:bg-[#202c33] border-[#222e35] md:border-[#2a3942]' : 'bg-[#ffffff] md:bg-[#f0f2f5] border-[#d1d7db]'
+      }`}>
         {/* Emoji Button */}
         <button
           type="button"
@@ -3480,7 +3629,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           className={`p-2 rounded-full transition-colors ${
             showEmojiPicker
               ? 'text-[#00a884] bg-white/10'
-              : 'text-[#8696a0] hover:text-[#d1d7db] hover:bg-white/5'
+              : '${isDark ? "text-[#8696a0] hover:text-[#d1d7db]" : "text-[#54656f] hover:text-[#111b21]"} hover:bg-white/5'
           }`}
           title={showEmojiPicker ? 'Close Emojis (Keyboard)' : 'Open Emoji Picker'}
         >
@@ -3629,7 +3778,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
         ) : (
           <>
-            <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 focus-within:ring-[#00a884]/40 transition-all">
+            <div className={`flex-1 rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 transition-all ${isDark ? "bg-[#2a3942] text-[#e9edef] focus-within:ring-[#00a884]/40" : "bg-white text-[#111b21] shadow-sm border border-[#d1d7db]/60 focus-within:ring-[#008069]/40"}`}>
+
               <input
                 type="text"
                 value={inputText}
@@ -3638,7 +3788,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   if (e.key === 'Enter') handleSendText();
                 }}
                 placeholder="Type a message (*bold*, _italic_, ~strike~)"
-                className="w-full bg-transparent text-[14.5px] text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
+                className={`w-full bg-transparent text-[14.5px] outline-none ${isDark ? "text-[#e9edef] placeholder-[#8696a0]" : "text-[#111b21] placeholder-[#54656f]"}`}
               />
             </div>
 

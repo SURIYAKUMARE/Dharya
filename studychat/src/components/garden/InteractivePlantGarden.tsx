@@ -23,11 +23,10 @@ import {
   Info,
   ChevronRight,
   ChevronLeft,
-  FastForward,
   Play,
   Pause,
   Zap,
-  Lock
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -180,10 +179,15 @@ export interface DailyPlantItem {
   bloomedAt?: number;
 }
 
-const LOCAL_DAILY_GARDEN_KEY = 'dharya_daily_garden_v4';
-const LOCAL_STREAK_KEY = 'dharya_daily_streak_v4';
+const LOCAL_DAILY_GARDEN_KEY = 'dharya_daily_garden_v5';
+const LOCAL_STREAK_KEY = 'dharya_daily_streak_v5';
 
-// ── 3. BOTANICAL SVG GRAPHIC: PHYSICAL GROWTH ENGINE ──
+// ── 3. REALISTIC BOTANICAL SVG GRAPHIC: TRUE BIOLOGICAL ANATOMY ──
+// Accurately illustrates realistic botanical plant physiology:
+// - Cross-section of soil showing taproot, fibrous root hairs, and seed capsule
+// - Chlorophyll stem with realistic tapering, 3D cylinder lighting, nodes & stipules
+// - Anatomically accurate true leaves with central midrib and lateral venation
+// - Protective calyx with sepals and layered, organic petals
 interface BotanicalPlantGraphicProps {
   species: PlantSpecies;
   growthPoints: number; // 0 - 100
@@ -192,6 +196,7 @@ interface BotanicalPlantGraphicProps {
   isSunlit?: boolean;
   isLoved?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  showRoots?: boolean;
 }
 
 export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
@@ -202,28 +207,42 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
   isSunlit = false,
   isLoved = false,
   size = 'md',
+  showRoots = true,
 }) => {
   const growth = Math.max(0, Math.min(100, growthPoints));
 
-  const isSeedStage = growth <= 20;
-  const isSproutStage = growth > 20 && growth <= 45;
-  const isVegetativeStage = growth > 45 && growth <= 70;
-  const isBudStage = growth > 70 && growth < 90;
+  // Biological Growth Stages:
+  // Phase 1 (0 - 20%): Seed Germination & Radicle Taproot Emergence
+  // Phase 2 (21 - 45%): Cotyledon Hypocotyl Loop & Baby Leaves Unfurling
+  // Phase 3 (46 - 70%): Vegetative True Leaves, Nodal Branching & Foliage
+  // Phase 4 (71 - 89%): Apical Calyx Sepals & Floral Bud Swelling
+  // Phase 5 (90 - 100%): Full Anthesis (Open Layered Flower Blossom with Stamens)
+  const isGermination = growth <= 20;
+  const isSprout = growth > 20 && growth <= 45;
+  const isVegetative = growth > 45 && growth <= 70;
+  const isBudding = growth > 70 && growth < 90;
   const isFullBloom = growth >= 90;
 
   const isSoilMoist = waterLevel >= 40;
-  const stemApexY = Math.max(55, 165 - (growth / 100) * 110);
 
-  const soilColor = isSoilMoist ? '#1a100a' : '#3d2516';
-  const soilHighlight = isSoilMoist ? '#2d1b10' : '#573722';
-  const viewBoxHeight = size === 'sm' ? 220 : 250;
+  // Ground soil line is at Y=175
+  const soilLineY = 175;
+  // Stem apex rises from Y=175 up to Y=55 at mature height
+  const stemApexY = Math.max(55, soilLineY - (growth / 100) * 120);
+
+  // Root depth expands downward into soil as plant grows (Y=175 to Y=265)
+  const rootDepthY = Math.min(265, 185 + (growth / 100) * 80);
+
+  const soilColor = isSoilMoist ? '#170e08' : '#331c0e';
+  const soilHighlight = isSoilMoist ? '#2b170c' : '#4d2915';
+  const viewBoxHeight = size === 'sm' ? 240 : 275;
 
   return (
     <div className="relative flex flex-col items-center justify-center select-none">
       {/* 1. Sunlight Ray Funnel */}
       {isSunlit && (
         <div className="absolute -top-16 inset-x-0 flex flex-col items-center pointer-events-none z-20 animate-pulse">
-          <div className="w-36 h-52 bg-gradient-to-b from-amber-300/40 via-yellow-200/20 to-transparent blur-md [clip-path:polygon(35%_0%,65%_0%,100%_100%,0%_100%)]" />
+          <div className="w-40 h-56 bg-gradient-to-b from-amber-300/40 via-yellow-200/20 to-transparent blur-md [clip-path:polygon(35%_0%,65%_0%,100%_100%,0%_100%)]" />
           <div className="absolute top-4 text-2xl animate-spin text-amber-300" style={{ animationDuration: '8s' }}>
             ✨
           </div>
@@ -253,368 +272,536 @@ export const BotanicalPlantGraphic: React.FC<BotanicalPlantGraphicProps> = ({
         </div>
       )}
 
-      {/* ── THE LIVING BOTANICAL SVG SCENE ── */}
+      {/* ── THE REALISTIC BOTANICAL SVG SCENE ── */}
       <svg
-        viewBox={`0 0 200 ${viewBoxHeight}`}
-        className={`w-full max-w-[200px] sm:max-w-[230px] drop-shadow-2xl transition-transform duration-500 ${
+        viewBox={`0 0 240 ${viewBoxHeight}`}
+        className={`w-full max-w-[210px] sm:max-w-[245px] drop-shadow-2xl transition-transform duration-500 ${
           isLoved ? 'scale-105' : ''
         }`}
         style={{ overflow: 'visible' }}
       >
         <defs>
-          <linearGradient id="plantStemGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="#15803d" />
-            <stop offset="60%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#4ade80" />
-          </linearGradient>
-
-          <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#86efac" />
-            <stop offset="40%" stopColor="#22c55e" />
+          {/* Realistic 3D Cylindrical Stem Gradient */}
+          <linearGradient id="realisticStemGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#0f5127" />
+            <stop offset="35%" stopColor="#16a34a" />
+            <stop offset="70%" stopColor="#4ade80" />
             <stop offset="100%" stopColor="#15803d" />
           </linearGradient>
 
-          <linearGradient id={`bloomGrad-${species.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor={species.color} />
-            <stop offset="100%" stopColor={species.secondaryColor} />
+          {/* Subsurface Scattering Leaf Gradient */}
+          <linearGradient id="realisticLeafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#86efac" />
+            <stop offset="30%" stopColor="#22c55e" />
+            <stop offset="75%" stopColor="#16a34a" />
+            <stop offset="100%" stopColor="#14532d" />
           </linearGradient>
 
-          <pattern id="soilTexture" width="6" height="6" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="0.8" fill={soilHighlight} opacity="0.6" />
-            <circle cx="5" cy="4" r="0.6" fill="#000000" opacity="0.4" />
+          {/* Flower Bloom Gradient */}
+          <linearGradient id={`realisticBloomGrad-${species.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={species.color} />
+            <stop offset="60%" stopColor={species.secondaryColor} />
+            <stop offset="100%" stopColor="#450a0a" />
+          </linearGradient>
+
+          {/* Soil Humus Texture Pattern */}
+          <pattern id="realisticSoilPattern" width="10" height="10" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.2" fill={soilHighlight} opacity="0.6" />
+            <circle cx="7" cy="4" r="0.8" fill="#000000" opacity="0.5" />
+            <circle cx="4" cy="8" r="1.4" fill={soilHighlight} opacity="0.7" />
+            <circle cx="8" cy="8" r="0.7" fill="#78716c" opacity="0.3" />
           </pattern>
         </defs>
 
-        {/* Ground Shadow in Soil Bed */}
-        <ellipse cx="100" cy="232" rx="68" ry="12" fill="#000000" opacity="0.45" filter="blur(4px)" />
-
-        {/* Natural Fertile Earth Garden Soil Bed Mound */}
-        <g id="earth-mound">
-          <ellipse cx="100" cy="210" rx="78" ry="24" fill="#1b0f07" />
+        {/* ── 1. FERTILE EARTH CUTAWAY (SUBTERRANEAN VIEW & ROOTS) ── */}
+        <g id="soil-cutaway">
+          {/* Soil Ground Body */}
           <path
-            d="M28 214 Q100 156 172 214 Q100 234 28 214 Z"
-            fill="#2e190d"
-            stroke="#150b05"
-            strokeWidth="1.5"
+            d="M 15 175 Q 120 162 225 175 L 220 268 Q 120 274 20 268 Z"
+            fill={soilColor}
+            stroke="#1b0e06"
+            strokeWidth="2"
           />
-          <path d="M42,204 L38,194 L45,206 M156,206 L160,196 L158,208 M92,224 L96,216 L100,225" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M 15 175 Q 120 162 225 175 L 220 268 Q 120 274 20 268 Z"
+            fill="url(#realisticSoilPattern)"
+          />
+
+          {/* Natural Soil Horizon Edge & Earth Crumbs */}
+          <ellipse cx="120" cy="175" rx="98" ry="12" fill={soilHighlight} opacity="0.7" />
+
+          {/* Tiny River Pebbles in Soil */}
+          <circle cx="50" cy="240" r="3" fill="#78716c" opacity="0.5" />
+          <circle cx="185" cy="230" r="3.5" fill="#a8a29e" opacity="0.4" />
+          <circle cx="160" cy="255" r="2.5" fill="#78716c" opacity="0.5" />
+
+          {/* Moisture Glisten on Soil Bed */}
+          {isSoilMoist && (
+            <g opacity="0.75">
+              <ellipse cx="105" cy="176" rx="20" ry="5" fill="#60a5fa" opacity="0.25" />
+              <circle cx="95" cy="174" r="1.5" fill="#93c5fd" opacity="0.85" />
+              <circle cx="145" cy="177" r="1.2" fill="#93c5fd" opacity="0.85" />
+            </g>
+          )}
+
+          {/* ── LIVING ROOT SYSTEM (EXPANDS IN SOIL AS PLANT GROWS) ── */}
+          {showRoots && (
+            <g id="living-roots" opacity={growth < 5 ? 0.3 : 0.95}>
+              {/* Primary Taproot (Radicle) */}
+              <path
+                d={`M 120 176 Q 118 ${(176 + rootDepthY) / 2} ${117 + Math.sin(growth) * 3} ${rootDepthY}`}
+                stroke="#fef3c7"
+                strokeWidth={growth > 50 ? '3' : '2'}
+                fill="none"
+                strokeLinecap="round"
+              />
+
+              {/* Lateral Branching Root Fibers (Develops with maturity) */}
+              {growth >= 20 && (
+                <>
+                  <path d="M 119 195 Q 98 215 82 225" stroke="#fde68a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  <path d="M 120 205 Q 142 222 158 232" stroke="#fde68a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  <path d="M 118 220 Q 102 238 90 250" stroke="#fef08a" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+                </>
+              )}
+              {growth >= 50 && (
+                <>
+                  <path d="M 82 225 Q 70 235 62 240" stroke="#fef08a" strokeWidth="1" fill="none" />
+                  <path d="M 158 232 Q 172 242 180 248" stroke="#fef08a" strokeWidth="1" fill="none" />
+                  <path d="M 118 235 Q 128 252 135 260" stroke="#fef08a" strokeWidth="1" fill="none" />
+                </>
+              )}
+
+              {/* Fine Root Hairs (Absorbing moisture) */}
+              <circle cx="82" cy="225" r="1" fill="#fef08a" />
+              <circle cx="158" cy="232" r="1" fill="#fef08a" />
+              <circle cx="117" cy={rootDepthY} r="1.2" fill="#ffffff" />
+            </g>
+          )}
+
+          {/* Living Grassy Sprouts on Soil Crust */}
+          <path d="M 45 174 L 41 162 L 48 175 M 190 176 L 196 164 L 193 177 M 70 175 L 73 166 L 76 176" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" />
         </g>
 
-        {/* Soil Bed Surface */}
-        <ellipse cx="100" cy="165" rx="58" ry="12" fill={soilColor} />
-        <ellipse cx="100" cy="165" rx="58" ry="12" fill="url(#soilTexture)" />
+        {/* ── 2. ABOVE-GROUND BIOLOGICAL GROWTH PHASES ── */}
 
-        {/* Moisture Glisten on Soil */}
-        {isSoilMoist && (
-          <g opacity="0.8">
-            <ellipse cx="85" cy="166" rx="14" ry="4" fill="#60a5fa" opacity="0.25" />
-            <circle cx="75" cy="164" r="1.5" fill="#93c5fd" opacity="0.8" />
-            <circle cx="118" cy="167" r="1.2" fill="#93c5fd" opacity="0.8" />
-            <circle cx="98" cy="169" r="1.8" fill="#60a5fa" opacity="0.7" />
-          </g>
-        )}
-
-        {/* STAGE 1: SEED IN FERTILE EARTH (0% - 20%) */}
-        {isSeedStage && (
-          <g id="stage-seed" className="transition-all duration-700">
-            <ellipse cx="100" cy="164" rx="20" ry="7" fill={soilHighlight} />
-            <g transform="translate(100, 160)">
-              <ellipse cx="0" cy="0" rx="8" ry="10" fill="#78350f" stroke="#451a03" strokeWidth="1" />
-              <path d="M-3,-5 Q0,-8 3,-5" stroke="#92400e" strokeWidth="1.5" fill="none" />
+        {/* ──────────────────────────────────────────────────────────
+            PHASE 1: GERMINATION & SEED CRACKING (0% - 20%)
+           ────────────────────────────────────────────────────────── */}
+        {isGermination && (
+          <g id="phase-germination" className="transition-all duration-700">
+            {/* The Seed Resting in Earth */}
+            <g transform="translate(120, 172)">
+              {/* Seed Capsule */}
+              <ellipse cx="0" cy="0" rx="9" ry="11" fill="#78350f" stroke="#451a03" strokeWidth="1.2" />
+              {/* Seed Testa (Coat Crack) */}
+              <path d="M -3 -6 Q 0 -9 3 -6" stroke="#92400e" strokeWidth="1.5" fill="none" />
               <line x1="0" y1="-8" x2="0" y2="4" stroke="#451a03" strokeWidth="1" strokeDasharray="2,2" />
 
+              {/* Emerging Hypocotyl Hook (Sprout emerges arched, pulling cotyledons up!) */}
               {growth >= 8 && (
                 <g className="animate-pulse">
-                  <path d="M0,6 Q-2,12 1,18" stroke="#fef08a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                  <path d="M0,-8 Q2,-15 5,-18" stroke="#86efac" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                  <circle cx="5" cy="-18" r="2.5" fill="#4ade80" />
-                  <circle cx="4" cy="-19" r="1" fill="#ffffff" opacity="0.9" />
+                  {/* Pale green germination loop pushing up */}
+                  <path
+                    d="M 0 -4 C 2 -16 10 -22 14 -14"
+                    stroke="#86efac"
+                    strokeWidth="3"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="14" cy="-14" r="3.5" fill="#4ade80" />
+                  {/* Dewdrop glistening */}
+                  <circle cx="13" cy="-16" r="1.2" fill="#ffffff" opacity="0.95" />
                 </g>
               )}
             </g>
-            <text x="100" y="136" textAnchor="middle" fill="#86efac" fontSize="9" fontWeight="bold" opacity="0.95">
-              {growth < 8 ? '🌱 Seed Germinating in Earth' : '🌱 Shoot Emerging!'}
+
+            <text x="120" y="142" textAnchor="middle" fill="#86efac" fontSize="9" fontWeight="bold" opacity="0.95">
+              {growth < 8 ? '🌰 Radicle Absorbing Moisture' : '🌱 Hypocotyl Arch Pushing Earth!'}
             </text>
           </g>
         )}
 
-        {/* STAGE 2: TENDER SPROUT (21% - 45%) */}
-        {isSproutStage && (
-          <g id="stage-sprout" className="animate-[gentleSway_4s_ease-in-out_infinite]" style={{ transformOrigin: '100px 165px' }}>
+        {/* ──────────────────────────────────────────────────────────
+            PHASE 2: COTYLEDONS & YOUNG SPROUT (21% - 45%)
+           ────────────────────────────────────────────────────────── */}
+        {isSprout && (
+          <g id="phase-sprout" className="animate-[gentleSway_4s_ease-in-out_infinite]" style={{ transformOrigin: '120px 175px' }}>
+            {/* Tender Straightening Hypocotyl Stem */}
             <path
-              d={`M 100 165 Q 98 145 101 ${stemApexY}`}
-              stroke="url(#plantStemGrad)"
-              strokeWidth="4.5"
+              d={`M 120 175 Q 118 ${(175 + stemApexY) / 2} 121 ${stemApexY}`}
+              stroke="url(#realisticStemGrad)"
+              strokeWidth="5"
               strokeLinecap="round"
               fill="none"
             />
+
+            {/* Left Cotyledon (Embryonic Leaf with central vein & highlight) */}
             <path
-              d={`M 101 ${stemApexY + 4} Q 82 ${stemApexY - 6} 74 ${stemApexY + 2} Q 88 ${stemApexY + 12} 101 ${stemApexY + 6}`}
-              fill="url(#leafGrad)"
+              d={`M 121 ${stemApexY + 4} C 98 ${stemApexY - 10} 86 ${stemApexY + 4} 121 ${stemApexY + 8}`}
+              fill="url(#realisticLeafGrad)"
               stroke="#15803d"
               strokeWidth="0.8"
             />
+            {/* Leaf Midrib Vein */}
+            <path d={`M 121 ${stemApexY + 5} Q 102 ${stemApexY - 2} 90 ${stemApexY + 2}`} stroke="#bbf7d0" strokeWidth="0.8" fill="none" />
+
+            {/* Right Cotyledon */}
             <path
-              d={`M 101 ${stemApexY + 4} Q 118 ${stemApexY - 6} 126 ${stemApexY + 2} Q 112 ${stemApexY + 12} 101 ${stemApexY + 6}`}
-              fill="url(#leafGrad)"
+              d={`M 121 ${stemApexY + 4} C 144 ${stemApexY - 10} 156 ${stemApexY + 4} 121 ${stemApexY + 8}`}
+              fill="url(#realisticLeafGrad)"
               stroke="#15803d"
               strokeWidth="0.8"
             />
-            <path d={`M 101 ${stemApexY + 5} Q 88 ${stemApexY} 76 ${stemApexY + 2}`} stroke="#4ade80" strokeWidth="0.8" fill="none" />
-            <path d={`M 101 ${stemApexY + 5} Q 112 ${stemApexY} 124 ${stemApexY + 2}`} stroke="#4ade80" strokeWidth="0.8" fill="none" />
-            <circle cx="78" cy={stemApexY + 1} r="1.5" fill="#ffffff" opacity="0.95" />
-            <circle cx="101" cy={stemApexY} r="3" fill="#86efac" />
+            <path d={`M 121 ${stemApexY + 5} Q 138 ${stemApexY - 2} 150 ${stemApexY + 2}`} stroke="#bbf7d0" strokeWidth="0.8" fill="none" />
+
+            {/* Dewdrop on leaf */}
+            <circle cx="94" cy={stemApexY + 1} r="1.6" fill="#ffffff" opacity="0.9" />
+
+            {/* Central Apical Meristem (Point of new true leaf emergence) */}
+            <circle cx="121" cy={stemApexY} r="3" fill="#86efac" />
           </g>
         )}
 
-        {/* STAGE 3: VEGETATIVE STEM & FOLIAGE (46% - 70%) */}
-        {isVegetativeStage && (
-          <g id="stage-vegetative" className="animate-[gentleSway_4s_ease-in-out_infinite]" style={{ transformOrigin: '100px 165px' }}>
+        {/* ──────────────────────────────────────────────────────────
+            PHASE 3: TRUE LEAF EXPANSION & NODAL STEM (46% - 70%)
+           ────────────────────────────────────────────────────────── */}
+        {isVegetative && (
+          <g id="phase-vegetative" className="animate-[gentleSway_4s_ease-in-out_infinite]" style={{ transformOrigin: '120px 175px' }}>
+            {/* Sturdy Cylindrical Tapered Stem with Organic Curve */}
             <path
-              d={`M 100 165 C 96 142 105 118 100 ${stemApexY}`}
-              stroke="url(#plantStemGrad)"
-              strokeWidth="5.5"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <g transform="translate(0, 20)">
-              <path d="M 98 135 C 75 130 62 145 52 138 C 66 122 85 125 98 131" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-              <path d="M 98 133 Q 75 131 54 138" stroke="#86efac" strokeWidth="1" fill="none" />
-              <path d="M 102 135 C 125 130 138 145 148 138 C 134 122 115 125 102 131" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-              <path d="M 102 133 Q 125 131 146 138" stroke="#86efac" strokeWidth="1" fill="none" />
-            </g>
-            <g transform="translate(0, -5)">
-              <path d="M 98 115 C 78 105 68 118 58 112 C 72 98 88 102 98 110" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-              <path d="M 102 115 C 122 105 132 118 142 112 C 128 98 112 102 102 110" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            </g>
-            <path d={`M 100 ${stemApexY + 8} Q 88 ${stemApexY - 10} 80 ${stemApexY - 4} Q 94 ${stemApexY + 4} 100 ${stemApexY + 8}`} fill="#86efac" stroke="#15803d" strokeWidth="0.8" />
-            <path d={`M 100 ${stemApexY + 8} Q 112 ${stemApexY - 10} 120 ${stemApexY - 4} Q 106 ${stemApexY + 4} 100 ${stemApexY + 8}`} fill="#86efac" stroke="#15803d" strokeWidth="0.8" />
-          </g>
-        )}
-
-        {/* STAGE 4: FLORAL BUDDING (71% - 89%) */}
-        {isBudStage && (
-          <g id="stage-bud" className="animate-[gentleSway_3.5s_ease-in-out_infinite]" style={{ transformOrigin: '100px 165px' }}>
-            <path
-              d={`M 100 165 C 97 135 104 100 100 ${stemApexY}`}
-              stroke="url(#plantStemGrad)"
+              d={`M 120 175 C 116 145 125 115 120 ${stemApexY}`}
+              stroke="url(#realisticStemGrad)"
               strokeWidth="6"
               strokeLinecap="round"
               fill="none"
             />
-            <path d="M 98 142 C 70 134 54 150 42 142 C 58 124 82 128 98 136" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 102 142 C 130 134 146 150 158 142 C 142 124 118 128 102 136" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 98 114 C 74 102 62 116 52 110 C 68 96 86 100 98 108" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 102 114 C 126 102 138 116 148 110 C 132 96 114 100 102 108" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
 
-            <g transform={`translate(100, ${stemApexY})`}>
-              <circle cx="0" cy="-10" r="18" fill={species.color} opacity="0.2" className="animate-ping" />
-              <path d="M-12,0 C-14,-14 -4,-22 0,-24 C4,-22 14,-14 12,0 Z" fill="#15803d" />
+            {/* Lower Tier Foliage (With Petioles, Leaflets, & Veins) */}
+            <g transform="translate(20, 20)">
+              {/* Left Leaf with Natural Curvature */}
               <path
-                d="M-8,-6 C-10,-18 0,-28 0,-28 C0,-28 10,-18 8,-6 Z"
-                fill={`url(#bloomGrad-${species.id})`}
+                d="M 98 135 C 68 128 48 148 38 138 C 56 116 80 122 98 130"
+                fill="url(#realisticLeafGrad)"
+                stroke="#15803d"
+                strokeWidth="1"
+              />
+              {/* Midrib and Lateral Veins */}
+              <path d="M 98 132 Q 68 128 42 138" stroke="#86efac" strokeWidth="1.2" fill="none" />
+              <path d="M 75 130 Q 66 122 62 120 M 60 134 Q 52 128 48 124" stroke="#86efac" strokeWidth="0.8" fill="none" />
+
+              {/* Right Leaf */}
+              <path
+                d="M 102 135 C 132 128 152 148 162 138 C 144 116 120 122 102 130"
+                fill="url(#realisticLeafGrad)"
+                stroke="#15803d"
+                strokeWidth="1"
+              />
+              <path d="M 102 132 Q 132 128 158 138" stroke="#86efac" strokeWidth="1.2" fill="none" />
+              <path d="M 125 130 Q 134 122 138 120 M 140 134 Q 148 128 152 124" stroke="#86efac" strokeWidth="0.8" fill="none" />
+            </g>
+
+            {/* Mid Tier Foliage */}
+            <g transform="translate(20, -5)">
+              <path
+                d="M 98 115 C 72 104 56 120 46 112 C 64 96 84 100 98 109"
+                fill="url(#realisticLeafGrad)"
+                stroke="#15803d"
+                strokeWidth="1"
+              />
+              <path d="M 98 112 Q 72 106 50 112" stroke="#86efac" strokeWidth="1" fill="none" />
+
+              <path
+                d="M 102 115 C 128 104 144 120 154 112 C 136 96 116 100 102 109"
+                fill="url(#realisticLeafGrad)"
+                stroke="#15803d"
+                strokeWidth="1"
+              />
+              <path d="M 102 112 Q 128 106 150 112" stroke="#86efac" strokeWidth="1" fill="none" />
+            </g>
+
+            {/* Crown Young Leaflets */}
+            <path
+              d={`M 120 ${stemApexY + 8} Q 106 ${stemApexY - 12} 98 ${stemApexY - 6} Q 112 ${stemApexY + 4} 120 ${stemApexY + 8}`}
+              fill="#86efac"
+              stroke="#15803d"
+              strokeWidth="0.8"
+            />
+            <path
+              d={`M 120 ${stemApexY + 8} Q 134 ${stemApexY - 12} 142 ${stemApexY - 6} Q 128 ${stemApexY + 4} 120 ${stemApexY + 8}`}
+              fill="#86efac"
+              stroke="#15803d"
+              strokeWidth="0.8"
+            />
+          </g>
+        )}
+
+        {/* ──────────────────────────────────────────────────────────
+            PHASE 4: APICAL FLORAL BUDDING & CALYX (71% - 89%)
+           ────────────────────────────────────────────────────────── */}
+        {isBudding && (
+          <g id="phase-budding" className="animate-[gentleSway_3.5s_ease-in-out_infinite]" style={{ transformOrigin: '120px 175px' }}>
+            <path
+              d={`M 120 175 C 116 135 124 95 120 ${stemApexY}`}
+              stroke="url(#realisticStemGrad)"
+              strokeWidth="6.5"
+              strokeLinecap="round"
+              fill="none"
+            />
+
+            {/* Full Layered Foliage Along Stem */}
+            <path d="M 118 145 C 84 134 64 154 50 144 C 70 120 100 126 118 136" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+            <path d="M 122 145 C 156 134 176 154 190 144 C 170 120 140 126 122 136" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+
+            <path d="M 118 116 C 88 104 74 120 62 112 C 80 96 102 100 118 109" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+            <path d="M 122 116 C 152 104 166 120 178 112 C 160 96 138 100 122 109" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+
+            {/* ── THE FLORAL CALYX & SWOLLEN BUD ── */}
+            <g transform={`translate(120, ${stemApexY})`}>
+              {/* Ready-to-bloom gentle glow */}
+              <circle cx="0" cy="-10" r="20" fill={species.color} opacity="0.25" className="animate-ping" />
+
+              {/* Protective Green Calyx Sepals (Clasping Bud) */}
+              <path d="M -14 0 C -16 -16 -4 -26 0 -28 C 4 -26 16 -16 14 0 Z" fill="#15803d" stroke="#0f5127" strokeWidth="1" />
+
+              {/* Swollen Wrapped Petal Core */}
+              <path
+                d="M -10 -6 C -12 -20 0 -32 0 -32 C 0 -32 12 -20 10 -6 Z"
+                fill={`url(#realisticBloomGrad-${species.id})`}
                 stroke={species.secondaryColor}
                 strokeWidth="1"
               />
-              <path d="M-10,2 Q-14,-12 -6,-18" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <path d="M10,2 Q14,-12 6,-18" stroke="#22c55e" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+              {/* Sepal Points Curving Backwards as Bud Swells */}
+              <path d="M -12 2 Q -18 -12 -8 -20" stroke="#22c55e" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+              <path d="M 12 2 Q 18 -12 8 -20" stroke="#22c55e" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             </g>
           </g>
         )}
 
-        {/* STAGE 5: FULL MAGNIFICENT BLOOM (90% - 100%) */}
+        {/* ──────────────────────────────────────────────────────────
+            PHASE 5: FULL ANTHESIS - MAGNIFICENT REALISTIC BLOOM (90% - 100%)
+           ────────────────────────────────────────────────────────── */}
         {isFullBloom && (
-          <g id="stage-bloom" className="animate-[gentleSway_3s_ease-in-out_infinite]" style={{ transformOrigin: '100px 165px' }}>
+          <g id="phase-bloom" className="animate-[gentleSway_3s_ease-in-out_infinite]" style={{ transformOrigin: '120px 175px' }}>
+            {/* Tall Sturdy Mature Stem */}
             <path
-              d="M 100 165 C 97 130 103 95 100 65"
-              stroke="url(#plantStemGrad)"
-              strokeWidth="6"
+              d="M 120 175 C 116 130 124 90 120 65"
+              stroke="url(#realisticStemGrad)"
+              strokeWidth="7"
               strokeLinecap="round"
               fill="none"
             />
-            <path d="M 98 140 C 66 130 48 148 38 140 C 56 120 82 125 98 134" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 102 140 C 134 130 152 148 162 140 C 144 120 118 125 102 134" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 98 105 C 72 92 58 106 48 100 C 64 84 84 88 98 98" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
-            <path d="M 102 105 C 128 92 142 106 152 100 C 136 84 116 88 102 98" fill="url(#leafGrad)" stroke="#15803d" strokeWidth="1" />
 
-            <g transform="translate(100, 60)">
-              <circle cx="0" cy="0" r="32" fill={species.color} opacity="0.18" className="animate-pulse" />
+            {/* Rich Foliage */}
+            <path d="M 118 142 C 80 130 58 152 44 142 C 66 118 98 124 118 134" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+            <path d="M 122 142 C 160 130 182 152 196 142 C 174 118 142 124 122 134" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
 
-              {/* 🌹 ROSE */}
+            <path d="M 118 104 C 84 92 68 108 56 100 C 76 82 100 86 118 96" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+            <path d="M 122 104 C 156 92 172 108 184 100 C 164 82 140 86 122 96" fill="url(#realisticLeafGrad)" stroke="#15803d" strokeWidth="1" />
+
+            {/* ── REALISTIC SPECIES-SPECIFIC BLOSSOM ANATOMY ── */}
+            <g transform="translate(120, 60)">
+              {/* Ambient Radiant Floral Glow */}
+              <circle cx="0" cy="0" r="36" fill={species.color} opacity="0.18" className="animate-pulse" />
+
+              {/* 🌹 1. RED VELVET ROSE (Multi-tiered Velvet Petals, Rosette Spiral & Golden Stamen) */}
               {species.id === 'rose' && (
                 <g id="blossom-rose">
-                  <path d="M-26,-4 C-32,-22 -14,-34 0,-28 C14,-34 32,-22 26,-4 C30,16 12,28 0,26 C-12,28 -30,16 -26,-4 Z" fill="#b91c1c" />
-                  <path d="M-20,-2 C-24,-16 -10,-24 0,-20 C10,-24 24,-16 20,-2 C22,12 8,20 0,18 C-8,20 -22,12 -20,-2 Z" fill="#dc2626" />
-                  <path d="M-12,-2 C-14,-10 -6,-16 0,-14 C6,-16 14,-10 12,-2 C14,8 6,12 0,11 C-6,12 -14,8 -12,-2 Z" fill="#ef4444" />
-                  <circle cx="0" cy="-1" r="5" fill="#f87171" />
+                  {/* Calyx sepals underneath */}
+                  <path d="M -18 10 Q -30 20 -24 30 Q -10 18 0 16 Q 10 18 24 30 Q 30 20 18 10" fill="#15803d" />
+
+                  {/* Outer Broad Velvety Petals */}
+                  <path d="M -32 -6 C -40 -28 -18 -42 0 -36 C 18 -42 40 -28 32 -6 C 38 18 16 34 0 32 C -16 34 -38 18 -32 -6 Z" fill="#991b1b" stroke="#450a0a" strokeWidth="1" />
+                  <path d="M -26 -4 C -32 -22 -14 -34 0 -28 C 14 -34 32 -22 26 -4 C 30 16 12 28 0 26 C -12 28 -30 16 -26 -4 Z" fill="#b91c1c" />
+
+                  {/* Middle Cupped Petals */}
+                  <path d="M -20 -2 C -25 -18 -10 -26 0 -22 C 10 -26 25 -18 20 -2 C 22 14 8 22 0 20 C -8 22 -22 14 -20 -2 Z" fill="#dc2626" />
+                  <path d="M -14 -2 C -18 -12 -6 -18 0 -16 C 6 -18 18 -12 14 -2 C 16 10 6 14 0 13 C -6 14 -16 10 -14 -2 Z" fill="#ef4444" />
+
+                  {/* Rosette Spiral Center & Stamen */}
+                  <circle cx="0" cy="-1" r="6" fill="#f87171" />
+                  <path d="M -3 -2 Q 0 -5 3 -2 Q 4 1 0 2 Q -4 1 -3 -2" fill="#ef4444" />
                   <circle cx="-2" cy="-2" r="1.2" fill="#fef08a" />
                   <circle cx="2" cy="0" r="1" fill="#fef08a" />
+                  <circle cx="0" cy="2" r="1" fill="#fef08a" />
                 </g>
               )}
 
-              {/* 🌻 SUNFLOWER */}
+              {/* 🌻 2. SUNBURST SUNFLOWER (Double-Tier Golden Ray Petals & Fibonacci Seed Disc) */}
               {species.id === 'sunflower' && (
                 <g id="blossom-sunflower">
-                  {[0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180, 202.5, 225, 247.5, 270, 292.5, 315, 337.5].map((deg, idx) => (
+                  {/* Outer 18 Golden Ray Florets */}
+                  {[0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340].map((deg, idx) => (
                     <ellipse
                       key={idx}
                       cx="0"
-                      cy="-24"
-                      rx="6"
-                      ry="15"
+                      cy="-26"
+                      rx="6.5"
+                      ry="16"
                       fill={idx % 2 === 0 ? '#facc15' : '#eab308'}
                       stroke="#ca8a04"
                       strokeWidth="0.6"
                       transform={`rotate(${deg})`}
                     />
                   ))}
-                  <circle cx="0" cy="0" r="16" fill="#451a03" stroke="#78350f" strokeWidth="2" />
-                  <circle cx="0" cy="0" r="12" fill="#291102" />
-                  <circle cx="-4" cy="-4" r="1.5" fill="#78350f" />
-                  <circle cx="4" cy="-4" r="1.5" fill="#78350f" />
-                  <circle cx="0" cy="4" r="1.5" fill="#78350f" />
-                  <circle cx="5" cy="3" r="1.2" fill="#b45309" />
+                  {/* Central Inflorescence Seed Disc */}
+                  <circle cx="0" cy="0" r="17" fill="#451a03" stroke="#78350f" strokeWidth="2.5" />
+                  <circle cx="0" cy="0" r="13" fill="#291102" />
+                  {/* Textured Spiral Pattern */}
+                  {[-6, 0, 6].map((x) =>
+                    [-6, 0, 6].map((y) => (
+                      <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="#b45309" opacity="0.8" />
+                    ))
+                  )}
+                  <circle cx="-2" cy="-2" r="1.5" fill="#f59e0b" />
+                  <circle cx="3" cy="2" r="1.5" fill="#f59e0b" />
                 </g>
               )}
 
-              {/* 🌸 SAKURA */}
+              {/* 🌸 3. SAKURA CHERRY BLOSSOM (Graceful 5-Petal Notched Blossoms & Pistils) */}
               {species.id === 'sakura' && (
                 <g id="blossom-sakura">
                   {[0, 72, 144, 216, 288].map((deg, idx) => (
-                    <path
-                      key={idx}
-                      d="M0,0 C-10,-18 -12,-28 0,-32 C12,-28 10,-18 0,0 Z"
-                      fill="#fbcfe8"
-                      stroke="#f472b6"
-                      strokeWidth="1"
-                      transform={`rotate(${deg})`}
-                    />
+                    <g key={idx} transform={`rotate(${deg})`}>
+                      <path
+                        d="M 0 0 C -12 -18 -14 -32 -4 -34 C -1 -34 0 -30 0 -30 C 0 -30 1 -34 4 -34 C 14 -32 12 -18 0 0 Z"
+                        fill="#fbcfe8"
+                        stroke="#f472b6"
+                        strokeWidth="1"
+                      />
+                    </g>
                   ))}
                   <circle cx="0" cy="0" r="7" fill="#f43f5e" />
-                  <circle cx="-3" cy="-3" r="1" fill="#fef08a" />
-                  <circle cx="3" cy="-3" r="1" fill="#fef08a" />
-                  <circle cx="0" cy="3" r="1" fill="#fef08a" />
+                  {/* Golden Stamen Tips */}
+                  <circle cx="-3" cy="-3" r="1.2" fill="#fef08a" />
+                  <circle cx="3" cy="-3" r="1.2" fill="#fef08a" />
+                  <circle cx="0" cy="3" r="1.2" fill="#fef08a" />
                 </g>
               )}
 
-              {/* 🪻 LAVENDER */}
+              {/* 🪻 4. FRENCH LAVENDER (Stacked Tiered Whorls of Violet Florets) */}
               {species.id === 'lavender' && (
                 <g id="blossom-lavender">
-                  {[-28, -20, -12, -4, 4, 12].map((y, idx) => (
+                  {[-32, -24, -16, -8, 0, 8, 16].map((y, idx) => (
                     <g key={idx} transform={`translate(0, ${y})`}>
-                      <ellipse cx="-8" cy="0" rx="5" ry="4" fill="#a855f7" />
-                      <ellipse cx="8" cy="0" rx="5" ry="4" fill="#a855f7" />
-                      <circle cx="0" cy="-2" r="5" fill="#c084fc" />
-                      <circle cx="0" cy="-2" r="1.5" fill="#f3e8ff" />
+                      <ellipse cx="-9" cy="0" rx="6" ry="4.5" fill="#a855f7" />
+                      <ellipse cx="9" cy="0" rx="6" ry="4.5" fill="#a855f7" />
+                      <circle cx="0" cy="-2" r="5.5" fill="#c084fc" />
+                      <circle cx="0" cy="-2" r="1.8" fill="#f3e8ff" />
                     </g>
                   ))}
                 </g>
               )}
 
-              {/* 🎋 BAMBOO */}
+              {/* 🎋 5. LUCKY EMERALD BAMBOO (Segmented Culm with Raised Ring Nodes) */}
               {species.id === 'bamboo' && (
                 <g id="blossom-bamboo" transform="translate(0, 10)">
-                  <rect x="-14" y="-45" width="8" height="60" rx="2" fill="#22c55e" stroke="#15803d" strokeWidth="1" />
-                  <line x1="-14" y1="-25" x2="-6" y2="-25" stroke="#fef08a" strokeWidth="2" />
-                  <line x1="-14" y1="-5" x2="-6" y2="-5" stroke="#fef08a" strokeWidth="2" />
-                  <rect x="6" y="-55" width="8" height="70" rx="2" fill="#16a34a" stroke="#14532d" strokeWidth="1" />
-                  <line x1="6" y1="-30" x2="14" y2="-30" stroke="#fef08a" strokeWidth="2" />
-                  <line x1="6" y1="-10" x2="14" y2="-10" stroke="#fef08a" strokeWidth="2" />
-                  <path d="M-10,-45 Q-28,-60 -24,-72 Q-14,-62 -10,-45" fill="#4ade80" />
-                  <path d="M10,-55 Q28,-70 24,-82 Q14,-72 10,-55" fill="#4ade80" />
+                  <rect x="-14" y="-55" width="9" height="75" rx="2" fill="#22c55e" stroke="#15803d" strokeWidth="1" />
+                  <line x1="-14" y1="-35" x2="-5" y2="-35" stroke="#fef08a" strokeWidth="2.5" />
+                  <line x1="-14" y1="-12" x2="-5" y2="-12" stroke="#fef08a" strokeWidth="2.5" />
+
+                  <rect x="5" y="-65" width="9" height="85" rx="2" fill="#16a34a" stroke="#14532d" strokeWidth="1" />
+                  <line x1="5" y1="-40" x2="14" y2="-40" stroke="#fef08a" strokeWidth="2.5" />
+                  <line x1="5" y1="-15" x2="14" y2="-15" stroke="#fef08a" strokeWidth="2.5" />
+
+                  {/* Fluttering Lanceolate Leaves */}
+                  <path d="M -10 -55 Q -32 -72 -26 -84 Q -14 -72 -10 -55" fill="#4ade80" />
+                  <path d="M 10 -65 Q 32 -82 26 -94 Q 14 -82 10 -65" fill="#4ade80" />
                 </g>
               )}
 
-              {/* 🌷 TULIP */}
+              {/* 🌷 6. DUTCH SILK TULIP (Classic Chalice with Overlapping Silky Petals) */}
               {species.id === 'tulip' && (
                 <g id="blossom-tulip">
-                  <ellipse cx="-10" cy="-14" rx="10" ry="18" fill="#be123c" />
-                  <ellipse cx="10" cy="-14" rx="10" ry="18" fill="#be123c" />
-                  <ellipse cx="-5" cy="-8" rx="12" ry="20" fill="#f43f5e" />
-                  <ellipse cx="5" cy="-8" rx="12" ry="20" fill="#e11d48" />
-                  <ellipse cx="0" cy="-6" rx="9" ry="18" fill="#fb7185" />
-                  <ellipse cx="0" cy="6" rx="7" ry="4" fill="#fef08a" opacity="0.8" />
+                  <ellipse cx="-11" cy="-14" rx="11" ry="20" fill="#be123c" />
+                  <ellipse cx="11" cy="-14" rx="11" ry="20" fill="#be123c" />
+                  <ellipse cx="-5" cy="-8" rx="13" ry="22" fill="#f43f5e" />
+                  <ellipse cx="5" cy="-8" rx="13" ry="22" fill="#e11d48" />
+                  <ellipse cx="0" cy="-6" rx="10" ry="20" fill="#fb7185" />
+                  {/* Basal Yellow Glow */}
+                  <ellipse cx="0" cy="8" rx="8" ry="4" fill="#fef08a" opacity="0.85" />
                 </g>
               )}
 
-              {/* 🪴 BONSAI */}
+              {/* 🪴 7. ZEN BONSAI */}
               {species.id === 'bonsai' && (
                 <g id="blossom-bonsai" transform="translate(0, 10)">
-                  <ellipse cx="-22" cy="-20" rx="18" ry="9" fill="#15803d" />
-                  <ellipse cx="22" cy="-30" rx="20" ry="10" fill="#16a34a" />
-                  <ellipse cx="0" cy="-45" rx="24" ry="12" fill="#22c55e" />
+                  <ellipse cx="-24" cy="-22" rx="20" ry="10" fill="#15803d" />
+                  <ellipse cx="24" cy="-32" rx="22" ry="11" fill="#16a34a" />
+                  <ellipse cx="0" cy="-48" rx="26" ry="13" fill="#22c55e" />
                 </g>
               )}
 
-              {/* 🪷 LOTUS */}
+              {/* 🪷 8. SACRED LOTUS */}
               {species.id === 'lotus' && (
                 <g id="blossom-lotus">
-                  {[-40, -20, 0, 20, 40].map((deg, idx) => (
+                  {[-45, -25, 0, 25, 45].map((deg, idx) => (
                     <path
                       key={idx}
-                      d="M0,0 C-12,-18 -10,-28 0,-34 C10,-28 12,-18 0,0 Z"
+                      d="M 0 0 C -12 -18 -10 -30 0 -36 C 10 -30 12 -18 0 0 Z"
                       fill="#f472b6"
                       stroke="#ec4899"
                       strokeWidth="1"
                       transform={`rotate(${deg})`}
                     />
                   ))}
-                  <circle cx="0" cy="-4" r="8" fill="#fde047" />
+                  <circle cx="0" cy="-4" r="9" fill="#fde047" />
                 </g>
               )}
 
-              {/* 🍓 STRAWBERRY */}
+              {/* 🍓 9. SWEET STRAWBERRY */}
               {species.id === 'strawberry' && (
                 <g id="blossom-strawberry">
-                  <path d="M-12,-8 C-16,8 0,18 0,18 C0,18 16,8 12,-8 C8,-16 -8,-16 -12,-8 Z" fill="#e11d48" />
-                  <circle cx="-4" cy="-4" r="0.8" fill="#fef08a" />
-                  <circle cx="4" cy="-4" r="0.8" fill="#fef08a" />
-                  <circle cx="0" cy="2" r="0.8" fill="#fef08a" />
-                  <path d="M-10,-12 L0,-6 L10,-12 L5,-16 L-5,-16 Z" fill="#22c55e" />
+                  <path d="M -13 -8 C -18 8 0 20 0 20 C 0 20 18 8 13 -8 C 9 -18 -9 -18 -13 -8 Z" fill="#e11d48" />
+                  <circle cx="-5" cy="-4" r="0.9" fill="#fef08a" />
+                  <circle cx="5" cy="-4" r="0.9" fill="#fef08a" />
+                  <circle cx="0" cy="3" r="0.9" fill="#fef08a" />
+                  <path d="M -11 -13 L 0 -6 L 11 -13 L 6 -18 L -6 -18 Z" fill="#22c55e" />
                 </g>
               )}
 
-              {/* 🌵 CACTUS */}
+              {/* 🌵 10. DESERT CACTUS */}
               {species.id === 'cactus' && (
                 <g id="blossom-cactus">
-                  <rect x="-14" y="-30" width="28" height="50" rx="14" fill="#0d9488" stroke="#042f2e" strokeWidth="1.5" />
-                  <circle cx="0" cy="-32" r="10" fill="#f43f5e" />
-                  <circle cx="0" cy="-32" r="5" fill="#facc15" />
+                  <rect x="-15" y="-32" width="30" height="55" rx="15" fill="#0d9488" stroke="#042f2e" strokeWidth="1.5" />
+                  <circle cx="0" cy="-34" r="11" fill="#f43f5e" />
+                  <circle cx="0" cy="-34" r="5.5" fill="#facc15" />
                 </g>
               )}
 
-              {/* 🌼 CHAMOMILE */}
+              {/* 🌼 11. GOLDEN CHAMOMILE */}
               {species.id === 'chamomile' && (
                 <g id="blossom-chamomile">
                   {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg, idx) => (
-                    <ellipse key={idx} cx="0" cy="-18" rx="4" ry="10" fill="#ffffff" stroke="#e2e8f0" strokeWidth="0.5" transform={`rotate(${deg})`} />
+                    <ellipse key={idx} cx="0" cy="-20" rx="4.5" ry="11" fill="#ffffff" stroke="#e2e8f0" strokeWidth="0.5" transform={`rotate(${deg})`} />
                   ))}
-                  <circle cx="0" cy="0" r="10" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+                  <circle cx="0" cy="0" r="11" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" />
                 </g>
               )}
 
-              {/* 🍀 CLOVER */}
+              {/* 🍀 12. LUCKY CLOVER */}
               {species.id === 'clover' && (
                 <g id="blossom-clover">
                   {[0, 90, 180, 270].map((deg, idx) => (
                     <path
                       key={idx}
-                      d="M0,0 C-10,-14 -14,-22 -7,-26 C0,-23 0,-14 0,0 C0,-14 0,-23 7,-26 C14,-22 10,-14 0,0 Z"
+                      d="M 0 0 C -10 -14 -14 -22 -7 -26 C 0 -23 0 -14 0 0 C 0 -14 0 -23 7 -26 C 14 -22 10 -14 0 0 Z"
                       fill="#22c55e"
                       stroke="#15803d"
                       strokeWidth="1"
                       transform={`rotate(${deg})`}
                     />
                   ))}
-                  <circle cx="0" cy="0" r="4" fill="#fde047" opacity="0.8" />
+                  <circle cx="0" cy="0" r="4.5" fill="#fde047" opacity="0.8" />
                 </g>
               )}
             </g>
 
             {/* Sparkles around bloom */}
             <g className="animate-pulse">
-              <text x="142" y="55" fontSize="14">✨</text>
-              <text x="45" y="65" fontSize="12">✨</text>
+              <text x="146" y="55" fontSize="14">✨</text>
+              <text x="42" y="65" fontSize="12">✨</text>
             </g>
           </g>
         )}
@@ -641,7 +828,7 @@ export const InteractivePlantGarden: React.FC = () => {
       {
         dayNumber: 1,
         speciesId: 'rose',
-        nickname: "Day 1: Our Red Velvet Rose",
+        nickname: "Day 1: Red Velvet Rose",
         plantedBy: 'surya',
         growthPoints: 100, // Bloomed
         waterLevel: 85,
@@ -777,7 +964,6 @@ export const InteractivePlantGarden: React.FC = () => {
   const [activeDayNumber, setActiveDayNumber] = useState<number>(5);
 
   // 3. Automatic Growth Engine Controls
-  // Speeds: 'normal' (+1% every 2s), 'fast' (+2% every 0.8s), 'instant' (+15% burst)
   const [isAutoGrowing, setIsAutoGrowing] = useState<boolean>(true);
   const [growthSpeed, setGrowthSpeed] = useState<'normal' | 'fast'>('normal');
 
@@ -857,8 +1043,8 @@ export const InteractivePlantGarden: React.FC = () => {
     } catch {}
   };
 
-  // ── AUTOMATIC CONTINUOUS GROWTH ENGINE (ONE PLANT AT ONE DAY) ──
-  // The active day's plant grows AUTOMATICALLY without requiring manual button clicks!
+  // ── AUTOMATIC CONTINUOUS GROWTH ENGINE ──
+  // Advances growth biologically without manual button clicks!
   useEffect(() => {
     if (!isAutoGrowing) return;
 
@@ -878,7 +1064,7 @@ export const InteractivePlantGarden: React.FC = () => {
             ? {
                 ...p,
                 growthPoints: newGrowth,
-                waterLevel: Math.max(30, p.waterLevel - 0.08), // Gentle moisture consumption
+                waterLevel: Math.max(30, p.waterLevel - 0.08),
                 sunlightLevel: Math.min(100, p.sunlightLevel + 0.05),
                 bloomedAt: newGrowth >= 100 && !p.bloomedAt ? Date.now() : p.bloomedAt,
               }
@@ -1003,24 +1189,52 @@ export const InteractivePlantGarden: React.FC = () => {
     });
   };
 
-  // Growth Stage info
-  const getGrowthStageInfo = (growth: number) => {
-    if (growth <= 20) return { name: 'Seed in Earth', icon: '🌰', tip: 'Seed nestled in dark soil, germinating automatically.' };
-    if (growth <= 45) return { name: 'Tender Sprout', icon: '🌱', tip: 'Shoot rising through earth with baby leaves unfurling.' };
-    if (growth <= 70) return { name: 'Foliage & Stem', icon: '🌿', tip: 'Stem thickens and produces lush green leaves.' };
-    if (growth < 90) return { name: 'Floral Bud', icon: '🌷', tip: 'Floral bud enclosed in sepals, preparing to blossom.' };
-    return { name: 'Full Magnificent Bloom', icon: '✨', tip: 'Splendid layered petals blooming in the garden breeze!' };
+  // Biological Stage info
+  const getBiologicalStageInfo = (growth: number) => {
+    if (growth <= 20) {
+      return {
+        name: 'Germination & Radicle Taproot',
+        subtext: 'Primary taproot digging deep into soil as hypocotyl arch breaks earth',
+        badge: '🌰 Germinating',
+      };
+    }
+    if (growth <= 45) {
+      return {
+        name: 'Cotyledon Embryonic Leaves',
+        subtext: 'Shoot straightens to sun, baby leaves unfurl, apical meristem awakens',
+        badge: '🌱 Sprouting',
+      };
+    }
+    if (growth <= 70) {
+      return {
+        name: 'Vegetative True Foliage',
+        subtext: 'Stem develops nodes, true serrated leaves expand with midrib veins',
+        badge: '🌿 Vegetative',
+      };
+    }
+    if (growth < 90) {
+      return {
+        name: 'Floral Calyx & Sepal Budding',
+        subtext: 'Protective sepals swell at apex as rich velvet petals prepare to bloom',
+        badge: '🌷 Budding',
+      };
+    }
+    return {
+      name: 'Full Botanical Anthesis',
+      subtext: 'Exquisite layered petals unfolded with golden stamens, pollen & dew',
+      badge: '🌸 Full Bloom',
+    };
   };
 
-  const stageInfo = getGrowthStageInfo(currentPlant.growthPoints);
+  const bioStage = getBiologicalStageInfo(currentPlant.growthPoints);
 
   return (
     <div className="relative w-full h-full min-h-[660px] flex flex-col justify-between select-none overflow-x-hidden overflow-y-auto">
-      {/* ── CSS KEYFRAMES ── */}
+      {/* ── CSS KEYFRAMES FOR REALISTIC BIOLOGICAL SWAY & SKY ── */}
       <style>{`
         @keyframes gentleSway {
           0%, 100% { transform: rotate(0deg); }
-          50% { transform: rotate(2.5deg); }
+          50% { transform: rotate(2deg); }
         }
 
         @keyframes wingFlap {
@@ -1082,11 +1296,10 @@ export const InteractivePlantGarden: React.FC = () => {
       {/* ── 1. LIVING SKY LAYER (DAYLIGHT ☀️ OR STARRY NIGHT 🌙) ── */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {!isNight ? (
-          /* DAY SKY: Azure atmosphere, golden sun, clouds & fluttering butterflies */
+          /* DAY SKY */
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-b from-[#38bdf8]/45 via-[#7dd3fc]/20 via-45% to-[#15803d]/45" />
 
-            {/* Glowing Golden Sun */}
             <div className="absolute top-8 right-12 sm:right-24">
               <div className="w-36 h-36 rounded-full bg-amber-400/25 blur-3xl animate-pulse" />
               <div
@@ -1097,7 +1310,6 @@ export const InteractivePlantGarden: React.FC = () => {
               </div>
             </div>
 
-            {/* Clouds */}
             <div className="absolute top-10 left-[-160px] opacity-65 animate-[cloudDriftSlow_45s_linear_infinite]">
               <svg width="160" height="55" viewBox="0 0 160 55" fill="none">
                 <path d="M20 45 Q10 45 10 32 Q10 18 30 18 Q38 8 55 8 Q72 8 80 18 Q90 12 100 18 Q115 12 125 22 Q140 18 145 32 Q155 32 155 45 Z" fill="white" opacity="0.8"/>
@@ -1109,7 +1321,6 @@ export const InteractivePlantGarden: React.FC = () => {
               </svg>
             </div>
 
-            {/* 🦋 Butterflies */}
             <div className="absolute animate-[butterflyFly1_24s_easeInOutQuad_infinite]">
               <div className="flex items-center transform -rotate-12 hover:scale-125 transition-transform">
                 <span className="text-3xl filter drop-shadow-[0_0_12px_#38bdf8] animate-[wingFlap_0.16s_linear_infinite_alternate]">🦋</span>
@@ -1124,11 +1335,10 @@ export const InteractivePlantGarden: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* NIGHT SKY: Deep celestial indigo, crescent moon, stars, shooting stars & fireflies */
+          /* NIGHT SKY */
           <div className="absolute inset-0">
             <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#091124]/90 via-45% to-[#052e16]/60" />
 
-            {/* Glowing Moon */}
             <div className="absolute top-8 right-12 sm:right-24">
               <div className="w-36 h-36 rounded-full bg-cyan-200/20 blur-3xl animate-pulse" />
               <div className="relative w-20 h-20 rounded-full shadow-[inset_-14px_-14px_0px_0px_#fef08a] filter drop-shadow-[0_0_26px_rgba(254,240,138,0.9)] flex items-center justify-center">
@@ -1136,7 +1346,7 @@ export const InteractivePlantGarden: React.FC = () => {
               </div>
             </div>
 
-            {/* Stars */}
+            {/* Twinkling Stars */}
             <div className="absolute inset-0">
               {[...Array(42)].map((_, idx) => {
                 const top = (idx * 17) % 65;
@@ -1210,21 +1420,21 @@ export const InteractivePlantGarden: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm sm:text-base font-extrabold text-white">
-                  Surya &amp; Sadhana's Living Garden
+                  Surya &amp; Sadhana's Botanical Garden
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/40 font-mono">
                   Day {streakDays} Streak
                 </span>
               </div>
               <p className="text-[11px] text-[#8696a0]">
-                One plant per day • Growing automatically from fertile earth to bloom
+                One plant per day • Growing automatically from seed, taproots to blooming flowers
               </p>
             </div>
           </div>
 
-          {/* Sky Switcher & Auto-Grow Engine Toggle */}
+          {/* Controls: Auto-Grow Engine & Sky Switcher */}
           <div className="flex items-center gap-2">
-            {/* Auto Growth Status Indicator */}
+            {/* Live Auto Growth Engine Toggle */}
             <button
               onClick={() => setIsAutoGrowing(!isAutoGrowing)}
               className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -1246,10 +1456,10 @@ export const InteractivePlantGarden: React.FC = () => {
               title="Toggle Growth Speed"
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>{growthSpeed === 'fast' ? 'Speed: 2x' : 'Speed: 1x'}</span>
+              <span>{growthSpeed === 'fast' ? '2x Speed' : '1x Speed'}</span>
             </button>
 
-            {/* Sky Theme (Day / Night / Auto) */}
+            {/* Sky Theme Toggle */}
             <div className="inline-flex items-center p-0.5 rounded-full bg-[#182229] border border-[#2a3942]">
               <button
                 onClick={() => {
@@ -1282,15 +1492,13 @@ export const InteractivePlantGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* ── 4. DAILY CALENDAR TIMELINE: ONE PLANT AT ONE DAY ── */}
+        {/* ── 4. DAILY CALENDAR TIMELINE: ONE PLANT PER DAY ── */}
         <div className="p-2.5 rounded-2xl bg-[#111b21]/80 backdrop-blur-md border border-[#2a3942]/60 overflow-x-auto scrollbar-none shadow-lg">
           <div className="flex items-center gap-2 min-w-max px-1">
             {dailyPlants.map((plant) => {
               const sp = PLANT_SPECIES.find((s) => s.id === plant.speciesId) || PLANT_SPECIES[0];
               const isSelected = plant.dayNumber === activeDayNumber;
               const isToday = plant.dayNumber === streakDays;
-              const isPast = plant.dayNumber < streakDays;
-              const isFuture = plant.dayNumber > streakDays;
 
               return (
                 <button
@@ -1324,18 +1532,21 @@ export const InteractivePlantGarden: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 5. THE CENTERPIECE: TODAY'S ACTIVE LIVING PLANT GROWING IN SOIL ── */}
-      <div className="relative z-10 max-w-3xl mx-auto w-full px-4 flex flex-col items-center justify-center my-auto py-2">
-        {/* Plant Identity Badge */}
+      {/* ── 5. CENTER BOTANICAL STAGE: LIVING REALISTIC PLANT IN EARTH ── */}
+      <div className="relative z-10 max-w-3xl mx-auto w-full px-4 flex flex-col items-center justify-center my-auto py-1">
+        {/* Biological Header Badge */}
         <div className="flex flex-col items-center text-center space-y-1 mb-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111b21]/90 border border-emerald-500/40 text-xs font-bold text-emerald-300 shadow-md">
-            <span>Day {currentPlant.dayNumber} Variety:</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#111b21]/90 border border-emerald-500/40 text-xs font-bold text-emerald-300 shadow-md">
+            <span>Day {currentPlant.dayNumber}:</span>
             <span className="text-white font-extrabold">{currentSpecies.name}</span>
             <span className="text-base">{currentSpecies.emoji}</span>
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-extrabold">
+              {bioStage.badge}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#8696a0]">{stageInfo.name}</span>
+            <span className="text-xs font-bold text-[#8696a0]">{bioStage.name}</span>
             <span className="text-xs font-mono font-black text-emerald-400">({currentPlant.growthPoints}%)</span>
             {isAutoGrowing && currentPlant.growthPoints < 100 && (
               <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-mono animate-pulse">
@@ -1344,8 +1555,12 @@ export const InteractivePlantGarden: React.FC = () => {
             )}
           </div>
 
+          <p className="text-[10.5px] text-[#8696a0] max-w-md">
+            {bioStage.subtext}
+          </p>
+
           {/* Growth Progress Bar */}
-          <div className="w-56 sm:w-72 h-2.5 rounded-full bg-[#182229] overflow-hidden p-0.5 border border-[#2a3942] shadow-inner">
+          <div className="w-56 sm:w-72 h-2.5 rounded-full bg-[#182229] overflow-hidden p-0.5 border border-[#2a3942] shadow-inner mt-0.5">
             <div
               className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 rounded-full transition-all duration-700 shadow-sm"
               style={{ width: `${currentPlant.growthPoints}%` }}
@@ -1353,10 +1568,10 @@ export const InteractivePlantGarden: React.FC = () => {
           </div>
         </div>
 
-        {/* ── VISIBLE BOTANICAL GRAPHIC ROOTED IN GARDEN EARTH ── */}
+        {/* ── THE VISIBLE REALISTIC BOTANICAL GRAPHIC ── */}
         <div
           onClick={() => setIsInspectModalOpen(true)}
-          className="relative my-1 cursor-pointer group"
+          className="relative my-0.5 cursor-pointer group"
           title="Click to Inspect in High Definition"
         >
           <BotanicalPlantGraphic
@@ -1367,6 +1582,7 @@ export const InteractivePlantGarden: React.FC = () => {
             isSunlit={isSunlit}
             isLoved={isLoved}
             size="lg"
+            showRoots={true}
           />
 
           <button
@@ -1381,13 +1597,12 @@ export const InteractivePlantGarden: React.FC = () => {
           </button>
         </div>
 
-        {/* Species Daily Quote */}
-        <p className="text-xs text-[#aebac1] italic text-center max-w-sm px-2 mt-0.5">
+        <p className="text-xs text-[#aebac1] italic text-center max-w-sm px-2">
           "{currentSpecies.quote}"
         </p>
       </div>
 
-      {/* ── 6. FLOATING INTERACTIVE NURTURE ISLAND (BOTTOM CONTROLS) ── */}
+      {/* ── 6. FLOATING NURTURE ISLAND (CARE & PROGRESSION) ── */}
       <div className="relative z-20 w-full max-w-xl mx-auto px-4 mb-2">
         <div className="p-2.5 rounded-3xl bg-[#111b21]/90 backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center justify-between gap-2">
           {/* Water */}
@@ -1420,7 +1635,7 @@ export const InteractivePlantGarden: React.FC = () => {
             <span>Give Love</span>
           </button>
 
-          {/* Advance Day (For testing & journey progression) */}
+          {/* Advance Day */}
           <button
             onClick={handleAdvanceNextDay}
             className="py-2.5 px-3.5 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-[#111b21] font-extrabold text-xs flex items-center gap-1 shadow-lg shadow-emerald-500/25 transition-all active:scale-95 cursor-pointer"
@@ -1432,9 +1647,8 @@ export const InteractivePlantGarden: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 7. FERTILE GARDEN GROUND BED (FOOTER) ── */}
+      {/* ── 7. FERTILE SOIL BED HORIZON (FOOTER) ── */}
       <div className="relative z-10 w-full h-16 sm:h-20 bg-gradient-to-b from-[#241309] via-[#1b0e06] to-[#0c0603] border-t-4 border-[#166534] shadow-[inset_0_12px_24px_rgba(0,0,0,0.6)]">
-        {/* Grass edge */}
         <div className="absolute -top-3.5 inset-x-0 h-3.5 flex items-center justify-around pointer-events-none overflow-hidden opacity-90">
           {[...Array(38)].map((_, i) => (
             <div
@@ -1456,12 +1670,12 @@ export const InteractivePlantGarden: React.FC = () => {
           <span>
             {currentPlant.growthPoints >= 100
               ? '🌸 Fully Bloomed and Living Forever'
-              : '🌱 Automatically growing right now'}
+              : '🌱 Living plant rooted in fertile earth'}
           </span>
         </div>
       </div>
 
-      {/* ── 8. MODAL: FULL-SCREEN BOTANICAL TIME LAPSE INSPECTOR ── */}
+      {/* ── 8. MODAL: FULL-SCREEN BOTANICAL INSPECTOR & MANUAL SLIDER ── */}
       {isInspectModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -1492,19 +1706,20 @@ export const InteractivePlantGarden: React.FC = () => {
                 isSunlit={isSunlit}
                 isLoved={isLoved}
                 size="lg"
+                showRoots={true}
               />
               <div className="mt-2 text-center">
-                <div className="text-sm font-bold text-emerald-400">{stageInfo.name}</div>
-                <p className="text-xs text-[#8696a0] max-w-xs mt-1">{stageInfo.tip}</p>
+                <div className="text-sm font-bold text-emerald-400">{bioStage.name}</div>
+                <p className="text-xs text-[#8696a0] max-w-xs mt-1">{bioStage.subtext}</p>
               </div>
             </div>
 
-            {/* Interactive Growth Slider (For curiosity & manual testing) */}
+            {/* Manual Slider */}
             <div className="space-y-2 p-3.5 rounded-2xl bg-[#182229]/70 border border-[#2a3942]">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-white font-bold flex items-center gap-1.5">
                   <Sliders className="w-4 h-4 text-emerald-400" />
-                  <span>Manual Time-Lapse Slider</span>
+                  <span>Interactive Biological Time-Lapse</span>
                 </span>
                 <span className="text-emerald-400 font-mono font-bold">{currentPlant.growthPoints}%</span>
               </div>
@@ -1522,15 +1737,15 @@ export const InteractivePlantGarden: React.FC = () => {
                 className="w-full accent-emerald-500 cursor-pointer h-2 bg-[#111b21] rounded-lg"
               />
               <div className="flex justify-between text-[10px] text-[#8696a0] font-mono">
-                <span>0% Seed</span>
-                <span>25% Sprout</span>
+                <span>0% Radicle</span>
+                <span>25% Cotyledon</span>
                 <span>55% Foliage</span>
-                <span>80% Bud</span>
-                <span>100% Bloom</span>
+                <span>80% Calyx Bud</span>
+                <span>100% Anthesis</span>
               </div>
             </div>
 
-            {/* Care Actions inside modal */}
+            {/* Modal Care Buttons */}
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={handleWater}

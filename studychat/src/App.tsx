@@ -16,16 +16,16 @@ function AppContent() {
 
   // Route protection guard: redirect unauthenticated access to private features
   React.useEffect(() => {
-    if ((activeTab === 'chat' || activeTab === 'garden') && !isChatAuthenticated) {
+    if ((activeTab === 'chat' || activeTab === 'gallery') && !isChatAuthenticated) {
       switchTab('chat-login');
     }
   }, [activeTab, isChatAuthenticated, switchTab]);
 
-  const isPrivate = activeTab === 'chat' || activeTab === 'garden';
+  const isPrivate = activeTab === 'chat' || activeTab === 'gallery';
 
-  // In WhatsApp Chat or Garden when authenticated: full-screen authentic WhatsApp Web experience
+  // In WhatsApp Chat or Gallery when authenticated: full-screen authentic WhatsApp Web experience
   if (isPrivate && isChatAuthenticated) {
-    return <WhatsAppChatView initialTab={activeTab === 'garden' ? 'garden' : 'chat'} />;
+    return <WhatsAppChatView initialTab={activeTab === 'gallery' ? 'gallery' : 'chat'} />;
   }
 
   const renderActiveView = () => {
@@ -40,7 +40,7 @@ function AppContent() {
         return <AssessmentModal />;
       case 'chat-login':
       case 'chat':
-      case 'garden':
+      case 'gallery':
         return <DharyaLoginPage />;
       case 'planner':
         return <PlannerView />;

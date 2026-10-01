@@ -17,7 +17,7 @@ import {
 } from '../../services/chatSyncService';
 import {
   MessageSquare,
-  Sprout,
+  Images,
   ArrowLeft,
   Phone,
   Video,
@@ -67,10 +67,10 @@ import {
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
-import { InteractivePlantGarden } from '../garden/InteractivePlantGarden';
+import { GalleryView } from '../gallery/GalleryView';
 
 interface WhatsAppChatViewProps {
-  initialTab?: 'chat' | 'garden';
+  initialTab?: 'chat' | 'gallery';
 }
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
@@ -144,7 +144,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
-  const [activeMainView, setActiveMainView] = useState<'chat' | 'garden'>(initialTab);
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery'>(initialTab ?? 'chat');
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -154,7 +154,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return initialTab === 'garden' ? 'conversation' : 'list';
+      return initialTab === 'gallery' ? 'conversation' : 'list';
     }
     return 'conversation';
   });
@@ -174,8 +174,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   useEffect(() => {
     if (initialTab) {
-      setActiveMainView(initialTab);
-      if (initialTab === 'garden') {
+      setActiveMainView(initialTab ?? 'chat');
+      if (initialTab === 'gallery') {
         setMobileView('conversation');
       }
     }
@@ -2116,32 +2116,27 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             )}
           </button>
 
-          {/* Botanical Garden Button */}
+          {/* Gallery Button */}
           <button
             onClick={() => {
-              setActiveMainView('garden');
+              setActiveMainView('gallery');
               setMobileView('conversation');
             }}
             className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              activeMainView === 'garden'
+              activeMainView === 'gallery'
                 ? isDark
-                  ? 'bg-[#374248] text-emerald-400 shadow-inner ring-1 ring-emerald-500/40'
+                  ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/40'
                   : 'bg-[#d9fdd3] text-[#008069] shadow-sm ring-1 ring-[#008069]/30'
                 : isDark
-                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400'
+                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-[#00a884]'
                 : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
             }`}
-            title="Botanical Garden (12 Specimen Streak)"
+            title="Gallery"
           >
-            <Sprout className="w-5 h-5" />
-            <span className={`absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black rounded-full shadow font-mono ${
-              isDark ? 'bg-[#00a884] text-[#111b21]' : 'bg-[#008069] text-white'
-            }`}>
-              12
-            </span>
-            {activeMainView === 'garden' && (
+            <Images className="w-5 h-5" />
+            {activeMainView === 'gallery' && (
               <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-emerald-400' : 'bg-[#008069]'
+                isDark ? 'bg-[#00a884]' : 'bg-[#008069]'
               }`} />
             )}
           </button>
@@ -2294,14 +2289,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
                   <button
                     onClick={() => {
-                      setActiveMainView('garden');
+                      setActiveMainView('gallery');
                       setShowSidebarMenu(false);
                       setMobileView('conversation');
                     }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-400 font-medium"
+                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-[#00a884] font-medium"
                   >
-                    <Sprout className="w-4 h-4" />
-                    <span>Botanical Garden (12 Varieties)</span>
+                    <Images className="w-4 h-4" />
+                    <span>Gallery</span>
                   </button>
                   <button
                     onClick={() => {
@@ -2381,13 +2376,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           <div className={`flex items-center gap-1 ${isDark ? 'text-[#aebac1]' : 'text-[#54656f]'}`}>
             <button
               onClick={() => {
-                setActiveMainView('garden');
+                setActiveMainView('gallery');
                 setMobileView('conversation');
               }}
-              className="p-2 rounded-full hover:bg-white/10 hover:text-emerald-400 transition-colors"
-              title="Botanical Garden"
+              className="p-2 rounded-full hover:bg-white/10 hover:text-[#00a884] transition-colors"
+              title="Gallery"
             >
-              <Sprout className="w-5 h-5 text-emerald-400" />
+              <Images className="w-5 h-5 text-[#00a884]" />
             </button>
 
             <button
@@ -2415,14 +2410,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
                   <button
                     onClick={() => {
-                      setActiveMainView('garden');
+                      setActiveMainView('gallery');
                       setShowSidebarMenu(false);
                       setMobileView('conversation');
                     }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-400 font-medium"
+                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-[#00a884] font-medium"
                   >
-                    <Sprout className="w-4 h-4" />
-                    <span>Botanical Garden</span>
+                    <Images className="w-4 h-4" />
+                    <span>Gallery</span>
                   </button>
                   <button
                     onClick={() => {
@@ -2632,20 +2627,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           <button
             onClick={() => {
-              setActiveMainView('garden');
+              setActiveMainView('gallery');
               setMobileView('conversation');
             }}
             className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-              activeMainView === 'garden'
-                ? 'text-emerald-400'
-                : 'text-[#8696a0] hover:text-emerald-400'
+              activeMainView === 'gallery'
+                ? 'text-[#00a884]'
+                : 'text-[#8696a0] hover:text-[#00a884]'
             }`}
           >
-            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'garden' ? 'bg-emerald-500/20' : ''}`}>
-              <Sprout className="w-5 h-5" />
-              <span className="absolute -top-1 right-2 w-2 h-2 rounded-full bg-emerald-400" />
+            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'gallery' ? 'bg-[#00a884]/20' : ''}`}>
+              <Images className="w-5 h-5" />
             </div>
-            <span className="text-[11px] font-semibold">Garden</span>
+            <span className="text-[11px] font-semibold">Gallery</span>
           </button>
 
           <button
@@ -2680,65 +2674,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </nav>
       </section>
 
-      {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Garden) ══════ */}
+      {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Gallery) ══════ */}
       <main
         className={`flex-1 flex flex-col h-full relative overflow-hidden transition-colors ${
           isDark ? 'bg-[#0b141a]' : 'bg-[#efeae2]'
         } ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}
       >
-        {activeMainView === 'garden' ? (
-          /* Garden View with WhatsApp Web styling */
+        {activeMainView === 'gallery' ? (
+          /* Gallery View */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
-            {/* Top Garden Header */}
-            <div className="bg-[#1f2c34] md:bg-[#202c33] px-3 sm:px-4 py-2.5 flex items-center justify-between border-b border-[#2a3942] z-30 shrink-0 shadow-sm h-[56px] md:h-[60px]">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  onClick={() => {
-                    setActiveMainView('chat');
-                    setMobileView(isMobileScreen ? 'list' : 'conversation');
-                  }}
-                  className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1.5"
-                  title="Back to Chats"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="text-xs font-medium text-[#00a884] hidden sm:inline">Back</span>
-                </button>
-
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold shadow-sm">
-                    🌱
-                  </div>
-                  <div>
-                    <h2 className="text-[15px] font-semibold text-[#e9edef] flex items-center gap-2 leading-tight">
-                      <span>Botanical Garden</span>
-                      <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-mono font-medium">12 Varieties</span>
-                    </h2>
-                    <p className="text-[11px] text-[#00a884] flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
-                      <span>Live Synced across Phone &amp; Laptop</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    setActiveMainView('chat');
-                    setMobileView('conversation');
-                  }}
-                  className="px-3.5 py-1.5 rounded-full bg-[#00a884] hover:bg-[#029071] text-white text-xs font-semibold flex items-center gap-1.5 shadow transition-all"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Open {partnerName}'s Chat</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Garden Scroll Container */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
-              <InteractivePlantGarden />
-            </div>
+            <GalleryView />
           </div>
         ) : (
           /* Active Chat Conversation */
@@ -2799,13 +2744,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         <div className={`flex items-center gap-1 sm:gap-2 ${isDark ? "text-[#aebac1]" : "text-[#54656f]"}`}>
           {/* Theme Switcher in Conversation Header */}
           <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-white/10 hover:text-amber-400" : "hover:bg-black/5 hover:text-indigo-600"}`} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}</button>
-          {/* Botanical Garden Quick Button */}
+          {/* Gallery Quick Button */}
           <button
-            onClick={() => setActiveMainView('garden')}
-            className="p-2 rounded-full hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition-colors"
-            title="Botanical Garden"
+            onClick={() => setActiveMainView('gallery')}
+            className="p-2 rounded-full hover:bg-white/10 text-[#00a884] hover:text-[#00a884]/80 transition-colors"
+            title="Gallery"
           >
-            <Sprout className="w-4 h-4 text-emerald-400" />
+            <Images className="w-4 h-4 text-[#00a884]" />
           </button>
 
           {/* Security & Privacy Section Quick Button */}

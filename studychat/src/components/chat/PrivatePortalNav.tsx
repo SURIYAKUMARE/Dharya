@@ -1,20 +1,20 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { MessageSquare, Sprout, ArrowLeft, Shield, Heart, Droplets, BookOpen } from 'lucide-react';
+import { MessageSquare, Images, ArrowLeft, BookOpen } from 'lucide-react';
 
 export const PrivatePortalNav: React.FC = () => {
   const { activeTab, switchTab, student } = useStudyApp();
 
   const isChat = activeTab === 'chat';
-  const isGarden = activeTab === 'garden';
+  const isGallery = activeTab === 'gallery';
 
-  // Get total plants from local storage
-  const plantCount = (() => {
+  // Get total gallery items from local storage
+  const galleryCount = (() => {
     try {
-      const saved = localStorage.getItem('dharya_multi_garden_plants_v1');
+      const saved = localStorage.getItem('dharya_gallery_v2');
       if (saved) return JSON.parse(saved).length;
     } catch {}
-    return 3;
+    return 12;
   })();
 
   return (
@@ -31,7 +31,7 @@ export const PrivatePortalNav: React.FC = () => {
           <span className="sm:hidden">Library</span>
         </button>
 
-        {/* Center: Dedicated Switcher (Chat vs Garden) */}
+        {/* Center: Dedicated Switcher (Chat vs Gallery) */}
         <div className="flex items-center p-1 rounded-2xl bg-[#202c33] border border-[#2a3942] shadow-inner">
           {/* Chat Tab */}
           <button
@@ -46,21 +46,21 @@ export const PrivatePortalNav: React.FC = () => {
             <span>Chat</span>
           </button>
 
-          {/* Garden Tab */}
+          {/* Gallery Tab */}
           <button
-            onClick={() => switchTab('garden')}
+            onClick={() => switchTab('gallery')}
             className={`flex items-center gap-2 px-3.5 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
-              isGarden
-                ? 'bg-emerald-600 text-white shadow-md scale-102'
+              isGallery
+                ? 'bg-[#00a884] text-white shadow-md scale-102'
                 : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
             }`}
           >
-            <Sprout className={`w-4 h-4 text-emerald-300 ${isGarden ? 'stroke-[2.5]' : ''}`} />
-            <span>Garden</span>
+            <Images className={`w-4 h-4 ${isGallery ? 'stroke-[2.5]' : 'text-[#00a884]'}`} />
+            <span>Gallery</span>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-              isGarden ? 'bg-black/30 text-white' : 'bg-[#111b21] text-emerald-400 border border-emerald-500/30'
+              isGallery ? 'bg-black/30 text-white' : 'bg-[#111b21] text-[#00a884] border border-[#00a884]/30'
             }`}>
-              {plantCount}
+              {galleryCount}
             </span>
           </button>
         </div>

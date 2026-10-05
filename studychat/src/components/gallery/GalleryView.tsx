@@ -61,6 +61,7 @@ import {
   Tag,
   PlusCircle,
   Plus,
+  ArrowLeft,
 } from 'lucide-react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import {
@@ -98,7 +99,15 @@ interface UploadItem {
   errorMsg?: string;
 }
 
-export const GalleryView: React.FC = () => {
+export interface GalleryViewProps {
+  onBackToChat?: () => void;
+  onOpenTimeline?: () => void;
+}
+
+export const GalleryView: React.FC<GalleryViewProps> = ({
+  onBackToChat,
+  onOpenTimeline,
+}) => {
   const { student } = useStudyApp();
   const owner = student?.username || 'surya';
 
@@ -660,8 +669,19 @@ export const GalleryView: React.FC = () => {
         <header className="bg-[#1e1f20] border-b border-[#2d2f31] px-4 sm:px-6 pt-3.5 pb-2.5 shrink-0 shadow-sm">
           {/* Row 1: Brand & Floating Search Pill & Add Media FAB */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
-            {/* Google Gallery Logo */}
-            <div className="flex items-center gap-3">
+            {/* Google Gallery Logo & Navigation Switchers */}
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+              {onBackToChat && (
+                <button
+                  onClick={onBackToChat}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] text-xs font-semibold text-[#8696a0] hover:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+                  title="Back to Active Chat"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Chats</span>
+                </button>
+              )}
+
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#1a73e8] via-[#8ab4f8] to-[#c2e7ff] flex items-center justify-center text-[#001d35] shadow-md shadow-blue-500/20 shrink-0">
                 <Images className="w-5 h-5 stroke-[2.5]" />
               </div>
@@ -713,6 +733,17 @@ export const GalleryView: React.FC = () => {
 
             {/* Action Buttons: Add Media & Refresh */}
             <div className="flex items-center gap-2 justify-end shrink-0">
+              {onOpenTimeline && (
+                <button
+                  onClick={onOpenTimeline}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-amber-500/40 text-xs font-bold text-amber-300 hover:text-white transition-all cursor-pointer shrink-0"
+                  title="Open Full Life Timeline"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden md:inline">Life Timeline</span>
+                </button>
+              )}
+
               <button
                 onClick={loadData}
                 disabled={loading}

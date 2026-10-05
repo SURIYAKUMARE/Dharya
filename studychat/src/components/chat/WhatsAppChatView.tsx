@@ -2726,12 +2726,30 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {activeMainView === 'gallery' ? (
           /* Gallery View */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
-            <GalleryView />
+            <GalleryView
+              onBackToChat={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              onOpenTimeline={() => {
+                setActiveMainView('timeline');
+                setMobileView('conversation');
+              }}
+            />
           </div>
         ) : activeMainView === 'timeline' ? (
           /* Life Timeline View */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
-            <LifeTimelineView />
+            <LifeTimelineView
+              onBackToChat={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              onOpenGallery={() => {
+                setActiveMainView('gallery');
+                setMobileView('conversation');
+              }}
+            />
           </div>
         ) : (
           /* Active Chat Conversation */

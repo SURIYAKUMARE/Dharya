@@ -1,22 +1,20 @@
 /**
  * GalleryView.tsx
- * Google Photos / Google Gallery redesigned media hub.
+ * Google Photos & Google Gallery redesigned media hub with Memory Incident Timeline.
  * Features:
  * - Google Material 3 & Google Photos design language
  * - Floating Google search pill with instant search
  * - Signature Google Photos timeline view grouped by dates (Today, Yesterday, etc.)
- * - Media tabs: Photos, Videos, Albums & Collections, Favorites
- * - Albums grid view with cover thumbnails and "+ Create Album"
+ * - Media tabs: Photos, Videos, Albums, Favorites, AND ⏳ Memory Timeline!
+ * - TIMELINE INCIDENT RECORDER:
+ *     1. Add a photo (or media)
+ *     2. Pick a date when it happened
+ *     3. Write "What incident happened" (full story / memories)
+ *     4. Chronological visual timeline stream with node markers
+ *     5. Edit and Delete incident entries
  * - Multi-select mode with batch delete, batch move, and batch favorite
- * - PROMINENT DELETE OPTIONS:
- *     1. Direct trash icon on card hover/tap
- *     2. Card context menu delete
- *     3. Batch delete selected items in top action bar
- *     4. Fullscreen viewer top bar trash icon
- *     5. Fullscreen viewer bottom bar delete button
- *     6. Keyboard 'Delete' or 'Backspace' shortcut in viewer
- * - Fullscreen viewer for Photos & Videos with native video player and navigation
- * - Drag-and-drop upload zone + "+ Add photos & videos" button
+ * - PROMINENT DELETE OPTIONS on cards, viewer, and timeline
+ * - Fullscreen viewer for Photos & Videos with native playback
  * - IndexedDB high-capacity browser persistence
  */
 
@@ -57,14 +55,25 @@ import {
   Calendar,
   Share2,
   Sparkles,
+  Clock,
+  BookOpen,
+  MapPin,
+  Tag,
+  PlusCircle,
+  Plus,
 } from 'lucide-react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import {
   GalleryItem,
   GalleryAlbum,
+  TimelineIncident,
   SortOrder,
   fetchPhotos,
   fetchAlbums,
+  fetchTimelineIncidents,
+  createTimelineIncident,
+  updateTimelineIncident,
+  deleteTimelineIncident,
   uploadMedia,
   toggleFavorite,
   deleteMediaItem,
@@ -77,7 +86,7 @@ import {
   ACCEPT_STRING,
 } from '../../services/galleryService';
 
-type GoogleTab = 'photos' | 'videos' | 'albums' | 'favorites';
+type GoogleTab = 'photos' | 'videos' | 'albums' | 'favorites' | 'timeline';
 
 interface UploadItem {
   id: string;
@@ -96,6 +105,7 @@ export const GalleryView: React.FC = () => {
   // ── Data State ────────────────────────────────────────────────────
   const [items, setItems]               = useState<GalleryItem[]>([]);
   const [albums, setAlbums]             = useState<GalleryAlbum[]>([]);
+  const [timelineIncidents, setTimelineIncidents] = useState<TimelineIncident[]>([]);
   const [loading, setLoading]           = useState(true);
   const [fetchError, setFetchError]     = useState<string | null>(null);
 
@@ -121,6 +131,18 @@ export const GalleryView: React.FC = () => {
   const [newCaptionText, setNewCaptionText] = useState('');
   const [showStorageInfo, setShowStorageInfo] = useState(false);
 
+  // ── Timeline Incident Modal State ─────────────────────────────────
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [editingIncident, setEditingIncident]     = useState<TimelineIncident | null>(null);
+  const [incidentTitle, setIncidentTitle]         = useState('');
+  const [incidentDate, setIncidentDate]           = useState('');
+  const [incidentText, setIncidentText]           = useState('');
+  const [incidentTag, setIncidentTag]             = useState('Milestone');
+  const [incidentLocation, setIncidentLocation]   = useState('');
+  const [incidentPhotoFile, setIncidentPhotoFile] = useState<File | null>(null);
+  const [incidentPhotoPreview, setIncidentPhotoPreview] = useState<string>('');
+  const [deleteIncidentTarget, setDeleteIncidentTarget] = useState<TimelineIncident | null>(null);
+
   // ── Upload & Drag state ───────────────────────────────────────────
   const [isDragOver, setIsDragOver]     = useState(false);
   const [uploads, setUploads]           = useState<UploadItem[]>([]);
@@ -128,6 +150,7 @@ export const GalleryView: React.FC = () => {
   const [toast, setToast]               = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
 
   const fileInputRef  = useRef<HTMLInputElement>(null);
+  const incidentPhotoInputRef = useRef<HTMLInputElement>(null);
   const toastTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
@@ -136,17 +159,19 @@ export const GalleryView: React.FC = () => {
     toastTimer.current = setTimeout(() => setToast(null), 3200);
   }, []);
 
-  // ── Load Media & Albums ───────────────────────────────────────────
+  // ── Load All Data ─────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
     try {
-      const [mediaData, albumsData] = await Promise.all([
+      const [mediaData, albumsData, timelineData] = await Promise.all([
         fetchPhotos(owner),
         fetchAlbums(),
+        fetchTimelineIncidents(owner),
       ]);
       setItems(mediaData);
       setAlbums(albumsData);
+      setTimelineIncidents(timelineData);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not load gallery';
       setFetchError(message);
@@ -173,7 +198,6 @@ export const GalleryView: React.FC = () => {
       } else if (activeTab === 'favorites') {
         list = list.filter((i) => i.isFavorite);
       }
-      // 'photos' tab shows both photos and videos in Google Photos timeline stream, or photos
     }
 
     // Search query
@@ -243,6 +267,24 @@ export const GalleryView: React.FC = () => {
 
     return groups;
   }, [filteredItems]);
+
+  // ── Filtered Timeline Incidents ───────────────────────────────────
+  const filteredTimeline = React.useMemo(() => {
+    let list = [...timelineIncidents];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (inc) =>
+          inc.title.toLowerCase().includes(q) ||
+          inc.incidentText.toLowerCase().includes(q) ||
+          (inc.location && inc.location.toLowerCase().includes(q)) ||
+          (inc.tag && inc.tag.toLowerCase().includes(q)),
+      );
+    }
+    return list.sort((a, b) =>
+      sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp,
+    );
+  }, [timelineIncidents, searchQuery, sortOrder]);
 
   // ── Multi-select Handlers ─────────────────────────────────────────
   const toggleSelect = (id: string, e?: React.MouseEvent) => {
@@ -353,7 +395,7 @@ export const GalleryView: React.FC = () => {
     if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
   };
 
-  // ── Delete Confirm Action ─────────────────────────────────────────
+  // ── Delete Confirm Action (Gallery Media) ─────────────────────────
   const handleDeleteConfirm = async () => {
     if (!deleteTargets || deleteTargets.length === 0) return;
     setDeleting(true);
@@ -386,7 +428,6 @@ export const GalleryView: React.FC = () => {
     setDeleteTargets(null);
   };
 
-  // ── Batch Delete Trigger ──────────────────────────────────────────
   const triggerBatchDelete = () => {
     const selectedItems = items.filter((i) => selectedIds.has(i.id));
     if (selectedItems.length > 0) {
@@ -404,7 +445,7 @@ export const GalleryView: React.FC = () => {
     showToast(nextVal ? 'Saved to Favorites ⭐' : 'Removed from Favorites');
   };
 
-  // ── Album Create & Manage ─────────────────────────────────────────
+  // ── Album Handlers ────────────────────────────────────────────────
   const handleCreateAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAlbumName.trim()) return;
@@ -445,6 +486,92 @@ export const GalleryView: React.FC = () => {
     setEditCaptionTarget(null);
   };
 
+  // ── Timeline Incident Handlers ────────────────────────────────────
+  const openNewIncidentModal = () => {
+    setEditingIncident(null);
+    setIncidentTitle('');
+    const today = new Date().toISOString().split('T')[0];
+    setIncidentDate(today);
+    setIncidentText('');
+    setIncidentTag('Special Memory');
+    setIncidentLocation('');
+    setIncidentPhotoFile(null);
+    setIncidentPhotoPreview('');
+    setShowIncidentModal(true);
+  };
+
+  const openEditIncidentModal = (inc: TimelineIncident) => {
+    setEditingIncident(inc);
+    setIncidentTitle(inc.title);
+    setIncidentDate(inc.incidentDate);
+    setIncidentText(inc.incidentText);
+    setIncidentTag(inc.tag || 'Memory');
+    setIncidentLocation(inc.location || '');
+    setIncidentPhotoFile(null);
+    setIncidentPhotoPreview(inc.photoUrl || '');
+    setShowIncidentModal(true);
+  };
+
+  const handleIncidentPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIncidentPhotoFile(file);
+    setIncidentPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleSaveIncident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!incidentTitle.trim() || !incidentDate.trim() || !incidentText.trim()) {
+      showToast('Please provide a title, date, and story', 'err');
+      return;
+    }
+
+    const timestamp = new Date(incidentDate).getTime() || Date.now();
+
+    if (editingIncident) {
+      await updateTimelineIncident(
+        editingIncident.id,
+        {
+          title: incidentTitle.trim(),
+          incidentDate,
+          incidentText: incidentText.trim(),
+          tag: incidentTag,
+          location: incidentLocation.trim(),
+          timestamp,
+        },
+        incidentPhotoFile || undefined,
+      );
+      showToast('Timeline incident updated ✓');
+    } else {
+      await createTimelineIncident(
+        {
+          owner,
+          title: incidentTitle.trim(),
+          incidentDate,
+          incidentText: incidentText.trim(),
+          tag: incidentTag,
+          location: incidentLocation.trim(),
+          timestamp,
+        },
+        incidentPhotoFile || undefined,
+      );
+      showToast('Incident added to timeline ✓');
+    }
+
+    setShowIncidentModal(false);
+    // Reload timeline
+    const updatedTimeline = await fetchTimelineIncidents(owner);
+    setTimelineIncidents(updatedTimeline);
+  };
+
+  const handleDeleteIncidentConfirm = async () => {
+    if (!deleteIncidentTarget) return;
+    await deleteTimelineIncident(deleteIncidentTarget.id);
+    setTimelineIncidents((prev) => prev.filter((i) => i.id !== deleteIncidentTarget.id));
+    showToast('Incident removed from timeline');
+    setDeleteIncidentTarget(null);
+  };
+
   // ── Lightbox Navigation ───────────────────────────────────────────
   const lbPrev = useCallback(() => {
     setLightboxIdx((i) =>
@@ -471,7 +598,7 @@ export const GalleryView: React.FC = () => {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       role="region"
-      aria-label="Google Gallery"
+      aria-label="Google Gallery & Timeline"
     >
       {/* ── Drag & Drop Full Overlay ── */}
       {isDragOver && (
@@ -554,7 +681,7 @@ export const GalleryView: React.FC = () => {
                     title="Storage details"
                   >
                     <HardDrive className="w-3 h-3 text-[#8ab4f8]" />
-                    <span>IndexedDB High-Capacity Storage</span>
+                    <span>IndexedDB Persistent Storage</span>
                   </button>
                 </div>
               </div>
@@ -565,7 +692,11 @@ export const GalleryView: React.FC = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e918f] pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search photos, videos, people &amp; albums…"
+                placeholder={
+                  activeTab === 'timeline'
+                    ? 'Search timeline incidents and stories…'
+                    : 'Search photos, videos, people & albums…'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-9 py-2 rounded-full bg-[#28292a] hover:bg-[#333538] focus:bg-[#1e1f20] border border-[#3c4043] focus:border-[#8ab4f8] text-[#e3e3e3] placeholder-[#8e918f] text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#8ab4f8] transition-all shadow-inner"
@@ -591,15 +722,26 @@ export const GalleryView: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
 
-              {/* Prominent Google Style "+ Add photos and videos" FAB Button */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] active:scale-95 text-[#001d35] text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#8ab4f8]/25 cursor-pointer"
-                aria-label="Add photos and videos"
-              >
-                <Upload className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Add photos &amp; videos</span>
-              </button>
+              {activeTab === 'timeline' ? (
+                /* Add Incident Button when on Timeline tab */
+                <button
+                  onClick={openNewIncidentModal}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] active:scale-95 text-[#001d35] text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#8ab4f8]/25 cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                  <span>+ Add Incident</span>
+                </button>
+              ) : (
+                /* Prominent Google Style "+ Add photos and videos" FAB Button */
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] active:scale-95 text-[#001d35] text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#8ab4f8]/25 cursor-pointer"
+                  aria-label="Add photos and videos"
+                >
+                  <Upload className="w-4 h-4 stroke-[2.5]" />
+                  <span>+ Add photos &amp; videos</span>
+                </button>
+              )}
 
               <input
                 ref={fileInputRef}
@@ -615,7 +757,7 @@ export const GalleryView: React.FC = () => {
             </div>
           </div>
 
-          {/* Row 2: Google Photos Navigation Tabs */}
+          {/* Row 2: Google Photos Navigation Tabs with Memory Timeline */}
           <div className="flex items-center justify-between gap-3 overflow-x-auto scrollbar-none pt-1">
             <nav className="flex items-center gap-1 sm:gap-2 shrink-0" role="tablist">
               <button
@@ -677,6 +819,22 @@ export const GalleryView: React.FC = () => {
                 <Heart className="w-3.5 h-3.5 text-rose-400" />
                 <span>Favorites ({favCount})</span>
               </button>
+
+              {/* Memory Incident Timeline Tab */}
+              <button
+                onClick={() => {
+                  setActiveTab('timeline');
+                  setSelectedAlbumId(null);
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'timeline'
+                    ? 'bg-gradient-to-r from-[#8ab4f8] to-[#c2e7ff] text-[#001d35] shadow-sm font-extrabold'
+                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Timeline ({timelineIncidents.length})</span>
+              </button>
             </nav>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -688,15 +846,6 @@ export const GalleryView: React.FC = () => {
               >
                 <Filter className="w-3 h-3" />
                 <span>{sortOrder === 'newest' ? 'Newest' : 'Oldest'}</span>
-              </button>
-
-              {/* Create Album shortcut */}
-              <button
-                onClick={() => setShowNewAlbumModal(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] text-[#8ab4f8] border border-[#8ab4f8]/30 text-xs font-bold transition-all cursor-pointer"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-                <span>+ Album</span>
               </button>
             </div>
           </div>
@@ -753,8 +902,171 @@ export const GalleryView: React.FC = () => {
 
       {/* ────────────────── MAIN CONTENT ────────────────── */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative p-3 sm:p-6">
-        {/* If in Albums Tab and NO album selected: show Google Photos Albums Grid */}
-        {activeTab === 'albums' && !selectedAlbumId ? (
+        {/* ── 1. TIMELINE INCIDENTS TAB (New Requested Feature!) ── */}
+        {activeTab === 'timeline' ? (
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Timeline Header Banner */}
+            <div className="bg-[#1e1f20] border border-[#2d2f31] rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-mono text-[#8ab4f8] mb-1">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>MEMORY INCIDENT TIMELINE</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+                  Our Story &amp; Incident Journal
+                </h2>
+                <p className="text-xs sm:text-sm text-[#8e918f] mt-1 max-w-xl">
+                  Add photos, pick the date, and write what incident happened. Every milestone and memory preserved forever.
+                </p>
+              </div>
+
+              <button
+                onClick={openNewIncidentModal}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs sm:text-sm font-bold shadow-lg shadow-[#8ab4f8]/25 transition-all cursor-pointer active:scale-95 shrink-0"
+              >
+                <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                <span>+ Add Incident</span>
+              </button>
+            </div>
+
+            {/* Timeline Empty State */}
+            {filteredTimeline.length === 0 && (
+              <div className="text-center py-16 px-4 bg-[#1e1f20]/40 rounded-3xl border border-[#2d2f31]">
+                <Clock className="w-12 h-12 text-[#8e918f] mx-auto mb-3 opacity-60" />
+                <h3 className="text-base font-bold text-white mb-1">No timeline incidents yet</h3>
+                <p className="text-xs text-[#8e918f] max-w-sm mx-auto mb-5">
+                  Write down your first incident, attach a photo, and set the date!
+                </p>
+                <button
+                  onClick={openNewIncidentModal}
+                  className="px-5 py-2 rounded-full bg-[#8ab4f8] text-[#001d35] text-xs font-bold"
+                >
+                  Add Your First Incident
+                </button>
+              </div>
+            )}
+
+            {/* Chronological Incident Timeline Track */}
+            {filteredTimeline.length > 0 && (
+              <div className="relative pl-6 sm:pl-8 border-l-2 border-[#3c4043] space-y-8 my-4">
+                {filteredTimeline.map((inc, index) => {
+                  const displayDate = new Date(inc.timestamp).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  });
+
+                  return (
+                    <article
+                      key={inc.id}
+                      className="relative group bg-[#1e1f20] border border-[#2d2f31] hover:border-[#8ab4f8]/60 rounded-3xl p-4 sm:p-6 transition-all duration-200 shadow-md hover:shadow-xl"
+                    >
+                      {/* Timeline Node Pin on the Track */}
+                      <div className="absolute -left-[31px] sm:-left-[39px] top-6 w-5 h-5 rounded-full bg-[#1e1f20] border-3 border-[#8ab4f8] flex items-center justify-center shadow-md">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
+                      </div>
+
+                      {/* Header Row: Date Badge, Tag, Location & Action Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2d2f31] pb-3 mb-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#28292a] text-[#8ab4f8] text-xs font-bold font-mono border border-[#3c4043]">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{inc.incidentDate || displayDate}</span>
+                          </span>
+
+                          {inc.tag && (
+                            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#28292a] text-[#c4c7c5] text-[11px] font-medium border border-[#3c4043]">
+                              <Tag className="w-3 h-3 text-amber-400" />
+                              <span>{inc.tag}</span>
+                            </span>
+                          )}
+
+                          {inc.location && (
+                            <span className="flex items-center gap-1 text-[11px] text-[#8e918f]">
+                              <MapPin className="w-3 h-3 text-rose-400" />
+                              <span>{inc.location}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Edit & Delete Action Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => openEditIncidentModal(inc)}
+                            className="p-1.5 rounded-full hover:bg-white/10 text-[#8e918f] hover:text-white transition-colors cursor-pointer"
+                            title="Edit Incident"
+                          >
+                            <Edit2 className="w-4 h-4 text-[#8ab4f8]" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteIncidentTarget(inc)}
+                            className="p-1.5 rounded-full hover:bg-rose-500/20 text-[#8e918f] hover:text-rose-400 transition-colors cursor-pointer"
+                            title="Delete Incident"
+                          >
+                            <Trash2 className="w-4 h-4 text-rose-400" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Title & Photo Layout */}
+                      <div className="space-y-3">
+                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+                          {inc.title}
+                        </h3>
+
+                        {/* Incident Photo if Attached */}
+                        {inc.photoUrl && (
+                          <div
+                            onClick={() => {
+                              // Open in fullscreen viewer as a virtual item
+                              const virtualItem: GalleryItem = {
+                                id: inc.id,
+                                owner: inc.owner,
+                                type: 'photo',
+                                publicUrl: inc.photoUrl!,
+                                fileName: inc.title,
+                                fileSize: 0,
+                                mimeType: 'image/jpeg',
+                                label: inc.title,
+                                isFavorite: false,
+                                albumId: 'timeline',
+                                createdAt: inc.timestamp,
+                                isLocalOnly: true,
+                              };
+                              setItems((prev) => [virtualItem, ...prev]);
+                              setLightboxIdx(0);
+                            }}
+                            className="relative max-h-80 sm:max-h-96 rounded-2xl overflow-hidden bg-black/40 border border-[#2d2f31] cursor-pointer group/photo"
+                          >
+                            <img
+                              src={inc.photoUrl}
+                              alt={inc.title}
+                              className="w-full h-full max-h-80 sm:max-h-96 object-cover object-center group-hover/photo:scale-102 transition-transform duration-300"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-black/20 group-hover/photo:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
+                              <span className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
+                                <ZoomIn className="w-3.5 h-3.5" />
+                                <span>View Full Photo</span>
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Written Incident Story Description */}
+                        <div className="bg-[#131314] p-4 rounded-2xl border border-[#2d2f31] text-xs sm:text-sm text-[#e3e3e3] leading-relaxed whitespace-pre-line">
+                          {inc.incidentText}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : activeTab === 'albums' && !selectedAlbumId ? (
+          /* ── 2. ALBUMS TAB ── */
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-bold text-white tracking-tight">
@@ -832,7 +1144,7 @@ export const GalleryView: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Timeline Media Stream View */
+          /* ── 3. TIMELINE MEDIA STREAM VIEW (Photos, Videos, Favorites) ── */
           <>
             {/* If inside an album: Header with back button */}
             {selectedAlbumId && (
@@ -939,7 +1251,7 @@ export const GalleryView: React.FC = () => {
 
                   return (
                     <section key={group.dateKey} aria-label={group.label} className="space-y-2.5">
-                      {/* Google Photos Timeline Date Header */}
+                      {/* Timeline Date Header */}
                       <div className="flex items-center justify-between px-1">
                         <div className="flex items-center gap-2">
                           <button
@@ -1022,7 +1334,208 @@ export const GalleryView: React.FC = () => {
         />
       )}
 
-      {/* ────────────────── GOOGLE STYLE DELETE MODAL ────────────────── */}
+      {/* ────────────────── ADD / EDIT TIMELINE INCIDENT MODAL ────────────────── */}
+      {showIncidentModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add or Edit Timeline Incident"
+        >
+          <div className="w-full max-w-lg bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150 my-8">
+            <div className="flex items-center justify-between border-b border-[#2d2f31] pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base sm:text-lg font-bold text-white">
+                  {editingIncident ? 'Edit Incident Story' : 'Add Incident to Timeline'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowIncidentModal(false)}
+                className="text-[#8e918f] hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveIncident} className="space-y-4">
+              {/* Title Input */}
+              <div>
+                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                  Incident Headline / Title *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rainy Day Walk, First Trip to Ooty, Birthday Surprise"
+                  value={incidentTitle}
+                  onChange={(e) => setIncidentTitle(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
+                />
+              </div>
+
+              {/* Date Input */}
+              <div>
+                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                  Date When Incident Happened *
+                </label>
+                <input
+                  type="date"
+                  value={incidentDate}
+                  onChange={(e) => setIncidentDate(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
+                />
+              </div>
+
+              {/* Photo Upload Area */}
+              <div>
+                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                  Attach Photo (Optional)
+                </label>
+                {incidentPhotoPreview ? (
+                  <div className="relative rounded-2xl overflow-hidden max-h-48 border border-[#3c4043] bg-black">
+                    <img
+                      src={incidentPhotoPreview}
+                      alt="Preview"
+                      className="w-full h-48 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIncidentPhotoFile(null);
+                        setIncidentPhotoPreview('');
+                      }}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer"
+                      title="Remove photo"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => incidentPhotoInputRef.current?.click()}
+                    className="p-4 rounded-2xl border-2 border-dashed border-[#3c4043] hover:border-[#8ab4f8] bg-[#131314] text-center cursor-pointer transition-colors"
+                  >
+                    <Camera className="w-6 h-6 text-[#8e918f] mx-auto mb-1" />
+                    <span className="text-xs text-[#c4c7c5] font-semibold block">
+                      Click to upload photo of this incident
+                    </span>
+                    <span className="text-[10px] text-[#8e918f]">JPG, PNG, WEBP</span>
+                  </div>
+                )}
+                <input
+                  ref={incidentPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleIncidentPhotoSelect}
+                />
+              </div>
+
+              {/* What incident happened? Text Area */}
+              <div>
+                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                  What Happened? (Write the story / incident) *
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Write the full memory of what happened... where you went, funny details, thoughts, and what made this incident special."
+                  value={incidentText}
+                  onChange={(e) => setIncidentText(e.target.value)}
+                  required
+                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8] leading-relaxed resize-none"
+                />
+              </div>
+
+              {/* Tag & Location Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                    Tag / Category
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Milestone, First Date, Funny"
+                    value={incidentTag}
+                    onChange={(e) => setIncidentTag(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Corner Cafe, Campus Lawn"
+                    value={incidentLocation}
+                    onChange={(e) => setIncidentLocation(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowIncidentModal(false)}
+                  className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold transition-all shadow-md shadow-[#8ab4f8]/30 cursor-pointer"
+                >
+                  {editingIncident ? 'Update Story' : 'Save to Timeline'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────── DELETE TIMELINE INCIDENT MODAL ────────────────── */}
+      {deleteIncidentTarget && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete Incident?</h3>
+                <p className="text-xs text-[#8e918f]">Remove this memory from timeline</p>
+              </div>
+            </div>
+            <p className="text-xs text-[#e3e3e3] bg-[#131314] p-3 rounded-2xl border border-[#2d2f31] mb-5">
+              "{deleteIncidentTarget.title}" ({deleteIncidentTarget.incidentDate})
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteIncidentTarget(null)}
+                className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteIncidentConfirm}
+                className="flex-1 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-rose-600/30"
+              >
+                Delete Memory
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────── GOOGLE STYLE MEDIA DELETE MODAL ────────────────── */}
       {deleteTargets && deleteTargets.length > 0 && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
@@ -1263,12 +1776,16 @@ export const GalleryView: React.FC = () => {
               </div>
             </div>
             <p className="text-xs text-[#c4c7c5] mb-4 leading-relaxed">
-              Google Gallery stores your photos, videos, and custom collections directly inside your device's persistent IndexedDB storage engine. Media survives page refreshes and browser sessions!
+              Google Gallery stores your photos, videos, custom collections, and memory timeline incidents directly inside your device's persistent IndexedDB storage engine. Media survives page refreshes and browser sessions!
             </p>
             <div className="bg-[#131314] p-3 rounded-2xl border border-[#2d2f31] mb-5 text-[11px] text-[#8e918f] space-y-1">
               <div className="flex justify-between">
                 <span>Total Media Items:</span>
                 <span className="text-white font-mono">{items.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Timeline Incidents:</span>
+                <span className="text-white font-mono">{timelineIncidents.length}</span>
               </div>
               <div className="flex justify-between">
                 <span>Collections / Albums:</span>

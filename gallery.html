@@ -607,6 +607,179 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── LIFE TIMELINE TRACK & INCIDENT CARDS ── */
+    .timeline-container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 16px 8px 60px;
+      position: relative;
+    }
+    .timeline-track-line {
+      position: absolute;
+      top: 36px;
+      bottom: 24px;
+      left: 27px;
+      width: 2px;
+      background: linear-gradient(180deg, #f59e0b 0%, #ec4899 50%, #8ab4f8 100%);
+      border-radius: 9999px;
+    }
+    @media (max-width: 640px) {
+      .timeline-track-line { left: 23px; }
+    }
+    .incident-item {
+      position: relative;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    .incident-pin {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #1e1f20;
+      border: 3px solid #f59e0b;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+      flex-shrink: 0;
+      margin-top: 14px;
+      z-index: 2;
+    }
+    .incident-card {
+      flex: 1;
+      background: #1e1f20;
+      border: 1px solid var(--border-active);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .incident-card:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .incident-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .incident-date-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .incident-tag-pill {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(236, 72, 153, 0.15);
+      color: #f472b6;
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+    }
+    .incident-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+    }
+    .incident-photo {
+      width: 100%;
+      max-height: 400px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: #131314;
+      cursor: pointer;
+      position: relative;
+    }
+    .incident-photo img {
+      width: 100%;
+      height: 100%;
+      max-height: 400px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s;
+    }
+    .incident-photo:hover img {
+      transform: scale(1.02);
+    }
+    .incident-story {
+      background: #131314;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      white-space: pre-line;
+    }
+    .incident-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+    .incident-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #28292a;
+      border: 1px solid var(--border-active);
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .incident-action-btn:hover {
+      background: #333538;
+      color: #fff;
+    }
+    .incident-action-btn.danger:hover {
+      background: rgba(242, 139, 130, 0.2);
+      border-color: var(--accent-rose);
+      color: var(--accent-rose);
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      background: #131314;
+      border: 1px solid var(--border-active);
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent-google);
+      box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -646,19 +819,20 @@
         </div>
 
         <div class="top-actions">
-          <button class="btn-google-primary" onclick="triggerFileInput()">
-            <span>+ Add photos &amp; videos</span>
+          <button class="btn-google-primary" id="main-add-btn" onclick="handleMainAddAction()">
+            <span id="main-add-btn-label">+ Add photos &amp; videos</span>
           </button>
           <input type="file" id="media-file-input" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)"/>
         </div>
       </div>
 
-      <!-- Navigation Tabs: Photos, Videos, Albums, Favorites -->
+      <!-- Navigation Tabs: Photos, Videos, Albums, Favorites, Life Timeline -->
       <div class="nav-tabs" role="tablist">
         <button class="nav-tab-btn active" onclick="setTab('photos', this)">📸 Photos</button>
         <button class="nav-tab-btn" onclick="setTab('videos', this)">🎬 Videos</button>
         <button class="nav-tab-btn" onclick="setTab('albums', this)">📁 Albums</button>
         <button class="nav-tab-btn" onclick="setTab('favorites', this)">⭐ Favorites</button>
+        <button class="nav-tab-btn" onclick="setTab('timeline', this)" style="border-color:rgba(245,158,11,0.5);">⏳ Life Timeline</button>
       </div>
     </div>
   </header>
@@ -724,6 +898,92 @@
         <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDelete()">Delete</button>
       </div>
     </div>
+  <!-- Add / Edit Life Incident Modal -->
+  <div class="modal-backdrop" id="modal-incident">
+    <div class="modal-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:1.6rem;">⏳</div>
+          <div>
+            <h3 style="font-size:16px;font-weight:800;color:#fff;" id="incident-modal-heading">Record Life Incident</h3>
+            <p style="font-size:11px;color:var(--text-muted);">Manually record photos, dates &amp; incident stories</p>
+          </div>
+        </div>
+        <button class="lb-btn" onclick="closeModal('modal-incident')" title="Close">✕</button>
+      </div>
+
+      <form id="incident-form" onsubmit="handleSaveIncident(event)">
+        <input type="hidden" id="inc-edit-id" value=""/>
+
+        <div class="form-group">
+          <label class="form-label">Incident Date *</label>
+          <input type="date" id="inc-date" class="form-control" required/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Incident Title / Headline *</label>
+          <input type="text" id="inc-title" class="form-control" placeholder="e.g. The Rainy Campus Walk" required/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What incident happened? (Story Details) *</label>
+          <textarea id="inc-story" class="form-control" rows="4" placeholder="Write out what happened, what made it special, feelings and memories…" required></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="form-group">
+          <div>
+            <label class="form-label">Category / Tag</label>
+            <select id="inc-tag" class="form-control">
+              <option value="Milestone">Milestone 💖</option>
+              <option value="First Time">First Time ✨</option>
+              <option value="Special Date">Special Date ☕</option>
+              <option value="Trip & Travel">Trip & Travel ✈️</option>
+              <option value="Campus Life">Campus Life 🎓</option>
+              <option value="Funny Incident">Funny Incident 😄</option>
+              <option value="Achievement">Achievement 🏆</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Location (Optional)</label>
+            <input type="text" id="inc-location" class="form-control" placeholder="e.g. Campus Lawn"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Attach Photo (Optional)</label>
+          <input type="file" id="inc-photo-input" accept="image/*" class="form-control" onchange="previewIncidentPhoto(event)"/>
+          <div id="inc-photo-preview-wrap" style="margin-top:8px;display:none;position:relative;">
+            <img id="inc-photo-preview" src="" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;"/>
+            <button type="button" onclick="clearIncidentPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+          <button type="button" class="nav-tab-btn" onclick="closeModal('modal-incident')">Cancel</button>
+          <button type="submit" class="btn-google-primary" style="background:#f59e0b;color:#1e1f20;">
+            <span id="inc-submit-btn-text">Save Incident</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Incident Confirmation Modal -->
+  <div class="modal-backdrop" id="modal-delete-incident">
+    <div class="modal-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:1.5rem;">🗑️</div>
+        <div>
+          <h3 style="font-size:16px;font-weight:800;color:#fff;">Delete Incident?</h3>
+          <p style="font-size:11px;color:var(--text-muted);">This memory will be permanently removed.</p>
+        </div>
+      </div>
+      <div id="delete-incident-modal-text" style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;">Are you sure you want to delete this incident?</div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="nav-tab-btn" onclick="closeModal('modal-delete-incident')">Cancel</button>
+        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDeleteIncident()">Delete</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast -->
@@ -731,16 +991,18 @@
 
   <script>
   const DB_NAME = 'dharya_gallery_db_v2';
-  const DB_VERSION = 2;
+  const DB_VERSION = 3;
   let db;
 
   let mediaItems = [];
+  let timelineIncidents = [];
   let currentTab = 'photos';
   let currentSearch = '';
   let selectedIds = new Set();
   let lbIndex = 0;
   let filteredList = [];
   let deleteQueue = [];
+  let incidentDeleteTargetId = null;
 
   const SEED_DATA = [
     {
@@ -783,12 +1045,49 @@
     }
   ];
 
+  const SEED_INCIDENTS = [
+    {
+      id: 'inc-1',
+      title: 'The Day Our Story Began 🌿❤️',
+      incidentText: 'The exact day our private world sparked into life. Everything became brighter and full of meaning. A quiet beginning that turned into our favorite story.',
+      incidentDate: '2024-10-09',
+      timestamp: new Date('2024-10-09').getTime(),
+      photoUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+      tag: 'First Day',
+      location: 'Campus Lawn',
+      createdAt: new Date('2024-10-09').getTime(),
+    },
+    {
+      id: 'inc-2',
+      title: 'Evening Coffee & Long Conversations ☕',
+      incidentText: 'Cold winter breeze, warm hot chocolate, and endless conversations where time just melted away. We talked about life, dreams, coding, and everything in between.',
+      incidentDate: '2024-12-24',
+      timestamp: new Date('2024-12-24').getTime(),
+      photoUrl: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
+      tag: 'Special Date',
+      location: 'Corner Cafe',
+      createdAt: new Date('2024-12-24').getTime(),
+    },
+    {
+      id: 'inc-3',
+      title: 'Late Night Coding & Stargazing 🌙✨',
+      incidentText: 'Staying up past midnight solving complex algorithms, sharing playlists, and walking out to the terrace to watch the stars. One of the most peaceful nights ever.',
+      incidentDate: '2025-02-28',
+      timestamp: new Date('2025-02-28').getTime(),
+      photoUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+      tag: 'Milestone',
+      location: 'Library Terrace',
+      createdAt: new Date('2025-02-28').getTime(),
+    },
+  ];
+
   function openDatabase() {
     return new Promise(resolve => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = e => {
         const d = req.result;
         if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('gallery_timeline')) d.createObjectStore('gallery_timeline', { keyPath: 'id' });
       };
       req.onsuccess = () => { db = req.result; resolve(db); };
       req.onerror = () => resolve(null);
@@ -797,8 +1096,14 @@
 
   async function loadData() {
     await openDatabase();
-    if (!db) { mediaItems = [...SEED_DATA]; renderTimeline(); return; }
+    if (!db) {
+      mediaItems = [...SEED_DATA];
+      timelineIncidents = [...SEED_INCIDENTS];
+      renderTimeline();
+      return;
+    }
 
+    // 1. Load Photos & Videos
     const tx = db.transaction('media', 'readonly');
     const store = tx.objectStore('media');
     const req = store.getAll();
@@ -815,8 +1120,32 @@
           return it;
         });
       }
-      renderTimeline();
+      if (currentTab !== 'timeline') renderTimeline();
     };
+
+    // 2. Load Life Timeline Incidents
+    try {
+      const tTx = db.transaction('gallery_timeline', 'readonly');
+      const tStore = tTx.objectStore('gallery_timeline');
+      const tReq = tStore.getAll();
+
+      tReq.onsuccess = () => {
+        const storedInc = tReq.result || [];
+        if (storedInc.length === 0) {
+          timelineIncidents = [...SEED_INCIDENTS];
+          const twTx = db.transaction('gallery_timeline', 'readwrite');
+          SEED_INCIDENTS.forEach(s => twTx.objectStore('gallery_timeline').put(s));
+        } else {
+          timelineIncidents = storedInc.map(it => {
+            if (it.blob) it.photoUrl = URL.createObjectURL(it.blob);
+            return it;
+          });
+        }
+        if (currentTab === 'timeline') renderLifeTimeline();
+      };
+    } catch (e) {
+      timelineIncidents = [...SEED_INCIDENTS];
+    }
   }
 
   function getFilteredItems() {
@@ -832,6 +1161,10 @@
   }
 
   function renderTimeline() {
+    if (currentTab === 'timeline') {
+      renderLifeTimeline();
+      return;
+    }
     filteredList = getFilteredItems();
     const container = document.getElementById('gallery-timeline-container');
     const badge = document.getElementById('media-count-badge');
@@ -969,8 +1302,262 @@
   function setTab(tab, btn) {
     currentTab = tab;
     document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderTimeline();
+    if (btn) btn.classList.add('active');
+
+    const mainBtnLabel = document.getElementById('main-add-btn-label');
+    const dropZoneEl = document.getElementById('drop-zone');
+
+    if (tab === 'timeline') {
+      if (mainBtnLabel) mainBtnLabel.textContent = '+ Add Life Incident';
+      if (dropZoneEl) dropZoneEl.style.display = 'none';
+      renderLifeTimeline();
+    } else {
+      if (mainBtnLabel) mainBtnLabel.textContent = '+ Add photos & videos';
+      if (dropZoneEl) dropZoneEl.style.display = 'block';
+      renderTimeline();
+    }
+  }
+
+  function handleMainAddAction() {
+    if (currentTab === 'timeline') {
+      openAddIncidentModal();
+    } else {
+      triggerFileInput();
+    }
+  }
+
+  /* ── LIFE TIMELINE RENDERER ── */
+  function renderLifeTimeline() {
+    const container = document.getElementById('gallery-timeline-container');
+    const badge = document.getElementById('media-count-badge');
+    if (badge) badge.textContent = `${timelineIncidents.length} moments`;
+
+    let list = [...timelineIncidents];
+    if (currentSearch && currentSearch.trim()) {
+      const q = currentSearch.toLowerCase();
+      list = list.filter(i =>
+        (i.title && i.title.toLowerCase().includes(q)) ||
+        (i.incidentText && i.incidentText.toLowerCase().includes(q)) ||
+        (i.location && i.location.toLowerCase().includes(q)) ||
+        (i.tag && i.tag.toLowerCase().includes(q))
+      );
+    }
+    list.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:70px 16px;color:#8e918f;">
+          <div style="font-size:3.5rem;margin-bottom:12px;">⏳</div>
+          <h3 style="font-size:1.1rem;font-weight:800;color:#fff;margin-bottom:6px;">No Life Incidents Found</h3>
+          <p style="font-size:12px;margin-bottom:20px;">Record your memories, exact dates, photos and stories manually.</p>
+          <button class="btn-google-primary" style="background:#f59e0b;color:#1e1f20;" onclick="openAddIncidentModal()">
+            <span>+ Add Your First Life Incident</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `
+      <div class="timeline-container">
+        <div class="timeline-track-line"></div>
+        ${list.map(inc => {
+          const dateStr = new Date(inc.timestamp || inc.incidentDate).toLocaleDateString('en-US', {
+            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+          });
+          const safeTitle = (inc.title || 'Untitled Moment').replace(/"/g, '&quot;');
+          return `
+            <article class="incident-item">
+              <div class="incident-pin"></div>
+              <div class="incident-card">
+                <div class="incident-header">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <div class="incident-date-badge">
+                      <span>📅</span>
+                      <span>${dateStr}</span>
+                    </div>
+                    ${inc.tag ? `<span class="incident-tag-pill">${inc.tag}</span>` : ''}
+                    ${inc.location ? `<span style="font-size:11px;color:#8e918f;display:inline-flex;align-items:center;gap:3px;">📍 ${inc.location}</span>` : ''}
+                  </div>
+                </div>
+
+                <h2 class="incident-title">${safeTitle}</h2>
+
+                ${inc.photoUrl ? `
+                  <div class="incident-photo" onclick="openIncidentLightbox('${inc.photoUrl}', '${encodeURIComponent(inc.title)}', '${dateStr}')">
+                    <img src="${inc.photoUrl}" alt="${safeTitle}" loading="lazy"/>
+                  </div>
+                ` : ''}
+
+                <div class="incident-story">${inc.incidentText || ''}</div>
+
+                <div class="incident-footer">
+                  <div style="font-size:11px;color:#8e918f;">Incident Date: <strong>${inc.incidentDate || ''}</strong></div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="incident-action-btn" onclick="openEditIncidentModal('${inc.id}')">
+                      <span>✏️ Edit</span>
+                    </button>
+                    <button class="incident-action-btn danger" onclick="requestDeleteIncident('${inc.id}')">
+                      <span>🗑️ Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    `;
+    container.innerHTML = html;
+  }
+
+  function openIncidentLightbox(url, title, dateStr) {
+    document.getElementById('lb-caption').textContent = decodeURIComponent(title);
+    document.getElementById('lb-sub').textContent = dateStr;
+    const favBtn = document.getElementById('lb-fav-btn');
+    if (favBtn) favBtn.style.display = 'none';
+    const stage = document.getElementById('lb-media-content');
+    if (stage) {
+      stage.innerHTML = `<img src="${url}" alt="${title}" style="max-height:75vh;max-width:100%;border-radius:16px;"/>`;
+    }
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  /* ── INCIDENT MODAL LOGIC ── */
+  let tempIncidentPhotoFile = null;
+
+  function openAddIncidentModal() {
+    document.getElementById('incident-modal-heading').textContent = 'Record Life Incident';
+    document.getElementById('inc-submit-btn-text').textContent = 'Save Incident';
+    document.getElementById('inc-edit-id').value = '';
+    document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inc-title').value = '';
+    document.getElementById('inc-story').value = '';
+    document.getElementById('inc-tag').value = 'Milestone';
+    document.getElementById('inc-location').value = '';
+    document.getElementById('inc-photo-input').value = '';
+    clearIncidentPhoto();
+    document.getElementById('modal-incident').classList.add('open');
+  }
+
+  function openEditIncidentModal(id) {
+    const inc = timelineIncidents.find(i => i.id === id);
+    if (!inc) return;
+    document.getElementById('incident-modal-heading').textContent = 'Edit Life Incident';
+    document.getElementById('inc-submit-btn-text').textContent = 'Update Incident';
+    document.getElementById('inc-edit-id').value = inc.id;
+    document.getElementById('inc-date').value = inc.incidentDate;
+    document.getElementById('inc-title').value = inc.title;
+    document.getElementById('inc-story').value = inc.incidentText;
+    document.getElementById('inc-tag').value = inc.tag || 'Milestone';
+    document.getElementById('inc-location').value = inc.location || '';
+    if (inc.photoUrl) {
+      document.getElementById('inc-photo-preview').src = inc.photoUrl;
+      document.getElementById('inc-photo-preview-wrap').style.display = 'block';
+    } else {
+      clearIncidentPhoto();
+    }
+    document.getElementById('modal-incident').classList.add('open');
+  }
+
+  function previewIncidentPhoto(e) {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      tempIncidentPhotoFile = file;
+      const url = URL.createObjectURL(file);
+      document.getElementById('inc-photo-preview').src = url;
+      document.getElementById('inc-photo-preview-wrap').style.display = 'block';
+    }
+  }
+
+  function clearIncidentPhoto() {
+    tempIncidentPhotoFile = null;
+    document.getElementById('inc-photo-input').value = '';
+    document.getElementById('inc-photo-preview').src = '';
+    document.getElementById('inc-photo-preview-wrap').style.display = 'none';
+  }
+
+  function handleSaveIncident(e) {
+    e.preventDefault();
+    const editId = document.getElementById('inc-edit-id').value;
+    const dateVal = document.getElementById('inc-date').value;
+    const titleVal = document.getElementById('inc-title').value.trim();
+    const storyVal = document.getElementById('inc-story').value.trim();
+    const tagVal = document.getElementById('inc-tag').value;
+    const locVal = document.getElementById('inc-location').value.trim();
+
+    if (!titleVal || !storyVal || !dateVal) {
+      alert('Please fill out date, headline title, and incident story.');
+      return;
+    }
+
+    const timestamp = new Date(dateVal).getTime() || Date.now();
+
+    if (editId) {
+      const inc = timelineIncidents.find(i => i.id === editId);
+      if (inc) {
+        inc.incidentDate = dateVal;
+        inc.timestamp = timestamp;
+        inc.title = titleVal;
+        inc.incidentText = storyVal;
+        inc.tag = tagVal;
+        inc.location = locVal;
+        if (tempIncidentPhotoFile) {
+          inc.blob = tempIncidentPhotoFile;
+          inc.photoUrl = URL.createObjectURL(tempIncidentPhotoFile);
+        }
+        if (db) {
+          const tx = db.transaction('gallery_timeline', 'readwrite');
+          tx.objectStore('gallery_timeline').put(inc);
+        }
+        showToast('Incident updated successfully ✓');
+      }
+    } else {
+      const newInc = {
+        id: 'inc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        incidentDate: dateVal,
+        timestamp: timestamp,
+        title: titleVal,
+        incidentText: storyVal,
+        tag: tagVal,
+        location: locVal,
+        photoUrl: tempIncidentPhotoFile ? URL.createObjectURL(tempIncidentPhotoFile) : '',
+        blob: tempIncidentPhotoFile || undefined,
+        createdAt: Date.now(),
+      };
+      timelineIncidents.unshift(newInc);
+      if (db) {
+        const tx = db.transaction('gallery_timeline', 'readwrite');
+        tx.objectStore('gallery_timeline').put(newInc);
+      }
+      showToast('Life incident recorded successfully ✓');
+    }
+
+    closeModal('modal-incident');
+    renderLifeTimeline();
+    tempIncidentPhotoFile = null;
+  }
+
+  function requestDeleteIncident(id) {
+    incidentDeleteTargetId = id;
+    const inc = timelineIncidents.find(i => i.id === id);
+    document.getElementById('delete-incident-modal-text').textContent =
+      inc ? `Are you sure you want to delete "${inc.title}"? This cannot be undone.` : 'Delete this incident?';
+    document.getElementById('modal-delete-incident').classList.add('open');
+  }
+
+  function confirmDeleteIncident() {
+    if (!incidentDeleteTargetId) return;
+    timelineIncidents = timelineIncidents.filter(i => i.id !== incidentDeleteTargetId);
+    if (db) {
+      const tx = db.transaction('gallery_timeline', 'readwrite');
+      tx.objectStore('gallery_timeline').delete(incidentDeleteTargetId);
+    }
+    closeModal('modal-delete-incident');
+    renderLifeTimeline();
+    showToast('Incident deleted permanently');
+    incidentDeleteTargetId = null;
   }
 
   function onSearchChange(e) {

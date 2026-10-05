@@ -1,12 +1,13 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { MessageSquare, Images, ArrowLeft, BookOpen } from 'lucide-react';
+import { MessageSquare, Images, Clock, BookOpen } from 'lucide-react';
 
 export const PrivatePortalNav: React.FC = () => {
   const { activeTab, switchTab, student } = useStudyApp();
 
   const isChat = activeTab === 'chat';
   const isGallery = activeTab === 'gallery';
+  const isTimeline = activeTab === 'timeline';
 
   // Get total gallery items from local storage
   const galleryCount = (() => {
@@ -31,12 +32,12 @@ export const PrivatePortalNav: React.FC = () => {
           <span className="sm:hidden">Library</span>
         </button>
 
-        {/* Center: Dedicated Switcher (Chat vs Gallery) */}
-        <div className="flex items-center p-1 rounded-2xl bg-[#202c33] border border-[#2a3942] shadow-inner">
+        {/* Center: Dedicated Switcher (Chat vs Gallery vs Life Timeline) */}
+        <div className="flex items-center p-1 rounded-2xl bg-[#202c33] border border-[#2a3942] shadow-inner gap-1">
           {/* Chat Tab */}
           <button
             onClick={() => switchTab('chat')}
-            className={`flex items-center gap-2 px-3.5 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               isChat
                 ? 'bg-[#00a884] text-white shadow-md scale-102'
                 : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
@@ -49,7 +50,7 @@ export const PrivatePortalNav: React.FC = () => {
           {/* Gallery Tab */}
           <button
             onClick={() => switchTab('gallery')}
-            className={`flex items-center gap-2 px-3.5 sm:px-5 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
               isGallery
                 ? 'bg-[#00a884] text-white shadow-md scale-102'
                 : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
@@ -62,6 +63,19 @@ export const PrivatePortalNav: React.FC = () => {
             }`}>
               {galleryCount}
             </span>
+          </button>
+
+          {/* Life Timeline Tab */}
+          <button
+            onClick={() => switchTab('timeline')}
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
+              isTimeline
+                ? 'bg-[#00a884] text-white shadow-md scale-102'
+                : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
+            }`}
+          >
+            <Clock className={`w-4 h-4 ${isTimeline ? 'stroke-[2.5]' : 'text-amber-400'}`} />
+            <span>Timeline</span>
           </button>
         </div>
 

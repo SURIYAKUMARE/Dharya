@@ -68,9 +68,10 @@ import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { GalleryView } from '../gallery/GalleryView';
+import { LifeTimelineView } from '../timeline/LifeTimelineView';
 
 interface WhatsAppChatViewProps {
-  initialTab?: 'chat' | 'gallery';
+  initialTab?: 'chat' | 'gallery' | 'timeline';
 }
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
@@ -144,7 +145,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
-  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery'>(initialTab ?? 'chat');
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline'>(initialTab ?? 'chat');
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -154,7 +155,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return initialTab === 'gallery' ? 'conversation' : 'list';
+      return initialTab === 'gallery' || initialTab === 'timeline' ? 'conversation' : 'list';
     }
     return 'conversation';
   });
@@ -175,7 +176,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   useEffect(() => {
     if (initialTab) {
       setActiveMainView(initialTab ?? 'chat');
-      if (initialTab === 'gallery') {
+      if (initialTab === 'gallery' || initialTab === 'timeline') {
         setMobileView('conversation');
       }
     }
@@ -2141,6 +2142,31 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             )}
           </button>
 
+          {/* Life Timeline Button */}
+          <button
+            onClick={() => {
+              setActiveMainView('timeline');
+              setMobileView('conversation');
+            }}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              activeMainView === 'timeline'
+                ? isDark
+                  ? 'bg-[#374248] text-amber-400 shadow-inner ring-1 ring-amber-400/40'
+                  : 'bg-amber-100 text-amber-700 shadow-sm ring-1 ring-amber-500/30'
+                : isDark
+                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400'
+                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-amber-600'
+            }`}
+            title="Life Timeline (Manual Memories & Incidents)"
+          >
+            <Clock className="w-5 h-5" />
+            {activeMainView === 'timeline' && (
+              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
+                isDark ? 'bg-amber-400' : 'bg-amber-600'
+              }`} />
+            )}
+          </button>
+
           {/* Voice & Video Calls Button */}
           <button
             onClick={() => setShowCallModal('video')}
@@ -2643,6 +2669,23 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </button>
 
           <button
+            onClick={() => {
+              setActiveMainView('timeline');
+              setMobileView('conversation');
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+              activeMainView === 'timeline'
+                ? 'text-amber-400'
+                : 'text-[#8696a0] hover:text-amber-400'
+            }`}
+          >
+            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'timeline' ? 'bg-amber-400/20' : ''}`}>
+              <Clock className="w-5 h-5" />
+            </div>
+            <span className="text-[11px] font-semibold">Timeline</span>
+          </button>
+
+          <button
             onClick={() => setShowCallModal('video')}
             className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
           >
@@ -2684,6 +2727,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Gallery View */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
             <GalleryView />
+          </div>
+        ) : activeMainView === 'timeline' ? (
+          /* Life Timeline View */
+          <div className="w-full h-full flex flex-col bg-[#0c1317]">
+            <LifeTimelineView />
           </div>
         ) : (
           /* Active Chat Conversation */
@@ -2751,6 +2799,15 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             title="Gallery"
           >
             <Images className="w-4 h-4 text-[#00a884]" />
+          </button>
+
+          {/* Life Timeline Quick Button */}
+          <button
+            onClick={() => setActiveMainView('timeline')}
+            className="p-2 rounded-full hover:bg-white/10 text-amber-400 hover:text-amber-300 transition-colors"
+            title="Life Timeline (Memories & Incidents)"
+          >
+            <Clock className="w-4 h-4 text-amber-400" />
           </button>
 
           {/* Security & Privacy Section Quick Button */}

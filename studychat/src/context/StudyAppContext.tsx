@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData';
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'planner' | 'profile';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
 
 export interface AssessmentRecord {
   topicId: string;
@@ -298,7 +298,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const switchTab = (tab: AppNavTab) => {
-    if (tab === 'chat' || tab === 'gallery') {
+    if (tab === 'chat' || tab === 'gallery' || tab === 'timeline') {
       if (!isChatAuthenticated) {
         openDharyaLogin();
         return;

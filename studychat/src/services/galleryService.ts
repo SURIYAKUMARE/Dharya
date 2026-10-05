@@ -58,9 +58,10 @@ export interface UploadResult {
 // ── Constants & Limits ────────────────────────────────────────────────────────
 
 const DB_NAME = 'dharya_gallery_db_v2';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_MEDIA = 'gallery_media';
 const STORE_ALBUMS = 'gallery_albums';
+const STORE_TIMELINE = 'gallery_timeline';
 
 export const MAX_PHOTO_BYTES = 25 * 1024 * 1024;   // 25 MB
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;  // 100 MB
@@ -217,6 +218,11 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_ALBUMS)) {
         db.createObjectStore(STORE_ALBUMS, { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains(STORE_TIMELINE)) {
+        const tStore = db.createObjectStore(STORE_TIMELINE, { keyPath: 'id' });
+        tStore.createIndex('timestamp', 'timestamp', { unique: false });
+        tStore.createIndex('owner', 'owner', { unique: false });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -649,3 +655,151 @@ export async function deleteMultipleItems(items: GalleryItem[]): Promise<boolean
 }
 
 export const deleteMediaItem = deletePhoto;
+
+// ── TIMELINE INCIDENTS ────────────────────────────────────────────────────────
+
+export interface TimelineIncident {
+  id: string;
+  owner: string;            // 'surya' | 'sadhana' | 'guest'
+  title: string;            // Headline of the incident (e.g. "The Rainy Campus Walk")
+  incidentText: string;     // Story / description of what incident happened
+  incidentDate: string;     // e.g. "2024-10-09"
+  timestamp: number;        // ms for date ordering
+  photoUrl?: string;        // photo attached to the incident
+  blob?: Blob;              // stored image file
+  tag?: string;             // category / tag
+  location?: string;        // location where it happened
+  createdAt: number;
+}
+
+const SEED_TIMELINE_INCIDENTS: Omit<TimelineIncident, 'owner'>[] = [
+  {
+    id: 'inc-1',
+    title: 'The Day Our Story Began 🌿❤️',
+    incidentText: 'The exact day our private world sparked into life. Everything became brighter and full of meaning. A quiet beginning that turned into our favorite story.',
+    incidentDate: '2024-10-09',
+    timestamp: new Date('2024-10-09').getTime(),
+    photoUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    tag: 'First Day',
+    location: 'Campus Lawn',
+    createdAt: new Date('2024-10-09').getTime(),
+  },
+  {
+    id: 'inc-2',
+    title: 'Evening Coffee & Long Conversations ☕',
+    incidentText: 'Cold winter breeze, warm hot chocolate, and endless conversations where time just melted away. We talked about life, dreams, coding, and everything in between.',
+    incidentDate: '2024-12-24',
+    timestamp: new Date('2024-12-24').getTime(),
+    photoUrl: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
+    tag: 'Special Memory',
+    location: 'Corner Cafe',
+    createdAt: new Date('2024-12-24').getTime(),
+  },
+  {
+    id: 'inc-3',
+    title: 'Late Night Coding & Stargazing 🌙✨',
+    incidentText: 'Staying up past midnight solving complex algorithms, sharing playlists, and walking out to the terrace to watch the stars. One of the most peaceful nights ever.',
+    incidentDate: '2025-02-28',
+    timestamp: new Date('2025-02-28').getTime(),
+    photoUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+    tag: 'Milestone',
+    location: 'Library Terrace',
+    createdAt: new Date('2025-02-28').getTime(),
+  },
+];
+
+export async function fetchTimelineIncidents(owner: string = 'surya'): Promise<TimelineIncident[]> {
+  try {
+    const records = await idbGetAll<TimelineIncident>(STORE_TIMELINE);
+    if (records && records.length > 0) {
+      return records
+        .map((r) => {
+          if (r.blob) {
+            try {
+              r.photoUrl = registerObjectUrl(URL.createObjectURL(r.blob));
+            } catch {}
+          }
+          return r;
+        })
+        .sort((a, b) => b.timestamp - a.timestamp);
+    }
+  } catch (err) {
+    console.warn('[galleryService] fetchTimeline error:', err);
+  }
+
+  // Seed
+  const seeded: TimelineIncident[] = [];
+  for (const s of SEED_TIMELINE_INCIDENTS) {
+    const inc: TimelineIncident = { ...s, owner };
+    seeded.push(inc);
+    await idbPut(STORE_TIMELINE, inc);
+  }
+  return seeded.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export async function createTimelineIncident(
+  data: Omit<TimelineIncident, 'id' | 'createdAt'>,
+  photoFile?: File,
+): Promise<TimelineIncident> {
+  const id = `inc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  let photoUrl = data.photoUrl || '';
+
+  if (photoFile) {
+    photoUrl = registerObjectUrl(URL.createObjectURL(photoFile));
+  }
+
+  const incident: TimelineIncident = {
+    ...data,
+    id,
+    photoUrl,
+    blob: photoFile,
+    createdAt: Date.now(),
+  };
+
+  await idbPut(STORE_TIMELINE, incident);
+  return incident;
+}
+
+export async function updateTimelineIncident(
+  id: string,
+  updates: Partial<TimelineIncident>,
+  newPhotoFile?: File,
+): Promise<boolean> {
+  try {
+    const records = await idbGetAll<TimelineIncident>(STORE_TIMELINE);
+    const existing = records.find((r) => r.id === id);
+    if (!existing) return false;
+
+    let photoUrl = updates.photoUrl !== undefined ? updates.photoUrl : existing.photoUrl;
+    let blob = existing.blob;
+
+    if (newPhotoFile) {
+      photoUrl = registerObjectUrl(URL.createObjectURL(newPhotoFile));
+      blob = newPhotoFile;
+    }
+
+    const updated: TimelineIncident = {
+      ...existing,
+      ...updates,
+      photoUrl,
+      blob,
+    };
+
+    await idbPut(STORE_TIMELINE, updated);
+    return true;
+  } catch (err) {
+    console.warn('[galleryService] updateTimeline error:', err);
+    return false;
+  }
+}
+
+export async function deleteTimelineIncident(id: string): Promise<boolean> {
+  try {
+    await idbDelete(STORE_TIMELINE, id);
+    return true;
+  } catch (err) {
+    console.warn('[galleryService] deleteTimeline error:', err);
+    return false;
+  }
+}
+

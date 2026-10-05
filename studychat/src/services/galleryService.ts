@@ -641,4 +641,11 @@ export async function deletePhoto(item: GalleryItem): Promise<boolean> {
   return true;
 }
 
+export async function deleteMultipleItems(items: GalleryItem[]): Promise<boolean> {
+  for (const item of items) {
+    await deletePhoto(item);
+  }
+  return true;
+}
+
 export const deleteMediaItem = deletePhoto;

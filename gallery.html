@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Dharya Gallery 📸 🎬</title>
+  <title>Google Gallery 📸 🎬</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg-base: #0b141a;
-      --bg-surface: #1f2c34;
-      --bg-card: #182229;
-      --bg-card-hover: #222e35;
-      --accent-teal: #00a884;
-      --accent-teal-hover: #029071;
-      --accent-rose: #f43f5e;
-      --border-subtle: #2a3942;
-      --border-focus: #00a884;
-      --text-primary: #e9edef;
-      --text-secondary: #8696a0;
-      --text-muted: #667781;
+      --bg-base: #131314;
+      --bg-surface: #1e1f20;
+      --bg-card: #1e1f20;
+      --bg-card-hover: #28292a;
+      --accent-google: #8ab4f8;
+      --accent-google-hover: #a8c7fa;
+      --accent-rose: #f28b82;
+      --border-subtle: #2d2f31;
+      --border-active: #3c4043;
+      --text-primary: #e3e3e3;
+      --text-secondary: #c4c7c5;
+      --text-muted: #8e918f;
       --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
       --radius-full: 9999px;
     }
 
@@ -39,18 +39,17 @@
       flex-direction: column;
     }
 
-    /* Accessibility focus */
     :focus-visible {
-      outline: 2px solid var(--accent-teal);
+      outline: 2px solid var(--accent-google);
       outline-offset: 2px;
     }
 
-    /* Header */
+    /* Google Header */
     header {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(31, 44, 52, 0.95);
+      background: rgba(30, 31, 32, 0.95);
       backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-subtle);
       padding: 12px 16px;
@@ -75,7 +74,7 @@
     .brand-wrap {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .back-btn {
@@ -84,9 +83,8 @@
       justify-content: center;
       width: 36px;
       height: 36px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-full);
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-primary);
       text-decoration: none;
       font-size: 1.1rem;
@@ -94,29 +92,65 @@
     }
     .back-btn:hover { background: rgba(255, 255, 255, 0.16); }
 
+    .brand-logo-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1a73e8, #8ab4f8, #c2e7ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+    }
+
     .brand-title {
       font-size: 1.25rem;
       font-weight: 800;
-      color: var(--text-primary);
+      color: #fff;
       letter-spacing: -0.02em;
     }
 
     .count-badge {
       font-size: 11px;
       font-weight: 700;
-      background: rgba(0, 168, 132, 0.15);
-      border: 1px solid rgba(0, 168, 132, 0.3);
-      color: var(--accent-teal);
+      background: #28292a;
+      border: 1px solid var(--border-active);
+      color: var(--accent-google);
       padding: 2px 8px;
       border-radius: var(--radius-full);
     }
 
-    .storage-note {
-      font-size: 11px;
-      color: var(--accent-teal);
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    /* Google Search Pill */
+    .search-pill-container {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+    .search-pill {
+      width: 100%;
+      padding: 10px 16px 10px 42px;
+      background: #28292a;
+      border: 1px solid var(--border-active);
+      border-radius: var(--radius-full);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .search-pill:focus {
+      outline: none;
+      background: #1e1f20;
+      border-color: var(--accent-google);
+      box-shadow: 0 0 0 2px rgba(138, 180, 248, 0.2);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
     }
 
     .top-actions {
@@ -125,138 +159,104 @@
       gap: 10px;
     }
 
-    .btn-primary {
+    .btn-google-primary {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--accent-teal);
-      color: #111b21;
+      background: var(--accent-google);
+      color: #001d35;
       padding: 9px 18px;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-full);
       font-size: 13px;
       font-weight: 700;
       border: none;
       cursor: pointer;
       transition: all 0.2s;
-      box-shadow: 0 4px 14px rgba(0, 168, 132, 0.25);
+      box-shadow: 0 4px 14px rgba(138, 180, 248, 0.25);
     }
-    .btn-primary:hover { background: var(--accent-teal-hover); transform: translateY(-1px); }
-    .btn-primary:active { transform: translateY(0); }
+    .btn-google-primary:hover { background: var(--accent-google-hover); transform: translateY(-1px); }
 
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-primary);
-      padding: 8px 14px;
-      border-radius: var(--radius-md);
-      font-size: 12px;
-      font-weight: 600;
-      border: 1px solid var(--border-subtle);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.14); }
-
-    /* Search & Filter Bar */
-    .controls-bar {
+    /* Navigation Tabs */
+    .nav-tabs {
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .search-box {
-      flex: 1;
-      min-width: 200px;
-      position: relative;
-    }
-    .search-box input {
-      width: 100%;
-      padding: 9px 14px 9px 36px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      color: var(--text-primary);
-      font-size: 13px;
-      font-family: inherit;
-      transition: border 0.2s;
-    }
-    .search-box input:focus {
-      outline: none;
-      border-color: var(--accent-teal);
-    }
-    .search-icon {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-secondary);
-      pointer-events: none;
-      font-size: 14px;
-    }
-
-    /* Filter pills */
-    .pill-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      gap: 8px;
       overflow-x: auto;
       scrollbar-width: none;
-      padding-bottom: 2px;
     }
-    .pill-group::-webkit-scrollbar { display: none; }
+    .nav-tabs::-webkit-scrollbar { display: none; }
 
-    .pill-btn {
-      padding: 6px 14px;
+    .nav-tab-btn {
+      padding: 7px 16px;
       border-radius: var(--radius-full);
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
+      background: #28292a;
+      border: 1px solid var(--border-active);
       color: var(--text-secondary);
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .pill-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
-    .pill-btn.active {
-      background: var(--accent-teal);
-      border-color: var(--accent-teal);
-      color: #111b21;
+    .nav-tab-btn:hover { color: #fff; background: #333538; }
+    .nav-tab-btn.active {
+      background: var(--accent-google);
+      border-color: var(--accent-google);
+      color: #001d35;
+      font-weight: 700;
     }
 
-    /* Drag & drop banner */
+    /* Batch action bar */
+    .batch-bar {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      background: #1e1f20;
+      border-bottom: 1px solid var(--border-active);
+      padding: 10px 16px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .batch-bar.show { display: flex; }
+
+    /* Dropzone */
     .dropzone {
       margin: 16px auto 0;
       max-width: 1400px;
       width: calc(100% - 32px);
-      border: 2px dashed var(--border-subtle);
+      border: 2px dashed var(--border-active);
       border-radius: var(--radius-lg);
       padding: 24px;
       text-align: center;
-      background: rgba(24, 34, 41, 0.4);
+      background: rgba(30, 31, 32, 0.4);
       cursor: pointer;
       transition: all 0.2s;
     }
     .dropzone:hover, .dropzone.drag-active {
-      border-color: var(--accent-teal);
-      background: rgba(0, 168, 132, 0.05);
+      border-color: var(--accent-google);
+      background: rgba(138, 180, 248, 0.05);
     }
-    .dropzone-icon {
-      font-size: 2rem;
-      margin-bottom: 6px;
+
+    /* Timeline Section Header */
+    .timeline-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 4px 8px;
     }
-    .dropzone-title {
+    .timeline-title {
       font-size: 14px;
       font-weight: 700;
-      color: var(--text-primary);
-    }
-    .dropzone-sub {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-top: 4px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     /* Gallery Grid */
@@ -271,16 +271,16 @@
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+      gap: 10px;
     }
     @media (min-width: 640px) {
-      .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+      .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
     }
     @media (min-width: 900px) {
-      .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+      .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
     }
     @media (min-width: 1200px) {
-      .gallery-grid { grid-template-columns: repeat(5, 1fr); }
+      .gallery-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
     }
 
     /* Media card */
@@ -292,12 +292,16 @@
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      transition: all 0.2s;
     }
     .media-card:hover {
+      border-color: rgba(138, 180, 248, 0.5);
       transform: translateY(-2px);
-      border-color: rgba(0, 168, 132, 0.4);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+    .media-card.selected {
+      border-color: var(--accent-google);
+      box-shadow: 0 0 0 3px var(--accent-google);
     }
     .media-card img, .media-card video {
       width: 100%;
@@ -306,42 +310,96 @@
       display: block;
     }
 
-    .video-badge {
+    /* Checkbox on top-left */
+    .select-check {
       position: absolute;
       top: 8px;
       left: 8px;
-      padding: 3px 8px;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(8px);
-      border-radius: var(--radius-full);
-      font-size: 10px;
-      font-weight: 700;
-      color: #fff;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.4);
       display: flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      color: transparent;
+      font-size: 12px;
+      transition: all 0.15s;
+      z-index: 10;
+    }
+    .media-card:hover .select-check, .media-card.selected .select-check {
+      opacity: 1;
+    }
+    .media-card.selected .select-check {
+      background: var(--accent-google);
+      border-color: var(--accent-google);
+      color: #001d35;
+      font-weight: 900;
     }
 
-    .fav-heart {
+    /* Prominent Card Trash Button on Top-Right */
+    .card-trash-btn {
       position: absolute;
       top: 8px;
       right: 8px;
       width: 28px;
       height: 28px;
-      border-radius: var(--radius-full);
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(8px);
-      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 13px;
       cursor: pointer;
-      transition: transform 0.15s;
+      opacity: 0;
+      transition: all 0.2s;
+      z-index: 10;
     }
-    .fav-heart:hover { transform: scale(1.15); }
-    .fav-heart.active { color: var(--accent-rose); }
+    .media-card:hover .card-trash-btn { opacity: 1; }
+    .card-trash-btn:hover {
+      background: rgba(220, 38, 38, 0.8);
+      border-color: #ef4444;
+      transform: scale(1.1);
+    }
+
+    .card-fav-btn {
+      position: absolute;
+      top: 8px;
+      right: 42px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s;
+      z-index: 10;
+    }
+    .media-card:hover .card-fav-btn, .card-fav-btn.active { opacity: 1; }
+    .card-fav-btn.active { color: var(--accent-rose); }
+
+    .video-duration-chip {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      padding: 2px 8px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: var(--radius-full);
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+      z-index: 5;
+    }
 
     .card-play-btn {
       position: absolute;
@@ -349,19 +407,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.25);
-      transition: background 0.2s;
+      background: rgba(0, 0, 0, 0.2);
     }
     .card-play-icon {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       background: rgba(0, 0, 0, 0.65);
       border: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 16px;
       color: #fff;
       padding-left: 3px;
       transition: transform 0.2s;
@@ -371,7 +428,7 @@
     .card-overlay {
       position: absolute;
       inset: 0;
-      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.1) 45%, transparent 100%);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 60%);
       opacity: 0;
       transition: opacity 0.2s;
       display: flex;
@@ -379,10 +436,7 @@
       justify-content: flex-end;
       padding: 10px;
     }
-    .media-card:hover .card-overlay, .media-card:focus-visible .card-overlay {
-      opacity: 1;
-    }
-
+    .media-card:hover .card-overlay { opacity: 1; }
     .card-caption {
       font-size: 12px;
       font-weight: 700;
@@ -391,27 +445,13 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .card-date {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.7);
-      margin-top: 2px;
-    }
-    .card-album {
-      display: inline-block;
-      font-size: 9px;
-      background: rgba(255, 255, 255, 0.2);
-      padding: 1px 6px;
-      border-radius: 4px;
-      margin-top: 4px;
-      width: fit-content;
-    }
 
-    /* Lightbox */
+    /* Lightbox / Fullscreen Viewer */
     .lightbox {
       position: fixed;
       inset: 0;
       z-index: 100;
-      background: rgba(0, 0, 0, 0.94);
+      background: rgba(0, 0, 0, 0.96);
       backdrop-filter: blur(20px);
       display: none;
       flex-direction: column;
@@ -427,28 +467,27 @@
       color: #fff;
       z-index: 10;
     }
-    .lb-counter {
-      font-size: 12px;
-      font-family: monospace;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 4px 12px;
-      border-radius: var(--radius-full);
+    .lb-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-    .lb-close-btn {
+    .lb-btn {
       width: 40px;
       height: 40px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.12);
       border: none;
       color: #fff;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: background 0.2s;
     }
-    .lb-close-btn:hover { background: rgba(255, 255, 255, 0.25); }
+    .lb-btn:hover { background: rgba(255, 255, 255, 0.25); }
+    .lb-btn.danger:hover { background: rgba(220, 38, 38, 0.8); }
 
     .lb-media-stage {
       flex: 1;
@@ -463,21 +502,21 @@
       max-width: 100%;
       max-height: 100%;
       border-radius: var(--radius-md);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
       object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
     }
 
     .lb-nav-btn {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      width: 46px;
-      height: 46px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
       border: 1px solid rgba(255, 255, 255, 0.2);
       color: #fff;
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -488,42 +527,49 @@
     .lb-nav-prev { left: 16px; }
     .lb-nav-next { right: 16px; }
 
+    /* Google Photos Floating Bottom Toolbar */
     .lb-footer {
-      max-width: 800px;
+      max-width: 600px;
       width: 100%;
       margin: 0 auto;
-      background: rgba(31, 44, 52, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--radius-md);
-      padding: 12px 16px;
+      background: rgba(30, 31, 32, 0.85);
+      border: 1px solid var(--border-active);
+      border-radius: var(--radius-full);
+      padding: 8px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .lb-caption {
-      font-size: 14px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .lb-sub {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.6);
-      margin-top: 2px;
-    }
-    .lb-actions {
-      display: flex;
-      align-items: center;
       gap: 8px;
     }
+    .lb-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .lb-action-btn:hover { background: rgba(255, 255, 255, 0.12); }
+    .lb-action-btn.delete-btn {
+      color: var(--accent-rose);
+      background: rgba(242, 139, 130, 0.15);
+    }
+    .lb-action-btn.delete-btn:hover {
+      background: rgba(242, 139, 130, 0.3);
+    }
 
-    /* Modals */
+    /* Modal */
     .modal-backdrop {
       position: fixed;
       inset: 0;
       z-index: 200;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.8);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -532,35 +578,13 @@
     }
     .modal-backdrop.open { display: flex; }
     .modal-card {
-      max-width: 400px;
+      max-width: 380px;
       width: 100%;
       background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-active);
       border-radius: var(--radius-lg);
-      padding: 22px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    }
-    .modal-title {
-      font-size: 16px;
-      font-weight: 800;
-      margin-bottom: 12px;
-    }
-    .modal-input {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-base);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      color: #fff;
-      font-family: inherit;
-      font-size: 13px;
-      margin-bottom: 14px;
-    }
-    .modal-input:focus { outline: none; border-color: var(--accent-teal); }
-    .modal-btn-row {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
     }
 
     /* Toast */
@@ -569,10 +593,10 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: #1f2c34;
-      border: 1px solid var(--border-subtle);
+      background: #1e1f20;
+      border: 1px solid var(--border-active);
       border-radius: var(--radius-full);
-      padding: 10px 22px;
+      padding: 10px 24px;
       font-size: 13px;
       font-weight: 700;
       color: #fff;
@@ -582,141 +606,122 @@
       z-index: 300;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* Empty state */
-    .empty-state {
-      padding: 60px 16px;
-      text-align: center;
-      color: var(--text-secondary);
-    }
-    .empty-state-icon {
-      font-size: 3.5rem;
-      margin-bottom: 12px;
-      opacity: 0.7;
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Bar -->
+  <!-- Multi-Select Action Bar (Google Photos Style) -->
+  <div class="batch-bar" id="batch-bar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="lb-btn" onclick="clearSelection()" title="Clear selection">✕</button>
+      <span style="font-weight:700;font-size:14px;" id="batch-count">0 selected</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="batchDelete()">
+        <span>🗑️ Delete Selected</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Google Photos Navigation Header -->
   <header>
     <div class="header-container">
       <div class="header-top">
         <div class="brand-wrap">
-          <a href="index.html" class="back-btn" title="Back to Study Portal">←</a>
+          <a href="index.html" class="back-btn" title="Back">←</a>
+          <div class="brand-logo-icon">📸</div>
           <div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <h1 class="brand-title">Dharya Gallery</h1>
+              <h1 class="brand-title">Google Gallery</h1>
               <span class="count-badge" id="media-count-badge">0 items</span>
-            </div>
-            <div class="storage-note">
-              <span>● Saved in Browser Storage (IndexedDB)</span>
             </div>
           </div>
         </div>
 
+        <!-- Google Search Pill -->
+        <div class="search-pill-container">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-pill" placeholder="Search photos, videos &amp; albums…" oninput="onSearchChange(event)"/>
+        </div>
+
         <div class="top-actions">
-          <button class="btn-primary" onclick="triggerFileInput()" aria-label="Add photos and videos">
-            <span>+ Add photos and videos</span>
+          <button class="btn-google-primary" onclick="triggerFileInput()">
+            <span>+ Add photos &amp; videos</span>
           </button>
           <input type="file" id="media-file-input" accept="image/*,video/*" multiple style="display:none;" onchange="handleFileSelect(event)"/>
         </div>
       </div>
 
-      <!-- Controls: Search & Filters -->
-      <div class="controls-bar">
-        <div class="search-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="search-input" placeholder="Search photos, videos, albums, or dates…" oninput="onSearchChange(event)" aria-label="Search media"/>
-        </div>
-
-        <!-- Filter pills: All, Photos, Videos, Favorites -->
-        <div class="pill-group" role="tablist">
-          <button class="pill-btn active" onclick="setMediaTypeFilter('all', this)">All</button>
-          <button class="pill-btn" onclick="setMediaTypeFilter('photos', this)">📸 Photos</button>
-          <button class="pill-btn" onclick="setMediaTypeFilter('videos', this)">🎬 Videos</button>
-          <button class="pill-btn" onclick="setMediaTypeFilter('favorites', this)">❤️ Favorites</button>
-        </div>
-
-        <!-- Album Selector -->
-        <div class="pill-group" id="album-pills">
-          <!-- Injected dynamically -->
-        </div>
-
-        <button class="btn-secondary" onclick="openNewAlbumModal()">+ New Album</button>
+      <!-- Navigation Tabs: Photos, Videos, Albums, Favorites -->
+      <div class="nav-tabs" role="tablist">
+        <button class="nav-tab-btn active" onclick="setTab('photos', this)">📸 Photos</button>
+        <button class="nav-tab-btn" onclick="setTab('videos', this)">🎬 Videos</button>
+        <button class="nav-tab-btn" onclick="setTab('albums', this)">📁 Albums</button>
+        <button class="nav-tab-btn" onclick="setTab('favorites', this)">⭐ Favorites</button>
       </div>
     </div>
   </header>
 
-  <!-- Drag and drop zone -->
-  <section aria-label="File upload dropzone">
-    <div class="dropzone" id="drop-zone" onclick="triggerFileInput()">
-      <div class="dropzone-icon">📥</div>
-      <div class="dropzone-title">Add Photos &amp; Videos to Gallery</div>
-      <div class="dropzone-sub">Click to browse or drag and drop files anywhere here • JPG, PNG, WEBP, MP4, MOV</div>
-    </div>
-  </section>
+  <!-- Upload Dropzone -->
+  <div class="dropzone" id="drop-zone" onclick="triggerFileInput()">
+    <div style="font-size:2rem;margin-bottom:6px;">📥</div>
+    <div style="font-weight:700;font-size:14px;color:#fff;">Drag and drop photos or videos here</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">or click to browse from device • Saved instantly to IndexedDB</div>
+  </div>
 
-  <!-- Main gallery grid container -->
+  <!-- Main Timeline Grid -->
   <main>
-    <div class="gallery-grid" id="gallery-grid" role="region" aria-label="Gallery media grid"></div>
-    <div class="empty-state" id="empty-state" style="display:none;">
-      <div class="empty-state-icon">🖼️</div>
-      <h3 style="font-size:1.1rem;font-weight:700;color:#fff;">No media found</h3>
-      <p style="font-size:13px;margin-top:4px;">Try another search term or click "Add photos and videos" above.</p>
-    </div>
+    <div id="gallery-timeline-container"></div>
   </main>
 
-  <!-- Fullscreen Lightbox / Viewer -->
-  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Media viewer">
+  <!-- Google Fullscreen Viewer -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true">
     <div class="lb-header">
-      <div class="lb-counter" id="lb-counter">1 / 1</div>
-      <button class="lb-close-btn" onclick="closeLightbox()" title="Close (Escape)" aria-label="Close viewer">✕</button>
+      <div class="lb-title-group">
+        <button class="lb-btn" onclick="closeLightbox()" title="Back">←</button>
+        <div>
+          <div id="lb-caption" style="font-weight:700;font-size:14px;">Caption</div>
+          <div id="lb-sub" style="font-size:11px;color:var(--text-muted);">Date</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="lb-btn" id="lb-fav-btn" onclick="toggleLbFav()" title="Favorite">⭐</button>
+        <!-- PROMINENT VIEWER DELETE BUTTON -->
+        <button class="lb-btn danger" onclick="deleteLbItem()" title="Delete photo/video">🗑️</button>
+        <button class="lb-btn" onclick="closeLightbox()" title="Close">✕</button>
+      </div>
     </div>
 
     <div class="lb-media-stage" id="lb-stage">
-      <button class="lb-nav-btn lb-nav-prev" onclick="lbPrev()" title="Previous (Left Arrow)" aria-label="Previous media">←</button>
+      <button class="lb-nav-btn lb-nav-prev" onclick="lbPrev()">←</button>
       <div id="lb-media-content" style="max-height:100%;max-width:100%;display:flex;align-items:center;justify-content:center;"></div>
-      <button class="lb-nav-btn lb-nav-next" onclick="lbNext()" title="Next (Right Arrow)" aria-label="Next media">→</button>
+      <button class="lb-nav-btn lb-nav-next" onclick="lbNext()">→</button>
     </div>
 
+    <!-- Google Photos Bottom Toolbar -->
     <div class="lb-footer">
-      <div>
-        <div class="lb-caption" id="lb-caption">Title</div>
-        <div class="lb-sub" id="lb-sub">Date &bull; Album</div>
-      </div>
-      <div class="lb-actions">
-        <button class="btn-secondary" id="lb-fav-btn" onclick="toggleLbFav()">❤️ Favorite</button>
-        <button class="btn-secondary" onclick="editLbCaption()">✏️ Edit Caption</button>
-        <button class="btn-secondary" onclick="moveLbAlbum()">📁 Album</button>
-        <button class="btn-secondary" style="color:var(--accent-rose);" onclick="deleteLbItem()">🗑️ Delete</button>
-      </div>
+      <button class="lb-action-btn" onclick="editLbCaption()">✏️ Edit</button>
+      <button class="lb-action-btn" onclick="downloadLbItem()">⬇️ Save</button>
+      <!-- PROMINENT BOTTOM DELETE BUTTON -->
+      <button class="lb-action-btn delete-btn" onclick="deleteLbItem()">🗑️ Delete</button>
     </div>
   </div>
 
-  <!-- New Album Modal -->
-  <div class="modal-backdrop" id="modal-album">
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-backdrop" id="modal-delete">
     <div class="modal-card">
-      <h3 class="modal-title">Create New Album</h3>
-      <input type="text" id="new-album-name" class="modal-input" placeholder="e.g. Goa Trip, Project Work"/>
-      <div class="modal-btn-row">
-        <button class="btn-secondary" onclick="closeModal('modal-album')">Cancel</button>
-        <button class="btn-primary" onclick="submitNewAlbum()">Create</button>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <div style="font-size:1.5rem;">🗑️</div>
+        <div>
+          <h3 style="font-size:16px;font-weight:800;color:#fff;">Delete from Gallery?</h3>
+          <p style="font-size:11px;color:var(--text-muted);">Item will be permanently removed.</p>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Move Album Modal -->
-  <div class="modal-backdrop" id="modal-move">
-    <div class="modal-card">
-      <h3 class="modal-title">Organize into Album</h3>
-      <div id="move-album-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:200px;overflow-y:auto;"></div>
-      <div class="modal-btn-row">
-        <button class="btn-secondary" onclick="closeModal('modal-move')">Cancel</button>
+      <div id="delete-modal-text" style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button class="nav-tab-btn" onclick="closeModal('modal-delete')">Cancel</button>
+        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDelete()">Delete</button>
       </div>
     </div>
   </div>
@@ -725,29 +730,18 @@
   <div class="toast" id="toast"></div>
 
   <script>
-  /* ══════════════════════════════════════════════════════
-     DATABASE & STATE MANAGEMENT (IndexedDB + Memory)
-  ══════════════════════════════════════════════════════ */
   const DB_NAME = 'dharya_gallery_db_v2';
   const DB_VERSION = 2;
   let db;
 
   let mediaItems = [];
-  let albums = [
-    { id: 'all', name: 'All Albums', emoji: '🗂️' },
-    { id: 'moments', name: 'Precious Moments', emoji: '✨' },
-    { id: 'campus', name: 'Campus Life', emoji: '🎓' },
-    { id: 'travel', name: 'Adventures', emoji: '✈️' },
-    { id: 'favorites', name: 'Highlights', emoji: '💖' }
-  ];
-
-  let currentTypeFilter = 'all';
-  let currentAlbumFilter = 'all';
+  let currentTab = 'photos';
   let currentSearch = '';
+  let selectedIds = new Set();
   let lbIndex = 0;
   let filteredList = [];
+  let deleteQueue = [];
 
-  // Seed data
   const SEED_DATA = [
     {
       id: 's1',
@@ -756,7 +750,7 @@
       label: 'Campus Library at Golden Hour',
       albumId: 'campus',
       isFavorite: true,
-      date: Date.now() - 86400000 * 2,
+      date: Date.now() - 86400000 * 1,
     },
     {
       id: 's2',
@@ -766,7 +760,7 @@
       albumId: 'campus',
       isFavorite: false,
       duration: '0:15',
-      date: Date.now() - 86400000 * 4,
+      date: Date.now() - 86400000 * 1,
     },
     {
       id: 's3',
@@ -775,7 +769,7 @@
       label: 'Weekend Mountain Reflection',
       albumId: 'travel',
       isFavorite: true,
-      date: Date.now() - 86400000 * 6,
+      date: Date.now() - 86400000 * 5,
     },
     {
       id: 's4',
@@ -785,294 +779,179 @@
       albumId: 'travel',
       isFavorite: true,
       duration: '0:15',
-      date: Date.now() - 86400000 * 8,
-    },
-    {
-      id: 's5',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-      label: 'Late Night Coding & Stargazing',
-      albumId: 'moments',
-      isFavorite: false,
-      date: Date.now() - 86400000 * 10,
-    },
-    {
-      id: 's6',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
-      label: 'Coffee & Algorithms Derivation',
-      albumId: 'moments',
-      isFavorite: true,
-      date: Date.now() - 86400000 * 14,
+      date: Date.now() - 86400000 * 5,
     }
   ];
 
   function openDatabase() {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
+      req.onupgradeneeded = e => {
         const d = req.result;
-        if (!d.objectStoreNames.contains('media')) {
-          d.createObjectStore('media', { keyPath: 'id' });
-        }
-        if (!d.objectStoreNames.contains('albums')) {
-          d.createObjectStore('albums', { keyPath: 'id' });
-        }
+        if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' });
       };
-      req.onsuccess = () => {
-        db = req.result;
-        resolve(db);
-      };
+      req.onsuccess = () => { db = req.result; resolve(db); };
       req.onerror = () => resolve(null);
     });
   }
 
   async function loadData() {
     await openDatabase();
-    if (!db) {
-      mediaItems = [...SEED_DATA];
-      renderAll();
-      return;
-    }
+    if (!db) { mediaItems = [...SEED_DATA]; renderTimeline(); return; }
 
-    const tx = db.transaction(['media', 'albums'], 'readonly');
-    const mediaStore = tx.objectStore('media');
-    const albumStore = tx.objectStore('albums');
+    const tx = db.transaction('media', 'readonly');
+    const store = tx.objectStore('media');
+    const req = store.getAll();
 
-    const mReq = mediaStore.getAll();
-    const aReq = albumStore.getAll();
-
-    mReq.onsuccess = () => {
-      const items = mReq.result || [];
-      if (items.length === 0) {
+    req.onsuccess = () => {
+      const stored = req.result || [];
+      if (stored.length === 0) {
         mediaItems = [...SEED_DATA];
-        // Seed IDB
-        const writeTx = db.transaction('media', 'readwrite');
-        SEED_DATA.forEach(s => writeTx.objectStore('media').put(s));
+        const wTx = db.transaction('media', 'readwrite');
+        SEED_DATA.forEach(s => wTx.objectStore('media').put(s));
       } else {
-        mediaItems = items.map(it => {
-          if (it.blob) {
-            it.url = URL.createObjectURL(it.blob);
-          }
+        mediaItems = stored.map(it => {
+          if (it.blob) it.url = URL.createObjectURL(it.blob);
           return it;
         });
       }
-      renderAll();
-    };
-
-    aReq.onsuccess = () => {
-      const storedAlbums = aReq.result || [];
-      if (storedAlbums.length > 0) {
-        albums = storedAlbums;
-      }
-      renderAlbumPills();
+      renderTimeline();
     };
   }
 
-  /* ══════════════════════════════════════════════════════
-     RENDERERS
-  ══════════════════════════════════════════════════════ */
   function getFilteredItems() {
     return mediaItems.filter(item => {
-      // Type
-      if (currentTypeFilter === 'photos' && item.type !== 'photo') return false;
-      if (currentTypeFilter === 'videos' && item.type !== 'video') return false;
-      if (currentTypeFilter === 'favorites' && !item.isFavorite) return false;
-
-      // Album
-      if (currentAlbumFilter !== 'all' && item.albumId !== currentAlbumFilter) return false;
-
-      // Search
+      if (currentTab === 'videos' && item.type !== 'video') return false;
+      if (currentTab === 'favorites' && !item.isFavorite) return false;
       if (currentSearch.trim()) {
         const q = currentSearch.toLowerCase();
-        const alb = albums.find(a => a.id === item.albumId);
-        const albName = alb ? alb.name.toLowerCase() : '';
-        const match = item.label.toLowerCase().includes(q) || albName.includes(q);
-        if (!match) return false;
+        if (!item.label.toLowerCase().includes(q)) return false;
       }
-
       return true;
     }).sort((a,b) => b.date - a.date);
   }
 
-  function renderAll() {
+  function renderTimeline() {
     filteredList = getFilteredItems();
-    const grid = document.getElementById('gallery-grid');
-    const emptyState = document.getElementById('empty-state');
-    const countBadge = document.getElementById('media-count-badge');
-
-    countBadge.textContent = `${mediaItems.length} item${mediaItems.length !== 1 ? 's' : ''}`;
+    const container = document.getElementById('gallery-timeline-container');
+    const badge = document.getElementById('media-count-badge');
+    badge.textContent = `${mediaItems.length} items`;
 
     if (filteredList.length === 0) {
-      grid.innerHTML = '';
-      emptyState.style.display = 'block';
+      container.innerHTML = `<div style="text-align:center;padding:60px 16px;color:#8e918f;"><div style="font-size:3rem;margin-bottom:8px;">🖼️</div><p>No photos or videos found.</p></div>`;
       return;
     }
 
-    emptyState.style.display = 'none';
-    grid.innerHTML = filteredList.map((item, idx) => {
-      const alb = albums.find(a => a.id === item.albumId);
-      const albumLabel = alb ? `${alb.emoji} ${alb.name}` : '';
-      const dateStr = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-      const mediaMarkup = item.type === 'video'
-        ? `<div class="card-play-btn"><div class="card-play-icon">▶</div></div>
-           <div class="video-badge">🎬 ${item.duration || 'VIDEO'}</div>
-           <video src="${item.url}" preload="metadata" muted playsinline></video>`
-        : `<img src="${item.url}" alt="${item.label}" loading="lazy"/>`;
-
-      return `
-        <article class="media-card" tabindex="0" onclick="openLightbox(${idx})" onkeydown="handleCardKey(event, ${idx})" aria-label="${item.label}, ${item.type}">
-          ${mediaMarkup}
-          <button class="fav-heart ${item.isFavorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleCardFav('${item.id}')" title="Toggle favorite">
-            ${item.isFavorite ? '❤️' : '🤍'}
-          </button>
-          <div class="card-overlay">
-            <div class="card-caption">${item.label}</div>
-            <div class="card-date">${dateStr}</div>
-            ${albumLabel ? `<div class="card-album">${albumLabel}</div>` : ''}
-          </div>
-        </article>
-      `;
-    }).join('');
-  }
-
-  function renderAlbumPills() {
-    const container = document.getElementById('album-pills');
-    container.innerHTML = albums.map(a => `
-      <button class="pill-btn ${currentAlbumFilter === a.id ? 'active' : ''}" onclick="setAlbumFilter('${a.id}')">
-        ${a.emoji} ${a.name}
-      </button>
-    `).join('');
-  }
-
-  /* ══════════════════════════════════════════════════════
-     INTERACTION & FILTERS
-  ══════════════════════════════════════════════════════ */
-  function triggerFileInput() {
-    document.getElementById('media-file-input').click();
-  }
-
-  function handleFileSelect(e) {
-    const files = Array.from(e.target.files);
-    uploadFiles(files);
-    e.target.value = '';
-  }
-
-  function uploadFiles(files) {
-    if (!files.length) return;
-    let addedCount = 0;
-
-    files.forEach(f => {
-      const isVideo = f.type.startsWith('video/');
-      const isImage = f.type.startsWith('image/');
-      if (!isImage && !isVideo) return;
-
-      const url = URL.createObjectURL(f);
-      const label = f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-
-      const newItem = {
-        id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        type: isVideo ? 'video' : 'photo',
-        url: url,
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-        albumId: currentAlbumFilter !== 'all' ? currentAlbumFilter : 'moments',
-        isFavorite: false,
-        duration: isVideo ? '0:30' : undefined,
-        date: Date.now(),
-        blob: f
-      };
-
-      mediaItems.unshift(newItem);
-      addedCount++;
-
-      // Save to IDB
-      if (db) {
-        const tx = db.transaction('media', 'readwrite');
-        tx.objectStore('media').put(newItem);
-      }
+    // Group by Date (Google Photos Timeline)
+    const groups = {};
+    filteredList.forEach(item => {
+      const d = new Date(item.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(item);
     });
 
-    if (addedCount > 0) {
-      renderAll();
-      showToast(`Added ${addedCount} item${addedCount !== 1 ? 's' : ''} to gallery ✓`);
+    let html = '';
+    for (const [dateLabel, groupItems] of Object.entries(groups)) {
+      html += `
+        <div style="margin-bottom:24px;">
+          <div class="timeline-header">
+            <div class="timeline-title">
+              <span>📅</span>
+              <span>${dateLabel}</span>
+              <span style="font-size:11px;color:#8e918f;">• ${groupItems.length}</span>
+            </div>
+          </div>
+          <div class="gallery-grid">
+            ${groupItems.map(item => {
+              const isSelected = selectedIds.has(item.id);
+              const overallIdx = filteredList.findIndex(x => x.id === item.id);
+              return `
+                <article class="media-card ${isSelected ? 'selected' : ''}" onclick="onCardClick('${item.id}', ${overallIdx})">
+                  <div class="select-check" onclick="event.stopPropagation(); toggleSelect('${item.id}')">${isSelected ? '✓' : ''}</div>
+                  
+                  <!-- PROMINENT DELETE BUTTON -->
+                  <button class="card-trash-btn" onclick="event.stopPropagation(); requestDelete(['${item.id}'])" title="Delete">🗑️</button>
+                  <button class="card-fav-btn ${item.isFavorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleCardFav('${item.id}')" title="Favorite">${item.isFavorite ? '⭐' : '☆'}</button>
+
+                  ${item.type === 'video'
+                    ? `<div class="card-play-btn"><div class="card-play-icon">▶</div></div>
+                       <div class="video-duration-chip">▶ ${item.duration || '0:15'}</div>
+                       <video src="${item.url}" preload="metadata" muted playsinline></video>`
+                    : `<img src="${item.url}" alt="${item.label}" loading="lazy"/>`
+                  }
+                  <div class="card-overlay">
+                    <div class="card-caption">${item.label}</div>
+                  </div>
+                </article>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
     }
+    container.innerHTML = html;
   }
 
-  function setMediaTypeFilter(type, btn) {
-    currentTypeFilter = type;
-    document.querySelectorAll('.pill-group:first-of-type .pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderAll();
-  }
-
-  function setAlbumFilter(albumId) {
-    currentAlbumFilter = albumId;
-    renderAlbumPills();
-    renderAll();
-  }
-
-  function onSearchChange(e) {
-    currentSearch = e.target.value;
-    renderAll();
-  }
-
-  function handleCardKey(e, idx) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+  function onCardClick(id, idx) {
+    if (selectedIds.size > 0) {
+      toggleSelect(id);
+    } else {
       openLightbox(idx);
     }
   }
 
-  /* ══════════════════════════════════════════════════════
-     LIGHTBOX VIEWER
-  ══════════════════════════════════════════════════════ */
-  function openLightbox(idx) {
-    lbIndex = idx;
-    showLightboxItem();
-    document.getElementById('lightbox').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
 
-  function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('open');
-    document.body.style.overflow = '';
-    const stage = document.getElementById('lb-media-content');
-    stage.innerHTML = '';
-  }
-
-  function showLightboxItem() {
-    const item = filteredList[lbIndex];
-    if (!item) return;
-
-    document.getElementById('lb-counter').textContent = `${lbIndex + 1} / ${filteredList.length}`;
-    document.getElementById('lb-caption').textContent = item.label;
-
-    const alb = albums.find(a => a.id === item.albumId);
-    const dateStr = new Date(item.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-    document.getElementById('lb-sub').textContent = `${dateStr} • ${alb ? alb.name : 'General'}`;
-
-    const favBtn = document.getElementById('lb-fav-btn');
-    favBtn.textContent = item.isFavorite ? '❤️ Favorited' : '🤍 Favorite';
-
-    const stage = document.getElementById('lb-media-content');
-    if (item.type === 'video') {
-      stage.innerHTML = `<video src="${item.url}" controls autoplay playsinline style="max-height:75vh;max-width:100%;border-radius:12px;"></video>`;
+    const bar = document.getElementById('batch-bar');
+    if (selectedIds.size > 0) {
+      bar.classList.add('show');
+      document.getElementById('batch-count').textContent = `${selectedIds.size} selected`;
     } else {
-      stage.innerHTML = `<img src="${item.url}" alt="${item.label}" style="max-height:75vh;max-width:100%;border-radius:12px;"/>`;
+      bar.classList.remove('show');
     }
+    renderTimeline();
   }
 
-  function lbPrev() {
-    if (!filteredList.length) return;
-    lbIndex = (lbIndex - 1 + filteredList.length) % filteredList.length;
-    showLightboxItem();
+  function clearSelection() {
+    selectedIds.clear();
+    document.getElementById('batch-bar').classList.remove('show');
+    renderTimeline();
   }
 
-  function lbNext() {
-    if (!filteredList.length) return;
-    lbIndex = (lbIndex + 1) % filteredList.length;
-    showLightboxItem();
+  function batchDelete() {
+    if (selectedIds.size === 0) return;
+    requestDelete(Array.from(selectedIds));
+  }
+
+  function requestDelete(ids) {
+    deleteQueue = ids;
+    const count = ids.length;
+    document.getElementById('delete-modal-text').textContent =
+      count === 1 ? 'Are you sure you want to delete this item?' : `Are you sure you want to delete ${count} items?`;
+    document.getElementById('modal-delete').classList.add('open');
+  }
+
+  function confirmDelete() {
+    if (deleteQueue.length === 0) return;
+    const toDeleteSet = new Set(deleteQueue);
+
+    mediaItems = mediaItems.filter(i => !toDeleteSet.has(i.id));
+
+    if (db) {
+      const tx = db.transaction('media', 'readwrite');
+      deleteQueue.forEach(id => tx.objectStore('media').delete(id));
+    }
+
+    deleteQueue.forEach(id => selectedIds.delete(id));
+    if (selectedIds.size === 0) document.getElementById('batch-bar').classList.remove('show');
+
+    closeModal('modal-delete');
+    closeLightbox();
+    renderTimeline();
+    showToast(`Deleted ${deleteQueue.length} item(s) from gallery`);
+    deleteQueue = [];
   }
 
   function toggleCardFav(id) {
@@ -1083,144 +962,164 @@
       const tx = db.transaction('media', 'readwrite');
       tx.objectStore('media').put(item);
     }
-    renderAll();
-    showToast(item.isFavorite ? 'Added to favorites ❤️' : 'Removed from favorites');
+    renderTimeline();
+    showToast(item.isFavorite ? 'Saved to Favorites ⭐' : 'Removed from Favorites');
+  }
+
+  function setTab(tab, btn) {
+    currentTab = tab;
+    document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTimeline();
+  }
+
+  function onSearchChange(e) {
+    currentSearch = e.target.value;
+    renderTimeline();
+  }
+
+  function triggerFileInput() { document.getElementById('media-file-input').click(); }
+  function handleFileSelect(e) {
+    const files = Array.from(e.target.files);
+    uploadFiles(files);
+    e.target.value = '';
+  }
+
+  function uploadFiles(files) {
+    if (!files.length) return;
+    let count = 0;
+    files.forEach(f => {
+      const isVideo = f.type.startsWith('video/');
+      const isImage = f.type.startsWith('image/');
+      if (!isImage && !isVideo) return;
+
+      const url = URL.createObjectURL(f);
+      const label = f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+
+      const item = {
+        id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        type: isVideo ? 'video' : 'photo',
+        url: url,
+        label: label.charAt(0).toUpperCase() + label.slice(1),
+        albumId: 'moments',
+        isFavorite: false,
+        duration: isVideo ? '0:30' : undefined,
+        date: Date.now(),
+        blob: f
+      };
+
+      mediaItems.unshift(item);
+      count++;
+      if (db) {
+        const tx = db.transaction('media', 'readwrite');
+        tx.objectStore('media').put(item);
+      }
+    });
+
+    if (count > 0) {
+      renderTimeline();
+      showToast(`Added ${count} media item(s) to Google Gallery ✓`);
+    }
+  }
+
+  /* Fullscreen Viewer */
+  function openLightbox(idx) {
+    lbIndex = idx;
+    showLbItem();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+    document.getElementById('lb-media-content').innerHTML = '';
+  }
+  function showLbItem() {
+    const item = filteredList[lbIndex];
+    if (!item) return;
+
+    document.getElementById('lb-caption').textContent = item.label;
+    document.getElementById('lb-sub').textContent = new Date(item.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    document.getElementById('lb-fav-btn').textContent = item.isFavorite ? '⭐' : '☆';
+
+    const stage = document.getElementById('lb-media-content');
+    if (item.type === 'video') {
+      stage.innerHTML = `<video src="${item.url}" controls autoplay playsinline style="max-height:75vh;max-width:100%;border-radius:16px;"></video>`;
+    } else {
+      stage.innerHTML = `<img src="${item.url}" alt="${item.label}" style="max-height:75vh;max-width:100%;border-radius:16px;"/>`;
+    }
+  }
+
+  function lbPrev() {
+    if (!filteredList.length) return;
+    lbIndex = (lbIndex - 1 + filteredList.length) % filteredList.length;
+    showLbItem();
+  }
+  function lbNext() {
+    if (!filteredList.length) return;
+    lbIndex = (lbIndex + 1) % filteredList.length;
+    showLbItem();
   }
 
   function toggleLbFav() {
     const item = filteredList[lbIndex];
     if (!item) return;
     toggleCardFav(item.id);
-    showLightboxItem();
+    showLbItem();
+  }
+
+  function deleteLbItem() {
+    const item = filteredList[lbIndex];
+    if (!item) return;
+    requestDelete([item.id]);
   }
 
   function editLbCaption() {
     const item = filteredList[lbIndex];
     if (!item) return;
-    const next = prompt('Enter new caption:', item.label);
+    const next = prompt('Edit caption:', item.label);
     if (next && next.trim()) {
       item.label = next.trim();
       if (db) {
         const tx = db.transaction('media', 'readwrite');
         tx.objectStore('media').put(item);
       }
-      renderAll();
-      showLightboxItem();
+      renderTimeline();
+      showLbItem();
       showToast('Caption updated');
     }
   }
 
-  function deleteLbItem() {
+  function downloadLbItem() {
     const item = filteredList[lbIndex];
     if (!item) return;
-    if (confirm(`Delete "${item.label}" from gallery?`)) {
-      mediaItems = mediaItems.filter(i => i.id !== item.id);
-      if (db) {
-        const tx = db.transaction('media', 'readwrite');
-        tx.objectStore('media').delete(item.id);
-      }
-      renderAll();
-      if (filteredList.length === 0) {
-        closeLightbox();
-      } else {
-        lbIndex = Math.min(lbIndex, filteredList.length - 1);
-        showLightboxItem();
-      }
-      showToast('Item deleted');
-    }
+    const a = document.createElement('a');
+    a.href = item.url;
+    a.download = item.label;
+    a.target = '_blank';
+    a.click();
   }
 
-  function moveLbAlbum() {
-    const item = filteredList[lbIndex];
-    if (!item) return;
-    const list = document.getElementById('move-album-list');
-    list.innerHTML = albums.filter(a => a.id !== 'all').map(a => `
-      <button class="btn-secondary" style="width:100%;text-align:left;justify-content:flex-start;" onclick="setMediaAlbum('${item.id}', '${a.id}')">
-        ${a.emoji} ${a.name}
-      </button>
-    `).join('');
-    openModal('modal-move');
-  }
-
-  function setMediaAlbum(itemId, albumId) {
-    const item = mediaItems.find(i => i.id === itemId);
-    if (item) {
-      item.albumId = albumId;
-      if (db) {
-        const tx = db.transaction('media', 'readwrite');
-        tx.objectStore('media').put(item);
-      }
-      renderAll();
-      showLightboxItem();
-      showToast('Moved to album');
-    }
-    closeModal('modal-move');
-  }
-
-  /* ══════════════════════════════════════════════════════
-     ALBUM MODALS
-  ══════════════════════════════════════════════════════ */
-  function openNewAlbumModal() {
-    openModal('modal-album');
-    document.getElementById('new-album-name').value = '';
-    document.getElementById('new-album-name').focus();
-  }
-
-  function submitNewAlbum() {
-    const name = document.getElementById('new-album-name').value.trim();
-    if (!name) return;
-    const newAlb = {
-      id: 'alb_' + Date.now(),
-      name: name,
-      emoji: '📁'
-    };
-    albums.push(newAlb);
-    if (db) {
-      const tx = db.transaction('albums', 'readwrite');
-      tx.objectStore('albums').put(newAlb);
-    }
-    renderAlbumPills();
-    setAlbumFilter(newAlb.id);
-    closeModal('modal-album');
-    showToast(`Created album "${name}" ✓`);
-  }
-
-  function openModal(id) { document.getElementById(id).classList.add('open'); }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-  /* ══════════════════════════════════════════════════════
-     DRAG AND DROP EVENTS
-  ══════════════════════════════════════════════════════ */
-  const dropZone = document.getElementById('drop-zone');
-  ['dragenter', 'dragover'].forEach(ev => {
-    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag-active'); });
-    document.body.addEventListener(ev, e => { e.preventDefault(); });
-  });
-  ['dragleave', 'drop'].forEach(ev => {
-    dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag-active'); });
-  });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    if (e.dataTransfer && e.dataTransfer.files) {
-      uploadFiles(Array.from(e.dataTransfer.files));
-    }
-  });
-
-  /* ══════════════════════════════════════════════════════
-     KEYBOARD NAVIGATION
-  ══════════════════════════════════════════════════════ */
   document.addEventListener('keydown', e => {
     const lb = document.getElementById('lightbox');
     if (lb.classList.contains('open')) {
       if (e.key === 'Escape') closeLightbox();
       if (e.key === 'ArrowLeft') lbPrev();
       if (e.key === 'ArrowRight') lbNext();
+      if (e.key === 'Delete' || e.key === 'Backspace') deleteLbItem();
     }
   });
 
-  /* ══════════════════════════════════════════════════════
-     TOAST
-  ══════════════════════════════════════════════════════ */
+  const dropZone = document.getElementById('drop-zone');
+  ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('drag-active'); }));
+  ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('drag-active'); }));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files) uploadFiles(Array.from(e.dataTransfer.files));
+  });
+
   let toastTimer;
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1230,7 +1129,6 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
-  // Init
   loadData();
   </script>
 </body>

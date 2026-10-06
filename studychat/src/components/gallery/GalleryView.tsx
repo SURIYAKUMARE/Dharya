@@ -85,7 +85,11 @@ import {
   deleteAlbum,
   validateFile,
   ACCEPT_STRING,
+  STORE_MEDIA,
+  STORE_TIMELINE,
+  idbDelete,
 } from '../../services/galleryService';
+import { moveToRecycleBin } from '../../services/recycleBinService';
 
 type GoogleTab = 'photos' | 'videos' | 'albums' | 'favorites' | 'timeline';
 
@@ -102,11 +106,13 @@ interface UploadItem {
 export interface GalleryViewProps {
   onBackToChat?: () => void;
   onOpenTimeline?: () => void;
+  onOpenRecycleBin?: () => void;
 }
 
 export const GalleryView: React.FC<GalleryViewProps> = ({
   onBackToChat,
   onOpenTimeline,
+  onOpenRecycleBin,
 }) => {
   const { student } = useStudyApp();
   const owner = student?.username || 'surya';
@@ -192,6 +198,32 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Listen for items restored from the Recycle Bin
+  useEffect(() => {
+    const handleRestoredGallery = (e: any) => {
+      const restored = e.detail?.item;
+      if (restored) {
+        setItems((prev) => (prev.some((i) => i.id === restored.id) ? prev : [restored, ...prev]));
+      }
+    };
+    const handleRestoredIncident = (e: any) => {
+      const restored = e.detail?.incident;
+      if (restored) {
+        setTimelineIncidents((prev) =>
+          prev.some((i) => i.id === restored.id)
+            ? prev
+            : [...prev, restored].sort((a, b) => b.timestamp - a.timestamp)
+        );
+      }
+    };
+    window.addEventListener('gallery_item_restored', handleRestoredGallery);
+    window.addEventListener('timeline_incident_restored', handleRestoredIncident);
+    return () => {
+      window.removeEventListener('gallery_item_restored', handleRestoredGallery);
+      window.removeEventListener('timeline_incident_restored', handleRestoredIncident);
+    };
+  }, []);
 
   // ── Filtered Media List ───────────────────────────────────────────
   const filteredItems = React.useMemo(() => {
@@ -409,10 +441,25 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     if (!deleteTargets || deleteTargets.length === 0) return;
     setDeleting(true);
 
-    if (deleteTargets.length === 1) {
-      await deleteMediaItem(deleteTargets[0]);
-    } else {
-      await deleteMultipleItems(deleteTargets);
+    try {
+      for (const item of deleteTargets) {
+        // 1. Move to Recycle Bin with full item data
+        await moveToRecycleBin({
+          originalId: item.id,
+          source: 'gallery',
+          title: item.label || item.fileName || 'Gallery Photo',
+          previewText: `${item.type === 'video' ? 'Video' : 'Photo'} • ${((item.fileSize || 0) / 1024 / 1024).toFixed(1)} MB`,
+          mediaUrl: item.publicUrl,
+          mediaType: item.type === 'video' ? 'video' : 'photo',
+          owner: item.owner,
+          originalData: item,
+        });
+
+        // 2. Remove from active store so it disappears immediately from Gallery
+        await idbDelete(STORE_MEDIA, item.id);
+      }
+    } catch (err) {
+      console.error('[GalleryView] Error moving to recycle bin:', err);
     }
 
     setDeleting(false);
@@ -431,8 +478,8 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
     showToast(
       deleteTargets.length === 1
-        ? 'Item deleted from gallery'
-        : `Deleted ${deleteTargets.length} items from gallery`,
+        ? 'Moved to Recycle Bin'
+        : `Moved ${deleteTargets.length} items to Recycle Bin`,
     );
     setDeleteTargets(null);
   };
@@ -575,9 +622,23 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
   const handleDeleteIncidentConfirm = async () => {
     if (!deleteIncidentTarget) return;
-    await deleteTimelineIncident(deleteIncidentTarget.id);
+    try {
+      await moveToRecycleBin({
+        originalId: deleteIncidentTarget.id,
+        source: 'timeline',
+        title: deleteIncidentTarget.title || 'Timeline Incident',
+        previewText: deleteIncidentTarget.incidentText || deleteIncidentTarget.incidentDate,
+        mediaUrl: deleteIncidentTarget.photoUrl,
+        mediaType: 'photo',
+        owner: deleteIncidentTarget.owner,
+        originalData: deleteIncidentTarget,
+      });
+      await idbDelete(STORE_TIMELINE, deleteIncidentTarget.id);
+    } catch (err) {
+      console.error('[GalleryView] Error moving incident to recycle bin:', err);
+    }
     setTimelineIncidents((prev) => prev.filter((i) => i.id !== deleteIncidentTarget.id));
-    showToast('Incident removed from timeline');
+    showToast('Incident moved to Recycle Bin');
     setDeleteIncidentTarget(null);
   };
 
@@ -741,6 +802,17 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 >
                   <Clock className="w-3.5 h-3.5 text-amber-400" />
                   <span className="hidden md:inline">Life Timeline</span>
+                </button>
+              )}
+
+              {onOpenRecycleBin && (
+                <button
+                  onClick={onOpenRecycleBin}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-rose-500/40 text-xs font-bold text-rose-300 hover:text-white transition-all cursor-pointer shrink-0"
+                  title="Open Recycle Bin"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span className="hidden md:inline">Recycle Bin</span>
                 </button>
               )}
 

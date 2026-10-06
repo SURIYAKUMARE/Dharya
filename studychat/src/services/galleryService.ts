@@ -58,10 +58,11 @@ export interface UploadResult {
 // ── Constants & Limits ────────────────────────────────────────────────────────
 
 const DB_NAME = 'dharya_gallery_db_v2';
-const DB_VERSION = 3;
-const STORE_MEDIA = 'gallery_media';
-const STORE_ALBUMS = 'gallery_albums';
-const STORE_TIMELINE = 'gallery_timeline';
+const DB_VERSION = 4;
+export const STORE_MEDIA = 'gallery_media';
+export const STORE_ALBUMS = 'gallery_albums';
+export const STORE_TIMELINE = 'gallery_timeline';
+export const STORE_RECYCLE = 'gallery_recycle_bin';
 
 export const MAX_PHOTO_BYTES = 25 * 1024 * 1024;   // 25 MB
 export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;  // 100 MB
@@ -224,13 +225,18 @@ function openDB(): Promise<IDBDatabase> {
         tStore.createIndex('timestamp', 'timestamp', { unique: false });
         tStore.createIndex('owner', 'owner', { unique: false });
       }
+      if (!db.objectStoreNames.contains(STORE_RECYCLE)) {
+        const rStore = db.createObjectStore(STORE_RECYCLE, { keyPath: 'id' });
+        rStore.createIndex('source', 'source', { unique: false });
+        rStore.createIndex('deletedAt', 'deletedAt', { unique: false });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-async function idbGetAll<T>(storeName: string): Promise<T[]> {
+export async function idbGetAll<T>(storeName: string): Promise<T[]> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -246,7 +252,7 @@ async function idbGetAll<T>(storeName: string): Promise<T[]> {
   }
 }
 
-async function idbPut<T>(storeName: string, item: T): Promise<void> {
+export async function idbPut<T>(storeName: string, item: T): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
@@ -261,7 +267,7 @@ async function idbPut<T>(storeName: string, item: T): Promise<void> {
   }
 }
 
-async function idbDelete(storeName: string, id: string): Promise<void> {
+export async function idbDelete(storeName: string, id: string): Promise<void> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {

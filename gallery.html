@@ -826,13 +826,14 @@
         </div>
       </div>
 
-      <!-- Navigation Tabs: Photos, Videos, Albums, Favorites, Life Timeline -->
+      <!-- Navigation Tabs: Photos, Videos, Albums, Favorites, Life Timeline, Recycle Bin -->
       <div class="nav-tabs" role="tablist">
         <button class="nav-tab-btn active" onclick="setTab('photos', this)">📸 Photos</button>
         <button class="nav-tab-btn" onclick="setTab('videos', this)">🎬 Videos</button>
         <button class="nav-tab-btn" onclick="setTab('albums', this)">📁 Albums</button>
         <button class="nav-tab-btn" onclick="setTab('favorites', this)">⭐ Favorites</button>
         <button class="nav-tab-btn" onclick="setTab('timeline', this)" style="border-color:rgba(245,158,11,0.5);">⏳ Life Timeline</button>
+        <button class="nav-tab-btn" onclick="setTab('recycle', this)" style="border-color:rgba(239,68,68,0.5);color:#fca5a5;">🗑️ Recycle Bin</button>
       </div>
     </div>
   </header>
@@ -888,14 +889,14 @@
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="font-size:1.5rem;">🗑️</div>
         <div>
-          <h3 style="font-size:16px;font-weight:800;color:#fff;">Delete from Gallery?</h3>
-          <p style="font-size:11px;color:var(--text-muted);">Item will be permanently removed.</p>
+          <h3 style="font-size:16px;font-weight:800;color:#fff;">Move to Recycle Bin?</h3>
+          <p style="font-size:11px;color:var(--text-muted);">Item will be moved to the Recycle Bin and hidden from gallery.</p>
         </div>
       </div>
       <div id="delete-modal-text" style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;"></div>
       <div style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="nav-tab-btn" onclick="closeModal('modal-delete')">Cancel</button>
-        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDelete()">Delete</button>
+        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDelete()">Move to Bin</button>
       </div>
     </div>
   <!-- Add / Edit Life Incident Modal -->
@@ -974,14 +975,14 @@
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
         <div style="font-size:1.5rem;">🗑️</div>
         <div>
-          <h3 style="font-size:16px;font-weight:800;color:#fff;">Delete Incident?</h3>
-          <p style="font-size:11px;color:var(--text-muted);">This memory will be permanently removed.</p>
+          <h3 style="font-size:16px;font-weight:800;color:#fff;">Move Incident to Recycle Bin?</h3>
+          <p style="font-size:11px;color:var(--text-muted);">This memory will be safely moved to the Recycle Bin.</p>
         </div>
       </div>
       <div id="delete-incident-modal-text" style="font-size:13px;color:var(--text-secondary);margin-bottom:18px;">Are you sure you want to delete this incident?</div>
       <div style="display:flex;justify-content:flex-end;gap:8px;">
         <button class="nav-tab-btn" onclick="closeModal('modal-delete-incident')">Cancel</button>
-        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDeleteIncident()">Delete</button>
+        <button class="btn-google-primary" style="background:#dc2626;color:#fff;" onclick="confirmDeleteIncident()">Move to Bin</button>
       </div>
     </div>
   </div>
@@ -991,11 +992,12 @@
 
   <script>
   const DB_NAME = 'dharya_gallery_db_v2';
-  const DB_VERSION = 3;
+  const DB_VERSION = 4;
   let db;
 
   let mediaItems = [];
   let timelineIncidents = [];
+  let recycleBinItems = [];
   let currentTab = 'photos';
   let currentSearch = '';
   let selectedIds = new Set();
@@ -1088,6 +1090,7 @@
         const d = req.result;
         if (!d.objectStoreNames.contains('media')) d.createObjectStore('media', { keyPath: 'id' });
         if (!d.objectStoreNames.contains('gallery_timeline')) d.createObjectStore('gallery_timeline', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('gallery_recycle_bin')) d.createObjectStore('gallery_recycle_bin', { keyPath: 'id' });
       };
       req.onsuccess = () => { db = req.result; resolve(db); };
       req.onerror = () => resolve(null);
@@ -1099,6 +1102,7 @@
     if (!db) {
       mediaItems = [...SEED_DATA];
       timelineIncidents = [...SEED_INCIDENTS];
+      recycleBinItems = [];
       renderTimeline();
       return;
     }
@@ -1120,7 +1124,7 @@
           return it;
         });
       }
-      if (currentTab !== 'timeline') renderTimeline();
+      if (currentTab !== 'timeline' && currentTab !== 'recycle') renderTimeline();
     };
 
     // 2. Load Life Timeline Incidents
@@ -1145,6 +1149,21 @@
       };
     } catch (e) {
       timelineIncidents = [...SEED_INCIDENTS];
+    }
+
+    // 3. Load Recycle Bin Items
+    try {
+      if (db.objectStoreNames.contains('gallery_recycle_bin')) {
+        const rTx = db.transaction('gallery_recycle_bin', 'readonly');
+        const rStore = rTx.objectStore('gallery_recycle_bin');
+        const rReq = rStore.getAll();
+        rReq.onsuccess = () => {
+          recycleBinItems = rReq.result || [];
+          if (currentTab === 'recycle') renderRecycleBin();
+        };
+      }
+    } catch (e) {
+      recycleBinItems = [];
     }
   }
 
@@ -1269,12 +1288,32 @@
   function confirmDelete() {
     if (deleteQueue.length === 0) return;
     const toDeleteSet = new Set(deleteQueue);
+    const itemsToRecycle = mediaItems.filter(i => toDeleteSet.has(i.id));
 
     mediaItems = mediaItems.filter(i => !toDeleteSet.has(i.id));
 
     if (db) {
-      const tx = db.transaction('media', 'readwrite');
-      deleteQueue.forEach(id => tx.objectStore('media').delete(id));
+      const tx = db.transaction(['media', 'gallery_recycle_bin'], 'readwrite');
+      const mediaStore = tx.objectStore('media');
+      const recycleStore = tx.objectStore('gallery_recycle_bin');
+
+      itemsToRecycle.forEach(item => {
+        const binRecord = {
+          id: `bin_gallery_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          originalId: item.id,
+          source: 'gallery',
+          title: item.label || 'Gallery Media',
+          previewText: `${item.type === 'video' ? 'Video' : 'Photo'}`,
+          mediaUrl: item.url,
+          mediaType: item.type === 'video' ? 'video' : 'photo',
+          owner: 'surya',
+          deletedAt: Date.now(),
+          originalData: item
+        };
+        recycleStore.put(binRecord);
+        recycleBinItems = [binRecord, ...recycleBinItems.filter(b => b.id !== binRecord.id)];
+        mediaStore.delete(item.id);
+      });
     }
 
     deleteQueue.forEach(id => selectedIds.delete(id));
@@ -1283,7 +1322,7 @@
     closeModal('modal-delete');
     closeLightbox();
     renderTimeline();
-    showToast(`Deleted ${deleteQueue.length} item(s) from gallery`);
+    showToast(`Moved ${itemsToRecycle.length} item(s) to Recycle Bin`);
     deleteQueue = [];
   }
 
@@ -1311,6 +1350,10 @@
       if (mainBtnLabel) mainBtnLabel.textContent = '+ Add Life Incident';
       if (dropZoneEl) dropZoneEl.style.display = 'none';
       renderLifeTimeline();
+    } else if (tab === 'recycle') {
+      if (mainBtnLabel) mainBtnLabel.textContent = '🗑️ Empty Recycle Bin';
+      if (dropZoneEl) dropZoneEl.style.display = 'none';
+      renderRecycleBin();
     } else {
       if (mainBtnLabel) mainBtnLabel.textContent = '+ Add photos & videos';
       if (dropZoneEl) dropZoneEl.style.display = 'block';
@@ -1321,6 +1364,8 @@
   function handleMainAddAction() {
     if (currentTab === 'timeline') {
       openAddIncidentModal();
+    } else if (currentTab === 'recycle') {
+      emptyAllRecycleBin();
     } else {
       triggerFileInput();
     }
@@ -1549,15 +1594,159 @@
 
   function confirmDeleteIncident() {
     if (!incidentDeleteTargetId) return;
+    const targetIncident = timelineIncidents.find(i => i.id === incidentDeleteTargetId);
     timelineIncidents = timelineIncidents.filter(i => i.id !== incidentDeleteTargetId);
-    if (db) {
-      const tx = db.transaction('gallery_timeline', 'readwrite');
-      tx.objectStore('gallery_timeline').delete(incidentDeleteTargetId);
+
+    if (db && targetIncident) {
+      const tx = db.transaction(['gallery_timeline', 'gallery_recycle_bin'], 'readwrite');
+      const tlStore = tx.objectStore('gallery_timeline');
+      const rStore = tx.objectStore('gallery_recycle_bin');
+      const binRecord = {
+        id: `bin_timeline_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        originalId: targetIncident.id,
+        source: 'timeline',
+        title: targetIncident.title || 'Timeline Incident',
+        previewText: targetIncident.incidentText || targetIncident.incidentDate,
+        mediaUrl: targetIncident.photoUrl,
+        mediaType: 'photo',
+        owner: targetIncident.owner || 'surya',
+        deletedAt: Date.now(),
+        originalData: targetIncident
+      };
+      rStore.put(binRecord);
+      recycleBinItems = [binRecord, ...recycleBinItems.filter(b => b.id !== binRecord.id)];
+      tlStore.delete(incidentDeleteTargetId);
     }
     closeModal('modal-delete-incident');
     renderLifeTimeline();
-    showToast('Incident deleted permanently');
+    showToast('Incident moved to Recycle Bin');
     incidentDeleteTargetId = null;
+  }
+
+  /* ── RECYCLE BIN RENDERER ── */
+  function renderRecycleBin() {
+    const container = document.getElementById('gallery-timeline-container');
+    const badge = document.getElementById('media-count-badge');
+    if (badge) badge.textContent = `${recycleBinItems.length} in Bin`;
+
+    if (recycleBinItems.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:70px 16px;color:#8e918f;">
+          <div style="font-size:3.5rem;margin-bottom:12px;">🗑️</div>
+          <h3 style="font-size:18px;font-weight:700;color:#fff;margin-bottom:6px;">Recycle Bin is Empty</h3>
+          <p style="font-size:13px;max-width:380px;margin:0 auto;line-height:1.5;">When you delete photos, videos, or timeline incidents, they will appear here safely instead of disappearing forever.</p>
+        </div>`;
+      return;
+    }
+
+    let html = `
+      <div style="margin-bottom:20px;padding:16px 20px;border-radius:16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <h2 style="font-size:16px;font-weight:800;color:#fca5a5;display:flex;align-items:center;gap:8px;">
+            <span>🗑️ Recycle Bin</span>
+            <span style="font-size:12px;background:#ef4444;color:#fff;padding:2px 8px;border-radius:999px;">${recycleBinItems.length} items</span>
+          </h2>
+          <p style="font-size:12px;color:#cbd5e1;margin-top:4px;">Items in Recycle Bin are hidden from the Gallery and Life Timeline. Restore them anytime or permanently erase them forever.</p>
+        </div>
+        <button onclick="emptyAllRecycleBin()" class="btn-google-primary" style="background:#dc2626;color:#fff;font-size:12px;padding:6px 14px;">
+          Empty Bin
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));gap:16px;">
+    `;
+
+    recycleBinItems.forEach(item => {
+      const dateStr = new Date(item.deletedAt || Date.now()).toLocaleString();
+      const sourceBadge = item.source === 'timeline'
+        ? '<span style="background:rgba(245,158,11,0.2);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">⏳ Timeline</span>'
+        : '<span style="background:rgba(59,130,246,0.2);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;">📸 Gallery</span>';
+
+      const mediaThumb = item.mediaUrl
+        ? `<div style="height:140px;background:#121316;position:relative;overflow:hidden;border-top-left-radius:14px;border-top-right-radius:14px;">
+             ${item.mediaType === 'video'
+               ? `<video src="${item.mediaUrl}" style="width:100%;height:100%;object-fit:cover;" muted></video><span style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;font-size:11px;color:#fff;">🎬 Video</span>`
+               : `<img src="${item.mediaUrl}" style="width:100%;height:100%;object-fit:cover;"/>`
+             }
+           </div>`
+        : `<div style="height:70px;background:#181b20;display:flex;align-items:center;justify-content:center;font-size:1.8rem;border-top-left-radius:14px;border-top-right-radius:14px;">📝</div>`;
+
+      html += `
+        <div style="background:#1e2025;border:1px solid #2d3139;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+          ${mediaThumb}
+          <div style="padding:14px;flex:1;display:flex;flex-direction:column;justify-content:space-between;">
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                ${sourceBadge}
+                <span style="font-size:11px;color:#8e918f;">Deleted ${dateStr}</span>
+              </div>
+              <h4 style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.title || 'Untitled item'}</h4>
+              <p style="font-size:12px;color:#94a3b8;line-height:1.4;max-height:48px;overflow:hidden;text-overflow:ellipsis;">${item.previewText || ''}</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #2d3139;">
+              <button onclick="restoreBinItem('${item.id}')" style="flex:1;padding:7px 12px;border-radius:8px;background:#10b981;color:#fff;border:none;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                ↺ Restore
+              </button>
+              <button onclick="deleteBinItemPermanently('${item.id}')" style="padding:7px 12px;border-radius:8px;background:rgba(239,68,68,0.15);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);font-weight:700;font-size:12px;cursor:pointer;">
+                🗑️ Erase Forever
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  function restoreBinItem(binId) {
+    const item = recycleBinItems.find(i => i.id === binId);
+    if (!item) return;
+
+    if (db) {
+      if (item.source === 'timeline') {
+        const tx = db.transaction(['gallery_timeline', 'gallery_recycle_bin'], 'readwrite');
+        tx.objectStore('gallery_timeline').put(item.originalData);
+        tx.objectStore('gallery_recycle_bin').delete(binId);
+        timelineIncidents.push(item.originalData);
+      } else {
+        const tx = db.transaction(['media', 'gallery_recycle_bin'], 'readwrite');
+        tx.objectStore('media').put(item.originalData);
+        tx.objectStore('gallery_recycle_bin').delete(binId);
+        mediaItems.push(item.originalData);
+      }
+    }
+
+    recycleBinItems = recycleBinItems.filter(i => i.id !== binId);
+    renderRecycleBin();
+    showToast('Restored back to ' + (item.source === 'timeline' ? 'Life Timeline ✓' : 'Gallery ✓'));
+  }
+
+  function deleteBinItemPermanently(binId) {
+    if (!confirm('Permanently delete this item? It will be erased forever and cannot be recovered.')) return;
+    if (db) {
+      const tx = db.transaction('gallery_recycle_bin', 'readwrite');
+      tx.objectStore('gallery_recycle_bin').delete(binId);
+    }
+    recycleBinItems = recycleBinItems.filter(i => i.id !== binId);
+    renderRecycleBin();
+    showToast('Item deleted permanently');
+  }
+
+  function emptyAllRecycleBin() {
+    if (recycleBinItems.length === 0) {
+      showToast('Recycle Bin is already empty');
+      return;
+    }
+    if (!confirm(`Permanently erase all ${recycleBinItems.length} items in the Recycle Bin? This cannot be undone.`)) return;
+    if (db) {
+      const tx = db.transaction('gallery_recycle_bin', 'readwrite');
+      tx.objectStore('gallery_recycle_bin').clear();
+    }
+    recycleBinItems = [];
+    renderRecycleBin();
+    showToast('Recycle Bin emptied permanently');
   }
 
   function onSearchChange(e) {

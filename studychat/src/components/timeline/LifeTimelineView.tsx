@@ -54,11 +54,15 @@ import {
   createTimelineIncident,
   updateTimelineIncident,
   deleteTimelineIncident,
+  STORE_TIMELINE,
+  idbDelete,
 } from '../../services/galleryService';
+import { moveToRecycleBin } from '../../services/recycleBinService';
 
 export interface LifeTimelineViewProps {
   onBackToChat?: () => void;
   onOpenGallery?: () => void;
+  onOpenRecycleBin?: () => void;
 }
 
 interface TagConfig {
@@ -127,6 +131,7 @@ function getEraLabel(dateStr: string, timestamp: number): string {
 export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   onBackToChat,
   onOpenGallery,
+  onOpenRecycleBin,
 }) => {
   const { student, switchTab } = useStudyApp();
   const owner = student?.username || 'surya';
@@ -186,6 +191,22 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   useEffect(() => {
     loadIncidents();
   }, [loadIncidents]);
+
+  // Listen for incidents restored from the Recycle Bin
+  useEffect(() => {
+    const handleRestoredIncident = (e: any) => {
+      const restored = e.detail?.incident;
+      if (restored) {
+        setIncidents((prev) =>
+          prev.some((i) => i.id === restored.id)
+            ? prev
+            : [...prev, restored].sort((a, b) => b.timestamp - a.timestamp)
+        );
+      }
+    };
+    window.addEventListener('timeline_incident_restored', handleRestoredIncident);
+    return () => window.removeEventListener('timeline_incident_restored', handleRestoredIncident);
+  }, []);
 
   // ── Filtered & Sorted Incidents ───────────────────────────────────
   const filteredIncidents = useMemo(() => {
@@ -356,14 +377,24 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
     }
   };
 
-  // ── Delete Incident ───────────────────────────────────────────────
+  // ── Delete Incident -> Moves to Recycle Bin ───────────────────────
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deleteTimelineIncident(deleteTarget.id);
+      await moveToRecycleBin({
+        originalId: deleteTarget.id,
+        source: 'timeline',
+        title: deleteTarget.title || 'Timeline Incident',
+        previewText: deleteTarget.incidentText || deleteTarget.incidentDate,
+        mediaUrl: deleteTarget.photoUrl,
+        mediaType: 'photo',
+        owner: deleteTarget.owner,
+        originalData: deleteTarget,
+      });
+      await idbDelete(STORE_TIMELINE, deleteTarget.id);
       setIncidents((prev) => prev.filter((i) => i.id !== deleteTarget.id));
-      showToast('Incident deleted permanently');
+      showToast('Incident moved to Recycle Bin');
       setDeleteTarget(null);
     } catch (err) {
       console.error('[LifeTimelineView] delete error:', err);
@@ -467,6 +498,18 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               >
                 <Images className="w-3.5 h-3.5" />
                 <span className="hidden md:inline">Gallery</span>
+              </button>
+            )}
+
+            {/* Quick Recycle Bin Switcher */}
+            {onOpenRecycleBin && (
+              <button
+                onClick={onOpenRecycleBin}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#20242c] hover:bg-[#282d38] border border-rose-500/40 text-xs font-bold text-rose-300 hover:text-white transition-all cursor-pointer"
+                title="Open Recycle Bin"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden md:inline">Recycle Bin</span>
               </button>
             )}
 

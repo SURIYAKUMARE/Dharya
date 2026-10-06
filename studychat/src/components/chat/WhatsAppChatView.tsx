@@ -69,9 +69,11 @@ import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { GalleryView } from '../gallery/GalleryView';
 import { LifeTimelineView } from '../timeline/LifeTimelineView';
+import { RecycleBinView } from '../recycle/RecycleBinView';
+import { moveToRecycleBin, fetchRecycleBinItems } from '../../services/recycleBinService';
 
 interface WhatsAppChatViewProps {
-  initialTab?: 'chat' | 'gallery' | 'timeline';
+  initialTab?: 'chat' | 'gallery' | 'timeline' | 'recycle-bin';
 }
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
@@ -145,7 +147,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
-  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline'>(initialTab ?? 'chat');
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline' | 'recycle-bin'>(initialTab ?? 'chat');
+  const [recycleBinCount, setRecycleBinCount] = useState<number>(0);
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -155,13 +158,43 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return initialTab === 'gallery' || initialTab === 'timeline' ? 'conversation' : 'list';
+      return initialTab === 'gallery' || initialTab === 'timeline' || initialTab === 'recycle-bin' ? 'conversation' : 'list';
     }
     return 'conversation';
   });
 
   const [showMobileSearch, setShowMobileSearch] = useState<boolean>(false);
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
+
+  // Track Recycle Bin count
+  useEffect(() => {
+    const updateBinCount = async () => {
+      try {
+        const binItems = await fetchRecycleBinItems();
+        setRecycleBinCount(binItems.length);
+      } catch {}
+    };
+    updateBinCount();
+    window.addEventListener('recycle_bin_updated', updateBinCount);
+    return () => window.removeEventListener('recycle_bin_updated', updateBinCount);
+  }, []);
+
+  // Listen for restored chat messages from the Recycle Bin
+  useEffect(() => {
+    const handleRestoredMsg = (e: any) => {
+      const restored = e.detail?.message;
+      if (restored) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === restored.id)) return prev;
+          const next = [...prev, restored].sort((a, b) => a.timestamp - b.timestamp);
+          persistMessages(next);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('whatsapp_message_restored', handleRestoredMsg);
+    return () => window.removeEventListener('whatsapp_message_restored', handleRestoredMsg);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -176,7 +209,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   useEffect(() => {
     if (initialTab) {
       setActiveMainView(initialTab ?? 'chat');
-      if (initialTab === 'gallery' || initialTab === 'timeline') {
+      if (initialTab === 'gallery' || initialTab === 'timeline' || initialTab === 'recycle-bin') {
         setMobileView('conversation');
       }
     }
@@ -1436,10 +1469,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setShowMenu(false);
   };
 
-  // Clear Chat for Everyone
-  const handleClearAllChat = () => {
-    if (confirm('Clear all messages in this chat? This cannot be undone.')) {
-      messages.forEach((m) => deleteRemoteMessage(m.id));
+  // Clear Chat -> Moves messages to Recycle Bin
+  const handleClearAllChat = async () => {
+    if (confirm('Clear all messages in this chat? All messages will be moved to the Recycle Bin.')) {
+      for (const m of messages) {
+        try {
+          await moveToRecycleBin({
+            originalId: m.id,
+            source: 'chat',
+            title: `Message from ${m.sender === 'sadhana' ? 'Sadhana' : 'Surya'}`,
+            previewText: m.text || (m.type ? `[${m.type}]` : 'Chat message'),
+            mediaUrl: m.mediaUrl,
+            mediaType: m.type === 'video' ? 'video' : m.type === 'image' ? 'photo' : undefined,
+            owner: m.sender,
+            originalData: m,
+          });
+        } catch (err) {
+          console.warn('Failed to move message to recycle bin:', err);
+        }
+      }
       persistMessages([]);
       setShowMenu(false);
       try {
@@ -1717,13 +1765,28 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // Delete message
-  const handleDeleteMessage = (msgId: string) => {
+  // Delete message -> Moves to Recycle Bin
+  const handleDeleteMessage = async (msgId: string) => {
+    const targetMsg = messages.find((m) => m.id === msgId);
+    if (targetMsg) {
+      try {
+        await moveToRecycleBin({
+          originalId: targetMsg.id,
+          source: 'chat',
+          title: `Message from ${targetMsg.sender === 'sadhana' ? 'Sadhana' : 'Surya'}`,
+          previewText: targetMsg.text || (targetMsg.type ? `[${targetMsg.type}]` : 'Chat message'),
+          mediaUrl: targetMsg.mediaUrl,
+          mediaType: targetMsg.type === 'video' ? 'video' : targetMsg.type === 'image' ? 'photo' : undefined,
+          owner: targetMsg.sender,
+          originalData: targetMsg,
+        });
+      } catch (err) {
+        console.warn('Failed to move message to recycle bin:', err);
+      }
+    }
+
     const next = messages.filter((m) => m.id !== msgId);
     persistMessages(next);
-
-    // Delete message from Supabase DB
-    deleteRemoteMessage(msgId);
 
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -2163,6 +2226,36 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             {activeMainView === 'timeline' && (
               <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
                 isDark ? 'bg-amber-400' : 'bg-amber-600'
+              }`} />
+            )}
+          </button>
+
+          {/* Recycle Bin Button */}
+          <button
+            onClick={() => {
+              setActiveMainView('recycle-bin');
+              setMobileView('conversation');
+            }}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+              activeMainView === 'recycle-bin'
+                ? isDark
+                  ? 'bg-[#374248] text-rose-400 shadow-inner ring-1 ring-rose-400/40'
+                  : 'bg-rose-100 text-rose-700 shadow-sm ring-1 ring-rose-500/30'
+                : isDark
+                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-rose-400'
+                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-rose-600'
+            }`}
+            title={`Recycle Bin (${recycleBinCount} items)`}
+          >
+            <Trash2 className="w-5 h-5" />
+            {recycleBinCount > 0 && (
+              <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-[#202c33]">
+                {recycleBinCount > 99 ? '99+' : recycleBinCount}
+              </span>
+            )}
+            {activeMainView === 'recycle-bin' && (
+              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
+                isDark ? 'bg-rose-400' : 'bg-rose-600'
               }`} />
             )}
           </button>
@@ -2686,6 +2779,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </button>
 
           <button
+            onClick={() => {
+              setActiveMainView('recycle-bin');
+              setMobileView('conversation');
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
+              activeMainView === 'recycle-bin'
+                ? 'text-rose-400'
+                : 'text-[#8696a0] hover:text-rose-400'
+            }`}
+          >
+            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'recycle-bin' ? 'bg-rose-500/20' : ''}`}>
+              <Trash2 className="w-5 h-5" />
+              {recycleBinCount > 0 && (
+                <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-[#1f2c34]" />
+              )}
+            </div>
+            <span className="text-[11px] font-semibold">Bin</span>
+          </button>
+
+          <button
             onClick={() => setShowCallModal('video')}
             className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
           >
@@ -2735,6 +2848,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 setActiveMainView('timeline');
                 setMobileView('conversation');
               }}
+              onOpenRecycleBin={() => {
+                setActiveMainView('recycle-bin');
+                setMobileView('conversation');
+              }}
             />
           </div>
         ) : activeMainView === 'timeline' ? (
@@ -2747,6 +2864,28 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               }}
               onOpenGallery={() => {
                 setActiveMainView('gallery');
+                setMobileView('conversation');
+              }}
+              onOpenRecycleBin={() => {
+                setActiveMainView('recycle-bin');
+                setMobileView('conversation');
+              }}
+            />
+          </div>
+        ) : activeMainView === 'recycle-bin' ? (
+          /* Recycle Bin View */
+          <div className="w-full h-full flex flex-col bg-[#0c1317]">
+            <RecycleBinView
+              onBackToChat={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              onOpenGallery={() => {
+                setActiveMainView('gallery');
+                setMobileView('conversation');
+              }}
+              onOpenTimeline={() => {
+                setActiveMainView('timeline');
                 setMobileView('conversation');
               }}
             />
@@ -2826,6 +2965,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             title="Life Timeline (Memories & Incidents)"
           >
             <Clock className="w-4 h-4 text-amber-400" />
+          </button>
+
+          {/* Recycle Bin Quick Button */}
+          <button
+            onClick={() => setActiveMainView('recycle-bin')}
+            className="p-2 rounded-full hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors relative"
+            title={`Recycle Bin (${recycleBinCount} items)`}
+          >
+            <Trash2 className="w-4 h-4 text-rose-400" />
+            {recycleBinCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-[#202c33]" />
+            )}
           </button>
 
           {/* Security & Privacy Section Quick Button */}

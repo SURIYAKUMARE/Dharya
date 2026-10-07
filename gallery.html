@@ -1006,82 +1006,48 @@
   let deleteQueue = [];
   let incidentDeleteTargetId = null;
 
-  const SEED_DATA = [
-    {
-      id: 's1',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-      label: 'Campus Library at Golden Hour',
-      albumId: 'campus',
-      isFavorite: true,
-      date: Date.now() - 86400000 * 1,
-    },
-    {
-      id: 's2',
-      type: 'video',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      label: 'Evening Walk Video',
-      albumId: 'campus',
-      isFavorite: false,
-      duration: '0:15',
-      date: Date.now() - 86400000 * 1,
-    },
-    {
-      id: 's3',
-      type: 'photo',
-      url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-      label: 'Weekend Mountain Reflection',
-      albumId: 'travel',
-      isFavorite: true,
-      date: Date.now() - 86400000 * 5,
-    },
-    {
-      id: 's4',
-      type: 'video',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-      label: 'Scenic Drone Flight',
-      albumId: 'travel',
-      isFavorite: true,
-      duration: '0:15',
-      date: Date.now() - 86400000 * 5,
-    }
-  ];
+  const SEED_DATA = [];
+  const SEED_INCIDENTS = [];
 
-  const SEED_INCIDENTS = [
-    {
-      id: 'inc-1',
-      title: 'The Day Our Story Began 🌿❤️',
-      incidentText: 'The exact day our private world sparked into life. Everything became brighter and full of meaning. A quiet beginning that turned into our favorite story.',
-      incidentDate: '2024-10-09',
-      timestamp: new Date('2024-10-09').getTime(),
-      photoUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-      tag: 'First Day',
-      location: 'Campus Lawn',
-      createdAt: new Date('2024-10-09').getTime(),
-    },
-    {
-      id: 'inc-2',
-      title: 'Evening Coffee & Long Conversations ☕',
-      incidentText: 'Cold winter breeze, warm hot chocolate, and endless conversations where time just melted away. We talked about life, dreams, coding, and everything in between.',
-      incidentDate: '2024-12-24',
-      timestamp: new Date('2024-12-24').getTime(),
-      photoUrl: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
-      tag: 'Special Date',
-      location: 'Corner Cafe',
-      createdAt: new Date('2024-12-24').getTime(),
-    },
-    {
-      id: 'inc-3',
-      title: 'Late Night Coding & Stargazing 🌙✨',
-      incidentText: 'Staying up past midnight solving complex algorithms, sharing playlists, and walking out to the terrace to watch the stars. One of the most peaceful nights ever.',
-      incidentDate: '2025-02-28',
-      timestamp: new Date('2025-02-28').getTime(),
-      photoUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-      tag: 'Milestone',
-      location: 'Library Terrace',
-      createdAt: new Date('2025-02-28').getTime(),
-    },
-  ];
+  function compressImage(file, maxWidth = 1920, maxHeight = 1080, quality = 0.82) {
+    return new Promise(resolve => {
+      if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ dataUrl: reader.result, blob: file });
+        reader.onerror = () => resolve({ dataUrl: URL.createObjectURL(file), blob: file });
+        reader.readAsDataURL(file);
+        return;
+      }
+      const img = new Image();
+      const tempUrl = URL.createObjectURL(file);
+      img.src = tempUrl;
+      img.onload = () => {
+        URL.revokeObjectURL(tempUrl);
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ dataUrl: URL.createObjectURL(file), blob: file });
+          return;
+        }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        canvas.toBlob(b => {
+          resolve({ dataUrl, blob: b || file });
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve({ dataUrl: URL.createObjectURL(file), blob: file });
+    });
+  }
 
   function openDatabase() {
     return new Promise(resolve => {
@@ -1100,55 +1066,65 @@
   async function loadData() {
     await openDatabase();
     if (!db) {
-      mediaItems = [...SEED_DATA];
-      timelineIncidents = [...SEED_INCIDENTS];
+      mediaItems = [];
+      timelineIncidents = [];
       recycleBinItems = [];
       renderTimeline();
       return;
     }
 
     // 1. Load Photos & Videos
-    const tx = db.transaction('media', 'readonly');
+    const tx = db.transaction('media', 'readwrite');
     const store = tx.objectStore('media');
     const req = store.getAll();
 
     req.onsuccess = () => {
       const stored = req.result || [];
-      if (stored.length === 0) {
-        mediaItems = [...SEED_DATA];
-        const wTx = db.transaction('media', 'readwrite');
-        SEED_DATA.forEach(s => wTx.objectStore('media').put(s));
-      } else {
-        mediaItems = stored.map(it => {
-          if (it.blob) it.url = URL.createObjectURL(it.blob);
-          return it;
-        });
-      }
+      const valid = [];
+      stored.forEach(it => {
+        // Purge legacy seed / unsplash / demo items
+        if (
+          it.id === 's1' || it.id === 's2' || it.id === 's3' || it.id === 's4' ||
+          it.id.startsWith('seed-') ||
+          (it.url && (it.url.includes('images.unsplash.com') || it.url.includes('commondatastorage.googleapis.com')))
+        ) {
+          store.delete(it.id);
+        } else {
+          if (it.blob && (!it.url || it.url.startsWith('blob:'))) {
+            it.url = URL.createObjectURL(it.blob);
+          }
+          valid.push(it);
+        }
+      });
+      mediaItems = valid;
       if (currentTab !== 'timeline' && currentTab !== 'recycle') renderTimeline();
     };
 
     // 2. Load Life Timeline Incidents
     try {
-      const tTx = db.transaction('gallery_timeline', 'readonly');
+      const tTx = db.transaction('gallery_timeline', 'readwrite');
       const tStore = tTx.objectStore('gallery_timeline');
       const tReq = tStore.getAll();
 
       tReq.onsuccess = () => {
         const storedInc = tReq.result || [];
-        if (storedInc.length === 0) {
-          timelineIncidents = [...SEED_INCIDENTS];
-          const twTx = db.transaction('gallery_timeline', 'readwrite');
-          SEED_INCIDENTS.forEach(s => twTx.objectStore('gallery_timeline').put(s));
-        } else {
-          timelineIncidents = storedInc.map(it => {
+        const validInc = [];
+        storedInc.forEach(it => {
+          if (
+            it.id.startsWith('inc-') ||
+            (it.photoUrl && (it.photoUrl.includes('images.unsplash.com') || it.photoUrl.includes('commondatastorage.googleapis.com')))
+          ) {
+            tStore.delete(it.id);
+          } else {
             if (it.blob) it.photoUrl = URL.createObjectURL(it.blob);
-            return it;
-          });
-        }
+            validInc.push(it);
+          }
+        });
+        timelineIncidents = validInc;
         if (currentTab === 'timeline') renderLifeTimeline();
       };
     } catch (e) {
-      timelineIncidents = [...SEED_INCIDENTS];
+      timelineIncidents = [];
     }
 
     // 3. Load Recycle Bin Items
@@ -1761,27 +1737,36 @@
     e.target.value = '';
   }
 
-  function uploadFiles(files) {
+  async function uploadFiles(files) {
     if (!files.length) return;
     let count = 0;
-    files.forEach(f => {
+    for (const f of files) {
       const isVideo = f.type.startsWith('video/');
       const isImage = f.type.startsWith('image/');
-      if (!isImage && !isVideo) return;
+      if (!isImage && !isVideo) continue;
 
-      const url = URL.createObjectURL(f);
+      let finalUrl = '';
+      let processedBlob = f;
+      if (isVideo) {
+        finalUrl = URL.createObjectURL(f);
+      } else {
+        const res = await compressImage(f);
+        finalUrl = res.dataUrl;
+        processedBlob = res.blob;
+      }
+
       const label = f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
 
       const item = {
         id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         type: isVideo ? 'video' : 'photo',
-        url: url,
+        url: finalUrl,
         label: label.charAt(0).toUpperCase() + label.slice(1),
         albumId: 'moments',
         isFavorite: false,
         duration: isVideo ? '0:30' : undefined,
         date: Date.now(),
-        blob: f
+        blob: processedBlob
       };
 
       mediaItems.unshift(item);
@@ -1790,11 +1775,11 @@
         const tx = db.transaction('media', 'readwrite');
         tx.objectStore('media').put(item);
       }
-    });
+    }
 
     if (count > 0) {
       renderTimeline();
-      showToast(`Added ${count} media item(s) to Google Gallery ✓`);
+      showToast(`Added ${count} media item(s) to Gallery ✓`);
     }
   }
 

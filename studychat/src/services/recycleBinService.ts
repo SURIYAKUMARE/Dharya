@@ -136,6 +136,25 @@ export async function restoreRecycleItem(binId: string): Promise<boolean> {
       const galleryItem = target.originalData as GalleryItem;
       if (galleryItem) {
         await idbPut(STORE_MEDIA, galleryItem);
+        try {
+          const sb = (await import('./supabaseClient')).getSupabase();
+          await sb.from('gallery_photos').upsert({
+            id: galleryItem.id,
+            owner: galleryItem.owner,
+            storage_path: galleryItem.storagePath || 'inline_data',
+            public_url: galleryItem.publicUrl,
+            file_name: galleryItem.fileName,
+            file_size: galleryItem.fileSize,
+            mime_type: galleryItem.mimeType,
+            label: galleryItem.label,
+            is_favorite: galleryItem.isFavorite,
+            width: galleryItem.width,
+            height: galleryItem.height,
+          });
+        } catch {}
+        window.dispatchEvent(
+          new CustomEvent('gallery_broadcast_photo_added', { detail: { item: galleryItem } })
+        );
         window.dispatchEvent(
           new CustomEvent('gallery_item_restored', { detail: { item: galleryItem } })
         );

@@ -931,6 +931,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           setIncomingCall(null);
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_ended', payload: data } }));
         })
+        .on('broadcast', { event: 'gallery_photo_added' }, (payload) => {
+          const data = payload?.payload;
+          if (data?.item) {
+            window.dispatchEvent(new CustomEvent('gallery_item_added_remotely', { detail: { item: data.item } }));
+          }
+        })
+        .on('broadcast', { event: 'gallery_photo_deleted' }, (payload) => {
+          const data = payload?.payload;
+          if (data?.itemId) {
+            window.dispatchEvent(new CustomEvent('gallery_item_deleted_remotely', { detail: { itemId: data.itemId } }));
+          }
+        })
         .on(
           'postgres_changes',
           {
@@ -1024,7 +1036,34 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           }
         });
 
+      const onBroadcastPhotoAdded = (e: any) => {
+        const item = e?.detail?.item;
+        if (item && channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'gallery_photo_added',
+            payload: { item },
+          });
+        }
+      };
+
+      const onBroadcastPhotoDeleted = (e: any) => {
+        const itemId = e?.detail?.itemId;
+        if (itemId && channelRef.current) {
+          channelRef.current.send({
+            type: 'broadcast',
+            event: 'gallery_photo_deleted',
+            payload: { itemId },
+          });
+        }
+      };
+
+      window.addEventListener('gallery_broadcast_photo_added', onBroadcastPhotoAdded);
+      window.addEventListener('gallery_broadcast_photo_deleted', onBroadcastPhotoDeleted);
+
       return () => {
+        window.removeEventListener('gallery_broadcast_photo_added', onBroadcastPhotoAdded);
+        window.removeEventListener('gallery_broadcast_photo_deleted', onBroadcastPhotoDeleted);
         try {
           channel.untrack();
         } catch {}

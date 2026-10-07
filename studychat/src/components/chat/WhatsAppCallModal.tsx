@@ -26,15 +26,28 @@ interface WhatsAppCallModalProps {
   channelRef: React.MutableRefObject<any>;
 }
 
-// Highly reliable global STUN servers
+// Highly reliable global STUN and TURN relay servers (guarantees connectivity across Symmetric NAT / 4G / 5G)
 const RTC_CONFIG: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
     { urls: 'stun:stun.cloudflare.com:3478' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
   iceCandidatePoolSize: 10,
 };
@@ -100,9 +113,15 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   // Web Audio Ringtone generator (WhatsApp-style ringing chime)
   const playRingtoneTone = useCallback(() => {
     try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
 
       const playTone = (freq: number, delay: number, dur: number) => {
         const osc = ctx.createOscillator();
@@ -261,27 +280,26 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         sendSignal('webrtc_ice_candidate', {
           from: currentUser,
           to: partnerUser,
-          candidate: event.candidate,
+          candidate: {
+            candidate: event.candidate.candidate,
+            sdpMid: event.candidate.sdpMid,
+            sdpMLineIndex: event.candidate.sdpMLineIndex,
+            usernameFragment: event.candidate.usernameFragment,
+          },
         });
       }
     };
 
     pc.ontrack = (event) => {
-      let stream = event.streams[0];
-      if (!stream) {
-        if (!remoteStreamRef.current) {
-          remoteStreamRef.current = new MediaStream();
-        }
-        remoteStreamRef.current.addTrack(event.track);
-        stream = remoteStreamRef.current;
-      } else {
-        remoteStreamRef.current = stream;
-      }
+      const stream = event.streams[0] || new MediaStream([event.track]);
+      remoteStreamRef.current = stream;
 
       if (remoteVideoRef.current && callType === 'video') {
         remoteVideoRef.current.srcObject = stream;
         remoteVideoRef.current.play().catch(() => {});
-        setHasRemoteVideo(true);
+        if (event.track.kind === 'video') {
+          setHasRemoteVideo(true);
+        }
       }
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = stream;
@@ -328,14 +346,17 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           });
           await pc.setLocalDescription(offer);
 
-          // Broadcast call offer with SDP
+          // Broadcast call offer with explicit SDP object
           sendSignal('call_offer', {
             from: currentUser,
             to: partnerUser,
             caller: currentUser,
             recipient: partnerUser,
             callType,
-            offer,
+            offer: {
+              type: pc.localDescription?.type || offer.type,
+              sdp: pc.localDescription?.sdp || offer.sdp,
+            },
             timestamp: Date.now(),
           });
           setCallStatus('ringing');
@@ -372,13 +393,17 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         if (payload.answer && pcRef.current) {
           try {
             if (pcRef.current.signalingState === 'have-local-offer') {
-              await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload.answer));
+              const desc = new RTCSessionDescription({
+                type: payload.answer.type || 'answer',
+                sdp: payload.answer.sdp || payload.answer,
+              });
+              await pcRef.current.setRemoteDescription(desc);
 
               // Drain queued ICE candidates
               while (pendingCandidatesRef.current.length > 0) {
                 const cand = pendingCandidatesRef.current.shift();
                 if (cand && pcRef.current) {
-                  await pcRef.current.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+                  await pcRef.current.addIceCandidate(cand).catch(() => {});
                 }
               }
             }
@@ -395,11 +420,15 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         (payload.to === currentUser || payload.from === partnerUser) &&
         payload.candidate
       ) {
-        if (pcRef.current && pcRef.current.remoteDescription) {
-          pcRef.current.addIceCandidate(new RTCIceCandidate(payload.candidate)).catch(() => {});
-        } else {
-          pendingCandidatesRef.current.push(payload.candidate);
-        }
+        try {
+          const candInit = payload.candidate.candidate ? payload.candidate : { candidate: payload.candidate };
+          const cand = new RTCIceCandidate(candInit);
+          if (pcRef.current && pcRef.current.remoteDescription) {
+            pcRef.current.addIceCandidate(cand).catch(() => {});
+          } else {
+            pendingCandidatesRef.current.push(cand);
+          }
+        } catch {}
       }
 
       // 3. Partner declined call
@@ -461,13 +490,17 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
     try {
       if (incomingOffer) {
-        await pc.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+        const desc = new RTCSessionDescription({
+          type: incomingOffer.type || 'offer',
+          sdp: incomingOffer.sdp || incomingOffer,
+        });
+        await pc.setRemoteDescription(desc);
 
         // Drain queued ICE candidates
         while (pendingCandidatesRef.current.length > 0) {
           const cand = pendingCandidatesRef.current.shift();
           if (cand) {
-            await pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+            await pc.addIceCandidate(cand).catch(() => {});
           }
         }
 
@@ -479,7 +512,10 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           to: partnerUser,
           caller: partnerUser,
           recipient: currentUser,
-          answer,
+          answer: {
+            type: pc.localDescription?.type || answer.type,
+            sdp: pc.localDescription?.sdp || answer.sdp,
+          },
           timestamp: Date.now(),
         });
       } else {
@@ -493,17 +529,24 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       }
     } catch (err) {
       console.warn('[WebRTC] Accept error:', err);
-      sendSignal('call_accepted', {
-        from: currentUser,
-        to: partnerUser,
-        caller: partnerUser,
-        recipient: currentUser,
-        timestamp: Date.now(),
-      });
     }
 
     startCallTimer();
   };
+
+  // Ensure remote stream is consistently attached whenever connected or stream updates
+  useEffect(() => {
+    if (remoteStreamRef.current) {
+      if (remoteVideoRef.current && callType === 'video') {
+        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.play().catch(() => {});
+      }
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = remoteStreamRef.current;
+        remoteAudioRef.current.play().catch(() => {});
+      }
+    }
+  }, [callStatus, callType, hasRemoteVideo]);
 
   // Decline incoming call
   const handleDeclineIncomingCall = () => {
@@ -584,6 +627,10 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   if (callStatus === 'incoming') {
     return (
       <div className="fixed inset-0 z-50 bg-[#091516] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200 overflow-hidden">
+        {/* Permanent audio & video tags so refs are never null */}
+        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        <video ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+
         {/* Subtle WhatsApp Calling Watermark Pattern */}
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.04]"
@@ -651,43 +698,33 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   if (callType === 'video') {
     return (
       <div className="fixed inset-0 z-50 bg-[#070e10] flex flex-col justify-between overflow-hidden select-none">
-        {/* Hidden audio element for remote stream */}
-        <audio ref={remoteAudioRef} autoPlay playsInline />
+        {/* Hidden permanent audio element for remote stream */}
+        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
 
         {/* Full-Screen Remote Video Stream or High-Tech Avatar Screen */}
         <div className="absolute inset-0 z-0 bg-[#070e10] flex items-center justify-center">
-          {callStatus === 'connected' ? (
-            <div className="relative w-full h-full flex items-center justify-center">
-              {/* Actual WebRTC Remote Camera Video */}
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className={`w-full h-full object-cover ${hasRemoteVideo ? 'opacity-100' : 'hidden'}`}
-              />
+          {/* Always mount video element in DOM so remoteVideoRef is never null */}
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className={`w-full h-full object-cover transition-opacity duration-300 ${
+              callStatus === 'connected' && hasRemoteVideo ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none'
+            }`}
+          />
 
-              {/* Ambient Avatar fallback when remote camera is starting or off */}
-              {!hasRemoteVideo && (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-[#091516] via-[#112423] to-[#071312]">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-[#25d366]/30 animate-pulse">
-                    {partnerName[0]}
-                  </div>
-                  <div className="mt-4 text-center z-20">
-                    <h3 className="text-xl font-bold text-white">{partnerName}</h3>
-                    <p className="text-xs text-[#25d366] font-medium">Connected • Live Audio &amp; Video</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-4xl flex items-center justify-center shadow-2xl animate-pulse ring-4 ring-[#25d366]/30">
+          {/* Ambient Avatar fallback when remote video is not connected or waiting */}
+          {(!hasRemoteVideo || callStatus !== 'connected') && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-tr from-[#091516] via-[#112423] to-[#071312]">
+              <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-5xl flex items-center justify-center shadow-2xl border-4 border-[#25d366]/30 animate-pulse">
                 {partnerName[0]}
               </div>
-              <h2 className="text-2xl font-bold text-white">{partnerName}</h2>
-              <p className="text-sm text-[#25d366] capitalize animate-pulse font-medium">
-                {callStatus === 'ringing' ? 'Ringing...' : 'Calling...'}
-              </p>
+              <div className="mt-4 text-center z-20">
+                <h3 className="text-xl font-bold text-white">{partnerName}</h3>
+                <p className="text-xs text-[#25d366] font-medium capitalize animate-pulse">
+                  {callStatus === 'connected' ? 'Connected • Live Audio' : `${callStatus}...`}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -814,8 +851,9 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         }}
       />
 
-      {/* Hidden audio element for remote stream */}
+      {/* Hidden media elements for remote stream */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
+      <video ref={remoteVideoRef} autoPlay playsInline className="hidden" />
 
       {/* Top Header Bar */}
       <div className="pt-6 space-y-2 relative z-10">

@@ -219,9 +219,32 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
     };
     window.addEventListener('gallery_item_restored', handleRestoredGallery);
     window.addEventListener('timeline_incident_restored', handleRestoredIncident);
+
+    const handleRemoteAdded = (e: any) => {
+      const added = e.detail?.item;
+      if (added) {
+        setItems((prev) => (prev.some((i) => i.id === added.id) ? prev : [added, ...prev]));
+      }
+    };
+    const handleRemoteDeleted = (e: any) => {
+      const delId = e.detail?.itemId;
+      if (delId) {
+        setItems((prev) => prev.filter((i) => i.id !== delId));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(delId);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('gallery_item_added_remotely', handleRemoteAdded);
+    window.addEventListener('gallery_item_deleted_remotely', handleRemoteDeleted);
+
     return () => {
       window.removeEventListener('gallery_item_restored', handleRestoredGallery);
       window.removeEventListener('timeline_incident_restored', handleRestoredIncident);
+      window.removeEventListener('gallery_item_added_remotely', handleRemoteAdded);
+      window.removeEventListener('gallery_item_deleted_remotely', handleRemoteDeleted);
     };
   }, []);
 
@@ -457,6 +480,18 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
 
         // 2. Remove from active store so it disappears immediately from Gallery
         await idbDelete(STORE_MEDIA, item.id);
+
+        // 3. Remove from Supabase and notify partner
+        try {
+          const sb = (await import('../../services/supabaseClient')).getSupabase();
+          await sb.from('gallery_photos').delete().eq('id', item.id);
+        } catch {}
+
+        window.dispatchEvent(
+          new CustomEvent('gallery_broadcast_photo_deleted', {
+            detail: { itemId: item.id },
+          })
+        );
       }
     } catch (err) {
       console.error('[GalleryView] Error moving to recycle bin:', err);

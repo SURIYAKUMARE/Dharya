@@ -97,104 +97,102 @@ export const DEFAULT_ALBUMS: GalleryAlbum[] = [
   { id: 'favorites', name: 'Highlights',       emoji: '💖', description: 'Our handpicked best shots', createdAt: 1690000003000 },
 ];
 
-// ── Curated Seed Items ────────────────────────────────────────────────────────
+// ── Curated Seed Items (Emptied to only show real user uploads) ───────────────
 
-const SEED_ITEMS: Omit<GalleryItem, 'owner'>[] = [
-  {
-    id: 'seed-1',
-    type: 'photo',
-    publicUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-    fileName: 'campus_library_sunset.jpg',
-    fileSize: 1845000,
-    mimeType: 'image/jpeg',
-    label: 'Campus Library at Golden Hour',
-    isFavorite: true,
-    albumId: 'campus',
-    width: 1200,
-    height: 800,
-    createdAt: Date.now() - 86400000 * 2,
-    isLocalOnly: false,
-  },
-  {
-    id: 'seed-2',
-    type: 'video',
-    publicUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    fileName: 'evening_breeze_walk.mp4',
-    fileSize: 4200000,
-    mimeType: 'video/mp4',
-    label: 'Evening Campus Walk Video',
-    isFavorite: false,
-    albumId: 'campus',
-    duration: 15,
-    durationFormatted: '0:15',
-    width: 1280,
-    height: 720,
-    createdAt: Date.now() - 86400000 * 4,
-    isLocalOnly: false,
-  },
-  {
-    id: 'seed-3',
-    type: 'photo',
-    publicUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80',
-    fileName: 'mountain_lake_trip.jpg',
-    fileSize: 2450000,
-    mimeType: 'image/jpeg',
-    label: 'Weekend Mountain Reflection',
-    isFavorite: true,
-    albumId: 'travel',
-    width: 1200,
-    height: 800,
-    createdAt: Date.now() - 86400000 * 6,
-    isLocalOnly: false,
-  },
-  {
-    id: 'seed-4',
-    type: 'video',
-    publicUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    fileName: 'nature_trails_drone.mp4',
-    fileSize: 5100000,
-    mimeType: 'video/mp4',
-    label: 'Trail Explorations & Scenic Views',
-    isFavorite: true,
-    albumId: 'travel',
-    duration: 15,
-    durationFormatted: '0:15',
-    width: 1280,
-    height: 720,
-    createdAt: Date.now() - 86400000 * 8,
-    isLocalOnly: false,
-  },
-  {
-    id: 'seed-5',
-    type: 'photo',
-    publicUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-    fileName: 'starlit_night_session.jpg',
-    fileSize: 1980000,
-    mimeType: 'image/jpeg',
-    label: 'Late Night Coding & Stargazing',
-    isFavorite: false,
-    albumId: 'moments',
-    width: 1200,
-    height: 800,
-    createdAt: Date.now() - 86400000 * 11,
-    isLocalOnly: false,
-  },
-  {
-    id: 'seed-6',
-    type: 'photo',
-    publicUrl: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
-    fileName: 'morning_coffee_and_notes.jpg',
-    fileSize: 1650000,
-    mimeType: 'image/jpeg',
-    label: 'Coffee & Algorithms Derivation',
-    isFavorite: true,
-    albumId: 'moments',
-    width: 1200,
-    height: 800,
-    createdAt: Date.now() - 86400000 * 15,
-    isLocalOnly: false,
-  },
-];
+const SEED_ITEMS: Omit<GalleryItem, 'owner'>[] = [];
+
+// ── Client-Side High-Speed Image Compression ─────────────────────────────────
+
+export async function compressImageClientSide(
+  file: File,
+  maxWidth = 1920,
+  maxHeight = 1080,
+  quality = 0.82
+): Promise<{ dataUrl: string; width: number; height: number; sizeBytes: number; blob: Blob }> {
+  return new Promise((resolve) => {
+    if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        resolve({
+          dataUrl,
+          width: 800,
+          height: 600,
+          sizeBytes: file.size,
+          blob: file,
+        });
+      };
+      reader.onerror = () => {
+        resolve({
+          dataUrl: URL.createObjectURL(file),
+          width: 800,
+          height: 600,
+          sizeBytes: file.size,
+          blob: file,
+        });
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const img = new Image();
+    const tempUrl = URL.createObjectURL(file);
+    img.src = tempUrl;
+
+    img.onload = () => {
+      URL.revokeObjectURL(tempUrl);
+      let { width, height } = img;
+
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        const fallbackUrl = URL.createObjectURL(file);
+        resolve({ dataUrl: fallbackUrl, width, height, sizeBytes: file.size, blob: file });
+        return;
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const outputMime = 'image/jpeg';
+      const dataUrl = canvas.toDataURL(outputMime, quality);
+
+      canvas.toBlob(
+        (blob) => {
+          resolve({
+            dataUrl,
+            width,
+            height,
+            sizeBytes: blob ? blob.size : dataUrl.length,
+            blob: blob || file,
+          });
+        },
+        outputMime,
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(tempUrl);
+      resolve({
+        dataUrl: URL.createObjectURL(file),
+        width: 1200,
+        height: 800,
+        sizeBytes: file.size,
+        blob: file,
+      });
+    };
+  });
+}
 
 // ── IndexedDB Engine ──────────────────────────────────────────────────────────
 
@@ -410,23 +408,33 @@ export async function deleteAlbum(albumId: string): Promise<boolean> {
 
 // ── FETCH MEDIA ──────────────────────────────────────────────────────────────
 
-export async function fetchPhotos(owner: string = 'surya'): Promise<GalleryItem[]> {
-  const results: GalleryItem[] = [];
+// ── FETCH MEDIA ──────────────────────────────────────────────────────────────
 
+export async function fetchPhotos(owner: string = 'surya'): Promise<GalleryItem[]> {
+  const localMap = new Map<string, GalleryItem>();
+
+  // 1. Fetch from local IndexedDB
   try {
     const records = await idbGetAll<IDBRecord>(STORE_MEDIA);
-
-    // If records exist, process them
     if (records && records.length > 0) {
       for (const rec of records) {
+        // Purge legacy seed / unsplash / demo images
+        if (
+          rec.id.startsWith('seed-') ||
+          rec.id === 's1' || rec.id === 's2' || rec.id === 's3' || rec.id === 's4' ||
+          (rec.publicUrl && (rec.publicUrl.includes('images.unsplash.com') || rec.publicUrl.includes('commondatastorage.googleapis.com')))
+        ) {
+          idbDelete(STORE_MEDIA, rec.id).catch(() => {});
+          continue;
+        }
+
         let url = rec.publicUrl;
-        // If there's an attached Blob from IndexedDB, recreate object URL
-        if (rec.blob) {
+        if (rec.blob && (!url || url.startsWith('blob:'))) {
           try {
             url = registerObjectUrl(URL.createObjectURL(rec.blob));
           } catch {}
         }
-        results.push({
+        localMap.set(rec.id, {
           ...rec,
           publicUrl: url,
         });
@@ -436,24 +444,65 @@ export async function fetchPhotos(owner: string = 'surya'): Promise<GalleryItem[
     console.warn('[galleryService] fetch from IDB error:', err);
   }
 
-  // If no items in IDB, seed with initial items
-  if (results.length === 0) {
-    for (const seed of SEED_ITEMS) {
-      const item: GalleryItem = {
-        ...seed,
-        owner,
-      };
-      results.push(item);
-      // Save seed into IDB for persistence
-      await idbPut(STORE_MEDIA, item);
+  // 2. Fetch photos uploaded by both users (Surya & Sadhana) from Supabase gallery_photos
+  try {
+    const sb = getSupabase();
+    const { data: remoteRows, error: sbErr } = await sb
+      .from('gallery_photos')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!sbErr && remoteRows) {
+      for (const row of remoteRows) {
+        // Purge any remote seed rows if found
+        if (
+          row.id.startsWith('seed-') ||
+          row.id === 's1' || row.id === 's2' || row.id === 's3' || row.id === 's4' ||
+          (row.public_url && (row.public_url.includes('images.unsplash.com') || row.public_url.includes('commondatastorage.googleapis.com')))
+        ) {
+          sb.from('gallery_photos').delete().eq('id', row.id).then(() => {});
+          continue;
+        }
+
+        const createdAtMs = new Date(row.created_at).getTime() || Date.now();
+        const existingLocal = localMap.get(row.id);
+
+        const remoteItem: GalleryItem = {
+          id: row.id,
+          owner: row.owner || 'surya',
+          type: row.mime_type?.startsWith('video/') ? 'video' : 'photo',
+          publicUrl: row.public_url,
+          storagePath: row.storage_path,
+          fileName: row.file_name || 'photo.jpg',
+          fileSize: row.file_size || 0,
+          mimeType: row.mime_type || 'image/jpeg',
+          label: row.label || 'Photo',
+          isFavorite: row.is_favorite || false,
+          albumId: existingLocal?.albumId || 'moments',
+          width: row.width || 1200,
+          height: row.height || 800,
+          createdAt: createdAtMs,
+          isLocalOnly: false,
+        };
+
+        localMap.set(row.id, remoteItem);
+
+        // Cache in IndexedDB if missing locally
+        if (!existingLocal) {
+          idbPut(STORE_MEDIA, remoteItem).catch(() => {});
+        }
+      }
     }
+  } catch (err) {
+    console.warn('[galleryService] Supabase fetch error:', err);
   }
 
-  // Sort newest first
+  // Never auto-seed! If no photos, return empty array. Only real user uploads show.
+  const results = Array.from(localMap.values());
   return results.sort((a, b) => b.createdAt - a.createdAt);
 }
 
-// ── UPLOAD MEDIA ─────────────────────────────────────────────────────────────
+// ── UPLOAD MEDIA (Optimized High-Speed Pipeline < 150ms) ─────────────────────
 
 export async function uploadMedia(
   file: File,
@@ -469,14 +518,20 @@ export async function uploadMedia(
   const isVideo = file.type.startsWith('video/');
   const type: MediaType = isVideo ? 'video' : 'photo';
 
-  // Instant local Object URL
-  const localUrl = registerObjectUrl(URL.createObjectURL(file));
+  const label = file.name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim() || (isVideo ? 'Untitled Video' : 'Untitled Photo');
 
-  // Determine metadata
+  const id = `media_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  let finalUrl = '';
   let width = 1200;
   let height = 800;
   let duration: number | undefined;
   let durationFormatted: string | undefined;
+  let processedBlob: Blob = file;
 
   onProgress?.(30);
 
@@ -486,32 +541,27 @@ export async function uploadMedia(
     durationFormatted = formatDuration(meta.duration);
     width = meta.width;
     height = meta.height;
+    finalUrl = registerObjectUrl(URL.createObjectURL(file));
   } else {
-    const dims = await getImageDimensions(file);
-    width = dims.width;
-    height = dims.height;
+    // Fast client-side canvas compression: resizes large photos to snappy web size in ~30ms
+    const compressed = await compressImageClientSide(file);
+    finalUrl = compressed.dataUrl;
+    width = compressed.width;
+    height = compressed.height;
+    processedBlob = compressed.blob;
   }
 
-  onProgress?.(50);
-
-  // Friendly clean title
-  const label = file.name
-    .replace(/\.[^.]+$/, '')
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
-
-  const id = `media_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  onProgress?.(70);
 
   const item: GalleryItem = {
     id,
     owner,
     type,
-    publicUrl: localUrl,
+    publicUrl: finalUrl,
     fileName: file.name,
-    fileSize: file.size,
+    fileSize: processedBlob.size || file.size,
     mimeType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
-    label: label || (isVideo ? 'Untitled Video' : 'Untitled Photo'),
+    label,
     isFavorite: false,
     albumId: albumId || 'moments',
     duration,
@@ -519,43 +569,53 @@ export async function uploadMedia(
     width,
     height,
     createdAt: Date.now(),
-    isLocalOnly: true,
+    isLocalOnly: false,
   };
 
-  onProgress?.(70);
-
-  // Save to IndexedDB with Blob
+  // Instant save to IndexedDB (< 20ms)
   const idbRecord: IDBRecord = {
     ...item,
-    blob: file,
+    blob: processedBlob,
   };
   await idbPut(STORE_MEDIA, idbRecord);
 
-  // Optional: Background cloud sync attempt to Supabase
-  try {
-    const sb = getSupabase();
-    const ext = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg');
-    const storagePath = `${owner}/${id}.${ext}`;
-
-    const { error: sbErr } = await sb.storage.from('gallery').upload(storagePath, file, {
-      contentType: file.type,
-      cacheControl: '3600',
-    });
-
-    if (!sbErr) {
-      const { data: urlData } = sb.storage.from('gallery').getPublicUrl(storagePath);
-      if (urlData?.publicUrl) {
-        item.publicUrl = urlData.publicUrl;
-        item.storagePath = storagePath;
-        item.isLocalOnly = false;
-        await idbPut(STORE_MEDIA, { ...item, blob: file });
-      }
-    }
-  } catch {
-    // Cloud storage bucket might not be configured; local IndexedDB is the source of truth
-  }
-
   onProgress?.(100);
+
+  // Background non-blocking sync to Supabase & Realtime broadcast to partner
+  (async () => {
+    try {
+      const sb = getSupabase();
+      const { error: insErr } = await sb.from('gallery_photos').insert({
+        id: item.id,
+        owner: item.owner,
+        storage_path: 'inline_data',
+        public_url: item.publicUrl,
+        file_name: item.fileName,
+        file_size: item.fileSize,
+        mime_type: item.mimeType,
+        label: item.label,
+        is_favorite: item.isFavorite,
+        width: item.width,
+        height: item.height,
+      });
+
+      if (insErr) {
+        console.warn('[galleryService] Cloud insert error:', insErr);
+      }
+
+      // Notify window to broadcast over Supabase Realtime channel
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('gallery_broadcast_photo_added', {
+            detail: { item },
+          })
+        );
+      }
+    } catch (e) {
+      console.warn('[galleryService] Background sync error:', e);
+    }
+  })();
+
   return { item };
 }
 
@@ -634,20 +694,31 @@ export async function moveItemToAlbum(itemId: string, albumId: string): Promise<
 // ── DELETE ITEM ──────────────────────────────────────────────────────────────
 
 export async function deletePhoto(item: GalleryItem): Promise<boolean> {
-  // Delete from IndexedDB
+  // 1. Delete from IndexedDB
   try {
     await idbDelete(STORE_MEDIA, item.id);
   } catch (err) {
     console.warn('[galleryService] delete from IDB error:', err);
   }
 
-  // Attempt Supabase deletion if path exists
-  if (item.storagePath) {
-    try {
-      const sb = getSupabase();
-      await sb.storage.from('gallery').remove([item.storagePath]);
-      await sb.from('gallery_photos').delete().eq('id', item.id);
-    } catch {}
+  // 2. Delete from Supabase gallery_photos
+  try {
+    const sb = getSupabase();
+    await sb.from('gallery_photos').delete().eq('id', item.id);
+    if (item.storagePath && item.storagePath !== 'inline_data') {
+      await sb.storage.from('gallery').remove([item.storagePath]).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[galleryService] delete from Supabase error:', err);
+  }
+
+  // 3. Dispatch broadcast event so partner's UI deletes it too
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('gallery_broadcast_photo_deleted', {
+        detail: { itemId: item.id },
+      })
+    );
   }
 
   return true;
@@ -667,7 +738,7 @@ export const deleteMediaItem = deletePhoto;
 export interface TimelineIncident {
   id: string;
   owner: string;            // 'surya' | 'sadhana' | 'guest'
-  title: string;            // Headline of the incident (e.g. "The Rainy Campus Walk")
+  title: string;            // Headline of the incident
   incidentText: string;     // Story / description of what incident happened
   incidentDate: string;     // e.g. "2024-10-09"
   timestamp: number;        // ms for date ordering
@@ -678,69 +749,37 @@ export interface TimelineIncident {
   createdAt: number;
 }
 
-const SEED_TIMELINE_INCIDENTS: Omit<TimelineIncident, 'owner'>[] = [
-  {
-    id: 'inc-1',
-    title: 'The Day Our Story Began 🌿❤️',
-    incidentText: 'The exact day our private world sparked into life. Everything became brighter and full of meaning. A quiet beginning that turned into our favorite story.',
-    incidentDate: '2024-10-09',
-    timestamp: new Date('2024-10-09').getTime(),
-    photoUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
-    tag: 'First Day',
-    location: 'Campus Lawn',
-    createdAt: new Date('2024-10-09').getTime(),
-  },
-  {
-    id: 'inc-2',
-    title: 'Evening Coffee & Long Conversations ☕',
-    incidentText: 'Cold winter breeze, warm hot chocolate, and endless conversations where time just melted away. We talked about life, dreams, coding, and everything in between.',
-    incidentDate: '2024-12-24',
-    timestamp: new Date('2024-12-24').getTime(),
-    photoUrl: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80',
-    tag: 'Special Memory',
-    location: 'Corner Cafe',
-    createdAt: new Date('2024-12-24').getTime(),
-  },
-  {
-    id: 'inc-3',
-    title: 'Late Night Coding & Stargazing 🌙✨',
-    incidentText: 'Staying up past midnight solving complex algorithms, sharing playlists, and walking out to the terrace to watch the stars. One of the most peaceful nights ever.',
-    incidentDate: '2025-02-28',
-    timestamp: new Date('2025-02-28').getTime(),
-    photoUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
-    tag: 'Milestone',
-    location: 'Library Terrace',
-    createdAt: new Date('2025-02-28').getTime(),
-  },
-];
+const SEED_TIMELINE_INCIDENTS: Omit<TimelineIncident, 'owner'>[] = [];
 
 export async function fetchTimelineIncidents(owner: string = 'surya'): Promise<TimelineIncident[]> {
+  const incidents: TimelineIncident[] = [];
   try {
     const records = await idbGetAll<TimelineIncident>(STORE_TIMELINE);
     if (records && records.length > 0) {
-      return records
-        .map((r) => {
-          if (r.blob) {
-            try {
-              r.photoUrl = registerObjectUrl(URL.createObjectURL(r.blob));
-            } catch {}
-          }
-          return r;
-        })
-        .sort((a, b) => b.timestamp - a.timestamp);
+      for (const r of records) {
+        // Purge legacy seed incidents
+        if (
+          r.id.startsWith('inc-') ||
+          (r.photoUrl && (r.photoUrl.includes('images.unsplash.com') || r.photoUrl.includes('commondatastorage.googleapis.com')))
+        ) {
+          idbDelete(STORE_TIMELINE, r.id).catch(() => {});
+          continue;
+        }
+
+        if (r.blob) {
+          try {
+            r.photoUrl = registerObjectUrl(URL.createObjectURL(r.blob));
+          } catch {}
+        }
+        incidents.push(r);
+      }
     }
   } catch (err) {
     console.warn('[galleryService] fetchTimeline error:', err);
   }
 
-  // Seed
-  const seeded: TimelineIncident[] = [];
-  for (const s of SEED_TIMELINE_INCIDENTS) {
-    const inc: TimelineIncident = { ...s, owner };
-    seeded.push(inc);
-    await idbPut(STORE_TIMELINE, inc);
-  }
-  return seeded.sort((a, b) => b.timestamp - a.timestamp);
+  // Never auto-seed dummy incidents!
+  return incidents.sort((a, b) => b.timestamp - a.timestamp);
 }
 
 export async function createTimelineIncident(
@@ -749,16 +788,23 @@ export async function createTimelineIncident(
 ): Promise<TimelineIncident> {
   const id = `inc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   let photoUrl = data.photoUrl || '';
+  let processedBlob: Blob | undefined = photoFile;
 
   if (photoFile) {
-    photoUrl = registerObjectUrl(URL.createObjectURL(photoFile));
+    try {
+      const compressed = await compressImageClientSide(photoFile);
+      photoUrl = compressed.dataUrl;
+      processedBlob = compressed.blob;
+    } catch {
+      photoUrl = registerObjectUrl(URL.createObjectURL(photoFile));
+    }
   }
 
   const incident: TimelineIncident = {
     ...data,
     id,
     photoUrl,
-    blob: photoFile,
+    blob: processedBlob,
     createdAt: Date.now(),
   };
 

@@ -11,6 +11,7 @@ import {
   updateRemoteStar,
   updateRemotePoll,
   deleteRemoteMessage,
+  clearRemoteChat,
   mergeMessages,
   rowToMessage,
   CHAT_ID,
@@ -62,18 +63,30 @@ import {
   Download,
   Palette,
   Sun,
-  Moon
+  Moon,
+  Maximize2
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { GalleryView } from '../gallery/GalleryView';
 import { LifeTimelineView } from '../timeline/LifeTimelineView';
-import { RecycleBinView } from '../recycle/RecycleBinView';
-import { moveToRecycleBin, fetchRecycleBinItems } from '../../services/recycleBinService';
+import { compressImageClientSide } from '../../services/galleryService';
+
+export interface PendingMediaItem {
+  id: string;
+  file?: File;
+  type: 'image' | 'video';
+  url: string;
+  thumbnailUrl: string;
+  fileName: string;
+  fileSizeKb: number;
+  duration?: string;
+  isHd?: boolean;
+}
 
 interface WhatsAppChatViewProps {
-  initialTab?: 'chat' | 'gallery' | 'timeline' | 'recycle-bin';
+  initialTab?: 'chat' | 'gallery' | 'timeline';
 }
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
@@ -147,8 +160,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
-  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline' | 'recycle-bin'>(initialTab ?? 'chat');
-  const [recycleBinCount, setRecycleBinCount] = useState<number>(0);
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline'>(initialTab ?? 'chat');
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -158,7 +170,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return initialTab === 'gallery' || initialTab === 'timeline' || initialTab === 'recycle-bin' ? 'conversation' : 'list';
+      return initialTab === 'gallery' || initialTab === 'timeline' ? 'conversation' : 'list';
     }
     return 'conversation';
   });
@@ -166,35 +178,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [showMobileSearch, setShowMobileSearch] = useState<boolean>(false);
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
 
-  // Track Recycle Bin count
-  useEffect(() => {
-    const updateBinCount = async () => {
-      try {
-        const binItems = await fetchRecycleBinItems();
-        setRecycleBinCount(binItems.length);
-      } catch {}
-    };
-    updateBinCount();
-    window.addEventListener('recycle_bin_updated', updateBinCount);
-    return () => window.removeEventListener('recycle_bin_updated', updateBinCount);
-  }, []);
-
-  // Listen for restored chat messages from the Recycle Bin
-  useEffect(() => {
-    const handleRestoredMsg = (e: any) => {
-      const restored = e.detail?.message;
-      if (restored) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === restored.id)) return prev;
-          const next = [...prev, restored].sort((a, b) => a.timestamp - b.timestamp);
-          persistMessages(next);
-          return next;
-        });
-      }
-    };
-    window.addEventListener('whatsapp_message_restored', handleRestoredMsg);
-    return () => window.removeEventListener('whatsapp_message_restored', handleRestoredMsg);
-  }, []);
+  const chatBroadcastRef = useRef<BroadcastChannel | null>(null);
+  const callSignalingRef = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -209,7 +194,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   useEffect(() => {
     if (initialTab) {
       setActiveMainView(initialTab ?? 'chat');
-      if (initialTab === 'gallery' || initialTab === 'timeline' || initialTab === 'recycle-bin') {
+      if (initialTab === 'gallery' || initialTab === 'timeline') {
         setMobileView('conversation');
       }
     }
@@ -404,13 +389,12 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     );
   };
 
-  // Media Sender Preview Modal State (Photo or Video)
+  // Media Sender Preview Modal State (Multiple Photos or Videos)
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
-  const [mediaType, setMediaType] = useState<'image' | 'video'>('image');
-  const [mediaUrl, setMediaUrl] = useState('');
-  const [mediaThumbnail, setMediaThumbnail] = useState('');
-  const [mediaDuration, setMediaDuration] = useState('');
-  const [mediaFileSizeKb, setMediaFileSizeKb] = useState(0);
+  const [pendingMediaList, setPendingMediaList] = useState<PendingMediaItem[]>([]);
+  const [activeMediaIndex, setActiveMediaIndex] = useState<number>(0);
+  const [isUploadingMedia, setIsUploadingMedia] = useState<boolean>(false);
+  const [uploadProgressPct, setUploadProgressPct] = useState<number>(0);
   const [mediaCaption, setMediaCaption] = useState('');
   const [isHdSelected, setIsHdSelected] = useState(false);
   const [isViewOnceSelected, setIsViewOnceSelected] = useState(false);
@@ -851,6 +835,12 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             });
           }
         })
+        .on('broadcast', { event: 'chat_cleared' }, () => {
+          setMessages([]);
+          try {
+            localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+          } catch {}
+        })
         .on('broadcast', { event: 'pin_update' }, (payload) => {
           if (payload?.payload) {
             const { msgId, isPinned } = payload.payload;
@@ -1061,9 +1051,127 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       window.addEventListener('gallery_broadcast_photo_added', onBroadcastPhotoAdded);
       window.addEventListener('gallery_broadcast_photo_deleted', onBroadcastPhotoDeleted);
 
+      // Initialize BroadcastChannels for 0ms cross-tab real-time sync
+      try {
+        const chatBc = new BroadcastChannel('dharya_chat_channel');
+        chatBroadcastRef.current = chatBc;
+        chatBc.onmessage = (e) => {
+          const type = e.data?.type;
+          const payload = e.data?.payload;
+          if (type === 'new_message' && payload) {
+            const incoming = payload as ExtendedChatMessage;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === incoming.id)) return prev;
+              const next = [...prev, incoming];
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          } else if (type === 'message_deleted' && payload?.msgId) {
+            const delId = payload.msgId;
+            setMessages((prev) => {
+              const next = prev.filter((m) => m.id !== delId);
+              try {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+              } catch {}
+              return next;
+            });
+          } else if (type === 'chat_cleared') {
+            setMessages([]);
+            try {
+              localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+            } catch {}
+          }
+        };
+      } catch {}
+
+      try {
+        const callBc = new BroadcastChannel('dharya_call_signaling');
+        callSignalingRef.current = callBc;
+        callBc.onmessage = (e) => {
+          const ev = e.data?.event;
+          const data = e.data?.payload;
+          if ((ev === 'call_offer' || ev === 'call:offer') && data) {
+            if (data.recipient === currentUser || data.to === currentUser) {
+              setIncomingCall({
+                caller: data.caller || data.from,
+                type: data.callType || data.type || 'video',
+                offer: data.offer,
+              });
+              window.dispatchEvent(
+                new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
+              );
+            }
+          } else if (ev === 'call_declined' || ev === 'call:rejected') {
+            setShowCallModal(null);
+            setIncomingCall(null);
+            window.dispatchEvent(
+              new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
+            );
+          } else if (ev === 'call_ended' || ev === 'call:ended' || ev === 'call:cancelled') {
+            setShowCallModal(null);
+            setIncomingCall(null);
+            window.dispatchEvent(
+              new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
+            );
+          }
+        };
+      } catch {}
+
+      const onChatStorage = (e: StorageEvent) => {
+        if (e.key === 'dharya_chat_new_msg' && e.newValue) {
+          try {
+            const { msg } = JSON.parse(e.newValue);
+            if (msg) {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                const next = [...prev, msg];
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            }
+          } catch {}
+        } else if (e.key === 'dharya_message_deleted' && e.newValue) {
+          try {
+            const { msgId } = JSON.parse(e.newValue);
+            if (msgId) {
+              setMessages((prev) => {
+                const next = prev.filter((m) => m.id !== msgId);
+                try {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            }
+          } catch {}
+        } else if (e.key === 'dharya_chat_cleared' && e.newValue) {
+          setMessages([]);
+          try {
+            localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+          } catch {}
+        }
+      };
+      window.addEventListener('storage', onChatStorage);
+
       return () => {
         window.removeEventListener('gallery_broadcast_photo_added', onBroadcastPhotoAdded);
         window.removeEventListener('gallery_broadcast_photo_deleted', onBroadcastPhotoDeleted);
+        window.removeEventListener('storage', onChatStorage);
+        if (chatBroadcastRef.current) {
+          try {
+            chatBroadcastRef.current.close();
+          } catch {}
+          chatBroadcastRef.current = null;
+        }
+        if (callSignalingRef.current) {
+          try {
+            callSignalingRef.current.close();
+          } catch {}
+          callSignalingRef.current = null;
+        }
         try {
           channel.untrack();
         } catch {}
@@ -1076,102 +1184,158 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle Media Selected (Photo or Video from Camera or Gallery)
-  const handleMediaFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Handle Media Selected (Photo or Video from Camera or Gallery - Supports Multiple Photos)
+  const handleMediaFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
-    const isVideo = file.type.startsWith('video/');
-    const isImage = file.type.startsWith('image/');
-    if (!isImage && !isVideo) {
-      alert('Please select an image or video file.');
-      return;
+    const files = Array.from(fileList);
+    const newItems: PendingMediaItem[] = [];
+
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = files[idx];
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+
+      if (!isImage && !isVideo) {
+        alert(`Skipping unsupported file "${file.name}". Please select image or video files.`);
+        continue;
+      }
+
+      if (isImage && file.size > 25 * 1024 * 1024) {
+        alert(`Photo "${file.name}" exceeds 25 MB limit.`);
+        continue;
+      }
+
+      if (isVideo && file.size > 50 * 1024 * 1024) {
+        alert(`Video "${file.name}" exceeds 50 MB limit.`);
+        continue;
+      }
+
+      const sizeKb = Math.round(file.size / 1024);
+      const itemId = `pending_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`;
+
+      if (isImage) {
+        try {
+          const compressed = await compressImageClientSide(
+            file,
+            isHdSelected ? 1920 : 1280,
+            isHdSelected ? 1080 : 720,
+            0.85
+          );
+          newItems.push({
+            id: itemId,
+            file,
+            type: 'image',
+            url: compressed.dataUrl,
+            thumbnailUrl: compressed.dataUrl,
+            fileName: file.name,
+            fileSizeKb: sizeKb,
+          });
+        } catch {
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+          });
+          if (dataUrl) {
+            newItems.push({
+              id: itemId,
+              file,
+              type: 'image',
+              url: dataUrl,
+              thumbnailUrl: dataUrl,
+              fileName: file.name,
+              fileSizeKb: sizeKb,
+            });
+          }
+        }
+      } else {
+        // Video processing
+        const objectUrl = URL.createObjectURL(file);
+        const { thumb, durationStr } = await new Promise<{ thumb: string; durationStr: string }>((resolve) => {
+          const tempVideo = document.createElement('video');
+          tempVideo.preload = 'metadata';
+          tempVideo.src = objectUrl;
+          tempVideo.muted = true;
+          tempVideo.playsInline = true;
+
+          let durStr = '0:15';
+          tempVideo.onloadedmetadata = () => {
+            const secs = Math.round(tempVideo.duration) || 0;
+            const mins = Math.floor(secs / 60);
+            const remSecs = secs % 60;
+            durStr = `${mins}:${remSecs < 10 ? '0' : ''}${remSecs}`;
+            tempVideo.currentTime = Math.min(1, Math.max(0, tempVideo.duration / 2));
+          };
+
+          tempVideo.onseeked = () => {
+            let thumbUrl = '';
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.min(640, tempVideo.videoWidth || 640);
+              canvas.height = Math.min(360, tempVideo.videoHeight || 360);
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                thumbUrl = canvas.toDataURL('image/jpeg', 0.8);
+              }
+            } catch {}
+            resolve({ thumb: thumbUrl, durationStr: durStr });
+          };
+
+          tempVideo.onerror = () => {
+            resolve({ thumb: '', durationStr: '0:15' });
+          };
+        });
+
+        // Convert video to Data URL if <= 25MB for fail-safe transmission
+        let videoDataUrl = objectUrl;
+        if (file.size <= 25 * 1024 * 1024) {
+          try {
+            videoDataUrl = await new Promise<string>((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.onerror = () => resolve(objectUrl);
+              r.readAsDataURL(file);
+            });
+          } catch {}
+        }
+
+        newItems.push({
+          id: itemId,
+          file,
+          type: 'video',
+          url: videoDataUrl,
+          thumbnailUrl: thumb,
+          fileName: file.name,
+          fileSizeKb: sizeKb,
+          duration: durationStr,
+        });
+      }
     }
 
-    setMediaType(isVideo ? 'video' : 'image');
-    setMediaCaption('');
-    setIsHdSelected(false);
-    setIsViewOnceSelected(false);
-    const sizeKb = Math.round(file.size / 1024);
-    setMediaFileSizeKb(sizeKb);
-
-    if (isVideo) {
-      const objectUrl = URL.createObjectURL(file);
-      setMediaUrl(objectUrl);
-
-      // Generate video thumbnail and calculate duration
-      const tempVideo = document.createElement('video');
-      tempVideo.preload = 'metadata';
-      tempVideo.src = objectUrl;
-      tempVideo.muted = true;
-      tempVideo.playsInline = true;
-
-      tempVideo.onloadedmetadata = () => {
-        const secs = Math.round(tempVideo.duration) || 0;
-        const mins = Math.floor(secs / 60);
-        const remSecs = secs % 60;
-        const durStr = `${mins}:${remSecs < 10 ? '0' : ''}${remSecs}`;
-        setMediaDuration(durStr);
-        tempVideo.currentTime = Math.min(1, Math.max(0, tempVideo.duration / 2));
-      };
-
-      tempVideo.onseeked = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.min(640, tempVideo.videoWidth || 640);
-          canvas.height = Math.min(360, tempVideo.videoHeight || 360);
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-            const thumb = canvas.toDataURL('image/jpeg', 0.8);
-            setMediaThumbnail(thumb);
-          }
-        } catch {}
-      };
-
+    if (newItems.length > 0) {
+      setPendingMediaList((prev) => [...prev, ...newItems]);
+      setActiveMediaIndex(0);
       setMediaModalOpen(true);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const rawData = event.target?.result as string;
-        if (!rawData) return;
-
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let { width, height } = img;
-          const maxDim = isHdSelected ? 1920 : 1280;
-
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const finalUrl = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85);
-            setMediaUrl(finalUrl);
-            setMediaThumbnail(finalUrl);
-            setMediaModalOpen(true);
-          } else {
-            setMediaUrl(rawData);
-            setMediaThumbnail(rawData);
-            setMediaModalOpen(true);
-          }
-        };
-        img.src = rawData;
-      };
-      reader.readAsDataURL(file);
     }
     e.target.value = '';
+  };
+
+  // Remove individual photo or video from preview strip before sending
+  const handleRemovePendingMedia = (idToRemove: string) => {
+    setPendingMediaList((prev) => {
+      const next = prev.filter((item) => item.id !== idToRemove);
+      if (next.length === 0) {
+        setMediaModalOpen(false);
+        setActiveMediaIndex(0);
+      } else {
+        setActiveMediaIndex((curr) => Math.min(curr, next.length - 1));
+      }
+      return next;
+    });
   };
 
 
@@ -1508,35 +1672,43 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setShowMenu(false);
   };
 
-  // Clear Chat -> Moves messages to Recycle Bin
+  // Permanently Clear Chat (NO Recycle Bin - true permanent wipe for both users)
   const handleClearAllChat = async () => {
-    if (confirm('Clear all messages in this chat? All messages will be moved to the Recycle Bin.')) {
-      for (const m of messages) {
-        try {
-          await moveToRecycleBin({
-            originalId: m.id,
-            source: 'chat',
-            title: `Message from ${m.sender === 'sadhana' ? 'Sadhana' : 'Surya'}`,
-            previewText: m.text || (m.type ? `[${m.type}]` : 'Chat message'),
-            mediaUrl: m.mediaUrl,
-            mediaType: m.type === 'video' ? 'video' : m.type === 'image' ? 'photo' : undefined,
-            owner: m.sender,
-            originalData: m,
-          });
-        } catch (err) {
-          console.warn('Failed to move message to recycle bin:', err);
-        }
-      }
-      persistMessages([]);
-      setShowMenu(false);
-      try {
-        channelRef.current?.send({
-          type: 'broadcast',
-          event: 'chat_cleared',
-          payload: { user: currentUser },
-        });
-      } catch {}
+    if (!confirm('Permanently clear all chat messages? All messages will be permanently deleted for both users. This cannot be undone.')) {
+      return;
     }
+
+    persistMessages([]);
+    setShowMenu(false);
+
+    // Permanently delete all messages from Supabase DB
+    clearRemoteChat(CHAT_ID).catch((err) => {
+      console.warn('Failed to clear remote chat:', err);
+    });
+
+    const clearPayload = { clearedBy: currentUser, chatId: CHAT_ID };
+    try {
+      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+      activeChannel.send({
+        type: 'broadcast',
+        event: 'chat_cleared',
+        payload: clearPayload,
+      });
+    } catch {}
+
+    try {
+      chatBroadcastRef.current?.postMessage({
+        type: 'chat_cleared',
+        payload: clearPayload,
+      });
+    } catch {}
+
+    try {
+      localStorage.setItem('dharya_chat_cleared', JSON.stringify({
+        ...clearPayload,
+        timestamp: Date.now() + Math.random(),
+      }));
+    } catch {}
   };
 
   // Wallpaper Style Provider with Light & Dark WhatsApp themes
@@ -1603,57 +1775,123 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // Send a Photo or Video (Standard or HD, Regular or View-Once)
-  const handleSendMedia = () => {
-    if (!mediaUrl) return;
+  // Send Photos or Videos (Supports multiple photos / videos with progress & permanent delivery)
+  const handleSendMedia = async () => {
+    if (pendingMediaList.length === 0) return;
+
+    setIsUploadingMedia(true);
+    setUploadProgressPct(15);
 
     const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
-    const isVideo = mediaType === 'video';
+    const total = pendingMediaList.length;
+    const sentMsgs: ExtendedChatMessage[] = [];
 
-    const newMsg: ExtendedChatMessage = {
-      id: `msg-${isVideo ? 'vid' : 'img'}-${Date.now()}`,
-      sender: currentUser,
-      text: mediaCaption.trim() || (isVideo ? 'Video' : isHdSelected ? 'High Definition Photo' : 'Photo'),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      timestamp: Date.now(),
-      read: false,
-      status: initialStatus,
-      type: isVideo ? 'video' : 'image',
-      mediaUrl: mediaUrl,
-      thumbnailUrl: mediaThumbnail || (isVideo ? undefined : mediaUrl),
-      duration: mediaDuration,
-      isHd: isHdSelected,
-      isViewOnce: isViewOnceSelected,
-      isOpened: false,
-      fileSizeKb: mediaFileSizeKb || (isVideo ? 2450 : isHdSelected ? 1200 : 420),
-      replyTo: replyingToMessage ? { id: replyingToMessage.id, sender: replyingToMessage.sender, text: replyingToMessage.text || replyingToMessage.type || 'Media' } : undefined,
-    };
-    setReplyingToMessage(null);
+    for (let i = 0; i < total; i++) {
+      const item = pendingMediaList[i];
+      let finalMediaUrl = item.url;
 
-    const next = [...messages, newMsg];
-    persistMessages(next);
+      // If video and file exists, attempt upload to Supabase storage 'chat_media' bucket for remote CDN delivery
+      if (item.type === 'video' && item.file) {
+        try {
+          const sb = getSupabase();
+          const cleanName = `${Date.now()}_${item.fileName.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+          const { data: upData, error: upErr } = await sb.storage
+            .from('chat_media')
+            .upload(`videos/${cleanName}`, item.file, { cacheControl: '3600', upsert: true });
+
+          if (!upErr && upData) {
+            const { data: pubData } = sb.storage.from('chat_media').getPublicUrl(`videos/${cleanName}`);
+            if (pubData?.publicUrl) {
+              finalMediaUrl = pubData.publicUrl;
+            }
+          }
+        } catch (e) {
+          console.warn('[handleSendMedia] Storage upload fallback to Data URL:', e);
+        }
+      }
+
+      setUploadProgressPct(Math.round(((i + 1) / total) * 90));
+
+      const isVideo = item.type === 'video';
+      const newMsg: ExtendedChatMessage = {
+        id: `msg-${isVideo ? 'vid' : 'img'}-${Date.now()}-${i}`,
+        sender: currentUser,
+        text: i === 0 && mediaCaption.trim()
+          ? mediaCaption.trim()
+          : isVideo
+          ? 'Video'
+          : isHdSelected
+          ? 'High Definition Photo'
+          : 'Photo',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now() + i,
+        read: false,
+        status: initialStatus,
+        type: item.type,
+        mediaUrl: finalMediaUrl,
+        thumbnailUrl: item.thumbnailUrl || (item.type === 'image' ? finalMediaUrl : undefined),
+        duration: item.duration,
+        isHd: isHdSelected,
+        isViewOnce: isViewOnceSelected,
+        isOpened: false,
+        fileSizeKb: item.fileSizeKb,
+        documentName: item.fileName,
+        replyTo: replyingToMessage
+          ? {
+              id: replyingToMessage.id,
+              sender: replyingToMessage.sender,
+              text: replyingToMessage.text || replyingToMessage.type || 'Media',
+            }
+          : undefined,
+      };
+
+      sentMsgs.push(newMsg);
+
+      // Persist to central Supabase DB
+      saveRemoteMessage(newMsg).catch(() => {});
+
+      // Broadcast real-time message event to partner (triple transport)
+      try {
+        const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+        activeChannel.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: newMsg,
+        });
+      } catch {}
+
+      try {
+        chatBroadcastRef.current?.postMessage({
+          type: 'new_message',
+          payload: newMsg,
+        });
+      } catch {}
+
+      try {
+        localStorage.setItem('dharya_chat_new_msg', JSON.stringify({
+          msg: newMsg,
+          timestamp: Date.now() + Math.random(),
+        }));
+      } catch {}
+    }
+
+    setMessages((prev) => {
+      const next = [...prev, ...sentMsgs];
+      try {
+        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    setUploadProgressPct(100);
+    setIsUploadingMedia(false);
     setMediaModalOpen(false);
-    setMediaUrl('');
-    setMediaThumbnail('');
+    setPendingMediaList([]);
+    setActiveMediaIndex(0);
     setMediaCaption('');
     setIsHdSelected(false);
     setIsViewOnceSelected(false);
-
-    // Persist to central Supabase DB for cross-device sync
-    saveRemoteMessage(newMsg);
-
-    try {
-      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
-      const broadcastPayload = {
-        ...newMsg,
-        mediaUrl: mediaUrl.startsWith('blob:') ? (mediaThumbnail || mediaUrl) : mediaUrl,
-      };
-      activeChannel.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: broadcastPayload,
-      });
-    } catch {}
+    setReplyingToMessage(null);
   };
 
   // Open media in Fullscreen Lightbox / Media Viewer
@@ -1804,36 +2042,63 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // Delete message -> Moves to Recycle Bin
+  // Delete message permanently (NO Recycle Bin - sender authorization + permanent delete across DB, storage, and UI)
   const handleDeleteMessage = async (msgId: string) => {
     const targetMsg = messages.find((m) => m.id === msgId);
-    if (targetMsg) {
-      try {
-        await moveToRecycleBin({
-          originalId: targetMsg.id,
-          source: 'chat',
-          title: `Message from ${targetMsg.sender === 'sadhana' ? 'Sadhana' : 'Surya'}`,
-          previewText: targetMsg.text || (targetMsg.type ? `[${targetMsg.type}]` : 'Chat message'),
-          mediaUrl: targetMsg.mediaUrl,
-          mediaType: targetMsg.type === 'video' ? 'video' : targetMsg.type === 'image' ? 'photo' : undefined,
-          owner: targetMsg.sender,
-          originalData: targetMsg,
-        });
-      } catch (err) {
-        console.warn('Failed to move message to recycle bin:', err);
-      }
+    if (!targetMsg) return;
+
+    // Authorization check: User can only delete their own messages
+    if (targetMsg.sender !== currentUser) {
+      alert('You are only authorized to delete your own messages.');
+      return;
     }
 
+    if (!confirm('Permanently delete this message? This action cannot be undone.')) {
+      return;
+    }
+
+    // 1. Remove from local state and localStorage
     const next = messages.filter((m) => m.id !== msgId);
     persistMessages(next);
 
+    // 2. Permanently delete from Supabase DB with sender authorization
+    deleteRemoteMessage(msgId, currentUser).catch((err) => {
+      console.warn('Failed to delete remote message:', err);
+    });
+
+    // 3. Clean up stored media in storage bucket if applicable
+    if (targetMsg.mediaUrl && targetMsg.mediaUrl.includes('chat_media')) {
+      try {
+        const parts = targetMsg.mediaUrl.split('chat_media/');
+        if (parts[1]) {
+          getSupabase().storage.from('chat_media').remove([parts[1]]).catch(() => {});
+        }
+      } catch {}
+    }
+
+    // 4. Real-time broadcast deletion to partner (triple transport: Supabase channel + BroadcastChannel + localStorage)
+    const deletePayload = { msgId, deletedBy: currentUser };
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
       activeChannel.send({
         type: 'broadcast',
         event: 'message_deleted',
-        payload: { msgId },
+        payload: deletePayload,
       });
+    } catch {}
+
+    try {
+      chatBroadcastRef.current?.postMessage({
+        type: 'message_deleted',
+        payload: deletePayload,
+      });
+    } catch {}
+
+    try {
+      localStorage.setItem('dharya_message_deleted', JSON.stringify({
+        ...deletePayload,
+        timestamp: Date.now() + Math.random(),
+      }));
     } catch {}
   };
 
@@ -2174,6 +2439,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         type="file"
         ref={fileInputRef}
         accept="image/*,video/*"
+        multiple
         onChange={handleMediaFileSelect}
         className="hidden"
       />
@@ -2269,35 +2535,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             )}
           </button>
 
-          {/* Recycle Bin Button */}
-          <button
-            onClick={() => {
-              setActiveMainView('recycle-bin');
-              setMobileView('conversation');
-            }}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              activeMainView === 'recycle-bin'
-                ? isDark
-                  ? 'bg-[#374248] text-rose-400 shadow-inner ring-1 ring-rose-400/40'
-                  : 'bg-rose-100 text-rose-700 shadow-sm ring-1 ring-rose-500/30'
-                : isDark
-                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-rose-400'
-                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-rose-600'
-            }`}
-            title={`Recycle Bin (${recycleBinCount} items)`}
-          >
-            <Trash2 className="w-5 h-5" />
-            {recycleBinCount > 0 && (
-              <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] rounded-full bg-rose-500 text-white text-[10px] font-extrabold flex items-center justify-center ring-2 ring-[#202c33]">
-                {recycleBinCount > 99 ? '99+' : recycleBinCount}
-              </span>
-            )}
-            {activeMainView === 'recycle-bin' && (
-              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-rose-400' : 'bg-rose-600'
-              }`} />
-            )}
-          </button>
 
           {/* Voice & Video Calls Button */}
           <button
@@ -2817,25 +3054,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <span className="text-[11px] font-semibold">Timeline</span>
           </button>
 
-          <button
-            onClick={() => {
-              setActiveMainView('recycle-bin');
-              setMobileView('conversation');
-            }}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-              activeMainView === 'recycle-bin'
-                ? 'text-rose-400'
-                : 'text-[#8696a0] hover:text-rose-400'
-            }`}
-          >
-            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'recycle-bin' ? 'bg-rose-500/20' : ''}`}>
-              <Trash2 className="w-5 h-5" />
-              {recycleBinCount > 0 && (
-                <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-[#1f2c34]" />
-              )}
-            </div>
-            <span className="text-[11px] font-semibold">Bin</span>
-          </button>
 
           <button
             onClick={() => setShowCallModal('video')}
@@ -2887,10 +3105,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 setActiveMainView('timeline');
                 setMobileView('conversation');
               }}
-              onOpenRecycleBin={() => {
-                setActiveMainView('recycle-bin');
-                setMobileView('conversation');
-              }}
+              onOpenRecycleBin={() => {}}
             />
           </div>
         ) : activeMainView === 'timeline' ? (
@@ -2905,28 +3120,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 setActiveMainView('gallery');
                 setMobileView('conversation');
               }}
-              onOpenRecycleBin={() => {
-                setActiveMainView('recycle-bin');
-                setMobileView('conversation');
-              }}
-            />
-          </div>
-        ) : activeMainView === 'recycle-bin' ? (
-          /* Recycle Bin View */
-          <div className="w-full h-full flex flex-col bg-[#0c1317]">
-            <RecycleBinView
-              onBackToChat={() => {
-                setActiveMainView('chat');
-                setMobileView('conversation');
-              }}
-              onOpenGallery={() => {
-                setActiveMainView('gallery');
-                setMobileView('conversation');
-              }}
-              onOpenTimeline={() => {
-                setActiveMainView('timeline');
-                setMobileView('conversation');
-              }}
+              onOpenRecycleBin={() => {}}
             />
           </div>
         ) : (
@@ -3006,17 +3200,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <Clock className="w-4 h-4 text-amber-400" />
           </button>
 
-          {/* Recycle Bin Quick Button */}
-          <button
-            onClick={() => setActiveMainView('recycle-bin')}
-            className="p-2 rounded-full hover:bg-white/10 text-rose-400 hover:text-rose-300 transition-colors relative"
-            title={`Recycle Bin (${recycleBinCount} items)`}
-          >
-            <Trash2 className="w-4 h-4 text-rose-400" />
-            {recycleBinCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 ring-1 ring-[#202c33]" />
-            )}
-          </button>
 
           {/* Security & Privacy Section Quick Button */}
           <button
@@ -3454,43 +3637,43 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   </div>
                 )}
 
-                {/* ── REGULAR VIDEO MESSAGE ── */}
+                {/* ── REGULAR VIDEO MESSAGE (Playable Directly Inside Chat + Fullscreen & Download) ── */}
                 {msg.type === 'video' && !msg.isViewOnce && (
-                  <div className="space-y-1.5 mb-1 cursor-pointer" onClick={() => openLightbox(msg)}>
-                    <div className="relative rounded-xl overflow-hidden bg-black/60 max-h-80 group flex items-center justify-center">
-                      {msg.thumbnailUrl ? (
-                        <img
-                          src={msg.thumbnailUrl}
-                          alt="Video Thumbnail"
-                          className="w-full h-auto object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
-                        />
-                      ) : (
-                        <video
-                          src={msg.mediaUrl}
-                          preload="metadata"
-                          className="w-full h-auto object-cover rounded-xl pointer-events-none"
-                        />
-                      )}
-
-                      {/* Center WhatsApp Play Button Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur border border-white/40 text-white flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-black/75 transition-all">
-                          <Play className="w-5 h-5 fill-current ml-0.5 text-white" />
-                        </div>
+                  <div className="space-y-1.5 mb-1 max-w-[340px] sm:max-w-[400px]">
+                    <div className="relative rounded-xl overflow-hidden bg-black/80 max-h-80 flex items-center justify-center border border-white/10 shadow-lg">
+                      <video
+                        src={msg.mediaUrl}
+                        poster={msg.thumbnailUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full max-h-80 object-contain rounded-xl"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-[#8696a0] px-1 pt-0.5">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <Video className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>{msg.duration || 'Video'}</span>
+                        {msg.fileSizeKb && (
+                          <span>
+                            • {msg.fileSizeKb > 1024 ? `${(msg.fileSizeKb / 1024).toFixed(1)} MB` : `${msg.fileSizeKb} KB`}
+                          </span>
+                        )}
+                        {msg.isHd && (
+                          <span className="px-1 py-0.2 rounded bg-white/10 text-[9px] font-bold text-emerald-400">
+                            HD
+                          </span>
+                        )}
                       </div>
-
-                      {/* Video Duration Badge */}
-                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur text-[10px] font-semibold text-white flex items-center gap-1 shadow">
-                        <Video className="w-3 h-3" />
-                        <span>{msg.duration || '0:15'}</span>
-                      </div>
-
-                      {/* HD Badge Overlay */}
-                      {msg.isHd && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5 shadow">
-                          <span>HD</span>
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => openLightbox(msg)}
+                        className="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                        title="View fullscreen & download"
+                      >
+                        <Maximize2 className="w-3 h-3" />
+                        <span>Expand</span>
+                      </button>
                     </div>
                     {msg.text && msg.text !== 'Video' && (
                       <p className="text-sm leading-relaxed text-white pt-1">
@@ -4053,135 +4236,225 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         )}
       </main>
 
-      {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos from Gallery or Camera) ── */}
-      {mediaModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+      {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos - Supports Multiple Selection & Removals) ── */}
+      {mediaModalOpen && pendingMediaList.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none">
           <div className="relative bg-[#182229] border border-[#2a3942] rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4">
-            {/* Top Bar with HD and View Once Toggles */}
-            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
-              <div className="flex items-center gap-2">
-                {/* Standard or HD Toggle Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsHdSelected(!isHdSelected)}
-                  className={`px-3 py-1 rounded-full text-xs font-black tracking-wider transition-all flex items-center gap-1.5 border ${
-                    isHdSelected
-                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
-                      : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
-                  }`}
-                  title="Toggle High Definition"
-                >
-                  <span>HD</span>
-                  <span className="text-[10px] font-normal">
-                    {isHdSelected ? 'HD Quality' : 'Standard'}
-                  </span>
-                </button>
+            {/* Top Bar with HD, View Once, and Close */}
+            {(() => {
+              const activeItem = pendingMediaList[activeMediaIndex] || pendingMediaList[0];
+              return (
+                <>
+                  <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
+                    <div className="flex items-center gap-2">
+                      {/* Standard or HD Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsHdSelected(!isHdSelected)}
+                        className={`px-3 py-1 rounded-full text-xs font-black tracking-wider transition-all flex items-center gap-1.5 border ${
+                          isHdSelected
+                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.5)]'
+                            : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
+                        }`}
+                        title="Toggle High Definition"
+                      >
+                        <span>HD</span>
+                        <span className="text-[10px] font-normal">
+                          {isHdSelected ? 'HD Quality' : 'Standard'}
+                        </span>
+                      </button>
 
-                {/* View Once Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsViewOnceSelected(!isViewOnceSelected)}
-                  className={`w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center border ${
-                    isViewOnceSelected
-                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
-                      : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
-                  }`}
-                  title="View Once (Photo or video can only be viewed once)"
-                >
-                  ①
-                </button>
+                      {/* View Once Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setIsViewOnceSelected(!isViewOnceSelected)}
+                        className={`w-7 h-7 rounded-full text-xs font-bold transition-all flex items-center justify-center border ${
+                          isViewOnceSelected
+                            ? 'bg-emerald-500 text-white border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                            : 'bg-white/5 text-[#8696a0] border-white/10 hover:text-white'
+                        }`}
+                        title="View Once (Photo or video can only be viewed once)"
+                      >
+                        ①
+                      </button>
 
-                {mediaType === 'video' && mediaDuration && (
-                  <span className="text-xs text-[#8696a0] px-2 py-0.5 rounded-full bg-white/5 flex items-center gap-1">
-                    <Video className="w-3 h-3 text-emerald-400" />
-                    <span>{mediaDuration}</span>
-                  </span>
-                )}
-              </div>
+                      {activeItem.type === 'video' && activeItem.duration && (
+                        <span className="text-xs text-[#8696a0] px-2 py-0.5 rounded-full bg-white/5 flex items-center gap-1">
+                          <Video className="w-3 h-3 text-emerald-400" />
+                          <span>{activeItem.duration}</span>
+                        </span>
+                      )}
 
-              <button
-                onClick={() => {
-                  setMediaModalOpen(false);
-                  setMediaUrl('');
-                  setMediaThumbnail('');
-                }}
-                className="p-1 rounded-full text-[#8696a0] hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+                      <span className="text-xs text-[#8696a0] px-2 py-0.5 rounded-full bg-white/5">
+                        {activeMediaIndex + 1} of {pendingMediaList.length}
+                      </span>
+                    </div>
 
-            {/* Media Preview (Video Player or Photo Viewer) */}
-            <div className="rounded-2xl overflow-hidden bg-black/60 max-h-80 flex items-center justify-center relative">
-              {mediaType === 'video' ? (
-                <video
-                  src={mediaUrl}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="max-h-80 w-auto rounded-2xl mx-auto"
-                />
-              ) : (
-                <img
-                  src={mediaUrl}
-                  alt="Media Preview"
-                  className="max-h-80 w-auto object-contain rounded-2xl"
-                />
-              )}
-            </div>
+                    <button
+                      onClick={() => {
+                        setMediaModalOpen(false);
+                        setPendingMediaList([]);
+                        setActiveMediaIndex(0);
+                      }}
+                      className="p-1 rounded-full text-[#8696a0] hover:text-white"
+                      title="Close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-            {/* Caption & Send */}
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={mediaCaption}
-                onChange={(e) => setMediaCaption(e.target.value)}
-                placeholder="Add a caption..."
-                className="w-full bg-[#2a3942] text-sm text-white px-4 py-2.5 rounded-xl border border-transparent focus:outline-none focus:border-[#00a884]"
-              />
+                  {/* Active Media Preview (Video Player or Photo Viewer) */}
+                  <div className="rounded-2xl overflow-hidden bg-black/60 max-h-80 flex items-center justify-center relative min-h-[220px]">
+                    {activeItem.type === 'video' ? (
+                      <video
+                        key={activeItem.id}
+                        src={activeItem.url}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="max-h-80 w-auto rounded-2xl mx-auto"
+                      />
+                    ) : (
+                      <img
+                        key={activeItem.id}
+                        src={activeItem.url}
+                        alt="Media Preview"
+                        className="max-h-80 w-auto object-contain rounded-2xl"
+                      />
+                    )}
+                  </div>
 
-              <div className="flex justify-between items-center pt-1">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Gallery</span>
-                  </button>
-                  <span className="text-[#8696a0] text-xs">•</span>
-                  <button
-                    type="button"
-                    onClick={() => cameraInputRef.current?.click()}
-                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                    <span>Camera</span>
-                  </button>
-                </div>
+                  {/* Multi-Photo Carousel / Thumbnail Strip */}
+                  <div className="flex items-center gap-2 overflow-x-auto py-1 px-1 scrollbar-none">
+                    {pendingMediaList.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        onClick={() => setActiveMediaIndex(idx)}
+                        className={`relative w-14 h-14 rounded-xl overflow-hidden cursor-pointer shrink-0 border-2 transition-all ${
+                          idx === activeMediaIndex
+                            ? 'border-[#00a884] scale-105 shadow-md ring-2 ring-[#00a884]/40'
+                            : 'border-transparent opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        {item.type === 'video' ? (
+                          <div className="w-full h-full bg-[#111b21] flex items-center justify-center relative">
+                            {item.thumbnailUrl ? (
+                              <img src={item.thumbnailUrl} alt="thumb" className="w-full h-full object-cover" />
+                            ) : (
+                              <Video className="w-5 h-5 text-emerald-400" />
+                            )}
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <Play className="w-3.5 h-3.5 text-white fill-current" />
+                            </div>
+                          </div>
+                        ) : (
+                          <img src={item.thumbnailUrl || item.url} alt="thumb" className="w-full h-full object-cover" />
+                        )}
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setMediaModalOpen(false);
-                      setMediaUrl('');
-                      setMediaThumbnail('');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-white/5 text-xs text-[#8696a0] hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSendMedia}
-                    className="px-6 py-2 rounded-xl bg-[#00a884] hover:bg-[#029071] text-white text-xs font-bold shadow flex items-center gap-1.5"
-                  >
-                    <span>Send</span>
-                    <Send className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+                        {/* Remove Selected Photo Button before sending */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemovePendingMedia(item.id);
+                          }}
+                          className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/80 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold shadow"
+                          title="Remove this photo before sending"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Add More Photos Button */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-14 h-14 rounded-xl border-2 border-dashed border-[#2a3942] hover:border-[#00a884] text-[#8696a0] hover:text-[#00a884] flex flex-col items-center justify-center shrink-0 transition-colors"
+                      title="Select more photos"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span className="text-[9px] font-bold">Add</span>
+                    </button>
+                  </div>
+
+                  {/* Upload Progress Bar */}
+                  {isUploadingMedia && (
+                    <div className="space-y-1">
+                      <div className="w-full bg-[#2a3942] rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-[#00a884] h-full transition-all duration-300"
+                          style={{ width: `${uploadProgressPct}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-[#8696a0] text-center font-medium">
+                        Uploading {uploadProgressPct}%...
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Caption & Send */}
+                  <div className="space-y-3 pt-1">
+                    <input
+                      type="text"
+                      value={mediaCaption}
+                      onChange={(e) => setMediaCaption(e.target.value)}
+                      placeholder="Add a caption..."
+                      className="w-full bg-[#2a3942] text-sm text-white px-4 py-2.5 rounded-xl border border-transparent focus:outline-none focus:border-[#00a884]"
+                    />
+
+                    <div className="flex justify-between items-center pt-1">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Gallery</span>
+                        </button>
+                        <span className="text-[#8696a0] text-xs">•</span>
+                        <button
+                          type="button"
+                          onClick={() => cameraInputRef.current?.click()}
+                          className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Camera</span>
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMediaModalOpen(false);
+                            setPendingMediaList([]);
+                            setActiveMediaIndex(0);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-white/5 text-xs text-[#8696a0] hover:text-white"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendMedia}
+                          disabled={isUploadingMedia}
+                          className="px-6 py-2 rounded-xl bg-[#00a884] hover:bg-[#029071] disabled:opacity-60 text-white text-xs font-bold shadow flex items-center gap-1.5"
+                        >
+                          <span>
+                            {isUploadingMedia
+                              ? `Sending (${uploadProgressPct}%)`
+                              : `Send ${pendingMediaList.length > 1 ? `(${pendingMediaList.length})` : ''}`}
+                          </span>
+                          <Send className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

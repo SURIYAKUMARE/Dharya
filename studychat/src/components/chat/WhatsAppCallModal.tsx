@@ -26,9 +26,29 @@ interface WhatsAppCallModalProps {
   channelRef: React.MutableRefObject<any>;
 }
 
-// Highly reliable global STUN and TURN relay servers (guarantees connectivity across Symmetric NAT / 4G / 5G)
-const RTC_CONFIG: RTCConfiguration = {
-  iceServers: [
+// Configurable STUN and TURN relay servers (guarantees connectivity across Symmetric NAT / 4G / 5G / corporate firewalls)
+export function getRtcConfiguration(): RTCConfiguration {
+  const metaEnv = (import.meta as any).env || {};
+  const envStun = (metaEnv.VITE_STUN_SERVER as string)?.trim();
+  const envTurn = (metaEnv.VITE_TURN_SERVER as string)?.trim();
+  const envTurnUser = (metaEnv.VITE_TURN_USERNAME as string)?.trim();
+  const envTurnPass = (metaEnv.VITE_TURN_PASSWORD as string)?.trim();
+
+  const servers: RTCIceServer[] = [];
+
+  if (envStun) {
+    servers.push({ urls: envStun });
+  }
+
+  if (envTurn) {
+    const customTurn: RTCIceServer = { urls: envTurn };
+    if (envTurnUser) customTurn.username = envTurnUser;
+    if (envTurnPass) customTurn.credential = envTurnPass;
+    servers.push(customTurn);
+  }
+
+  // Reliable global fallback STUN & TURN
+  servers.push(
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
@@ -47,10 +67,14 @@ const RTC_CONFIG: RTCConfiguration = {
       urls: 'turn:openrelay.metered.ca:443?transport=tcp',
       username: 'openrelayproject',
       credential: 'openrelayproject',
-    },
-  ],
-  iceCandidatePoolSize: 10,
-};
+    }
+  );
+
+  return {
+    iceServers: servers,
+    iceCandidatePoolSize: 10,
+  };
+}
 
 export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   callType,
@@ -90,12 +114,20 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const callTimeoutRef = useRef<number | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const isCleaningUpRef = useRef<boolean>(false);
+  const callBroadcastRef = useRef<BroadcastChannel | null>(null);
 
-  // High-reliability dual signaling sender: Supabase Realtime + localStorage
+  // High-reliability triple signaling sender: Supabase Realtime + BroadcastChannel + localStorage
   const sendSignal = useCallback((event: string, payload: any) => {
     try {
       channelRef.current?.send({
         type: 'broadcast',
+        event,
+        payload,
+      });
+    } catch {}
+
+    try {
+      callBroadcastRef.current?.postMessage({
         event,
         payload,
       });
@@ -268,7 +300,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       try { pcRef.current.close(); } catch {}
     }
 
-    const pc = new RTCPeerConnection(RTC_CONFIG);
+    const pc = new RTCPeerConnection(getRtcConfiguration());
     pcRef.current = pc;
 
     stream.getTracks().forEach((track) => {
@@ -378,13 +410,13 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
     setupCall();
 
-    // ── UNIFIED SIGNAL HANDLER (Realtime channel + CustomEvent + StorageEvent) ──
+    // ── UNIFIED SIGNAL HANDLER (Realtime channel + BroadcastChannel + CustomEvent + StorageEvent) ──
     const handleSignal = async (event: string, payload: any) => {
       if (!payload || isCleaningUpRef.current) return;
 
-      // 1. Call accepted by recipient
+      // 1. Call accepted / answer by recipient
       if (
-        event === 'call_accepted' &&
+        (event === 'call_accepted' || event === 'call:accepted' || event === 'call:answer') &&
         (payload.to === currentUser || payload.recipient === currentUser || payload.caller === currentUser)
       ) {
         if (ringtoneTimerRef.current) clearInterval(ringtoneTimerRef.current);
@@ -416,7 +448,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
       // 2. ICE Candidate received
       if (
-        event === 'webrtc_ice_candidate' &&
+        (event === 'webrtc_ice_candidate' || event === 'call:ice-candidate') &&
         (payload.to === currentUser || payload.from === partnerUser) &&
         payload.candidate
       ) {
@@ -431,9 +463,9 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         } catch {}
       }
 
-      // 3. Partner declined call
+      // 3. Partner declined / rejected / busy
       if (
-        event === 'call_declined' &&
+        (event === 'call_declined' || event === 'call:rejected' || event === 'call:busy') &&
         (payload.to === currentUser || payload.caller === currentUser || payload.recipient === partnerUser)
       ) {
         cleanupMediaAndTimers();
@@ -441,9 +473,9 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         setTimeout(() => onClose(0, 'declined'), 300);
       }
 
-      // 4. Partner ended call
+      // 4. Partner ended / cancelled call
       if (
-        event === 'call_ended' &&
+        (event === 'call_ended' || event === 'call:ended' || event === 'call:cancelled') &&
         (payload.to === currentUser || payload.from === partnerUser || !payload.to)
       ) {
         cleanupMediaAndTimers();
@@ -451,6 +483,16 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         setTimeout(() => onClose(payload.durationSecs || 0, 'completed'), 300);
       }
     };
+
+    // BroadcastChannel listener for zero-delay cross-tab call signaling
+    try {
+      callBroadcastRef.current = new BroadcastChannel('dharya_call_signaling');
+      callBroadcastRef.current.onmessage = (e) => {
+        if (e.data?.event && e.data?.payload) {
+          handleSignal(e.data.event, e.data.payload);
+        }
+      };
+    } catch {}
 
     // CustomEvent listener from WhatsAppChatView
     const onCustomEvent = (e: any) => {
@@ -476,6 +518,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       isMounted = false;
       window.removeEventListener('whatsapp_call_signal', onCustomEvent);
       window.removeEventListener('storage', onStorageEvent);
+      if (callBroadcastRef.current) {
+        try {
+          callBroadcastRef.current.close();
+        } catch {}
+        callBroadcastRef.current = null;
+      }
       cleanupMediaAndTimers();
     };
   }, [isIncoming, currentUser, partnerUser, callType, startCallTimer, cleanupMediaAndTimers, playRingtoneTone, sendSignal, onClose]);

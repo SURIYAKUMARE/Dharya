@@ -333,12 +333,21 @@ export async function updateRemotePoll(
 }
 
 /**
- * Delete a message from Supabase
+ * Delete a message permanently from Supabase with sender authorization
  */
-export async function deleteRemoteMessage(msgId: string): Promise<boolean> {
+export async function deleteRemoteMessage(
+  msgId: string,
+  senderId?: 'surya' | 'sadhana'
+): Promise<boolean> {
   try {
     const supabase = getSupabase();
-    const { error } = await supabase.from('messages').delete().eq('id', msgId);
+    let query = supabase.from('messages').delete().eq('id', msgId).eq('chat_id', CHAT_ID);
+    if (senderId) {
+      // Check sender authorization (also account for 'dharya' alias for surya)
+      const allowedSenders = senderId === 'surya' ? ['surya', 'dharya'] : ['sadhana'];
+      query = query.in('sender_id', allowedSenders);
+    }
+    const { error } = await query;
     if (error) {
       console.warn('[chatSync] deleteRemoteMessage error:', error.message);
       return false;
@@ -346,6 +355,24 @@ export async function deleteRemoteMessage(msgId: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.warn('[chatSync] deleteRemoteMessage failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Permanently delete all messages in the chat conversation from Supabase
+ */
+export async function clearRemoteChat(chatId: string = CHAT_ID): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase.from('messages').delete().eq('chat_id', chatId);
+    if (error) {
+      console.warn('[chatSync] clearRemoteChat error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] clearRemoteChat failed:', err);
     return false;
   }
 }

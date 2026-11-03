@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { Message, Reaction } from '../types';
+import { moveToRecycleBin } from '../services/recycleBinService';
 
 const PAGE_SIZE = 40;
 
@@ -116,21 +117,47 @@ export function useMessages() {
     if (data) upsertMessage(data as Message);
   }, [user, upsertMessage]);
 
-  // ── Delete for me ────────────────────────────────────────
+  // ── Delete for me (moves to Recycle Bin) ────────────────────────
   const deleteForMe = useCallback(async (msg: Message) => {
+    // 1. Move to Recycle Bin for safe recovery
+    await moveToRecycleBin({
+      originalId: msg.id,
+      source: 'chat',
+      title: msg.content ? (msg.content.slice(0, 32) + (msg.content.length > 32 ? '…' : '')) : (msg.media_type ? `Shared ${msg.media_type}` : 'Chat message'),
+      previewText: msg.content || (msg.media_caption ?? undefined),
+      mediaUrl: msg.media_url || undefined,
+      mediaType: msg.media_type || undefined,
+      ownerId: user?.id,
+      originalData: msg,
+    });
+
+    // 2. Hide from local display immediately
     const ids = [...(msg.deleted_for ?? []), user?.id ?? ''];
     await supabase.from('messages').update({ deleted_for: ids }).eq('id', msg.id);
     upsertMessage({ ...msg, deleted_for: ids });
   }, [user, upsertMessage]);
 
-  // ── Delete for everyone ──────────────────────────────────
+  // ── Delete for everyone (moves to Recycle Bin) ──────────────────
   const deleteForEveryone = useCallback(async (msg: Message) => {
+    // 1. Move to Recycle Bin
+    await moveToRecycleBin({
+      originalId: msg.id,
+      source: 'chat',
+      title: msg.content ? (msg.content.slice(0, 32) + (msg.content.length > 32 ? '…' : '')) : (msg.media_type ? `Shared ${msg.media_type}` : 'Chat message'),
+      previewText: msg.content || (msg.media_caption ?? undefined),
+      mediaUrl: msg.media_url || undefined,
+      mediaType: msg.media_type || undefined,
+      ownerId: user?.id,
+      originalData: msg,
+    });
+
+    // 2. Erase content remotely so partner also sees it removed
     const ids = [msg.sender_id, partnerId ?? ''].filter(Boolean);
     await supabase.from('messages')
       .update({ deleted_for: ids, content: null, media_url: null })
       .eq('id', msg.id);
     upsertMessage({ ...msg, deleted_for: ids, content: null, media_url: null });
-  }, [partnerId, upsertMessage]);
+  }, [user, partnerId, upsertMessage]);
 
   // ── React / un-react ─────────────────────────────────────
   const reactToMessage = useCallback(async (msgId: string, emoji: string) => {

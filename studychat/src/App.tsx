@@ -1,5 +1,6 @@
 import React from 'react';
 import { StudyAppProvider, useStudyApp } from './context/StudyAppContext';
+import { ToastProvider } from './components/common/Toast';
 import { StudyNavbar } from './components/study/StudyNavbar';
 import { StudyBottomNav } from './components/study/StudyBottomNav';
 import { StudyHomePage } from './components/study/StudyHomePage';
@@ -28,6 +29,11 @@ function AppContent() {
     return <WhatsAppChatView initialTab={activeTab === 'gallery' ? 'gallery' : activeTab === 'timeline' ? 'timeline' : 'chat'} />;
   }
 
+  // Full-screen Dharya Login (not wrapped in academic navbars)
+  if (activeTab === 'chat-login' || (!isChatAuthenticated && (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline'))) {
+    return <DharyaLoginPage />;
+  }
+
   const renderActiveView = () => {
     switch (activeTab) {
       case 'home':
@@ -38,11 +44,6 @@ function AppContent() {
         return <TopicExplanationView />;
       case 'assessment':
         return <AssessmentModal />;
-      case 'chat-login':
-      case 'chat':
-      case 'gallery':
-      case 'timeline':
-        return <DharyaLoginPage />;
       case 'planner':
         return <PlannerView />;
       case 'profile':
@@ -77,7 +78,9 @@ function AppContent() {
 export function App() {
   return (
     <StudyAppProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </StudyAppProvider>
   );
 }

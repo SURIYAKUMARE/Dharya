@@ -120,7 +120,7 @@ export const RecycleBinView: React.FC<RecycleBinViewProps> = ({
           ? 'Chat'
           : item.source === 'gallery'
           ? 'Gallery'
-          : 'Life Timeline';
+          : 'Memories';
       showToast(`Restored "${item.title}" back to ${place} ✓`);
     } else {
       showToast('Failed to restore item.');
@@ -255,49 +255,49 @@ export const RecycleBinView: React.FC<RecycleBinViewProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
               activeFilter === 'all'
-                ? 'bg-white text-black font-extrabold shadow-sm'
-                : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
             }`}
           >
-            All Items ({items.length})
+            All Items{items.length > 0 ? ` (${items.length})` : ''}
           </button>
 
           <button
             onClick={() => setActiveFilter('chat')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
               activeFilter === 'chat'
-                ? 'bg-teal-500/25 text-teal-300 border border-teal-400 font-bold'
-                : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
             }`}
           >
-            <MessageSquare className="w-3 h-3 text-teal-400" />
-            <span>Chats ({chatCount})</span>
+            <MessageSquare className="w-3 h-3 text-[#7E9F89]" />
+            <span>Chats{chatCount > 0 ? ` (${chatCount})` : ''}</span>
           </button>
 
           <button
             onClick={() => setActiveFilter('gallery')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
               activeFilter === 'gallery'
-                ? 'bg-blue-500/25 text-blue-300 border border-blue-400 font-bold'
-                : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
             }`}
           >
-            <Images className="w-3 h-3 text-blue-400" />
-            <span>Gallery ({galleryCount})</span>
+            <Images className="w-3 h-3 text-[#7E9F89]" />
+            <span>Gallery{galleryCount > 0 ? ` (${galleryCount})` : ''}</span>
           </button>
 
           <button
             onClick={() => setActiveFilter('timeline')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
               activeFilter === 'timeline'
-                ? 'bg-amber-500/25 text-amber-300 border border-amber-400 font-bold'
-                : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
             }`}
           >
-            <Clock className="w-3 h-3 text-amber-400" />
-            <span>Timeline ({timelineCount})</span>
+            <Clock className="w-3 h-3 text-[#7E9F89]" />
+            <span>Memories{timelineCount > 0 ? ` (${timelineCount})` : ''}</span>
           </button>
         </div>
       </header>

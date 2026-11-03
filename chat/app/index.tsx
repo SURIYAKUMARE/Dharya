@@ -4,26 +4,33 @@ import { router } from 'expo-router';
 import { useAuthStore } from '../src/store/authStore';
 
 export default function Index() {
-  const { session, chatId } = useAuthStore();
+  const { session, chatId, fetchOrCreateChat } = useAuthStore();
 
   useEffect(() => {
-    // Small delay so the store hydrates before redirecting
-    const t = setTimeout(() => {
-      if (session === null) {
-        // Flow: Engineering Study Books → Subject Topics → Next → Login → Chat
-        router.replace('/study');
-      } else if (session && !chatId) {
-        router.replace('/pair');
-      } else if (session && chatId) {
-        router.replace('/chat');
+    const initApp = async () => {
+      if (session && !chatId) {
+        await fetchOrCreateChat();
       }
-    }, 250);
-    return () => clearTimeout(t);
+
+      const t = setTimeout(() => {
+        if (!session) {
+          router.replace('/auth');
+        } else if (!chatId) {
+          router.replace('/pair');
+        } else {
+          router.replace('/chat');
+        }
+      }, 300);
+
+      return () => clearTimeout(t);
+    };
+
+    initApp();
   }, [session, chatId]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0f0a1a', alignItems: 'center', justifyContent: 'center' }}>
-      <ActivityIndicator color="#c026d3" size="large" />
+    <View style={{ flex: 1, backgroundColor: '#131615', alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator color="#7E9F89" size="large" />
     </View>
   );
 }

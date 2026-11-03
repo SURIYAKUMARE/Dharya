@@ -1,28 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { router } from 'expo-router';
 import {
   Search, Image as ImageIcon, MoreVertical, ArrowLeft,
-  Bell, GraduationCap, Users
+  Bell, BookOpen, Trash2, Heart, Sparkles,
 } from 'lucide-react-native';
 import { ColorPalette } from '../lib/colors';
 import { formatLastSeen } from '../lib/utils';
 import { useNotificationStore } from '../store/notificationStore';
-import { UserRole } from '../types';
-import { BookEngineeringLogo } from './BookEngineeringLogo';
+import { MilestoneCounterModal, DEFAULT_MILESTONE_DATE_STR } from './MilestoneCounterModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Props {
-  partnerName:         string;
-  partnerOnline:       boolean;
-  partnerLastSeen:     string | null;
-  partnerTyping:       boolean;
-  C:                   ColorPalette;
-  currentRole?:        UserRole;
-  onRoleSwitchToggle?: () => void;
-  onSearchToggle:      () => void;
-  onGallery:           () => void;
-  onSettings:          () => void;
-  onNotificationToggle?: () => void;
+  partnerName: string;
+  partnerOnline: boolean;
+  partnerLastSeen: string | null;
+  partnerTyping: boolean;
+  C: ColorPalette;
+  onSearchToggle: () => void;
+  onGallery: () => void;
+  onSettings: () => void;
+  onShareMilestoneToChat?: (text: string) => void;
 }
 
 export function ChatHeader({
@@ -31,41 +29,29 @@ export function ChatHeader({
   partnerLastSeen,
   partnerTyping,
   C,
-  currentRole = 'Student',
-  onRoleSwitchToggle,
   onSearchToggle,
   onGallery,
   onSettings,
-  onNotificationToggle,
+  onShareMilestoneToChat,
 }: Props) {
   const { unreadCount, togglePanel } = useNotificationStore();
   const unread = unreadCount();
 
-  // Subtle pulse animation for notification bell when unread > 0
-  const bellScale = useRef(new Animated.Value(1)).current;
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [milestoneDays, setMilestoneDays] = useState<number>(0);
 
+  // Calculate days for the milestone pill
   useEffect(() => {
-    if (unread > 0) {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(bellScale, {
-            toValue: 1.18,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(bellScale, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    } else {
-      bellScale.setValue(1);
-    }
-  }, [unread]);
+    const updateCountdown = async () => {
+      const savedDate = (await AsyncStorage.getItem('@dharya_milestone_date')) || DEFAULT_MILESTONE_DATE_STR;
+      const targetTime = new Date(savedDate).getTime();
+      const diffMs = Math.abs(Date.now() - targetTime);
+      setMilestoneDays(Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const statusText = partnerTyping
     ? 'typing…'
@@ -79,30 +65,12 @@ export function ChatHeader({
     ? C.accentGreen
     : C.textMuted;
 
-  const handleBellPress = () => {
-    if (onNotificationToggle) {
-      onNotificationToggle();
-    } else {
-      togglePanel();
-    }
-  };
-
   return (
     <View style={[s.header, { backgroundColor: C.surface, borderBottomColor: C.border }]}>
-      {/* Back to study library */}
-      <TouchableOpacity
-        onPress={() => router.push('/study')}
-        style={s.back}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityLabel="Go to Study Library"
-      >
-        <ArrowLeft size={20} color={C.text} />
-      </TouchableOpacity>
-
-      {/* Avatar */}
-      <View style={[s.avatar, { backgroundColor: C.accent + '33', borderColor: C.accent + '55' }]}>
+      {/* Partner Avatar */}
+      <View style={[s.avatar, { backgroundColor: C.accent + '25', borderColor: C.accent + '44' }]}>
         <Text style={[s.avatarTxt, { color: C.accent }]}>
-          {partnerName.charAt(0).toUpperCase() || '?'}
+          {partnerName.charAt(0).toUpperCase() || 'S'}
         </Text>
         {partnerOnline && <View style={[s.onlineDot, { backgroundColor: C.accentGreen }]} />}
       </View>
@@ -111,77 +79,84 @@ export function ChatHeader({
       <View style={s.mid}>
         <View style={s.nameRow}>
           <Text style={[s.name, { color: C.text }]} numberOfLines={1}>
-            {partnerName}
+            {partnerName || 'Dharya'}
           </Text>
-          {currentRole && (
-            <TouchableOpacity
-              style={[s.roleBadge, { backgroundColor: C.accent + '22', borderColor: C.accent + '44' }]}
-              onPress={onRoleSwitchToggle}
-              activeOpacity={0.7}
-            >
-              <Text style={[s.roleText, { color: C.accent }]}>{currentRole}</Text>
-            </TouchableOpacity>
-          )}
+
+          {/* Romantic Milestone Countdown Pill */}
+          <TouchableOpacity
+            style={[s.milestonePill, { backgroundColor: C.card, borderColor: C.border }]}
+            onPress={() => setShowMilestoneModal(true)}
+            activeOpacity={0.8}
+            accessibilityLabel="View days together counter"
+          >
+            <Heart size={10} color={C.accent} fill={C.accent} />
+            <Text style={[s.milestoneText, { color: C.textSecondary }]}>
+              {milestoneDays}d together
+            </Text>
+          </TouchableOpacity>
         </View>
+
         <Text style={[s.status, { color: statusColor }]} numberOfLines={1}>
           {statusText}
         </Text>
       </View>
 
-      {/* Actions */}
+      {/* Header Actions */}
       <View style={s.actions}>
-        {/* Study Library Quick Link */}
+        {/* Search in chat */}
+        <TouchableOpacity
+          onPress={onSearchToggle}
+          style={s.iconBtn}
+          accessibilityLabel="Search conversation"
+        >
+          <Search size={18} color={C.iconDefault} />
+        </TouchableOpacity>
+
+        {/* Media Gallery */}
+        <TouchableOpacity
+          onPress={onGallery}
+          style={s.iconBtn}
+          accessibilityLabel="Shared media gallery"
+        >
+          <ImageIcon size={18} color={C.iconDefault} />
+        </TouchableOpacity>
+
+        {/* Recycle Bin */}
+        <TouchableOpacity
+          onPress={() => router.push('/recycle-bin')}
+          style={s.iconBtn}
+          accessibilityLabel="Recycle Bin"
+        >
+          <Trash2 size={18} color={C.iconDefault} />
+        </TouchableOpacity>
+
+        {/* Study Library Link */}
         <TouchableOpacity
           onPress={() => router.push('/study')}
           style={s.iconBtn}
           accessibilityLabel="Engineering Study Library"
         >
-          <BookEngineeringLogo size={22} />
-        </TouchableOpacity>
-
-        {/* Search */}
-        <TouchableOpacity onPress={onSearchToggle} style={s.iconBtn} accessibilityLabel="Search chat">
-          <Search size={19} color={C.iconDefault} />
-        </TouchableOpacity>
-
-        {/* Role / Conversation Switcher */}
-        {onRoleSwitchToggle && (
-          <TouchableOpacity
-            onPress={onRoleSwitchToggle}
-            style={s.iconBtn}
-            accessibilityLabel="Switch contacts and roles"
-          >
-            <Users size={19} color={C.iconDefault} />
-          </TouchableOpacity>
-        )}
-
-        {/* ── Notification Bell with Red Badge ────────────────────────────── */}
-        <TouchableOpacity
-          onPress={handleBellPress}
-          style={s.bellBtn}
-          activeOpacity={0.8}
-          accessibilityLabel="Notifications"
-        >
-          <Animated.View style={{ transform: [{ scale: bellScale }] }}>
-            <Bell size={20} color={unread > 0 ? C.accent : C.iconDefault} />
-          </Animated.View>
-          {unread > 0 && (
-            <View style={s.redBadge}>
-              <Text style={s.badgeCount}>{unread > 99 ? '99+' : unread}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        {/* Gallery */}
-        <TouchableOpacity onPress={onGallery} style={s.iconBtn} accessibilityLabel="Media gallery">
-          <ImageIcon size={19} color={C.iconDefault} />
+          <BookOpen size={18} color={C.iconDefault} />
         </TouchableOpacity>
 
         {/* Settings */}
-        <TouchableOpacity onPress={onSettings} style={s.iconBtn} accessibilityLabel="Settings">
-          <MoreVertical size={19} color={C.iconDefault} />
+        <TouchableOpacity
+          onPress={onSettings}
+          style={s.iconBtn}
+          accessibilityLabel="Settings"
+        >
+          <MoreVertical size={18} color={C.iconDefault} />
         </TouchableOpacity>
       </View>
+
+      {/* Milestone Modal */}
+      <MilestoneCounterModal
+        visible={showMilestoneModal}
+        onClose={() => setShowMilestoneModal(false)}
+        C={C}
+        partnerName={partnerName}
+        onShareToChat={onShareMilestoneToChat}
+      />
     </View>
   );
 }
@@ -190,13 +165,10 @@ const s = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-  },
-  back: {
-    padding: 6,
+    gap: 10,
   },
   avatar: {
     width: 38,
@@ -229,22 +201,25 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flexWrap: 'wrap',
   },
   name: {
     fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: -0.2,
   },
-  roleBadge: {
-    paddingHorizontal: 6,
+  milestonePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 10,
     borderWidth: 1,
   },
-  roleText: {
+  milestoneText: {
     fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
+    fontWeight: '700',
   },
   status: {
     fontSize: 11,
@@ -252,32 +227,9 @@ const s = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 1,
   },
   iconBtn: {
     padding: 7,
-  },
-  bellBtn: {
-    padding: 7,
-    position: 'relative',
-  },
-  redBadge: {
-    position: 'absolute',
-    top: 3,
-    right: 3,
-    backgroundColor: '#ef4444',
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5,
-    borderColor: '#ffffff',
-  },
-  badgeCount: {
-    color: '#ffffff',
-    fontSize: 9,
-    fontWeight: '900',
-    textAlign: 'center',
   },
 });

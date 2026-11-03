@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "cleanUrls": true,
   "builds": [
     {
       "src": "*.html",
@@ -7,13 +8,10 @@
     }
   ],
   "routes": [
-    {
-      "src": "/gallery.html",
-      "dest": "/gallery.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/gallery.html", "dest": "/gallery.html" },
+    { "src": "/login.html", "dest": "/login.html" },
+    { "src": "/engihub_logo.jpg", "dest": "/engihub_logo.jpg" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

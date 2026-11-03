@@ -1,6 +1,36 @@
 import { getSupabase, ExtendedChatMessage } from './supabaseClient';
 
 export const CHAT_ID = 'dharya-surya-sadhana';
+export const STUDY_GROUP_CHAT_ID = 'engineering-study-circle';
+
+export interface ConversationInfo {
+  id: string;
+  name: string;
+  type: 'direct' | 'group';
+  participants: ('surya' | 'sadhana')[];
+  description?: string;
+  isPinned?: boolean;
+  avatar?: string;
+}
+
+export const PERMITTED_CONVERSATIONS: ConversationInfo[] = [
+  {
+    id: 'dharya-surya-sadhana',
+    name: 'Sadhana',
+    type: 'direct',
+    participants: ['surya', 'sadhana'],
+    description: 'Private 1-to-1 conversation',
+    isPinned: true,
+  },
+  {
+    id: 'engineering-study-circle',
+    name: 'Engineering Study Circle',
+    type: 'group',
+    participants: ['surya', 'sadhana'],
+    description: 'B.Tech Core Subjects, GATE & Semester Discussion',
+    isPinned: false,
+  },
+];
 
 /**
  * Converts a Supabase PostgreSQL row to an ExtendedChatMessage
@@ -46,28 +76,33 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     };
   }
 
-  const status: 'sending' | 'sent' | 'delivered' | 'read' =
+  const status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed' =
     row.status === 'read'
       ? 'read'
       : row.status === 'delivered'
       ? 'delivered'
+      : row.status === 'failed'
+      ? 'failed'
       : row.status === 'sending'
       ? 'sending'
       : 'sent';
 
   const isStarred = Array.isArray(row.starred_by) && row.starred_by.length > 0;
+  const deletedForAll = !!row.deleted_for_all;
+  const deletedFor = Array.isArray(row.deleted_for) ? row.deleted_for : [];
 
   return {
     id: String(row.id),
+    chatId: row.chat_id || CHAT_ID,
     sender,
-    text: row.content || '',
+    text: deletedForAll ? 'This message was deleted' : row.content || '',
     time: timeStr,
     timestamp: createdAtMs,
     read: status === 'read',
     status,
     type: msgType,
-    mediaUrl: row.media_url || undefined,
-    thumbnailUrl: row.media_thumb || undefined,
+    mediaUrl: deletedForAll ? undefined : (row.media_url || undefined),
+    thumbnailUrl: deletedForAll ? undefined : (row.media_thumb || undefined),
     reactions:
       typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
     replyTo: replyToObj,
@@ -76,6 +111,10 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     transcript: row.formatted_content?.transcript || undefined,
     isPinned: !!row.pinned,
     isStarred,
+    isEdited: !!row.edited_at,
+    editedAt: row.edited_at || undefined,
+    deletedFor,
+    deletedForAll,
     fileSizeKb: row.media_size ? Math.round(row.media_size / 1024) : undefined,
     duration: row.media_duration ? String(row.media_duration) : undefined,
     documentName: row.media_name || undefined,
@@ -84,8 +123,8 @@ export function rowToMessage(row: any): ExtendedChatMessage {
         ? `${(row.media_size / 1048576).toFixed(1)} MB`
         : `${Math.round(row.media_size / 1024)} KB`
       : undefined,
-    documentUrl: msgType === 'document' ? row.media_url : undefined,
-    audioUrl: msgType === 'voice' ? row.media_url : undefined,
+    documentUrl: msgType === 'document' && !deletedForAll ? row.media_url : undefined,
+    audioUrl: msgType === 'voice' && !deletedForAll ? row.media_url : undefined,
     audioDuration: row.media_duration || undefined,
     poll: pollObj,
   };
@@ -94,10 +133,10 @@ export function rowToMessage(row: any): ExtendedChatMessage {
 /**
  * Converts an ExtendedChatMessage to a Supabase messages table row
  */
-export function messageToRow(msg: ExtendedChatMessage): any {
+export function messageToRow(msg: ExtendedChatMessage, defaultChatId: string = CHAT_ID): any {
   return {
     id: msg.id,
-    chat_id: CHAT_ID,
+    chat_id: msg.chatId || defaultChatId,
     sender_id: msg.sender,
     content: msg.text || '',
     formatted_content: {
@@ -117,6 +156,9 @@ export function messageToRow(msg: ExtendedChatMessage): any {
     delivered_at:
       msg.status === 'delivered' || msg.status === 'read' ? new Date().toISOString() : null,
     read_at: msg.status === 'read' ? new Date().toISOString() : null,
+    edited_at: msg.editedAt || (msg.isEdited ? new Date().toISOString() : null),
+    deleted_for: msg.deletedFor || [],
+    deleted_for_all: !!msg.deletedForAll,
     reactions: msg.reactions || {},
     starred_by: msg.isStarred ? ['all'] : [],
     pinned: !!msg.isPinned,
@@ -128,37 +170,58 @@ export function messageToRow(msg: ExtendedChatMessage): any {
 }
 
 /**
- * Fetch all messages from Supabase
+ * Fetch messages from Supabase for a conversation with pagination
  */
-export async function fetchRemoteMessages(): Promise<ExtendedChatMessage[]> {
+export async function fetchRemoteMessages(
+  chatId: string = CHAT_ID,
+  limit: number = 50,
+  beforeTimestamp?: number
+): Promise<{ messages: ExtendedChatMessage[]; hasMore: boolean }> {
   try {
     const supabase = getSupabase();
-    const { data, error } = await supabase
+    let query = supabase
       .from('messages')
       .select('*')
-      .eq('chat_id', CHAT_ID)
-      .order('created_at', { ascending: true });
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: false })
+      .limit(limit + 1);
 
+    if (beforeTimestamp) {
+      query = query.lt('created_at', new Date(beforeTimestamp).toISOString());
+    }
+
+    const { data, error } = await query;
     if (error) {
       console.warn('[chatSync] fetchRemoteMessages error:', error.message);
-      return [];
+      return { messages: [], hasMore: false };
     }
-    if (!data || !Array.isArray(data)) return [];
+    if (!data || !Array.isArray(data)) return { messages: [], hasMore: false };
 
-    return data.map(rowToMessage);
+    const hasMore = data.length > limit;
+    const rows = hasMore ? data.slice(0, limit) : data;
+    const msgs = rows.reverse().map(rowToMessage);
+    return { messages: msgs, hasMore };
   } catch (err) {
     console.warn('[chatSync] fetchRemoteMessages failed:', err);
-    return [];
+    return { messages: [], hasMore: false };
   }
+}
+
+/**
+ * Fetch all messages from Supabase (convenience helper)
+ */
+export async function fetchAllRemoteMessages(chatId: string = CHAT_ID): Promise<ExtendedChatMessage[]> {
+  const result = await fetchRemoteMessages(chatId, 100);
+  return result.messages;
 }
 
 /**
  * Save / upsert a single message to Supabase
  */
-export async function saveRemoteMessage(msg: ExtendedChatMessage): Promise<boolean> {
+export async function saveRemoteMessage(msg: ExtendedChatMessage, chatId: string = CHAT_ID): Promise<boolean> {
   try {
     const supabase = getSupabase();
-    const row = messageToRow(msg);
+    const row = messageToRow(msg, chatId);
     const { error } = await supabase.from('messages').upsert(row, { onConflict: 'id' });
     if (error) {
       console.warn('[chatSync] saveRemoteMessage error:', error.message);
@@ -167,6 +230,94 @@ export async function saveRemoteMessage(msg: ExtendedChatMessage): Promise<boole
     return true;
   } catch (err) {
     console.warn('[chatSync] saveRemoteMessage failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Edit message text with audit timestamp in Supabase
+ */
+export async function editRemoteMessage(
+  msgId: string,
+  newText: string,
+  senderId: 'surya' | 'sadhana'
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const allowedSenders = senderId === 'surya' ? ['surya', 'dharya'] : ['sadhana'];
+    const { error } = await supabase
+      .from('messages')
+      .update({
+        content: newText,
+        edited_at: new Date().toISOString(),
+      })
+      .eq('id', msgId)
+      .in('sender_id', allowedSenders);
+
+    if (error) {
+      console.warn('[chatSync] editRemoteMessage error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] editRemoteMessage failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Delete message for current user only ("Delete for me")
+ */
+export async function deleteRemoteMessageForMe(
+  msgId: string,
+  currentDeletedFor: string[] = [],
+  userId: 'surya' | 'sadhana'
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const updated = Array.from(new Set([...currentDeletedFor, userId]));
+    const { error } = await supabase
+      .from('messages')
+      .update({ deleted_for: updated })
+      .eq('id', msgId);
+
+    if (error) {
+      console.warn('[chatSync] deleteRemoteMessageForMe error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] deleteRemoteMessageForMe failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Delete message for everyone ("Delete for everyone")
+ */
+export async function deleteRemoteMessageForEveryone(
+  msgId: string,
+  senderId: 'surya' | 'sadhana'
+): Promise<boolean> {
+  try {
+    const supabase = getSupabase();
+    const allowedSenders = senderId === 'surya' ? ['surya', 'dharya'] : ['sadhana'];
+    const { error } = await supabase
+      .from('messages')
+      .update({
+        deleted_for_all: true,
+        content: 'This message was deleted',
+      })
+      .eq('id', msgId)
+      .in('sender_id', allowedSenders);
+
+    if (error) {
+      console.warn('[chatSync] deleteRemoteMessageForEveryone error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[chatSync] deleteRemoteMessageForEveryone failed:', err);
     return false;
   }
 }
@@ -202,7 +353,8 @@ export async function updateRemoteStatus(
  * Mark all incoming messages from the other user as read in Supabase
  */
 export async function markAllIncomingAsRead(
-  currentUser: 'surya' | 'sadhana'
+  currentUser: 'surya' | 'sadhana',
+  chatId: string = CHAT_ID
 ): Promise<boolean> {
   try {
     const supabase = getSupabase();
@@ -212,7 +364,7 @@ export async function markAllIncomingAsRead(
     const { error } = await supabase
       .from('messages')
       .update({ status: 'read', read_at: new Date().toISOString() })
-      .eq('chat_id', CHAT_ID)
+      .eq('chat_id', chatId)
       .in('sender_id', otherSenders)
       .neq('status', 'read');
 

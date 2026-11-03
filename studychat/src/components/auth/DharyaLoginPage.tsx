@@ -1,145 +1,203 @@
 import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { Eye, EyeOff, ShieldCheck, ArrowRight, ArrowLeft, X, User, KeyRound, Sparkles } from 'lucide-react';
-import { EngineeringLogo } from '../common/EngineeringLogo';
-import confetti from 'canvas-confetti';
+import { Eye, EyeOff, ShieldCheck, ArrowRight, BookOpen, KeyRound, User, Lock } from 'lucide-react';
 
 export const DharyaLoginPage: React.FC = () => {
-  const { loginToChat, switchTab, selectedTopic, selectedSubject } = useStudyApp();
+  const { loginToChat, quickLogin, switchTab } = useStudyApp();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   const handleManualLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    const success = loginToChat(username, password);
-    if (success) {
-      const u = username.trim().toLowerCase();
-      confetti({
-        particleCount: 70,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: u === 'surya' ? ['#10b981', '#34d399', '#6ee7b7'] : ['#f43f5e', '#fb7185', '#fda4af'],
-      });
-      switchTab('chat');
+    try {
+      const success = loginToChat(username, password);
+      if (success) {
+        switchTab('chat');
+      } else {
+        setError('Invalid credentials. Please verify your Student ID and Access Key.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleQuickSignIn = (user: 'surya' | 'sadhana') => {
+    quickLogin(user);
+    switchTab('chat');
+  };
+
   return (
-    <div className="max-w-md mx-auto w-full pt-6 pb-24 px-3 sm:px-0">
-      <div className="relative">
-        {/* Soft Ambient Background Glow */}
-        <div className="absolute -inset-3 rounded-3xl bg-gradient-to-tr from-blue-500/10 via-indigo-500/15 to-emerald-500/10 blur-2xl opacity-80 pointer-events-none" />
+    <div className="min-h-screen bg-[#131615] flex items-center justify-center p-4 sm:p-6 text-[#ECEEEB] font-sans relative">
+      <div className="w-full max-w-md">
+        <div className="bg-[#1A1D1C] border border-[#2A302D] rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+          
+          {/* Top Bar: Quiet Mode & Camouflage Switch */}
+          <div className="flex items-center justify-between text-xs pb-3 border-b border-[#242A27]">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#7E9F89]" />
+              <span className="text-[#A3ADA5] font-mono tracking-wider uppercase text-[11px]">Private Space</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => switchTab('home')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#222724] hover:bg-[#282F2B] text-[#9EA7A0] hover:text-[#ECEEEB] transition-colors border border-[#2D3531] cursor-pointer text-xs"
+              title="Open Academic Curriculum & Notes Portal"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#7E9F89]" />
+              <span>Academic Mode</span>
+            </button>
+          </div>
 
-        {/* Card Container */}
-        <div className="relative bg-white/95 backdrop-blur-xl border border-[#E2D9CC] rounded-3xl p-6 sm:p-9 shadow-2xl text-center">
-          {/* Top Back to Study Portal Button */}
-          <button
-            type="button"
-            onClick={() => switchTab(selectedTopic ? 'topic-explanation' : 'home')}
-            className="absolute top-5 left-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#EDE8E1] text-[#475569] hover:text-[#0F172A] text-xs font-semibold transition-all border border-[#DDD5C7] shadow-2xs cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Study Portal</span>
-          </button>
+          {/* Quiet Branding Header */}
+          <div className="text-center space-y-1.5 pt-1">
+            <h1 className="text-2xl font-bold tracking-tight text-[#ECEEEB]">
+              Dharya
+            </h1>
+            <p className="text-xs text-[#8B968E] max-w-xs mx-auto leading-relaxed">
+              A quiet personal space for Surya &amp; Sadhana
+            </p>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => switchTab('home')}
-            className="absolute top-5 right-5 p-1.5 rounded-xl text-[#64748B] hover:text-[#0F172A] hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Profile Selector */}
+          <div className="space-y-3">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-[#707A72] text-center">
+              Continue as
+            </div>
 
-          {/* Academic Portal Verification Emblem */}
-          <div className="pt-6 mb-4 flex justify-center">
-            <div className="p-1 rounded-3xl bg-gradient-to-tr from-blue-50 to-indigo-50 border border-[#BFDBFE] flex items-center justify-center shadow-xs">
-              <EngineeringLogo size="lg" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Surya Profile Button - Sage accent */}
+              <button
+                type="button"
+                onClick={() => handleQuickSignIn('surya')}
+                className="p-3.5 rounded-xl bg-[#202522] hover:bg-[#262C29] border border-[#2E3632] hover:border-[#4E6B58] transition-all text-left flex items-center gap-3 cursor-pointer group active:scale-[0.99]"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#2B3830] border border-[#3E5246] flex items-center justify-center font-bold text-sm text-[#A5C2AF] shrink-0">
+                  S
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-[#ECEEEB] leading-tight">
+                    Surya
+                  </div>
+                  <div className="text-[11px] text-[#7E9F89] mt-0.5">Enter space</div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-[#707A72] group-hover:text-[#A5C2AF] transition-colors" />
+              </button>
+
+              {/* Sadhana Profile Button - Muted Rose accent */}
+              <button
+                type="button"
+                onClick={() => handleQuickSignIn('sadhana')}
+                className="p-3.5 rounded-xl bg-[#222122] hover:bg-[#2A2829] border border-[#342D30] hover:border-[#7A4B53] transition-all text-left flex items-center gap-3 cursor-pointer group active:scale-[0.99]"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#36272B] border border-[#52383F] flex items-center justify-center font-bold text-sm text-[#D8A1AA] shrink-0">
+                  S
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-[#ECEEEB] leading-tight">
+                    Sadhana
+                  </div>
+                  <div className="text-[11px] text-[#D48D98] mt-0.5">Enter space</div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-[#707A72] group-hover:text-[#D8A1AA] transition-colors" />
+              </button>
             </div>
           </div>
 
-          {/* Academic Verification Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EBF3FB] border border-[#BFDBFE] text-[#1D4ED8] text-[11px] font-mono font-bold uppercase tracking-wider mb-2 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-            <span>Academic Portal Verification</span>
-          </div>
-
-          {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight font-serif">
-            Student Verification
-          </h1>
-
-          <p className="text-xs text-[#64748B] mt-1.5 mb-6 leading-relaxed">
-            Enter your university credentials to verify topic assessment for{' '}
-            <span className="text-[#1273C4] font-bold">{selectedTopic?.title || 'Engineering Curriculum'}</span>.
-          </p>
-
-          {/* Form Fields */}
-          <form onSubmit={handleManualLogin} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1.5 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#64748B]" />
-                <span>Student ID / Username</span>
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter Student ID (e.g. sec2511xx)"
-                required
-                className="w-full px-4 py-3 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#1273C4] focus:ring-3 focus:ring-[#1273C4]/15 transition-all font-sans shadow-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#334155] mb-1.5 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-[#64748B]" />
-                <span>Access Key / Password</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter access key"
-                  autoComplete="new-password"
-                  required
-                  className="w-full px-4 py-3 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm placeholder-[#94A3B8] focus:outline-none focus:border-[#1273C4] focus:ring-3 focus:ring-[#1273C4]/15 transition-all font-sans pr-11 shadow-xs"
-                />
+          {/* Manual Access Key Form */}
+          <div className="pt-2">
+            {!showManualForm ? (
+              <div className="text-center">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#0F172A] transition-colors cursor-pointer"
+                  onClick={() => setShowManualForm(true)}
+                  className="text-xs text-[#707A72] hover:text-[#A3ADA5] transition-colors inline-flex items-center gap-1.5 cursor-pointer font-sans"
                 >
-                  {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Sign in with access key</span>
                 </button>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleManualLogin} className="space-y-4 pt-3 border-t border-[#242A27] text-left">
+                <div>
+                  <label htmlFor="login-username" className="block text-xs font-medium text-[#A3ADA5] mb-1.5 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#707A72]" />
+                    <span>Username or Student ID</span>
+                  </label>
+                  <input
+                    id="login-username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="surya or sadhana"
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141716] border border-[#2E3430] text-[#ECEEEB] text-sm placeholder-[#555E58] focus:outline-none focus:border-[#7E9F89] transition-colors font-sans"
+                  />
+                </div>
 
-            {error && (
-              <div className="p-3 rounded-2xl bg-[#FFF1F2] border border-[#FECDD3] text-[#BE123C] text-xs text-center font-mono">
-                {error}
-              </div>
+                <div>
+                  <label htmlFor="login-password" className="block text-xs font-medium text-[#A3ADA5] mb-1.5 flex items-center gap-1.5">
+                    <KeyRound className="w-3.5 h-3.5 text-[#707A72]" />
+                    <span>Access Key / Password</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="login-password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter access key"
+                      required
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#141716] border border-[#2E3430] text-[#ECEEEB] text-sm placeholder-[#555E58] focus:outline-none focus:border-[#7E9F89] transition-colors font-sans pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#707A72] hover:text-[#ECEEEB] transition-colors cursor-pointer p-1"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div role="alert" className="p-3 rounded-xl bg-[#2A1D1F] border border-[#52292E] text-[#E08D93] text-xs leading-relaxed">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-2.5 px-4 rounded-xl bg-[#4E6B58] hover:bg-[#3D5646] active:bg-[#354B3D] text-[#FFFFFF] font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>{isLoading ? 'Verifying...' : 'Verify and Enter'}</span>
+                </button>
+              </form>
             )}
-
-            <button
-              type="submit"
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-            >
-              <span>Verify &amp; Proceed</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Academic Footer Note */}
-          <div className="mt-6 pt-4 border-t border-[#E5DFD5] text-[11px] text-[#94A3B8] text-center font-mono">
-            Department of Engineering &amp; Technology • AICTE GATE Standard
           </div>
+
+          {/* Quiet Security Footer */}
+          <div className="pt-3 text-center text-[11px] text-[#707A72] flex items-center justify-center gap-1.5 border-t border-[#242A27]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#7E9F89]" />
+            <span>Encrypted private session</span>
+          </div>
+
         </div>
       </div>
     </div>

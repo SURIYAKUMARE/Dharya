@@ -33,6 +33,7 @@ import {
   Heart,
   Download,
   MoreHorizontal,
+  MoreVertical,
   X,
   ChevronLeft,
   ChevronRight,
@@ -145,6 +146,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const [editCaptionTarget, setEditCaptionTarget] = useState<GalleryItem | null>(null);
   const [newCaptionText, setNewCaptionText] = useState('');
   const [showStorageInfo, setShowStorageInfo] = useState(false);
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
 
   // ── Timeline Incident Modal State ─────────────────────────────────
   const [showIncidentModal, setShowIncidentModal] = useState(false);
@@ -703,7 +705,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       role="region"
-      aria-label="Google Gallery & Timeline"
+      aria-label="Gallery"
     >
       {/* ── Drag & Drop Full Overlay ── */}
       {isDragOver && (
@@ -761,16 +763,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           </div>
         </div>
       ) : (
-        /* Default Google Photos Header */
-        <header className="bg-[#1e1f20] border-b border-[#2d2f31] px-4 sm:px-6 pt-3.5 pb-2.5 shrink-0 shadow-sm">
-          {/* Row 1: Brand & Floating Search Pill & Add Media FAB */}
+        /* Restrained Gallery Header */
+        <header className="bg-[#181c1b] border-b border-[#2b332e] px-4 sm:px-6 pt-3.5 pb-2.5 shrink-0 shadow-xs">
+          {/* Row 1: Brand & Search Bar & Primary Actions */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
-            {/* Google Gallery Logo & Navigation Switchers */}
+            {/* Gallery Navigation & Info */}
             <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
               {onBackToChat && (
                 <button
                   onClick={onBackToChat}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] text-xs font-semibold text-[#8696a0] hover:text-white transition-all cursor-pointer active:scale-95 shrink-0"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#131615] hover:bg-[#232926] border border-[#2b332e] text-xs font-medium text-[#808B84] hover:text-[#ECEEEB] transition-all cursor-pointer shrink-0"
                   title="Back to Active Chat"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
@@ -778,108 +780,127 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 </button>
               )}
 
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#1a73e8] via-[#8ab4f8] to-[#c2e7ff] flex items-center justify-center text-[#001d35] shadow-md shadow-blue-500/20 shrink-0">
-                <Images className="w-5 h-5 stroke-[2.5]" />
+              <div className="w-9 h-9 rounded-xl bg-[#1d2420] border border-[#2b3a30] text-[#7E9F89] flex items-center justify-center shrink-0">
+                <Images className="w-4 h-4 stroke-[2]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                    Google Gallery
+                  <h1 className="text-base sm:text-lg font-semibold text-[#ECEEEB] tracking-tight">
+                    Gallery
                   </h1>
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#28292a] text-[#8ab4f8] border border-[#3c4043]">
-                    {items.length} items
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-[#8e918f]">
-                  <button
-                    onClick={() => setShowStorageInfo(true)}
-                    className="inline-flex items-center gap-1 hover:text-[#8ab4f8] cursor-pointer"
-                    title="Storage details"
-                  >
-                    <HardDrive className="w-3 h-3 text-[#8ab4f8]" />
-                    <span>IndexedDB Persistent Storage</span>
-                  </button>
+                  {items.length > 0 && (
+                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#1d2420] text-[#7E9F89] border border-[#2b3a30]">
+                      {items.length} items
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Google Search Pill */}
+            {/* Restrained Search Input */}
             <div className="relative flex-1 max-w-md mx-auto sm:mx-4">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e918f] pointer-events-none" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808B84] pointer-events-none" />
               <input
                 type="text"
                 placeholder={
                   activeTab === 'timeline'
-                    ? 'Search timeline incidents and stories…'
-                    : 'Search photos, videos, people & albums…'
+                    ? 'Search memories…'
+                    : 'Search photos, videos, albums…'
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 rounded-full bg-[#28292a] hover:bg-[#333538] focus:bg-[#1e1f20] border border-[#3c4043] focus:border-[#8ab4f8] text-[#e3e3e3] placeholder-[#8e918f] text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#8ab4f8] transition-all shadow-inner"
+                className="w-full pl-10 pr-9 py-2 rounded-xl bg-[#131615] hover:bg-[#1a1f1c] focus:bg-[#131615] border border-[#2b332e] focus:border-[#7E9F89] text-[#ECEEEB] placeholder-[#808B84] text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7E9F89]/30 transition-all shadow-inner"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8e918f] hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808B84] hover:text-white"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Action Buttons: Add Media & Refresh */}
+            {/* Action Buttons: Primary "+ Add photos" & Overflow Menu */}
             <div className="flex items-center gap-2 justify-end shrink-0">
-              {onOpenTimeline && (
-                <button
-                  onClick={onOpenTimeline}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-amber-500/40 text-xs font-bold text-amber-300 hover:text-white transition-all cursor-pointer shrink-0"
-                  title="Open Full Life Timeline"
-                >
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden md:inline">Life Timeline</span>
-                </button>
-              )}
-
-              {onOpenRecycleBin && (
-                <button
-                  onClick={onOpenRecycleBin}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-rose-500/40 text-xs font-bold text-rose-300 hover:text-white transition-all cursor-pointer shrink-0"
-                  title="Open Recycle Bin"
-                >
-                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="hidden md:inline">Recycle Bin</span>
-                </button>
-              )}
-
-              <button
-                onClick={loadData}
-                disabled={loading}
-                className="w-9 h-9 rounded-full bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] flex items-center justify-center text-[#c4c7c5] hover:text-white transition-all cursor-pointer"
-                title="Refresh"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-
               {activeTab === 'timeline' ? (
-                /* Add Incident Button when on Timeline tab */
                 <button
                   onClick={openNewIncidentModal}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] active:scale-95 text-[#001d35] text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#8ab4f8]/25 cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
                 >
-                  <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                  <span>+ Add Incident</span>
+                  <PlusCircle className="w-4 h-4 stroke-[2]" />
+                  <span>+ Add memory</span>
                 </button>
               ) : (
-                /* Prominent Google Style "+ Add photos and videos" FAB Button */
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] active:scale-95 text-[#001d35] text-xs sm:text-sm font-bold transition-all shadow-md shadow-[#8ab4f8]/25 cursor-pointer"
-                  aria-label="Add photos and videos"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
+                  aria-label="Add photos"
                 >
-                  <Upload className="w-4 h-4 stroke-[2.5]" />
-                  <span>+ Add photos &amp; videos</span>
+                  <Upload className="w-4 h-4 stroke-[2]" />
+                  <span>+ Add photos</span>
                 </button>
               )}
+
+              {/* Compact Overflow Menu for Secondary Actions */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowOverflowMenu(!showOverflowMenu)}
+                  className="w-9 h-9 rounded-xl bg-[#131615] hover:bg-[#232926] border border-[#2b332e] flex items-center justify-center text-[#808B84] hover:text-[#ECEEEB] transition-all cursor-pointer"
+                  title="More actions"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {showOverflowMenu && (
+                  <div className="absolute right-0 top-11 w-48 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
+                    {onOpenRecycleBin && (
+                      <button
+                        onClick={() => {
+                          onOpenRecycleBin();
+                          setShowOverflowMenu(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-rose-300 font-medium"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Recycle Bin</span>
+                      </button>
+                    )}
+                    {onOpenTimeline && (
+                      <button
+                        onClick={() => {
+                          onOpenTimeline();
+                          setShowOverflowMenu(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#7E9F89] font-medium"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
+                        <span>Memories</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowStorageInfo(true);
+                        setShowOverflowMenu(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
+                    >
+                      <HardDrive className="w-3.5 h-3.5 text-[#7E9F89]" />
+                      <span>Storage details</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        loadData();
+                        setShowOverflowMenu(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -895,7 +916,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Google Photos Navigation Tabs with Memory Timeline */}
+          {/* Row 2: Gallery Navigation Tabs */}
           <div className="flex items-center justify-between gap-3 overflow-x-auto scrollbar-none pt-1">
             <nav className="flex items-center gap-1 sm:gap-2 shrink-0" role="tablist">
               <button
@@ -903,14 +924,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   setActiveTab('photos');
                   setSelectedAlbumId(null);
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   activeTab === 'photos' && !selectedAlbumId
-                    ? 'bg-[#8ab4f8] text-[#001d35] shadow-sm'
-                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                 }`}
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Photos ({photoCount})</span>
+                <span>Photos{photoCount > 0 ? ` (${photoCount})` : ''}</span>
               </button>
 
               <button
@@ -918,14 +939,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   setActiveTab('videos');
                   setSelectedAlbumId(null);
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   activeTab === 'videos' && !selectedAlbumId
-                    ? 'bg-[#8ab4f8] text-[#001d35] shadow-sm'
-                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                 }`}
               >
                 <Film className="w-3.5 h-3.5" />
-                <span>Videos ({videoCount})</span>
+                <span>Videos{videoCount > 0 ? ` (${videoCount})` : ''}</span>
               </button>
 
               <button
@@ -933,14 +954,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   setActiveTab('albums');
                   setSelectedAlbumId(null);
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   activeTab === 'albums'
-                    ? 'bg-[#8ab4f8] text-[#001d35] shadow-sm'
-                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                 }`}
               >
                 <Folder className="w-3.5 h-3.5" />
-                <span>Albums ({albums.length})</span>
+                <span>Albums{albums.length > 0 ? ` (${albums.length})` : ''}</span>
               </button>
 
               <button
@@ -948,14 +969,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   setActiveTab('favorites');
                   setSelectedAlbumId(null);
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   activeTab === 'favorites' && !selectedAlbumId
-                    ? 'bg-[#8ab4f8] text-[#001d35] shadow-sm'
-                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                    ? 'bg-[#2a1d20] text-[#D48D98] border border-[#48282e] shadow-xs'
+                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                 }`}
               >
-                <Heart className="w-3.5 h-3.5 text-rose-400" />
-                <span>Favorites ({favCount})</span>
+                <Heart className="w-3.5 h-3.5 text-[#D48D98]" />
+                <span>Favorites{favCount > 0 ? ` (${favCount})` : ''}</span>
               </button>
 
               {/* Memory Incident Timeline Tab */}
@@ -964,14 +985,14 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   setActiveTab('timeline');
                   setSelectedAlbumId(null);
                 }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   activeTab === 'timeline'
-                    ? 'bg-gradient-to-r from-[#8ab4f8] to-[#c2e7ff] text-[#001d35] shadow-sm font-extrabold'
-                    : 'bg-[#28292a] text-[#c4c7c5] hover:text-white hover:bg-[#333538]'
+                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Timeline ({timelineIncidents.length})</span>
+                <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
+                <span>Memories{timelineIncidents.length > 0 ? ` (${timelineIncidents.length})` : ''}</span>
               </button>
             </nav>
 
@@ -996,7 +1017,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-[#8e918f] uppercase tracking-wide">
               {uploads.some((u) => u.status === 'uploading')
-                ? 'Uploading to Google Gallery…'
+                ? 'Uploading to Gallery…'
                 : 'Upload Complete'}
             </span>
             <button
@@ -1308,28 +1329,30 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
               </div>
             )}
 
-            {/* Drag & drop helper box */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="mb-6 p-4 rounded-2xl border-2 border-dashed border-[#3c4043] hover:border-[#8ab4f8] bg-[#1e1f20]/40 hover:bg-[#1e1f20] transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#28292a] group-hover:bg-[#8ab4f8]/20 flex items-center justify-center text-[#8e918f] group-hover:text-[#8ab4f8] transition-colors shrink-0">
-                  <Upload className="w-5 h-5" />
+            {/* Drag & drop helper box (only shown when gallery has items) */}
+            {filteredItems.length > 0 && (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="mb-6 p-4 rounded-xl border border-dashed border-[#2b332e] hover:border-[#7E9F89] bg-[#181c1b] hover:bg-[#1d2420]/40 transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#131615] group-hover:bg-[#1d2420] border border-[#2b332e] flex items-center justify-center text-[#808B84] group-hover:text-[#7E9F89] transition-colors shrink-0">
+                    <Upload className="w-4 h-4 stroke-[2]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#ECEEEB]">
+                      Add photos &amp; videos
+                    </p>
+                    <p className="text-xs text-[#808B84]">
+                      Drag and drop anywhere or click to browse
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    Add photos &amp; videos to Google Gallery
-                  </p>
-                  <p className="text-xs text-[#8e918f]">
-                    Drag &amp; drop anywhere or click to browse • High quality &amp; instant playback
-                  </p>
-                </div>
+                <span className="px-3.5 py-1.5 rounded-lg bg-[#131615] group-hover:bg-[#4E6B58] text-[#808B84] group-hover:text-white border border-[#2b332e] group-hover:border-transparent text-xs font-medium transition-all shrink-0">
+                  Browse Files
+                </span>
               </div>
-              <span className="px-3.5 py-1.5 rounded-full bg-[#28292a] group-hover:bg-[#8ab4f8] text-[#c4c7c5] group-hover:text-[#001d35] text-xs font-bold transition-all shrink-0">
-                Browse Files
-              </span>
-            </div>
+            )}
 
             {/* Skeletons Loading State */}
             {loading && (
@@ -1337,7 +1360,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-square rounded-2xl bg-[#1e1f20] animate-pulse border border-[#2d2f31]"
+                    className="aspect-square rounded-2xl bg-[#181c1b] animate-pulse border border-[#2b332e]"
                   />
                 ))}
               </div>
@@ -1346,16 +1369,16 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
             {/* Empty State */}
             {!loading && !fetchError && filteredItems.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-20 h-20 rounded-3xl bg-[#1e1f20] border border-[#3c4043] flex items-center justify-center mb-4 text-[#8e918f]">
+                <div className="w-16 h-16 rounded-2xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center mb-4 text-[#7E9F89]">
                   {activeTab === 'videos' ? (
-                    <Film className="w-10 h-10 text-[#8ab4f8]" />
+                    <Film className="w-8 h-8 stroke-[1.75]" />
                   ) : activeTab === 'favorites' ? (
-                    <Heart className="w-10 h-10 text-rose-400" />
+                    <Heart className="w-8 h-8 stroke-[1.75] text-[#D48D98]" />
                   ) : (
-                    <Images className="w-10 h-10 text-[#8ab4f8]" />
+                    <Images className="w-8 h-8 stroke-[1.75]" />
                   )}
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-white mb-1">
+                <h3 className="text-base sm:text-lg font-semibold text-[#ECEEEB] mb-1">
                   {searchQuery
                     ? `No matches for "${searchQuery}"`
                     : selectedAlbumId
@@ -1364,19 +1387,19 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     ? 'No videos yet'
                     : activeTab === 'favorites'
                     ? 'No favorites yet'
-                    : 'Your Gallery is Ready'}
+                    : 'No photos yet'}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#8e918f] max-w-sm mb-5 leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#808B84] max-w-sm mb-5 leading-relaxed">
                   {searchQuery
                     ? 'Try searching with different keywords or clear your query.'
-                    : 'Upload photos and videos to relive your memories anytime.'}
+                    : 'Photos and videos you share together will appear here.'}
                 </p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs sm:text-sm font-bold shadow-md shadow-[#8ab4f8]/20 cursor-pointer active:scale-95"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
                 >
-                  <Upload className="w-4 h-4 stroke-[2.5]" />
-                  <span>+ Add photos and videos</span>
+                  <Upload className="w-4 h-4 stroke-[2]" />
+                  <span>+ Add photos</span>
                 </button>
               </div>
             )}
@@ -1693,7 +1716,7 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                     : `Delete ${deleteTargets.length} items?`}
                 </h3>
                 <p className="text-xs text-[#8e918f]">
-                  Permanently remove from Google Gallery storage
+                  Permanently remove from Gallery storage
                 </p>
               </div>
             </div>
@@ -1905,35 +1928,41 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         >
           <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-2xl bg-[#8ab4f8]/20 border border-[#8ab4f8]/40 flex items-center justify-center text-[#8ab4f8]">
+              <div className="w-11 h-11 rounded-2xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center text-[#7E9F89]">
                 <HardDrive className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Browser Storage Engine</h3>
-                <p className="text-xs text-[#8ab4f8] font-semibold">IndexedDB High-Capacity</p>
+                <h3 className="text-base font-semibold text-[#ECEEEB]">Device Storage</h3>
+                <p className="text-xs text-[#7E9F89] font-medium">Local High-Capacity Cache</p>
               </div>
             </div>
-            <p className="text-xs text-[#c4c7c5] mb-4 leading-relaxed">
-              Google Gallery stores your photos, videos, custom collections, and memory timeline incidents directly inside your device's persistent IndexedDB storage engine. Media survives page refreshes and browser sessions!
+            <p className="text-xs text-[#808B84] mb-4 leading-relaxed">
+              Dharya stores your photos, videos, custom collections, and memories directly on your device with persistent local storage. Media survives page refreshes and browser sessions!
             </p>
-            <div className="bg-[#131314] p-3 rounded-2xl border border-[#2d2f31] mb-5 text-[11px] text-[#8e918f] space-y-1">
+            <div className="bg-[#131615] p-3 rounded-2xl border border-[#2b332e] mb-5 text-[11px] text-[#808B84] space-y-1">
               <div className="flex justify-between">
                 <span>Total Media Items:</span>
-                <span className="text-white font-mono">{items.length}</span>
+                <span className="text-[#ECEEEB] font-mono">{items.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Timeline Incidents:</span>
-                <span className="text-white font-mono">{timelineIncidents.length}</span>
+                <span>Memories:</span>
+                <span className="text-[#ECEEEB] font-mono">{timelineIncidents.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Collections / Albums:</span>
-                <span className="text-white font-mono">{albums.length}</span>
+                <span>Albums:</span>
+                <span className="text-[#ECEEEB] font-mono">{albums.length}</span>
               </div>
               <div className="flex justify-between">
                 <span>Persistence Status:</span>
-                <span className="text-[#8ab4f8] font-semibold">Active &amp; Persistent</span>
+                <span className="text-[#7E9F89] font-semibold">Active &amp; Persistent</span>
               </div>
             </div>
+            <button
+              onClick={() => setShowStorageInfo(false)}
+              className="w-full py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] text-white text-xs font-medium cursor-pointer transition-colors"
+            >
+              Done
+            </button>
             <button
               onClick={() => setShowStorageInfo(false)}
               className="w-full py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold cursor-pointer"

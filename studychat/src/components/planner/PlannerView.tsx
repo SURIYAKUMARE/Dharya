@@ -142,7 +142,7 @@ export const PlannerView: React.FC = () => {
         {/* Add Plan Button */}
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="px-5 py-3 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 rounded-xl bg-[#2D4A3E] hover:bg-[#233B31] text-white font-medium text-xs sm:text-sm shadow-xs transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Add Study Plan</span>

@@ -54,15 +54,43 @@ interface StudyAppContextType {
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
 
 export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isChatAuthenticated, setIsChatAuthenticated] = useState<boolean>(() => {
+    try {
+      const sessionAuth = sessionStorage.getItem('study_chat_auth') === 'true';
+      const localAuth = localStorage.getItem('study_chat_auth') === 'true';
+      return sessionAuth || localAuth;
+    } catch {
+      return false;
+    }
+  });
+
   const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
     try {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
-      if (path.includes('login') || hash === '#login' || hash === '#chat') {
+      const isAuth = sessionStorage.getItem('study_chat_auth') === 'true' ||
+                     localStorage.getItem('study_chat_auth') === 'true';
+
+      if (path.includes('academic') || hash === '#academic' || path.includes('curriculum')) {
+        return 'home';
+      }
+      if (path.includes('gallery') || hash === '#gallery') {
+        return isAuth ? 'gallery' : 'chat-login';
+      }
+      if (path.includes('timeline') || hash === '#timeline') {
+        return isAuth ? 'timeline' : 'chat-login';
+      }
+      if (path.includes('planner') || hash === '#planner') {
+        return 'planner';
+      }
+      if (path.includes('login') || hash === '#login') {
         return 'chat-login';
       }
+
+      // Default to Dharya messaging: Chat if logged in, otherwise Dharya Login
+      return isAuth ? 'chat' : 'chat-login';
     } catch {}
-    return 'home';
+    return 'chat-login';
   });
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(SUBJECTS_DATA[0]);
   const [selectedTopic, setSelectedTopic] = useState<TopicExplanation | null>(SUBJECTS_DATA[0].topics[0]);
@@ -74,14 +102,6 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (saved) return JSON.parse(saved);
     } catch {}
     return null;
-  });
-
-  const [isChatAuthenticated, setIsChatAuthenticated] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem('study_chat_auth') === 'true';
-    } catch {
-      return false;
-    }
   });
 
   const [assessmentNotice, setAssessmentNotice] = useState<string | null>(null);
@@ -207,7 +227,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setStudent(prof);
       setIsChatAuthenticated(true);
       sessionStorage.setItem('study_chat_auth', 'true');
+      localStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+      localStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'surya');
       setAssessmentNotice(null);
       setActiveTab('chat');
@@ -226,7 +248,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setStudent(prof);
       setIsChatAuthenticated(true);
       sessionStorage.setItem('study_chat_auth', 'true');
+      localStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+      localStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'sadhana');
       setAssessmentNotice(null);
       setActiveTab('chat');
@@ -278,23 +302,25 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setStudent(prof);
       setIsChatAuthenticated(true);
       sessionStorage.setItem('study_chat_auth', 'true');
+      localStorage.setItem('study_chat_auth', 'true');
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+      localStorage.setItem('study_student_profile', JSON.stringify(prof));
       setAssessmentNotice(null);
       setActiveTab('chat');
       return true;
     }
 
-    // Incorrect password: redirect directly to assessment and set notice
-    setAssessmentNotice('Incorrect password. You have been redirected to the assessment.');
-    setActiveTab('assessment');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Incorrect credentials: set clear notice and do not abruptly redirect to assessment quiz
+    setAssessmentNotice('Invalid credentials. Please verify your Student ID and Access Key.');
     return false;
   };
 
   const logoutChat = () => {
     setIsChatAuthenticated(false);
     sessionStorage.removeItem('study_chat_auth');
-    setActiveTab('home');
+    localStorage.removeItem('study_chat_auth');
+    localStorage.removeItem('studyportal_current_user');
+    setActiveTab('chat-login');
   };
 
   const switchTab = (tab: AppNavTab) => {

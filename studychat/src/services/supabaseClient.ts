@@ -23,17 +23,22 @@ export function getSupabase(): SupabaseClient {
 
 export interface ChatMessage {
   id: string;
+  chatId?: string;
   sender: 'surya' | 'sadhana';
   text: string;
   time: string;
   timestamp: number;
   read: boolean;
-  status?: 'sending' | 'sent' | 'delivered' | 'read';
+  status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
   type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document';
   mediaUrl?: string;
   reactions?: Record<string, string[]>;
   replyTo?: { id: string; sender: string; text: string };
   isSecret?: boolean;
+  isEdited?: boolean;
+  editedAt?: string;
+  deletedFor?: string[];
+  deletedForAll?: boolean;
 }
 
 export interface ExtendedChatMessage extends ChatMessage {

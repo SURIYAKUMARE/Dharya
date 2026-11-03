@@ -46,6 +46,7 @@ import {
   Smile,
   Compass,
   Award,
+  MoreVertical,
 } from 'lucide-react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import {
@@ -58,6 +59,7 @@ import {
   idbDelete,
 } from '../../services/galleryService';
 import { moveToRecycleBin } from '../../services/recycleBinService';
+import { DateCounterModal, useDateCount } from '../common/DateCounterModal';
 
 export interface LifeTimelineViewProps {
   onBackToChat?: () => void;
@@ -75,13 +77,13 @@ interface TagConfig {
 }
 
 const PRESET_TAGS: TagConfig[] = [
-  { id: 'Milestone', label: 'Milestone 💖', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.4)', bgGlow: 'rgba(251,191,36,0.12)', dotColor: '#f59e0b' },
-  { id: 'First Time', label: 'First Time ✨', color: '#c084fc', borderColor: 'rgba(192,132,252,0.4)', bgGlow: 'rgba(192,132,252,0.12)', dotColor: '#a855f7' },
-  { id: 'Special Date', label: 'Special Date ☕', color: '#34d399', borderColor: 'rgba(52,211,153,0.4)', bgGlow: 'rgba(52,211,153,0.12)', dotColor: '#10b981' },
-  { id: 'Trip & Travel', label: 'Trip & Travel ✈️', color: '#60a5fa', borderColor: 'rgba(96,165,250,0.4)', bgGlow: 'rgba(96,165,250,0.12)', dotColor: '#3b82f6' },
-  { id: 'Campus Life', label: 'Campus Life 🎓', color: '#f472b6', borderColor: 'rgba(244,114,182,0.4)', bgGlow: 'rgba(244,114,182,0.12)', dotColor: '#ec4899' },
-  { id: 'Funny Incident', label: 'Funny Incident 😄', color: '#fb923c', borderColor: 'rgba(251,146,60,0.4)', bgGlow: 'rgba(251,146,60,0.12)', dotColor: '#f97316' },
-  { id: 'Achievement', label: 'Achievement 🏆', color: '#facc15', borderColor: 'rgba(250,204,21,0.4)', bgGlow: 'rgba(250,204,21,0.12)', dotColor: '#eab308' },
+  { id: 'Milestone', label: 'Milestone', color: '#D48D98', borderColor: '#48282e', bgGlow: 'transparent', dotColor: '#D48D98' },
+  { id: 'First Time', label: 'First Time', color: '#7E9F89', borderColor: '#2b3f33', bgGlow: 'transparent', dotColor: '#7E9F89' },
+  { id: 'Special Date', label: 'Special Date', color: '#C8A97E', borderColor: '#453826', bgGlow: 'transparent', dotColor: '#C8A97E' },
+  { id: 'Trip & Travel', label: 'Travel', color: '#7EA1B2', borderColor: '#243742', bgGlow: 'transparent', dotColor: '#7EA1B2' },
+  { id: 'Campus Life', label: 'Campus', color: '#B594B8', borderColor: '#3e2840', bgGlow: 'transparent', dotColor: '#B594B8' },
+  { id: 'Funny Incident', label: 'Funny Incident', color: '#D49D73', borderColor: '#453022', bgGlow: 'transparent', dotColor: '#D49D73' },
+  { id: 'Achievement', label: 'Achievement', color: '#C9B078', borderColor: '#423720', bgGlow: 'transparent', dotColor: '#C9B078' },
 ];
 
 function getTagConfig(tagName?: string): TagConfig {
@@ -89,11 +91,11 @@ function getTagConfig(tagName?: string): TagConfig {
   return (
     found || {
       id: tagName || 'Memory',
-      label: `${tagName || 'Memory'} 🌟`,
-      color: '#8ab4f8',
-      borderColor: 'rgba(138,180,248,0.4)',
-      bgGlow: 'rgba(138,180,248,0.12)',
-      dotColor: '#8ab4f8',
+      label: tagName || 'Memory',
+      color: '#7E9F89',
+      borderColor: '#2b3f33',
+      bgGlow: 'transparent',
+      dotColor: '#7E9F89',
     }
   );
 }
@@ -107,7 +109,7 @@ function formatRelativeTime(timestamp: number): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays < 0) return 'Future Milestone';
-  if (diffDays === 0) return 'Today ✨';
+  if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
@@ -143,6 +145,9 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('oldest');
   const [showStats, setShowStats] = useState(false);
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState<boolean>(false);
+  const dateCount = useDateCount();
 
   // ── Add / Edit Modal ──────────────────────────────────────────────
   const [showModal, setShowModal] = useState(false);
@@ -445,41 +450,42 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               </button>
             )}
 
-            {/* Glowing Icon Brand */}
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md shadow-amber-500/25 shrink-0 ring-1 ring-white/20">
-              <Clock className="w-5 h-5 stroke-[2.5]" />
+            {/* Restrained Brand Icon */}
+            <div className="w-9 h-9 rounded-xl bg-[#1d2420] border border-[#2b3a30] text-[#7E9F89] flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4 stroke-[2]" />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <span>Life Timeline</span>
-                  <span className="text-amber-400 text-sm font-normal">✦</span>
+                <h1 className="text-base sm:text-lg font-semibold text-[#ECEEEB] tracking-tight">
+                  Memories
                 </h1>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  {incidents.length} moments
-                </span>
+                {incidents.length > 0 && (
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#1d2420] text-[#7E9F89] border border-[#2b3a30]">
+                    {incidents.length} memories
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] sm:text-xs text-[#8e918f] font-medium">
-                Record real-life incidents, dates, photos &amp; written stories
+              <p className="text-[11px] text-[#808B84]">
+                Shared moments, personal dates, photos &amp; written stories
               </p>
             </div>
           </div>
 
           {/* Quick Floating Search Pill */}
           <div className="relative flex-1 max-w-sm mx-auto sm:mx-3">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8e918f] pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808B84] pointer-events-none" />
             <input
               type="text"
-              placeholder="Search incidents, stories, locations…"
+              placeholder="Search memories, stories, dates…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-full bg-[#20242c] hover:bg-[#282d38] focus:bg-[#15171c] border border-[#2d3340] focus:border-amber-400 text-xs sm:text-sm text-white placeholder-[#8e918f] focus:outline-none focus:ring-1 focus:ring-amber-400/40 transition-all shadow-inner"
+              className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#131615] hover:bg-[#1a1f1c] focus:bg-[#131615] border border-[#2b332e] focus:border-[#7E9F89] text-xs sm:text-sm text-[#ECEEEB] placeholder-[#808B84] focus:outline-none focus:ring-1 focus:ring-[#7E9F89]/30 transition-all shadow-inner"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8e918f] hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808B84] hover:text-white"
                 title="Clear search"
               >
                 <X className="w-3.5 h-3.5" />
@@ -489,61 +495,74 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
 
           {/* Action CTAs */}
           <div className="flex items-center gap-2 justify-end shrink-0">
-            {/* Quick Gallery Switcher */}
-            {onOpenGallery && (
-              <button
-                onClick={onOpenGallery}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#20242c] hover:bg-[#282d38] border border-[#2e3340] text-xs font-bold text-[#8ab4f8] hover:text-white transition-all cursor-pointer"
-                title="Open Gallery View"
-              >
-                <Images className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Gallery</span>
-              </button>
-            )}
-
-            {/* Quick Recycle Bin Switcher */}
-            {onOpenRecycleBin && (
-              <button
-                onClick={onOpenRecycleBin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#20242c] hover:bg-[#282d38] border border-rose-500/40 text-xs font-bold text-rose-300 hover:text-white transition-all cursor-pointer"
-                title="Open Recycle Bin"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden md:inline">Recycle Bin</span>
-              </button>
-            )}
-
-            {/* Stats Toggle */}
-            <button
-              onClick={() => setShowStats((s) => !s)}
-              className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
-                showStats
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'bg-[#20242c] text-[#8e918f] hover:text-white border-[#2e3340]'
-              }`}
-              title="Toggle Timeline Statistics"
-            >
-              <Award className="w-4 h-4" />
-            </button>
-
-            {/* Refresh */}
-            <button
-              onClick={loadIncidents}
-              disabled={loading}
-              className="w-9 h-9 rounded-full bg-[#20242c] hover:bg-[#282d38] border border-[#2e3340] flex items-center justify-center text-[#8e918f] hover:text-white transition-all cursor-pointer"
-              title="Refresh timeline"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-amber-400' : ''}`} />
-            </button>
-
-            {/* 🌟 PROMINENT "+ ADD LIFE INCIDENT" CTA */}
+            {/* Primary "+ Add memory" CTA */}
             <button
               onClick={handleOpenAdd}
-              className="flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-pink-500 hover:from-amber-400 hover:via-rose-400 hover:to-pink-400 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-500/25 transition-all cursor-pointer ring-1 ring-white/20"
+              className="flex items-center gap-2 px-4 sm:px-5 py-2 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-              <span>+ Add Life Incident</span>
+              <PlusCircle className="w-4 h-4 stroke-[2]" />
+              <span>+ Add memory</span>
             </button>
+
+            {/* Secondary Overflow Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowOverflowMenu(!showOverflowMenu)}
+                className="w-9 h-9 rounded-xl bg-[#131615] hover:bg-[#232926] border border-[#2b332e] flex items-center justify-center text-[#808B84] hover:text-[#ECEEEB] transition-all cursor-pointer"
+                title="More actions"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showOverflowMenu && (
+                <div className="absolute right-0 top-11 w-48 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
+                  {onOpenGallery && (
+                    <button
+                      onClick={() => {
+                        onOpenGallery();
+                        setShowOverflowMenu(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#7E9F89] font-medium"
+                    >
+                      <Images className="w-3.5 h-3.5 text-[#7E9F89]" />
+                      <span>Gallery</span>
+                    </button>
+                  )}
+                  {onOpenRecycleBin && (
+                    <button
+                      onClick={() => {
+                        onOpenRecycleBin();
+                        setShowOverflowMenu(false);
+                      }}
+                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-rose-300 font-medium"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Recycle Bin</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowStats((s) => !s);
+                      setShowOverflowMenu(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
+                  >
+                    <Award className="w-3.5 h-3.5 text-[#7E9F89]" />
+                    <span>{showStats ? 'Hide Statistics' : 'Show Statistics'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      loadIncidents();
+                      setShowOverflowMenu(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -569,6 +588,51 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
           </div>
         )}
 
+        {/* ── Special Date Counter Milestone Card (20 May 2026, 7:30) ── */}
+        <div
+          onClick={() => setShowMilestoneModal(true)}
+          className="p-3.5 sm:p-4 rounded-xl bg-[#181c1b] border border-[#2b332e] hover:border-[#3d4941] shadow-xs cursor-pointer transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#2a1d20] border border-[#48282e] text-[#D48D98] flex items-center justify-center shrink-0">
+              <Heart className="w-4 h-4 fill-current" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-semibold text-[#ECEEEB]">Milestone Countdown</span>
+                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#2a1d20] text-[#D48D98] border border-[#48282e]">
+                  20 May 2026, 7:30
+                </span>
+              </div>
+              <p className="text-[11px] text-[#808B84] mt-0.5">
+                Every second counted since our journey began
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-[#131615] px-3 py-1.5 rounded-lg border border-[#232926] font-mono text-xs">
+            <div className="text-center px-1">
+              <span className="text-sm sm:text-base font-semibold text-[#D48D98]">{dateCount.days}</span>
+              <span className="text-[9px] text-[#808B84] uppercase ml-1">Days</span>
+            </div>
+            <span className="text-[#3d4941]">:</span>
+            <div className="text-center px-1">
+              <span className="text-sm sm:text-base font-semibold text-[#ECEEEB]">{String(dateCount.hours).padStart(2, '0')}</span>
+              <span className="text-[9px] text-[#808B84] uppercase ml-1">h</span>
+            </div>
+            <span className="text-[#3d4941]">:</span>
+            <div className="text-center px-1">
+              <span className="text-sm sm:text-base font-semibold text-[#ECEEEB]">{String(dateCount.minutes).padStart(2, '0')}</span>
+              <span className="text-[9px] text-[#808B84] uppercase ml-1">m</span>
+            </div>
+            <span className="text-[#3d4941]">:</span>
+            <div className="text-center px-1">
+              <span className="text-sm sm:text-base font-semibold text-[#7E9F89]">{String(dateCount.seconds).padStart(2, '0')}</span>
+              <span className="text-[9px] text-[#808B84] uppercase ml-1">s</span>
+            </div>
+          </div>
+        </div>
+
         {/* ── Filters & Category Tags ── */}
         <div className="flex items-center justify-between gap-2 overflow-x-auto scrollbar-none pt-1">
           <div className="flex items-center gap-1.5 shrink-0">
@@ -576,11 +640,11 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               onClick={() => setSelectedTag('all')}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 selectedTag === 'all'
-                  ? 'bg-white text-black font-extrabold shadow-sm'
-                  : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                  ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                  : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
               }`}
             >
-              All Moments ({incidents.length})
+              All Moments{incidents.length > 0 ? ` (${incidents.length})` : ''}
             </button>
             {PRESET_TAGS.map((t) => {
               const count = incidents.filter((i) => i.tag === t.id).length;
@@ -589,14 +653,14 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 <button
                   key={t.id}
                   onClick={() => setSelectedTag(t.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-gradient-to-r from-amber-500/30 to-pink-500/30 text-white font-bold border border-amber-400/60 shadow-sm'
-                      : 'bg-[#20242c] text-[#8e918f] hover:text-white border border-[#2e3340]'
+                      ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
+                      : 'bg-[#181c1b] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
                   }`}
                 >
                   <span>{t.label}</span>
-                  <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                  {count > 0 && <span className="text-[10px] opacity-75 font-mono">({count})</span>}
                 </button>
               );
             })}
@@ -605,11 +669,11 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
           {/* Sort order toggle */}
           <button
             onClick={() => setSortOrder((s) => (s === 'oldest' ? 'newest' : 'oldest'))}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#20242c] hover:bg-[#282d38] border border-[#2e3340] text-[#c4c7c5] text-xs font-bold transition-all shrink-0 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#181c1b] hover:bg-[#232926] border border-[#2b332e] text-[#ECEEEB] text-xs font-medium transition-all shrink-0 cursor-pointer"
             title="Toggle chronological timeline order"
           >
-            <Filter className="w-3.5 h-3.5 text-amber-400" />
-            <span>{sortOrder === 'oldest' ? 'Story Order (Oldest First)' : 'Newest First'}</span>
+            <Filter className="w-3.5 h-3.5 text-[#7E9F89]" />
+            <span>{sortOrder === 'oldest' ? 'Oldest First' : 'Newest First'}</span>
           </button>
         </div>
       </header>
@@ -623,7 +687,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-56 rounded-3xl bg-[#17191e] animate-pulse border border-[#252830]"
+                  className="h-56 rounded-2xl bg-[#181c1b] animate-pulse border border-[#2b332e]"
                 />
               ))}
             </div>
@@ -631,26 +695,26 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
 
           {/* Empty State */}
           {!loading && filteredIncidents.length === 0 && (
-            <div className="text-center py-20 px-6 bg-[#17191e]/60 rounded-3xl border border-[#252830] shadow-xl">
-              <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto mb-4">
-                <BookOpen className="w-8 h-8" />
+            <div className="text-center py-20 px-6 bg-[#181c1b] rounded-2xl border border-[#2b332e] shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center text-[#7E9F89] mx-auto mb-4">
+                <BookOpen className="w-7 h-7 stroke-[1.75]" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-1.5">
+              <h3 className="text-base font-semibold text-[#ECEEEB] mb-1.5">
                 {searchQuery || selectedTag !== 'all'
-                  ? 'No matching incidents found'
-                  : 'Your Life Timeline is Ready'}
+                  ? 'No matching memories found'
+                  : 'No memories yet'}
               </h3>
-              <p className="text-xs sm:text-sm text-[#8e918f] max-w-sm mx-auto mb-6 leading-relaxed">
+              <p className="text-xs text-[#808B84] max-w-sm mx-auto mb-6 leading-relaxed">
                 {searchQuery || selectedTag !== 'all'
-                  ? 'Try clearing the search query or tag filter to view all moments.'
-                  : 'Start writing your life journey! Add a photo, select the date, and write what incident happened.'}
+                  ? 'Try clearing the search query or category filter to view all memories.'
+                  : 'Save a photo, a date, or a story you want to remember.'}
               </p>
               <button
                 onClick={handleOpenAdd}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-500/25 mx-auto cursor-pointer"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] text-white text-xs font-medium shadow-xs mx-auto cursor-pointer transition-colors"
               >
-                <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Write First Life Incident</span>
+                <PlusCircle className="w-4 h-4 stroke-[2]" />
+                <span>+ Add memory</span>
               </button>
             </div>
           )}
@@ -662,18 +726,18 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               <section key={group.era} className="space-y-6">
                 {/* Era Marker Pill */}
                 <div className="sticky top-2 z-20 flex items-center gap-3 py-1">
-                  <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#1e222b]/95 backdrop-blur-md border border-amber-500/30 text-amber-300 text-xs font-extrabold shadow-md">
-                    <Sparkles className="w-3 h-3 text-amber-400" />
+                  <div className="flex items-center gap-2 px-3 py-0.5 rounded-full bg-[#181c1b]/95 backdrop-blur-xs border border-[#2b332e] text-[#ECEEEB] text-xs font-medium shadow-xs">
+                    <Sparkles className="w-3 h-3 text-[#7E9F89]" />
                     <span>{group.era}</span>
-                    <span className="text-[10px] text-[#8e918f] font-mono">
+                    <span className="text-[10px] text-[#808B84] font-mono">
                       ({group.items.length})
                     </span>
                   </div>
-                  <div className="flex-1 h-[1px] bg-gradient-to-r from-amber-500/30 via-[#2e3340] to-transparent" />
+                  <div className="flex-1 h-[1px] bg-[#2b332e]" />
                 </div>
 
                 {/* Track Line with Incident Cards */}
-                <div className="relative pl-7 sm:pl-9 border-l-2 border-gradient-to-b from-amber-500/60 via-rose-500/40 to-sky-500/30 space-y-7">
+                <div className="relative pl-7 sm:pl-9 border-l border-[#2b332e] space-y-7">
                   {group.items.map((inc) => {
                     const tagCfg = getTagConfig(inc.tag);
                     const dateObj = new Date(inc.timestamp || inc.incidentDate);
@@ -690,12 +754,12 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                     return (
                       <article
                         key={inc.id}
-                        className="relative bg-[#17191e] hover:bg-[#1b1e25] border border-[#252830] hover:border-amber-400/50 rounded-3xl p-5 sm:p-7 shadow-md hover:shadow-2xl transition-all duration-200 group"
+                        className="relative bg-[#181c1b] border border-[#2b332e] hover:border-[#3d4941] rounded-2xl p-5 sm:p-6 shadow-xs transition-colors group"
                       >
-                        {/* Glowing Node Dot on Timeline Track */}
+                        {/* Clean Node Dot on Timeline Track */}
                         <div
-                          className="absolute -left-[35px] sm:-left-[43px] top-6 w-5 h-5 rounded-full bg-[#0f1115] flex items-center justify-center shadow-lg group-hover:scale-125 transition-transform"
-                          style={{ border: `3px solid ${tagCfg.dotColor}` }}
+                          className="absolute -left-[35px] sm:-left-[43px] top-6 w-4 h-4 rounded-full bg-[#131615] flex items-center justify-center transition-transform"
+                          style={{ border: `2px solid ${tagCfg.dotColor}` }}
                         >
                           <div
                             className="w-1.5 h-1.5 rounded-full"
@@ -704,16 +768,16 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                         </div>
 
                         {/* Header Row: Date Badge, Tag, Location & Actions */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#252830] pb-3.5 mb-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2b332e] pb-3 mb-4">
                           <div className="flex flex-wrap items-center gap-2">
                             {/* Calendar Date Badge */}
-                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#20242c] text-amber-300 text-xs font-bold font-mono border border-amber-500/30 shadow-sm">
-                              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                            <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#131615] text-[#ECEEEB] text-xs font-medium font-mono border border-[#232926]">
+                              <Calendar className="w-3.5 h-3.5 text-[#7E9F89]" />
                               <span>{inc.incidentDate || formattedDate}</span>
                             </span>
 
                             {/* Relative time chip */}
-                            <span className="text-[11px] text-[#8e918f] font-medium">
+                            <span className="text-[11px] text-[#808B84]">
                               • {relativeTime}
                             </span>
 
@@ -820,15 +884,15 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
           <div className="w-full max-w-lg bg-[#1a1d24] border border-[#343a48] rounded-3xl p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 duration-150 my-6">
             <div className="flex items-center justify-between border-b border-[#282d38] pb-3 mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <div className="w-8 h-8 rounded-xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center text-[#7E9F89]">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-white">
-                    {editingIncident ? 'Edit Life Incident' : 'Record Life Incident'}
+                  <h3 className="text-base sm:text-lg font-semibold text-[#ECEEEB]">
+                    {editingIncident ? 'Edit Memory' : 'New Memory'}
                   </h3>
-                  <p className="text-[11px] text-[#8e918f]">
-                    Save photos, dates &amp; real incident memories
+                  <p className="text-[11px] text-[#808B84]">
+                    Save photos, dates &amp; meaningful memories
                   </p>
                 </div>
               </div>
@@ -1015,7 +1079,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-500/25 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>
@@ -1024,8 +1088,8 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                     </>
                   ) : (
                     <>
-                      <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>{editingIncident ? 'Update Incident' : 'Save to Timeline'}</span>
+                      <Check className="w-3.5 h-3.5 stroke-[2]" />
+                      <span>{editingIncident ? 'Save Changes' : '+ Save Memory'}</span>
                     </>
                   )}
                 </button>
@@ -1162,6 +1226,14 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ── SPECIAL MILESTONE DATE COUNTER MODAL (20 MAY 2026, 7:30) ── */}
+      <DateCounterModal
+        isOpen={showMilestoneModal}
+        onClose={() => setShowMilestoneModal(false)}
+        partnerName="Sadhana"
+        isDark={true}
+      />
 
       {/* ────────────────── TOAST ALERT ────────────────── */}
       {toast && (

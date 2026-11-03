@@ -37,49 +37,49 @@ export const StudyNavbar: React.FC = () => {
           <nav className="hidden md:flex items-center gap-1 bg-[#F1ECE4]/80 p-1 rounded-2xl border border-[#E5DFD5]">
             <button
               onClick={() => switchTab('home')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
                 activeTab === 'home'
-                  ? 'bg-white text-[#1273C4] shadow-sm font-bold border border-black/5'
+                  ? 'bg-white text-[#2D4A3E] shadow-sm font-semibold border border-black/5'
                   : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
               }`}
             >
-              <BookOpen className={`w-3.5 h-3.5 ${activeTab === 'home' ? 'text-[#1273C4]' : 'text-[#64748B]'}`} />
+              <BookOpen className={`w-3.5 h-3.5 ${activeTab === 'home' ? 'text-[#2D4A3E]' : 'text-[#64748B]'}`} />
               <span>Library</span>
             </button>
 
             <button
               onClick={() => switchTab('subjects')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
                 activeTab === 'subjects' || activeTab === 'topic-explanation'
-                  ? 'bg-white text-[#1273C4] shadow-sm font-bold border border-black/5'
+                  ? 'bg-white text-[#2D4A3E] shadow-sm font-semibold border border-black/5'
                   : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
               }`}
             >
-              <Layers className={`w-3.5 h-3.5 ${activeTab === 'subjects' || activeTab === 'topic-explanation' ? 'text-[#1273C4]' : 'text-[#64748B]'}`} />
+              <Layers className={`w-3.5 h-3.5 ${activeTab === 'subjects' || activeTab === 'topic-explanation' ? 'text-[#2D4A3E]' : 'text-[#64748B]'}`} />
               <span>Curriculum</span>
             </button>
 
             <button
               onClick={() => switchTab('planner')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
                 activeTab === 'planner'
-                  ? 'bg-white text-[#1273C4] shadow-sm font-bold border border-black/5'
+                  ? 'bg-white text-[#2D4A3E] shadow-sm font-semibold border border-black/5'
                   : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
               }`}
             >
-              <Calendar className={`w-3.5 h-3.5 ${activeTab === 'planner' ? 'text-[#1273C4]' : 'text-[#64748B]'}`} />
+              <Calendar className={`w-3.5 h-3.5 ${activeTab === 'planner' ? 'text-[#2D4A3E]' : 'text-[#64748B]'}`} />
               <span>Planner</span>
             </button>
 
             <button
               onClick={() => switchTab('profile')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
                 activeTab === 'profile'
-                  ? 'bg-white text-[#1273C4] shadow-sm font-bold border border-black/5'
+                  ? 'bg-white text-[#2D4A3E] shadow-sm font-semibold border border-black/5'
                   : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
               }`}
             >
-              <User className={`w-3.5 h-3.5 ${activeTab === 'profile' ? 'text-[#1273C4]' : 'text-[#64748B]'}`} />
+              <User className={`w-3.5 h-3.5 ${activeTab === 'profile' ? 'text-[#2D4A3E]' : 'text-[#64748B]'}`} />
               <span>Profile</span>
             </button>
           </nav>

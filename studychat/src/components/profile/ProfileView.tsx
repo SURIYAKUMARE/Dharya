@@ -47,13 +47,6 @@ export const ProfileView: React.FC = () => {
     });
 
     setIsEditing(false);
-
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#2563eb', '#10b981', '#f59e0b'],
-    });
   };
 
   return (
@@ -64,7 +57,7 @@ export const ProfileView: React.FC = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center gap-4.5 relative z-10">
-          <div className="w-18 h-18 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white text-3xl font-black shadow-md flex items-center justify-center uppercase shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-[#2D4A3E] text-white text-2xl font-semibold shadow-xs flex items-center justify-center uppercase shrink-0">
             {student?.name ? student.name.charAt(0) : 'S'}
           </div>
           <div className="space-y-1">
@@ -72,7 +65,7 @@ export const ProfileView: React.FC = () => {
               <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] font-serif">
                 {student?.name || 'Surya'}
               </h2>
-              <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-[#EBF3FB] text-[#1D4ED8] border border-[#BFDBFE]">
+              <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-medium bg-[#E8EFEA] text-[#2D4A3E] border border-[#CCD8CF]">
                 {student?.studentId || 'ENG-2024-0910'}
               </span>
             </div>
@@ -86,7 +79,7 @@ export const ProfileView: React.FC = () => {
           {/* Edit Profile Button */}
           <button
             onClick={handleOpenEdit}
-            className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-xs font-bold text-[#1273C4] hover:text-[#0D62A5] shadow-2xs hover:shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-xs font-medium text-[#2D4A3E] hover:text-[#1B3028] shadow-2xs transition-colors flex items-center gap-2 cursor-pointer"
           >
             <Edit3 className="w-4 h-4" />
             <span>Edit Profile</span>

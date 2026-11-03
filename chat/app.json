@@ -10,15 +10,26 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0f0a1a"
+      "backgroundColor": "#131615"
     },
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.dharya.chat" },
     "android": {
       "package": "com.dharya.chat",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#0f0a1a"
-      }
+        "backgroundColor": "#131615"
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -30,13 +41,13 @@
       "expo-secure-store",
       [
         "expo-image-picker",
-        { "photosPermission": "Allow Dharya to access your photos." }
+        { "photosPermission": "Allow Dharya to access your photos and videos." }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#c026d3"
+          "color": "#7E9F89"
         }
       ]
     ],

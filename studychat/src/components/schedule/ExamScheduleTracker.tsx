@@ -51,24 +51,25 @@ export const ExamScheduleTracker: React.FC = () => {
     },
     {
       id: 'e3',
-      courseCode: 'VIVA-401',
+      courseCode: 'MILESTONE-520',
       publicExamName: 'Comprehensive Viva Voce & Departmental Capstone',
       publicVenue: 'Senate Conference Hall',
-      publicDate: 'In 24 days',
-      targetTimestamp: Date.now() + 24 * 86400000 + 8 * 3600000,
-      privatePlanName: 'Our Big Milestone Anniversary Celebration 💖🥂',
-      privateVenue: 'Our Secret Favorite Spot',
-      privateNotes: 'A whole day dedicated just to us, with handmade gifts and unforgettable smiles.',
+      publicDate: '20 May 2026, 7:30',
+      targetTimestamp: new Date('2026-05-20T07:30:00').getTime(),
+      privatePlanName: 'Our Big Milestone Date Counter (20 May 2026, 7:30) 💖🥂',
+      privateVenue: 'Our Special Memory Spot',
+      privateNotes: 'Started on 20 May 2026 at 7:30. Every single day and heartbeat celebrated together.',
     },
   ]);
 
   const formatCountdown = (target: number) => {
-    const diff = Math.max(0, target - currentTime);
+    const isPast = currentTime >= target;
+    const diff = Math.abs(currentTime - target);
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((diff / 1000 / 60) % 60);
     const seconds = Math.floor((diff / 1000) % 60);
-    return { days, hours, minutes, seconds };
+    return { days, hours, minutes, seconds, isPast };
   };
 
   return (

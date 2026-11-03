@@ -3,7 +3,14 @@ import { useStudyApp } from '../../context/StudyAppContext';
 import { getSupabase, ChatMessage, ExtendedChatMessage, LOCAL_MESSAGES_KEY } from '../../services/supabaseClient';
 import {
   fetchRemoteMessages,
+  fetchAllRemoteMessages,
   saveRemoteMessage,
+  editRemoteMessage,
+  deleteRemoteMessageForMe,
+  deleteRemoteMessageForEveryone,
+  STUDY_GROUP_CHAT_ID,
+  PERMITTED_CONVERSATIONS,
+  ConversationInfo,
   updateRemoteStatus,
   markAllIncomingAsRead,
   updateRemoteReactions,
@@ -32,6 +39,7 @@ import {
   CheckCheck,
   Pin,
   Sparkles,
+  Heart,
   Lock,
   Unlock,
   Shield,
@@ -64,14 +72,28 @@ import {
   Palette,
   Sun,
   Moon,
-  Maximize2
+  Maximize2,
+  Bookmark,
+  CheckCircle,
+  Wifi,
+  WifiOff,
+  Users,
+  AlertCircle,
+  Edit2,
+  RotateCw,
+  Ban
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { GalleryView } from '../gallery/GalleryView';
 import { LifeTimelineView } from '../timeline/LifeTimelineView';
+import { RecycleBinView } from '../recycle/RecycleBinView';
 import { compressImageClientSide } from '../../services/galleryService';
+import { moveToRecycleBin } from '../../services/recycleBinService';
+import { THEMES, ThemeId, CHAT_WALLPAPERS, getStoredTheme, saveStoredTheme } from '../../config/themes';
+import { useToast } from '../common/Toast';
+import { DateCounterModal, useDateCount } from '../common/DateCounterModal';
 
 export interface PendingMediaItem {
   id: string;
@@ -91,16 +113,48 @@ interface WhatsAppChatViewProps {
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
   const { student, logoutChat, switchTab } = useStudyApp();
+  const { showToast } = useToast();
 
   // Active user and partner details
   const currentUser: 'surya' | 'sadhana' = student?.username === 'sadhana' ? 'sadhana' : 'surya';
   const partnerUser: 'surya' | 'sadhana' = currentUser === 'surya' ? 'sadhana' : 'surya';
   const partnerName = partnerUser === 'sadhana' ? 'Sadhana' : 'Surya';
 
-  // Load stored messages permanently from localStorage; zero mock login/seed messages injected
+  // Active Conversation Routing & Identity
+  const [activeChatId, setActiveChatId] = useState<string>(() => {
+    try {
+      return localStorage.getItem('dharya_active_chat_id') || CHAT_ID;
+    } catch {
+      return CHAT_ID;
+    }
+  });
+  const activeChatIdRef = useRef(activeChatId);
+  useEffect(() => {
+    activeChatIdRef.current = activeChatId;
+  }, [activeChatId]);
+
+  const activeConversation = useMemo(() => {
+    return PERMITTED_CONVERSATIONS.find((c) => c.id === activeChatId) || PERMITTED_CONVERSATIONS[0];
+  }, [activeChatId]);
+
+  const isGroupChat = activeConversation.type === 'group';
+
+  const getChatStorageKey = (chatId: string) => {
+    return chatId === CHAT_ID ? LOCAL_MESSAGES_KEY : `${LOCAL_MESSAGES_KEY}_${chatId}`;
+  };
+
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'offline'>('connecting');
+  const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState<boolean>(false);
+  const [editingMessage, setEditingMessage] = useState<ExtendedChatMessage | null>(null);
+  const [editText, setEditText] = useState<string>('');
+
+  // Load stored messages permanently from localStorage for active conversation
   const [messages, setMessages] = useState<ExtendedChatMessage[]>(() => {
     try {
-      const saved = localStorage.getItem(LOCAL_MESSAGES_KEY);
+      const initChatId = localStorage.getItem('dharya_active_chat_id') || CHAT_ID;
+      const key = initChatId === CHAT_ID ? LOCAL_MESSAGES_KEY : `${LOCAL_MESSAGES_KEY}_${initChatId}`;
+      const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed;
@@ -109,7 +163,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     return [];
   });
 
-  const [inputText, setInputText] = useState('');
+  // Persistent Input Draft across tab switches and reloads
+  const [inputText, setInputText] = useState(() => {
+    try {
+      const u = student?.username === 'sadhana' ? 'sadhana' : 'surya';
+      return localStorage.getItem(`dharya_draft_${u}`) || '';
+    } catch {
+      return '';
+    }
+  });
+
+  // Online / Offline Network Monitoring
+  const [isOnline, setIsOnline] = useState<boolean>(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  // Message Selection & Bulk Actions
+  const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
+  const [selectedMsgIds, setSelectedMsgIds] = useState<Set<string>>(new Set());
+
+  // Media filter for search: 'all' | 'image' | 'video' | 'voice' | 'document' | 'starred'
+  const [mediaFilter, setMediaFilter] = useState<'all' | 'image' | 'video' | 'voice' | 'document' | 'starred'>('all');
   
   // Dynamic Presence & Last Seen State
   const [isPartnerOnline, setIsPartnerOnline] = useState<boolean>(() => {
@@ -160,7 +232,29 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
-  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline'>(initialTab ?? 'chat');
+  // Synthesized notification chime via Web Audio API (cross-platform, zero external asset dependency)
+  const playNotificationSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.12);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } catch {}
+  };
+
+  const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline' | 'recycle'>(initialTab ?? 'chat');
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 768;
@@ -187,7 +281,29 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       setIsMobileScreen(isMob);
     };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast('✓ Connected to network. Syncing messages...', 'success');
+      fetchRemoteMessages(activeChatIdRef.current).then((res) => {
+        if (res.messages && res.messages.length > 0) {
+          setMessages((prev) => mergeMessages(prev, res.messages));
+          setHasMoreMessages(res.hasMore);
+        }
+      });
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast('⚠️ Network connection lost. Offline mode active.', 'error');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
   const [showSidebarMenu, setShowSidebarMenu] = useState(false);
 
@@ -212,6 +328,96 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video'; offer?: any } | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
+
+  // Switch Conversation Handler
+  const handleSelectConversation = (chatId: string) => {
+    if (chatId === activeChatId) {
+      setActiveMainView('chat');
+      setMobileView('conversation');
+      return;
+    }
+    setActiveChatId(chatId);
+    try {
+      localStorage.setItem('dharya_active_chat_id', chatId);
+    } catch {}
+
+    const chatKey = getChatStorageKey(chatId);
+    try {
+      const cached = localStorage.getItem(chatKey);
+      if (cached) {
+        setMessages(JSON.parse(cached));
+      } else {
+        setMessages([]);
+      }
+    } catch {
+      setMessages([]);
+    }
+
+    setActiveMainView('chat');
+    setMobileView('conversation');
+    setEditingMessage(null);
+    setEditText('');
+    setReplyingToMessage(null);
+
+    fetchRemoteMessages(chatId, 50).then((res) => {
+      if (res.messages) {
+        setMessages(res.messages);
+        setHasMoreMessages(res.hasMore);
+        try {
+          localStorage.setItem(chatKey, JSON.stringify(res.messages));
+        } catch {}
+      }
+    });
+  };
+
+  // Filtered list of permitted conversations (Direct & Group)
+  const filteredConversations = useMemo(() => {
+    return PERMITTED_CONVERSATIONS.filter((conv) => {
+      if (sidebarSearchQuery.trim()) {
+        const q = sidebarSearchQuery.toLowerCase();
+        const matchName = conv.name.toLowerCase().includes(q) || (conv.id === CHAT_ID && partnerName.toLowerCase().includes(q));
+        const matchDesc = Boolean(conv.description && conv.description.toLowerCase().includes(q));
+        if (!matchName && !matchDesc) return false;
+      }
+      if (chatFilter === 'groups') return conv.type === 'group';
+      if (chatFilter === 'favorites') return conv.id === CHAT_ID;
+      if (chatFilter === 'unread') {
+        const unreadCount = conv.id === activeChatId
+          ? messages.filter((m) => m.sender !== currentUser && !m.read && m.status !== 'read').length
+          : (() => {
+              try {
+                const msgs: ExtendedChatMessage[] = JSON.parse(localStorage.getItem(getChatStorageKey(conv.id)) || '[]');
+                return msgs.filter((m) => m.sender !== currentUser && !m.read && m.status !== 'read').length;
+              } catch {
+                return 0;
+              }
+            })();
+        return unreadCount > 0;
+      }
+      return true;
+    });
+  }, [sidebarSearchQuery, chatFilter, activeChatId, messages, currentUser, partnerName]);
+
+  const getConversationDetails = (conv: ConversationInfo) => {
+    const isSelected = activeMainView === 'chat' && activeChatId === conv.id;
+    const isGroup = conv.type === 'group';
+    const displayName = isGroup ? conv.name : partnerName;
+
+    let convMessages = messages;
+    if (conv.id !== activeChatId) {
+      try {
+        convMessages = JSON.parse(localStorage.getItem(getChatStorageKey(conv.id)) || '[]');
+      } catch {
+        convMessages = [];
+      }
+    }
+
+    const visibleMessages = convMessages.filter((m) => !m.deletedFor?.includes(currentUser));
+    const lastMsg = visibleMessages[visibleMessages.length - 1];
+    const unreadCount = visibleMessages.filter((m) => m.sender !== currentUser && !m.read && m.status !== 'read').length;
+
+    return { isSelected, isGroup, displayName, lastMsg, unreadCount };
+  };
 
   // ── FULL WHATSAPP FEATURE SUITE STATES ──
   const [replyingToMessage, setReplyingToMessage] = useState<ExtendedChatMessage | null>(null);
@@ -238,26 +444,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
   });
 
-  // Theme state: 'dark' | 'light' (Official WhatsApp Native Themes)
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      const saved = localStorage.getItem('whatsapp_theme');
-      if (saved === 'light' || saved === 'dark') return saved;
-    } catch {}
-    return 'dark';
-  });
+  // ── FULL 10-THEME SYSTEM ENGINE ──
+  const [themeId, setThemeId] = useState<ThemeId>(() => getStoredTheme());
+  const activeTheme = useMemo(() => THEMES[themeId] || THEMES.dark, [themeId]);
+  const isDark = activeTheme.isDark;
+  const [showThemeModal, setShowThemeModal] = useState<boolean>(false);
+  const [themeModalTab, setThemeModalTab] = useState<'themes' | 'wallpapers'>('themes');
+  const customWallpaperFileRef = useRef<HTMLInputElement | null>(null);
+  const [showDateCountModal, setShowDateCountModal] = useState<boolean>(false);
+  const dateCount = useDateCount();
 
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === 'dark' ? 'light' : 'dark';
-      try {
-        localStorage.setItem('whatsapp_theme', next);
-      } catch {}
-      return next;
-    });
+  const handleSelectTheme = (newThemeId: ThemeId) => {
+    setThemeId(newThemeId);
+    saveStoredTheme(newThemeId);
+    showToast(`Theme switched to ${THEMES[newThemeId]?.name || newThemeId}`, 'success');
   };
 
-  const isDark = theme === 'dark';
+  const toggleTheme = () => {
+    const nextTheme: ThemeId = isDark ? 'light' : 'dark';
+    handleSelectTheme(nextTheme);
+  };
 
   // Real Audio Recording with MediaRecorder
   const [isRecordingAudio, setIsRecordingAudio] = useState<boolean>(false);
@@ -316,21 +522,28 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // WhatsApp Message Status Ticks Renderer
+  // WhatsApp Message Status Ticks Renderer (Honest States: sending -> sent -> delivered -> read / failed)
   const renderMessageTicks = (msg: ExtendedChatMessage) => {
     if (msg.sender !== currentUser) return null;
 
-    let status: 'sending' | 'sent' | 'delivered' | 'read' = msg.status || 'sent';
+    const status: 'sending' | 'sent' | 'delivered' | 'read' | 'failed' =
+      msg.status || (msg.read ? 'read' : 'sent');
 
-    if (!msg.status) {
-      if (msg.read) {
-        status = 'read';
-      } else {
-        const partnerRepliedAfter = messages.some(
-          (m) => m.sender !== currentUser && (m.timestamp > msg.timestamp || m.id > msg.id)
-        );
-        status = partnerRepliedAfter ? 'read' : isPartnerOnline ? 'delivered' : 'sent';
-      }
+    if (status === 'failed') {
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRetrySendMessage(msg);
+          }}
+          className="text-rose-400 hover:text-rose-300 inline-flex items-center gap-1 ml-1 cursor-pointer transition-colors"
+          title="Failed to send. Click to retry."
+        >
+          <AlertCircle className="w-3.5 h-3.5" />
+          <span className="text-[10px] underline font-medium">Retry</span>
+        </button>
+      );
     }
 
     if (status === 'sending') {
@@ -341,19 +554,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       );
     }
 
-    // Single grey tick: recipient offline / reached server
+    // Single grey tick: saved to Supabase backend
     if (status === 'sent') {
       return (
         <span
           className="text-[#8696a0] inline-flex items-center ml-1"
-          title="One grey tick: Sent to server (Recipient is offline)"
+          title="One grey tick: Sent to server"
         >
           <Check className="w-3.5 h-3.5 stroke-[2.3]" />
         </span>
       );
     }
 
-    // Double grey tick: recipient online / delivered to phone
+    // Double grey tick: recipient acknowledged delivery
     if (status === 'delivered') {
       return (
         <span
@@ -367,18 +580,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
     // status === 'read'
     if (!readReceiptsEnabled) {
-      // Turning it off: Hide read receipts (remains double grey)
+      // User disabled read receipts in privacy settings
       return (
         <span
           className="text-[#8696a0] inline-flex items-center ml-1"
-          title="Two grey ticks: Delivered (Read receipts turned off in Settings > Privacy)"
+          title="Two grey ticks: Delivered"
         >
           <CheckCheck className="w-3.5 h-3.5 stroke-[2.3]" />
         </span>
       );
     }
 
-    // Double blue tick: recipient opened and read the message
+    // Double blue tick: recipient actively opened and read the message
     return (
       <span
         className="text-[#53bdeb] inline-flex items-center ml-1"
@@ -422,18 +635,45 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<any>(null);
 
+  // Intelligent Scroll Retention & Floating Jump to Newest
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef<boolean>(true);
+  const [showScrollBottom, setShowScrollBottom] = useState<boolean>(false);
+  const [unreadCountBelow, setUnreadCountBelow] = useState<number>(0);
+
+  // Message Delete Confirmation Dialog (Recycle Bin / Delete for Everyone / Delete for Me)
+  const [deleteDialogMsg, setDeleteDialogMsg] = useState<ExtendedChatMessage | null>(null);
+
+  const handleChatScroll = () => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const isNear = distanceFromBottom < 120;
+    isNearBottomRef.current = isNear;
+    setShowScrollBottom(!isNear);
+    if (isNear) {
+      setUnreadCountBelow(0);
+    }
+  };
+
   // Save messages permanently to localStorage and broadcast
-  const persistMessages = (newMessages: ExtendedChatMessage[]) => {
+  // Save messages permanently to localStorage and broadcast
+  const persistMessages = (newMessages: ExtendedChatMessage[], targetChatId: string = activeChatIdRef.current) => {
     setMessages(newMessages);
     try {
-      localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(newMessages));
+      const key = getChatStorageKey(targetChatId);
+      localStorage.setItem(key, JSON.stringify(newMessages));
+      if (targetChatId === CHAT_ID) {
+        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(newMessages));
+      }
     } catch {}
   };
 
   // Sync cross-tab messages permanently
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === LOCAL_MESSAGES_KEY && e.newValue) {
+      const currentKey = getChatStorageKey(activeChatIdRef.current);
+      if ((e.key === currentKey || (activeChatIdRef.current === CHAT_ID && e.key === LOCAL_MESSAGES_KEY)) && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
           if (Array.isArray(parsed)) {
@@ -444,17 +684,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [activeChatId]);
 
   // Continuous bi-directional synchronization with Supabase backend
   const syncWithRemote = useRef<() => Promise<void>>(async () => {});
 
   syncWithRemote.current = async () => {
     try {
-      const remote = await fetchRemoteMessages();
-      if (remote && remote.length > 0) {
+      const currentId = activeChatIdRef.current;
+      const res = await fetchRemoteMessages(currentId, 50);
+      if (res.messages && res.messages.length > 0) {
+        setHasMoreMessages(res.hasMore);
         setMessages((prev) => {
-          const merged = mergeMessages(prev, remote);
+          const merged = mergeMessages(prev, res.messages);
           // Check if any change exists
           if (
             merged.length !== prev.length ||
@@ -464,6 +706,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               return (
                 m.id !== p.id ||
                 m.status !== p.status ||
+                m.text !== p.text ||
+                m.isEdited !== p.isEdited ||
+                m.deletedForAll !== p.deletedForAll ||
                 m.isPinned !== p.isPinned ||
                 m.isOpened !== p.isOpened ||
                 JSON.stringify(m.reactions || {}) !== JSON.stringify(p.reactions || {})
@@ -471,7 +716,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             })
           ) {
             try {
-              localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(merged));
+              localStorage.setItem(getChatStorageKey(currentId), JSON.stringify(merged));
+              if (currentId === CHAT_ID) {
+                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(merged));
+              }
             } catch {}
             return merged;
           }
@@ -483,10 +731,142 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
   };
 
+  // Older messages pagination loader preserving scroll offset
+  const handleLoadOlderMessages = async () => {
+    if (isLoadingOlder || !hasMoreMessages || messages.length === 0) return;
+    const oldest = messages[0];
+    if (!oldest) return;
+
+    const container = chatScrollRef.current;
+    const prevScrollHeight = container ? container.scrollHeight : 0;
+    const prevScrollTop = container ? container.scrollTop : 0;
+
+    setIsLoadingOlder(true);
+    try {
+      const res = await fetchRemoteMessages(activeChatId, 50, oldest.timestamp);
+      if (res.messages && res.messages.length > 0) {
+        setMessages((prev) => {
+          const merged = mergeMessages(res.messages, prev);
+          try {
+            localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setHasMoreMessages(res.hasMore);
+        requestAnimationFrame(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+          }
+        });
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (err) {
+      console.warn('Failed to load older messages:', err);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
+
+  // Dispatch outgoing message with honest initial 'sending' state
+  const dispatchSendMessage = async (msg: ExtendedChatMessage) => {
+    const sendingMsg: ExtendedChatMessage = {
+      ...msg,
+      chatId: activeChatId,
+      status: 'sending',
+    };
+
+    setMessages((prev) => {
+      const next = [...prev, sendingMsg];
+      persistMessages(next);
+      return next;
+    });
+
+    const ok = await saveRemoteMessage({ ...sendingMsg, status: 'sent' }, activeChatId);
+
+    setMessages((prev) => {
+      const updated = prev.map((m) =>
+        m.id === msg.id ? { ...m, status: (ok ? 'sent' : 'failed') as any } : m
+      );
+      persistMessages(updated);
+      return updated;
+    });
+
+    if (ok) {
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: { ...sendingMsg, status: 'sent' },
+        });
+      } catch {}
+      try {
+        chatBroadcastRef.current?.postMessage({
+          type: 'new_message',
+          payload: { ...sendingMsg, status: 'sent' },
+        });
+      } catch {}
+    }
+  };
+
+  // Retry sending a previously failed message
+  const handleRetrySendMessage = async (msg: ExtendedChatMessage) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === msg.id ? { ...m, status: 'sending' as const } : m))
+    );
+    const ok = await saveRemoteMessage({ ...msg, status: 'sent' }, activeChatId);
+    setMessages((prev) => {
+      const updated = prev.map((m) =>
+        m.id === msg.id ? { ...m, status: (ok ? 'sent' : 'failed') as any } : m
+      );
+      persistMessages(updated);
+      return updated;
+    });
+    if (ok) {
+      try {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'new_message',
+          payload: { ...msg, status: 'sent' },
+        });
+      } catch {}
+    }
+  };
+
+  // Edit Message Action
+  const handleConfirmEdit = async () => {
+    if (!editingMessage || !editText.trim()) return;
+    const newText = editText.trim();
+    const msgId = editingMessage.id;
+    const editedAt = new Date().toISOString();
+
+    setMessages((prev) => {
+      const updated = prev.map((m) =>
+        m.id === msgId ? { ...m, text: newText, isEdited: true, editedAt } : m
+      );
+      persistMessages(updated);
+      return updated;
+    });
+
+    setEditingMessage(null);
+    setEditText('');
+
+    await editRemoteMessage(msgId, newText, currentUser);
+
+    try {
+      channelRef.current?.send({
+        type: 'broadcast',
+        event: 'message_edited',
+        payload: { msgId, newText, editedAt, sender: currentUser },
+      });
+    } catch {}
+  };
+
   // Initial load from Supabase on mount
   useEffect(() => {
     syncWithRemote.current();
-  }, []);
+  }, [activeChatId]);
 
   // Continuous smart background sync (every 2.5s) to guarantee phone and laptop stay 100% in sync
   useEffect(() => {
@@ -625,11 +1005,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     };
   }, [currentUser, partnerUser]);
 
-  // Supabase Realtime channel setup with Presence Tracking
+  // Supabase Realtime channel setup with Presence Tracking & Multi-Room Support
   useEffect(() => {
     try {
       const supabase = getSupabase();
-      const channel = supabase.channel('whatsapp-one-on-one-room', {
+      setConnectionStatus('connecting');
+
+      const channel = supabase.channel(`dharya-room-${activeChatId}`, {
         config: {
           broadcast: { self: true },
           presence: {
@@ -645,23 +1027,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           const partnerPresences = state[partnerUser];
           if (partnerPresences && partnerPresences.length > 0) {
             setIsPartnerOnline(true);
-            // Upgrade any sent messages to delivered
-            setMessages((prev) => {
-              let updatedAny = false;
-              const next = prev.map((m) => {
-                if (m.sender === currentUser && m.status === 'sent') {
-                  updatedAny = true;
-                  return { ...m, status: 'delivered' as const };
-                }
-                return m;
-              });
-              if (updatedAny) {
-                try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
-                } catch {}
-              }
-              return next;
-            });
           } else {
             const partnerActive = localStorage.getItem(`whatsapp_active_${partnerUser}`);
             if (!partnerActive || Date.now() - Number(partnerActive) >= 9000) {
@@ -674,22 +1039,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         .on('presence', { event: 'join' }, ({ key }) => {
           if (key === partnerUser) {
             setIsPartnerOnline(true);
-            setMessages((prev) => {
-              let updatedAny = false;
-              const next = prev.map((m) => {
-                if (m.sender === currentUser && m.status === 'sent') {
-                  updatedAny = true;
-                  return { ...m, status: 'delivered' as const };
-                }
-                return m;
-              });
-              if (updatedAny) {
-                try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
-                } catch {}
-              }
-              return next;
-            });
           }
         })
         .on('presence', { event: 'leave' }, ({ key }) => {
@@ -705,22 +1054,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         .on('broadcast', { event: 'user_online' }, (payload) => {
           if (payload?.payload?.user === partnerUser) {
             setIsPartnerOnline(true);
-            setMessages((prev) => {
-              let updatedAny = false;
-              const next = prev.map((m) => {
-                if (m.sender === currentUser && m.status === 'sent') {
-                  updatedAny = true;
-                  return { ...m, status: 'delivered' as const };
-                }
-                return m;
-              });
-              if (updatedAny) {
-                try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
-                } catch {}
-              }
-              return next;
-            });
           }
         })
         .on('broadcast', { event: 'user_offline' }, (payload) => {
@@ -736,46 +1069,132 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         .on('broadcast', { event: 'new_message' }, (payload) => {
           if (payload?.payload) {
             const incoming = payload.payload as ExtendedChatMessage;
+            if (incoming.chatId && incoming.chatId !== activeChatId) {
+              // Message is for another permitted conversation; cache it for unread badge
+              const otherKey = getChatStorageKey(incoming.chatId);
+              try {
+                const prevOther = JSON.parse(localStorage.getItem(otherKey) || '[]');
+                if (!prevOther.some((m: any) => m.id === incoming.id)) {
+                  localStorage.setItem(otherKey, JSON.stringify([...prevOther, incoming]));
+                }
+              } catch {}
+              return;
+            }
+
             setMessages((prev) => {
               if (prev.some((m) => m.id === incoming.id)) return prev;
               const next = [...prev, incoming];
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
+                if (activeChatId === CHAT_ID) {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                }
               } catch {}
               return next;
             });
 
-            // If we are the recipient and currently in the chat view:
+            // If incoming is from recipient: play notification and acknowledge honest delivery receipt
             if (incoming.sender !== currentUser) {
+              playNotificationSound();
+
+              // Send authentic delivered receipt event
               updateRemoteStatus(incoming.id, 'delivered');
               try {
                 channel.send({
                   type: 'broadcast',
-                  event: 'message_status_update',
+                  event: 'message_delivered',
                   payload: {
                     msgId: incoming.id,
-                    status: 'delivered',
+                    recipient: currentUser,
                   },
                 });
               } catch {}
 
-              // If chat is open, user immediately views it -> mark as 'read' (double blue tick)
-              if (readReceiptsEnabledRef.current) {
+              // If chat is open, user immediately views it -> acknowledge read receipt
+              if (readReceiptsEnabledRef.current && document.visibilityState === 'visible') {
                 setTimeout(() => {
                   updateRemoteStatus(incoming.id, 'read');
                   try {
                     channel.send({
                       type: 'broadcast',
-                      event: 'message_status_update',
+                      event: 'message_read',
                       payload: {
                         msgId: incoming.id,
-                        status: 'read',
+                        reader: currentUser,
                       },
                     });
                   } catch {}
                 }, 400);
               }
             }
+          }
+        })
+        .on('broadcast', { event: 'message_delivered' }, (payload) => {
+          if (payload?.payload?.msgId) {
+            const { msgId } = payload.payload;
+            setMessages((prev) => {
+              const updated = prev.map((m) =>
+                m.id === msgId && m.status !== 'read' ? { ...m, status: 'delivered' as const } : m
+              );
+              try {
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
+                if (activeChatId === CHAT_ID) {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                }
+              } catch {}
+              return updated;
+            });
+          }
+        })
+        .on('broadcast', { event: 'message_read' }, (payload) => {
+          if (payload?.payload?.msgId) {
+            const { msgId } = payload.payload;
+            setMessages((prev) => {
+              const updated = prev.map((m) =>
+                m.id === msgId ? { ...m, status: 'read' as const, read: true } : m
+              );
+              try {
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
+                if (activeChatId === CHAT_ID) {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                }
+              } catch {}
+              return updated;
+            });
+          }
+        })
+        .on('broadcast', { event: 'message_edited' }, (payload) => {
+          if (payload?.payload?.msgId) {
+            const { msgId, newText, editedAt } = payload.payload;
+            setMessages((prev) => {
+              const updated = prev.map((m) =>
+                m.id === msgId ? { ...m, text: newText, isEdited: true, editedAt } : m
+              );
+              try {
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
+                if (activeChatId === CHAT_ID) {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                }
+              } catch {}
+              return updated;
+            });
+          }
+        })
+        .on('broadcast', { event: 'message_deleted_for_all' }, (payload) => {
+          if (payload?.payload?.msgId) {
+            const { msgId } = payload.payload;
+            setMessages((prev) => {
+              const updated = prev.map((m) =>
+                m.id === msgId ? { ...m, text: 'This message was deleted', deletedForAll: true } : m
+              );
+              try {
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
+                if (activeChatId === CHAT_ID) {
+                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                }
+              } catch {}
+              return updated;
+            });
           }
         })
         .on('broadcast', { event: 'message_status_update' }, (payload) => {
@@ -791,7 +1210,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 };
               });
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
               } catch {}
               return updated;
             });
@@ -810,7 +1229,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               });
               if (changed) {
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(updated));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(updated));
                 } catch {}
               }
               return updated;
@@ -829,7 +1248,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setMessages((prev) => {
               const next = prev.filter((m) => m.id !== delId);
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
@@ -838,7 +1257,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         .on('broadcast', { event: 'chat_cleared' }, () => {
           setMessages([]);
           try {
-            localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+            localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify([]));
           } catch {}
         })
         .on('broadcast', { event: 'pin_update' }, (payload) => {
@@ -847,7 +1266,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setMessages((prev) => {
               const next = prev.map((m) => (m.id === msgId ? { ...m, isPinned } : m));
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
@@ -859,7 +1278,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             if (partnerTypingTimerRef.current) clearTimeout(partnerTypingTimerRef.current);
             partnerTypingTimerRef.current = window.setTimeout(() => {
               setIsPartnerTyping(false);
-            }, 2500);
+            }, 3000);
           }
         })
         .on('broadcast', { event: 'message_starred' }, (payload) => {
@@ -868,7 +1287,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setMessages((prev) => {
               const next = prev.map((m) => (m.id === msgId ? { ...m, isStarred } : m));
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
@@ -880,7 +1299,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setMessages((prev) => {
               const next = prev.map((m) => (m.id === msgId ? { ...m, poll } : m));
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
@@ -939,7 +1358,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `chat_id=eq.${CHAT_ID}`,
+            filter: `chat_id=eq.${activeChatId}`,
           },
           (payload) => {
             if (payload?.new) {
@@ -948,10 +1367,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 if (prev.some((m) => m.id === incoming.id)) return prev;
                 const next = [...prev, incoming];
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
                 } catch {}
                 return next;
               });
+              if (incoming.sender !== currentUser) {
+                playNotificationSound();
+                updateRemoteStatus(incoming.id, 'delivered');
+              }
             }
           }
         )
@@ -961,7 +1384,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             event: 'UPDATE',
             schema: 'public',
             table: 'messages',
-            filter: `chat_id=eq.${CHAT_ID}`,
+            filter: `chat_id=eq.${activeChatId}`,
           },
           (payload) => {
             if (payload?.new) {
@@ -969,7 +1392,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               setMessages((prev) => {
                 const next = prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m));
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
                 } catch {}
                 return next;
               });
@@ -989,7 +1412,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               setMessages((prev) => {
                 const next = prev.filter((m) => m.id !== delId);
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
                 } catch {}
                 return next;
               });
@@ -998,6 +1421,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         )
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
+            setConnectionStatus('connected');
             await channel.track({
               user: currentUser,
               online: true,
@@ -1013,7 +1437,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             // If we have read receipts enabled, mark all incoming unread messages as read
             if (readReceiptsEnabledRef.current) {
-              markAllIncomingAsRead(currentUser);
+              markAllIncomingAsRead(currentUser, activeChatId);
               channel.send({
                 type: 'broadcast',
                 event: 'all_messages_read',
@@ -1023,6 +1447,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             // Sync with Supabase on connect
             syncWithRemote.current();
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            setConnectionStatus('offline');
+          } else {
+            setConnectionStatus('connecting');
           }
         });
 
@@ -1064,7 +1492,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               if (prev.some((m) => m.id === incoming.id)) return prev;
               const next = [...prev, incoming];
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
@@ -1073,14 +1501,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setMessages((prev) => {
               const next = prev.filter((m) => m.id !== delId);
               try {
-                localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
               } catch {}
               return next;
             });
           } else if (type === 'chat_cleared') {
             setMessages([]);
             try {
-              localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+              localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify([]));
             } catch {}
           }
         };
@@ -1128,7 +1556,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 if (prev.some((m) => m.id === msg.id)) return prev;
                 const next = [...prev, msg];
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
                 } catch {}
                 return next;
               });
@@ -1141,7 +1569,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               setMessages((prev) => {
                 const next = prev.filter((m) => m.id !== msgId);
                 try {
-                  localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
+                  localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify(next));
                 } catch {}
                 return next;
               });
@@ -1150,7 +1578,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         } else if (e.key === 'dharya_chat_cleared' && e.newValue) {
           setMessages([]);
           try {
-            localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify([]));
+            localStorage.setItem(getChatStorageKey(activeChatId), JSON.stringify([]));
           } catch {}
         }
       };
@@ -1178,11 +1606,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         supabase.removeChannel(channel);
       };
     } catch {}
-  }, [currentUser, partnerUser]);
+  }, [currentUser, partnerUser, activeChatId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const lastMsg = messages[messages.length - 1];
+    const isSentByMe = lastMsg && lastMsg.sender === currentUser;
+
+    if (isNearBottomRef.current || isSentByMe) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setUnreadCountBelow(0);
+    } else {
+      setUnreadCountBelow((prev) => prev + 1);
+    }
+  }, [messages, currentUser]);
 
   // Handle Media Selected (Photo or Video from Camera or Gallery - Supports Multiple Photos)
   const handleMediaFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1342,6 +1778,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   // Typing Debouncer
   const handleInputTextChange = (val: string) => {
     setInputText(val);
+    try {
+      localStorage.setItem(`dharya_draft_${currentUser}`, val);
+    } catch {}
     const now = Date.now();
     if (now - lastTypingBroadcastRef.current > 1800) {
       lastTypingBroadcastRef.current = now;
@@ -1458,7 +1897,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       pollType: pollAllowMultiple ? 'multi' : 'single',
     };
 
-    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
     const newMsg: ExtendedChatMessage = {
       id: 'msg-poll-' + Date.now(),
       sender: currentUser,
@@ -1466,7 +1904,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
-      status: initialStatus,
+      status: 'sending',
       type: 'poll',
       poll: pollObj,
       replyTo: replyingToMessage
@@ -1478,21 +1916,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         : undefined,
     };
 
-    const next = [...messages, newMsg];
-    persistMessages(next);
-    saveRemoteMessage(newMsg);
     setReplyingToMessage(null);
     setShowPollModal(false);
     setPollQuestion('');
     setPollOptions(['', '']);
-
-    try {
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: newMsg,
-      });
-    } catch {}
+    dispatchSendMessage(newMsg);
   };
 
   // Real Audio Recording with MediaRecorder
@@ -1545,7 +1973,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64Audio = reader.result as string;
-        const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
         const durStr = `${Math.floor(totalSecs / 60)}:${totalSecs % 60 < 10 ? '0' : ''}${totalSecs % 60}`;
 
         const newMsg: ExtendedChatMessage = {
@@ -1555,7 +1982,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           timestamp: Date.now(),
           read: false,
-          status: initialStatus,
+          status: 'sending',
           type: 'voice',
           audioUrl: base64Audio,
           mediaUrl: base64Audio,
@@ -1570,18 +1997,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             : undefined,
         };
 
-        const next = [...messages, newMsg];
-        persistMessages(next);
-        saveRemoteMessage(newMsg);
         setReplyingToMessage(null);
-
-        try {
-          channelRef.current?.send({
-            type: 'broadcast',
-            event: 'new_message',
-            payload: newMsg,
-          });
-        } catch {}
+        dispatchSendMessage(newMsg);
       };
       reader.readAsDataURL(audioBlob);
       recorder.stream.getTracks().forEach((t) => t.stop());
@@ -1607,7 +2024,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       const rawData = event.target?.result as string;
       if (!rawData) return;
 
-      const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
       const newMsg: ExtendedChatMessage = {
         id: 'msg-doc-' + Date.now(),
         sender: currentUser,
@@ -1615,7 +2031,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now(),
         read: false,
-        status: initialStatus,
+        status: 'sending',
         type: 'document',
         documentName: file.name,
         documentSize: sizeStr,
@@ -1630,18 +2046,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           : undefined,
       };
 
-      const next = [...messages, newMsg];
-      persistMessages(next);
-      saveRemoteMessage(newMsg);
       setReplyingToMessage(null);
-
-      try {
-        channelRef.current?.send({
-          type: 'broadcast',
-          event: 'new_message',
-          payload: newMsg,
-        });
-      } catch {}
+      dispatchSendMessage(newMsg);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -1711,7 +2117,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // Wallpaper Style Provider with Light & Dark WhatsApp themes
+  // Wallpaper Style Provider with Full 10-Theme Integration
   const getWallpaperStyle = () => {
     if (activeWallpaper === 'obsidian') {
       return { backgroundColor: isDark ? '#0a0f12' : '#e4e7ea', backgroundImage: 'none' };
@@ -1725,24 +2131,139 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     if (activeWallpaper === 'coffee') {
       return { backgroundColor: isDark ? '#181512' : '#f2ede6', backgroundImage: 'none' };
     }
-    if (!isDark) {
+    if (activeWallpaper === 'stars') {
       return {
-        backgroundColor: '#efeae2',
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
+        backgroundColor: '#05070e',
+        backgroundImage: `radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(244, 63, 94, 0.08) 0%, transparent 40%)`
+      };
+    }
+    if (activeWallpaper === 'gradient') {
+      return {
+        backgroundColor: activeTheme.bgMain,
+        backgroundImage: isDark
+          ? `radial-gradient(ellipse at top right, ${activeTheme.accent}15, transparent 70%), radial-gradient(ellipse at bottom left, #0f172a, transparent 70%)`
+          : `radial-gradient(ellipse at top right, ${activeTheme.accent}20, transparent 70%), radial-gradient(ellipse at bottom left, #e2e8f0, transparent 70%)`
+      };
+    }
+    if (activeWallpaper.startsWith('data:') || activeWallpaper.startsWith('http')) {
+      return {
+        backgroundImage: `url(${activeWallpaper})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       };
     }
     return {
-      backgroundColor: '#0c1317',
+      backgroundColor: activeTheme.bgMain,
       backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2353bdeb' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
     };
   };
 
-  // Send a Text Message
+  // Jump to Replied Message with Smooth Scroll & Highlight Pulse
+  const jumpToMessage = (targetMsgId: string) => {
+    const el = document.getElementById(`msg-${targetMsgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-emerald-400', 'animate-pulse');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-emerald-400', 'animate-pulse');
+      }, 2200);
+    } else {
+      showToast('Quoted message not found in visible conversation', 'info');
+    }
+  };
+
+  // Copy Single Message Text to Clipboard
+  const handleCopyMessage = (msg: ExtendedChatMessage) => {
+    const textToCopy = msg.text || msg.mediaUrl || msg.documentName || '';
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      showToast('Message copied to clipboard!', 'success');
+    }
+  };
+
+  // Message Selection & Bulk Actions
+  const handleToggleSelectMsg = (id: string) => {
+    setSelectedMsgIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkCopy = () => {
+    const selectedMsgs = messages.filter((m) => selectedMsgIds.has(m.id));
+    const combined = selectedMsgs.map((m) => m.text || m.documentName || m.mediaUrl || '').filter(Boolean).join('\n');
+    if (combined) {
+      navigator.clipboard.writeText(combined);
+      showToast(`Copied ${selectedMsgs.length} messages to clipboard`, 'success');
+    }
+    setIsSelectionMode(false);
+    setSelectedMsgIds(new Set());
+  };
+
+  const handleBulkStar = () => {
+    const idsToStar = Array.from(selectedMsgIds);
+    setMessages((prev) => {
+      const next = prev.map((m) => (idsToStar.includes(m.id) ? { ...m, isStarred: true } : m));
+      persistMessages(next);
+      return next;
+    });
+    idsToStar.forEach((id) => updateRemoteStar(id, true));
+    showToast(`Starred ${idsToStar.length} messages`, 'success');
+    setIsSelectionMode(false);
+    setSelectedMsgIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    const idsToDelete = Array.from(selectedMsgIds);
+    const authorized = messages.filter((m) => idsToDelete.includes(m.id) && m.sender === currentUser);
+    if (authorized.length === 0) {
+      showToast('You can only delete messages sent by you', 'error');
+      return;
+    }
+    if (confirm(`Permanently delete ${authorized.length} selected message(s)? This action is permanent and cannot be undone.`)) {
+      const authIds = authorized.map((m) => m.id);
+      setMessages((prev) => {
+        const next = prev.filter((m) => !authIds.includes(m.id));
+        persistMessages(next);
+        return next;
+      });
+      authIds.forEach((id) => {
+        deleteRemoteMessage(id, currentUser).catch(() => {});
+        const deletePayload = { msgId: id, deletedBy: currentUser };
+        try {
+          const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
+          activeChannel.send({
+            type: 'broadcast',
+            event: 'message_deleted',
+            payload: deletePayload,
+          });
+        } catch {}
+        try {
+          chatBroadcastRef.current?.postMessage({
+            type: 'message_deleted',
+            payload: deletePayload,
+          });
+        } catch {}
+        try {
+          localStorage.setItem('dharya_message_deleted', JSON.stringify({
+            ...deletePayload,
+            timestamp: Date.now() + Math.random(),
+          }));
+        } catch {}
+      });
+      showToast(`Permanently deleted ${authIds.length} message(s)`, 'success');
+      setIsSelectionMode(false);
+      setSelectedMsgIds(new Set());
+    }
+  };
+
+  // Send a Text Message with honest initial 'sending' state
   const handleSendText = () => {
     const text = inputText.trim();
     if (!text) return;
-
-    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
 
     const newMsg: ExtendedChatMessage = {
       id: 'msg-' + Date.now(),
@@ -1751,28 +2272,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: Date.now(),
       read: false,
-      status: initialStatus,
+      status: 'sending',
       type: 'text',
       fileSizeKb: Math.max(1, Math.round(text.length * 0.05)),
       replyTo: replyingToMessage ? { id: replyingToMessage.id, sender: replyingToMessage.sender, text: replyingToMessage.text || replyingToMessage.type || 'Message' } : undefined,
     };
     setReplyingToMessage(null);
-
-    const next = [...messages, newMsg];
-    persistMessages(next);
     setInputText('');
-
-    // Persist to central Supabase DB for cross-device sync
-    saveRemoteMessage(newMsg);
-
     try {
-      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
-      activeChannel.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: newMsg,
-      });
+      localStorage.removeItem(`dharya_draft_${currentUser}`);
     } catch {}
+
+    dispatchSendMessage(newMsg);
   };
 
   // Send Photos or Videos (Supports multiple photos / videos with progress & permanent delivery)
@@ -1782,9 +2293,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setIsUploadingMedia(true);
     setUploadProgressPct(15);
 
-    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
     const total = pendingMediaList.length;
-    const sentMsgs: ExtendedChatMessage[] = [];
 
     for (let i = 0; i < total; i++) {
       const item = pendingMediaList[i];
@@ -1826,7 +2335,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now() + i,
         read: false,
-        status: initialStatus,
+        status: 'sending',
         type: item.type,
         mediaUrl: finalMediaUrl,
         thumbnailUrl: item.thumbnailUrl || (item.type === 'image' ? finalMediaUrl : undefined),
@@ -1845,43 +2354,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           : undefined,
       };
 
-      sentMsgs.push(newMsg);
-
-      // Persist to central Supabase DB
-      saveRemoteMessage(newMsg).catch(() => {});
-
-      // Broadcast real-time message event to partner (triple transport)
-      try {
-        const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
-        activeChannel.send({
-          type: 'broadcast',
-          event: 'new_message',
-          payload: newMsg,
-        });
-      } catch {}
-
-      try {
-        chatBroadcastRef.current?.postMessage({
-          type: 'new_message',
-          payload: newMsg,
-        });
-      } catch {}
-
-      try {
-        localStorage.setItem('dharya_chat_new_msg', JSON.stringify({
-          msg: newMsg,
-          timestamp: Date.now() + Math.random(),
-        }));
-      } catch {}
+      await dispatchSendMessage(newMsg);
     }
-
-    setMessages((prev) => {
-      const next = [...prev, ...sentMsgs];
-      try {
-        localStorage.setItem(LOCAL_MESSAGES_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
 
     setUploadProgressPct(100);
     setIsUploadingMedia(false);
@@ -2042,64 +2516,82 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
-  // Delete message permanently (NO Recycle Bin - sender authorization + permanent delete across DB, storage, and UI)
-  const handleDeleteMessage = async (msgId: string) => {
+  // Delete message: supports "Delete for me" (hides locally & marks deleted_for) and "Delete for everyone" (replaces with "This message was deleted")
+  const handleDeleteMessage = async (msgId: string, mode: 'for-everyone' | 'for-me' = 'for-everyone') => {
     const targetMsg = messages.find((m) => m.id === msgId);
     if (!targetMsg) return;
 
-    // Authorization check: User can only delete their own messages
-    if (targetMsg.sender !== currentUser) {
-      alert('You are only authorized to delete your own messages.');
-      return;
+    // 1. Move to Universal Recycle Bin so item can be reviewed/restored or emptied
+    try {
+      await moveToRecycleBin({
+        originalId: targetMsg.id,
+        source: 'chat',
+        title: `Message from ${targetMsg.sender === currentUser ? 'You' : partnerName}`,
+        previewText: targetMsg.text || targetMsg.type || 'Attachment',
+        mediaUrl: targetMsg.mediaUrl,
+        mediaType: targetMsg.type === 'video' ? 'video' : targetMsg.type === 'image' ? 'photo' : undefined,
+        owner: currentUser,
+        originalData: targetMsg,
+      });
+    } catch (err) {
+      console.warn('Failed to move message to recycle bin:', err);
     }
 
-    if (!confirm('Permanently delete this message? This action cannot be undone.')) {
-      return;
-    }
+    if (mode === 'for-me') {
+      // Hide locally and record in Supabase deleted_for array
+      const updatedDeletedFor = [...(targetMsg.deletedFor || []), currentUser];
+      const next = messages.map((m) => (m.id === msgId ? { ...m, deletedFor: updatedDeletedFor } : m));
+      persistMessages(next);
+      deleteRemoteMessageForMe(msgId, targetMsg.deletedFor || [], currentUser).catch(() => {});
+      showToast('Message deleted for you (saved in Recycle Bin)', 'info');
+    } else if (mode === 'for-everyone' && targetMsg.sender === currentUser) {
+      // Delete for everyone: replaces message text with "This message was deleted"
+      const next = messages.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              text: 'This message was deleted',
+              deletedForAll: true,
+              mediaUrl: undefined,
+              documentUrl: undefined,
+              audioUrl: undefined,
+            }
+          : m
+      );
+      persistMessages(next);
+      deleteRemoteMessageForEveryone(msgId, currentUser).catch((err) => {
+        console.warn('Failed to delete remote message for everyone:', err);
+      });
 
-    // 1. Remove from local state and localStorage
-    const next = messages.filter((m) => m.id !== msgId);
-    persistMessages(next);
+      // Storage cleanup if applicable
+      if (targetMsg.mediaUrl && targetMsg.mediaUrl.includes('chat_media')) {
+        try {
+          const parts = targetMsg.mediaUrl.split('chat_media/');
+          if (parts[1]) {
+            getSupabase().storage.from('chat_media').remove([parts[1]]).catch(() => {});
+          }
+        } catch {}
+      }
 
-    // 2. Permanently delete from Supabase DB with sender authorization
-    deleteRemoteMessage(msgId, currentUser).catch((err) => {
-      console.warn('Failed to delete remote message:', err);
-    });
-
-    // 3. Clean up stored media in storage bucket if applicable
-    if (targetMsg.mediaUrl && targetMsg.mediaUrl.includes('chat_media')) {
+      // Real-time broadcast deletion to all participants
       try {
-        const parts = targetMsg.mediaUrl.split('chat_media/');
-        if (parts[1]) {
-          getSupabase().storage.from('chat_media').remove([parts[1]]).catch(() => {});
-        }
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'message_deleted_for_all',
+          payload: { msgId },
+        });
       } catch {}
+      try {
+        chatBroadcastRef.current?.postMessage({
+          type: 'message_deleted_for_all',
+          payload: { msgId },
+        });
+      } catch {}
+
+      showToast('Message deleted for everyone', 'info');
     }
 
-    // 4. Real-time broadcast deletion to partner (triple transport: Supabase channel + BroadcastChannel + localStorage)
-    const deletePayload = { msgId, deletedBy: currentUser };
-    try {
-      const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
-      activeChannel.send({
-        type: 'broadcast',
-        event: 'message_deleted',
-        payload: deletePayload,
-      });
-    } catch {}
-
-    try {
-      chatBroadcastRef.current?.postMessage({
-        type: 'message_deleted',
-        payload: deletePayload,
-      });
-    } catch {}
-
-    try {
-      localStorage.setItem('dharya_message_deleted', JSON.stringify({
-        ...deletePayload,
-        timestamp: Date.now() + Math.random(),
-      }));
-    } catch {}
+    setDeleteDialogMsg(null);
   };
 
   // Handle call completion / close and log call summary message into chat
@@ -2126,22 +2618,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now(),
         read: false,
-        status: isPartnerOnlineRef.current ? 'delivered' : 'sent',
+        status: 'sending',
         type: 'text',
       };
-      const next = [...messages, newMsg];
-      persistMessages(next);
-
-      // Persist call log to Supabase DB
-      saveRemoteMessage(newMsg);
-
-      try {
-        channelRef.current?.send({
-          type: 'broadcast',
-          event: 'new_message',
-          payload: newMsg,
-        });
-      } catch {}
+      dispatchSendMessage(newMsg);
     }
   };
 
@@ -2294,12 +2774,33 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     return <>{parts}</>;
   };
 
-  // Filtered messages if search is active
+  // Filtered messages: respects "Delete for me", search query, and media filter
   const displayedMessages = useMemo(() => {
-    if (!searchQuery.trim()) return messages;
-    const q = searchQuery.toLowerCase();
-    return messages.filter((m) => m.text.toLowerCase().includes(q) || m.transcript?.toLowerCase().includes(q));
-  }, [messages, searchQuery]);
+    let list = messages.filter((m) => !m.deletedFor?.includes(currentUser));
+    if (mediaFilter !== 'all') {
+      if (mediaFilter === 'starred') {
+        list = list.filter((m) => m.isStarred);
+      } else {
+        list = list.filter((m) => m.type === mediaFilter);
+      }
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (m) =>
+          m.text.toLowerCase().includes(q) ||
+          m.transcript?.toLowerCase().includes(q) ||
+          m.documentName?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [messages, currentUser, searchQuery, mediaFilter]);
+
+  // First unread incoming message ID for rendering the divider
+  const firstUnreadMsgId = useMemo(() => {
+    const unread = displayedMessages.find((m) => m.sender !== currentUser && m.status !== 'read');
+    return unread?.id || null;
+  }, [displayedMessages, currentUser]);
 
   // ── EMERGENCY PANIC CAMOUFLAGE OVERLAY ──
   if (disguisePanic) {
@@ -2510,7 +3011,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             )}
           </button>
 
-          {/* Life Timeline Button */}
+          {/* Memories Button */}
           <button
             onClick={() => {
               setActiveMainView('timeline');
@@ -2519,18 +3020,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               activeMainView === 'timeline'
                 ? isDark
-                  ? 'bg-[#374248] text-amber-400 shadow-inner ring-1 ring-amber-400/40'
-                  : 'bg-amber-100 text-amber-700 shadow-sm ring-1 ring-amber-500/30'
+                  ? 'bg-[#2b3a30] text-[#7E9F89] shadow-inner ring-1 ring-[#7E9F89]/40'
+                  : 'bg-[#E4EDE6] text-[#4E6B58] shadow-xs ring-1 ring-[#4E6B58]/30'
                 : isDark
-                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400'
-                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-amber-600'
+                ? 'text-[#A3ADA5] hover:bg-[#242926] hover:text-[#ECEEEB]'
+                : 'text-[#5A655E] hover:bg-[#F0EDE8] hover:text-[#1F2421]'
             }`}
-            title="Life Timeline (Manual Memories & Incidents)"
+            title="Memories"
           >
             <Clock className="w-5 h-5" />
             {activeMainView === 'timeline' && (
               <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-amber-400' : 'bg-amber-600'
+                isDark ? 'bg-[#7E9F89]' : 'bg-[#4E6B58]'
               }`} />
             )}
           </button>
@@ -2590,13 +3091,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <BookOpen className="w-5 h-5" />
           </button>
 
-          {/* Chat Wallpaper Switcher */}
+          {/* Themes & Wallpaper Switcher (10 Themes) */}
           <button
-            onClick={() => setShowWallpaperModal(true)}
+            onClick={() => setShowThemeModal(true)}
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-teal-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-teal-600'
             }`}
-            title="Chat Wallpaper"
+            title="Themes &amp; Wallpapers (10 Themes)"
           >
             <Palette className="w-5 h-5" />
           </button>
@@ -2607,7 +3108,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
             }`}
-            title="Security &amp; Privacy (E2EE 256-bit)"
+            title="Security &amp; Privacy (TLS 1.3 &amp; PostgreSQL RLS)"
           >
             <ShieldCheck className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-[#008069]'}`} />
           </button>
@@ -2942,49 +3443,70 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
         {/* Chats List Area */}
         <div className={`flex-1 overflow-y-auto divide-y ${isDark ? 'divide-[#222e35]/30' : 'divide-[#f0f2f5]'}`}>
-          {/* Chat 1: Sadhana / Partner (Active & Pinned) */}
-          {(!sidebarSearchQuery || partnerName.toLowerCase().includes(sidebarSearchQuery.toLowerCase())) && (
-          <div
-            onClick={() => {
-              setActiveMainView('chat');
-              setMobileView('conversation');
-            }}
-            className={`px-3 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
-              activeMainView === 'chat'
-                ? isDark ? 'bg-[#2a3942]' : 'bg-[#f0f2f5]'
-                : isDark ? 'hover:bg-[#202c33]' : 'hover:bg-[#f5f6f6]'
-            }`}
-          >
-            <div className="relative shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold flex items-center justify-center text-base shadow">
-                {partnerName[0]}
-              </div>
-              {isPartnerOnline && (
-                <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 shadow-[0_0_6px_#00a884] ${
-                  isDark ? 'border-[#111b21]' : 'border-white'
-                }`} />
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className={`text-[15px] font-semibold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>{partnerName}</span>
-                <span className={`text-[11px] font-medium shrink-0 ml-1 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
-                  {messages[messages.length - 1]?.time || 'Now'}
-                </span>
-              </div>
-              <div className={`flex items-center justify-between mt-1 text-[13px] ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`}>
-                <div className="flex items-center gap-1 truncate max-w-[220px]">
-                  <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb] shrink-0" />
-                  <span className="truncate">
-                    {messages[messages.length - 1]?.text || 'Tap to start conversation'}
-                  </span>
+          {filteredConversations.map((conv) => {
+            const { isSelected, isGroup, displayName, lastMsg, unreadCount } = getConversationDetails(conv);
+            return (
+              <div
+                key={conv.id}
+                onClick={() => handleSelectConversation(conv.id)}
+                className={`px-3 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
+                  isSelected
+                    ? isDark ? 'bg-[#2a3942]' : 'bg-[#f0f2f5]'
+                    : isDark ? 'hover:bg-[#202c33]' : 'hover:bg-[#f5f6f6]'
+                }`}
+              >
+                <div className="relative shrink-0">
+                  {isGroup ? (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow">
+                      <Users className="w-6 h-6" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold flex items-center justify-center text-base shadow">
+                      {partnerName[0]}
+                    </div>
+                  )}
+                  {!isGroup && isPartnerOnline && (
+                    <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 shadow-[0_0_6px_#00a884] ${
+                      isDark ? 'border-[#111b21]' : 'border-white'
+                    }`} />
+                  )}
                 </div>
-                <Pin className={`w-3.5 h-3.5 rotate-45 shrink-0 ml-1 ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`} />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[15px] font-semibold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>
+                      {displayName}
+                    </span>
+                    <span className={`text-[11px] font-medium shrink-0 ml-1 ${
+                      unreadCount > 0 ? (isDark ? 'text-[#00a884]' : 'text-[#008069] font-bold') : (isDark ? 'text-[#8696a0]' : 'text-[#667781]')
+                    }`}>
+                      {lastMsg?.time || 'Active'}
+                    </span>
+                  </div>
+
+                  <div className={`flex items-center justify-between mt-1 text-[13px] ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`}>
+                    <div className="flex items-center gap-1 truncate max-w-[210px]">
+                      {lastMsg && lastMsg.sender === currentUser && renderMessageTicks(lastMsg)}
+                      <span className="truncate">
+                        {lastMsg ? (lastMsg.deletedForAll ? 'This message was deleted' : lastMsg.text || lastMsg.type || 'Media') : conv.description}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                      {!isGroup && (
+                        <Pin className={`w-3.5 h-3.5 rotate-45 ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`} />
+                      )}
+                      {unreadCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00a884] text-[#111b21] min-w-[18px] text-center shadow-xs">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          )}
+            );
+          })}
         </div>
 
         {/* Mobile Floating Action Button (FAB) */}
@@ -3105,7 +3627,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 setActiveMainView('timeline');
                 setMobileView('conversation');
               }}
-              onOpenRecycleBin={() => {}}
+              onOpenRecycleBin={() => {
+                setActiveMainView('recycle');
+                setMobileView('conversation');
+              }}
             />
           </div>
         ) : activeMainView === 'timeline' ? (
@@ -3120,7 +3645,28 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 setActiveMainView('gallery');
                 setMobileView('conversation');
               }}
-              onOpenRecycleBin={() => {}}
+              onOpenRecycleBin={() => {
+                setActiveMainView('recycle');
+                setMobileView('conversation');
+              }}
+            />
+          </div>
+        ) : activeMainView === 'recycle' ? (
+          /* Universal Recycle Bin View */
+          <div className="w-full h-full flex flex-col bg-[#0c1317]">
+            <RecycleBinView
+              onBackToChat={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              onOpenGallery={() => {
+                setActiveMainView('gallery');
+                setMobileView('conversation');
+              }}
+              onOpenTimeline={() => {
+                setActiveMainView('timeline');
+                setMobileView('conversation');
+              }}
             />
           </div>
         ) : (
@@ -3140,28 +3686,55 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* Contact Avatar with Live Online Badge */}
+          {/* Contact or Group Avatar */}
           <div
-            onClick={() => setShowContactInfo(true)}
-            className="relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-base shadow-sm ring-1 ring-white/10"
+            onClick={() => !isGroupChat && setShowContactInfo(true)}
+            className={`relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-white font-bold text-base shadow-sm ring-1 ring-white/10 ${
+              isGroupChat
+                ? 'bg-gradient-to-tr from-sky-600 to-indigo-600'
+                : 'bg-gradient-to-tr from-[#00a884] to-[#128c7e]'
+            }`}
           >
-            <span>{partnerName[0]}</span>
-            {isPartnerOnline && (
+            {isGroupChat ? <Users className="w-5 h-5" /> : <span>{partnerName[0]}</span>}
+            {!isGroupChat && isPartnerOnline && (
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#00a884] border-2 border-[#202c33] shadow-[0_0_8px_#00a884]" />
             )}
           </div>
 
-          {/* Contact Name & Live Status */}
-          <div onClick={() => setShowContactInfo(true)} className="cursor-pointer">
+          {/* Conversation Title & Live Status */}
+          <div onClick={() => !isGroupChat && setShowContactInfo(true)} className="cursor-pointer">
             <div className="flex items-center gap-2">
-              <h2 className={`text-[15px] font-semibold tracking-tight ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>{partnerName}</h2>
+              <h2 className={`text-[15px] font-semibold tracking-tight ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>
+                {isGroupChat ? activeConversation.name : partnerName}
+              </h2>
               {advancedPrivacy && (
                 <span title="Advanced Chat Privacy Enabled">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#00a884]" />
                 </span>
               )}
+              {/* Connection status indicator */}
+              <div className="flex items-center gap-1.5 ml-1">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    connectionStatus === 'connected'
+                      ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]'
+                      : connectionStatus === 'connecting'
+                      ? 'bg-amber-400 animate-pulse'
+                      : 'bg-rose-500'
+                  }`}
+                  title={`Connection: ${connectionStatus}`}
+                />
+                <span className="text-[10px] text-white/50 hidden lg:inline capitalize">
+                  {connectionStatus}
+                </span>
+              </div>
             </div>
-            {isPartnerTyping ? (
+
+            {isGroupChat ? (
+              <p className="text-[11px] text-[#8696a0] font-normal leading-tight truncate max-w-[200px] sm:max-w-xs">
+                {activeConversation.participants.map((p) => (p === currentUser ? 'You' : p === 'sadhana' ? 'Sadhana' : 'Surya')).join(', ')}
+              </p>
+            ) : isPartnerTyping ? (
               <p className="text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse">
                 <span>typing...</span>
               </p>
@@ -3178,47 +3751,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
         </div>
 
+        {/* ── Romantic Milestone Date Counter Pill (Shown ONLY for private 1-to-1 conversation) ── */}
+        {!isGroupChat && (
+          <button
+            onClick={() => setShowDateCountModal(true)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-mono transition-all shadow-xs cursor-pointer select-none ${
+              isDark
+                ? 'bg-[#2a1d20]/70 hover:bg-[#2a1d20] border-[#48282e] text-[#D48D98]'
+                : 'bg-[#FDF4F5] hover:bg-[#FBE8EA] border-[#F0D5D8] text-[#A85A66]'
+            }`}
+            title="Date Counter: 20 May 2026, 7:30 — Click for countdown"
+          >
+            <Heart className="w-3.5 h-3.5 fill-current shrink-0 animate-pulse" />
+            <span className="hidden lg:inline">20 May 2026, 7:30 •</span>
+            <span>{dateCount.days}d {dateCount.hours}h</span>
+            <span className="hidden sm:inline">{dateCount.minutes}m {dateCount.seconds}s</span>
+          </button>
+        )}
+
         {/* Action Icons */}
-        <div className={`flex items-center gap-1 sm:gap-2 ${isDark ? "text-[#aebac1]" : "text-[#54656f]"}`}>
-          {/* Theme Switcher in Conversation Header */}
-          <button onClick={toggleTheme} className={`p-2 rounded-full transition-colors ${isDark ? "hover:bg-white/10 hover:text-amber-400" : "hover:bg-black/5 hover:text-indigo-600"}`} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}</button>
-          {/* Gallery Quick Button */}
-          <button
-            onClick={() => setActiveMainView('gallery')}
-            className="p-2 rounded-full hover:bg-white/10 text-[#00a884] hover:text-[#00a884]/80 transition-colors"
-            title="Gallery"
-          >
-            <Images className="w-4 h-4 text-[#00a884]" />
-          </button>
-
-          {/* Life Timeline Quick Button */}
-          <button
-            onClick={() => setActiveMainView('timeline')}
-            className="p-2 rounded-full hover:bg-white/10 text-amber-400 hover:text-amber-300 transition-colors"
-            title="Life Timeline (Memories & Incidents)"
-          >
-            <Clock className="w-4 h-4 text-amber-400" />
-          </button>
-
-
-          {/* Security & Privacy Section Quick Button */}
-          <button
-            onClick={() => setShowSecurityModal(true)}
-            className="p-2 rounded-full hover:bg-white/10 text-emerald-400 hover:text-emerald-300 transition-colors"
-            title="Security &amp; Privacy Section"
-          >
-            <ShieldCheck className="w-4 h-4" />
-          </button>
-
-          {/* Chat Lists & Filters Button */}
-          <button
-            onClick={() => setShowChatLists(true)}
-            className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
-            title="Chat Lists &amp; Filters"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-
+        <div className={`flex items-center gap-0.5 sm:gap-1.5 ${isDark ? "text-[#959E98]" : "text-[#555E58]"}`}>
           {/* Video Call */}
           <button
             onClick={() => setShowCallModal('video')}
@@ -3257,13 +3809,67 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
+              <div className="absolute right-0 top-10 w-56 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-[#7E9F89]" />}
+                    <span>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveMainView('gallery');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-[#7E9F89] font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Images className="w-3.5 h-3.5 text-[#7E9F89]" />
+                    <span>Gallery</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveMainView('timeline');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-[#7E9F89] font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
+                    <span>Memories</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveMainView('recycle');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-rose-300 font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Recycle Bin</span>
+                  </span>
+                </button>
+
+                <div className="h-px bg-white/10 my-1" />
+
                 <button
                   onClick={() => {
                     setShowContactInfo(true);
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors"
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors"
                 >
                   Contact Info
                 </button>
@@ -3280,7 +3886,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Security &amp; Privacy</span>
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">E2EE</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">TLS+RLS</span>
                 </button>
 
                 {/* Emergency Panic Button */}
@@ -3316,16 +3922,44 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
                 <button
                   onClick={() => {
-                    setShowWallpaperModal(true);
+                    setIsSelectionMode((prev) => !prev);
+                    setSelectedMsgIds(new Set());
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-teal-300"
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-white cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Select Messages</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowDateCountModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-rose-300 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                    <span>Date Counter (20 May 2026)</span>
+                  </span>
+                  <span className="text-[10px] text-rose-400 font-mono">{dateCount.days}d {dateCount.hours}h</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowThemeModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-teal-300 cursor-pointer"
                 >
                   <span className="flex items-center gap-2">
                     <Palette className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Chat Wallpaper</span>
+                    <span>Theme &amp; Wallpaper</span>
                   </span>
-                  <span className="text-[10px] text-teal-400 font-mono capitalize">{activeWallpaper}</span>
+                  <span className="text-[10px] text-teal-400 font-mono capitalize">{activeTheme.name}</span>
                 </button>
 
                 <button
@@ -3419,30 +4053,120 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
       </div>
 
-      {/* ── IN-CHAT SEARCH BAR ── */}
+      {/* ── OFFLINE STATUS BANNER ── */}
+      {!isOnline && (
+        <div className="bg-amber-950/80 border-b border-amber-500/30 text-amber-200 px-4 py-1.5 text-xs flex items-center justify-between z-20">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-3.5 h-3.5 text-amber-400" />
+            <span>Offline mode — messages will sync automatically when reconnected</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── MESSAGE SELECTION ACTION BAR ── */}
+      {isSelectionMode && (
+        <div className={`px-4 py-2.5 border-b flex items-center justify-between gap-3 text-xs z-30 transition-all ${
+          isDark ? 'bg-[#202c33] border-[#2a3942] text-white' : 'bg-slate-100 border-[#d1d7db] text-[#111b21]'
+        }`}>
+          <div className="flex items-center gap-2 font-bold text-sm">
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedMsgIds(new Set());
+              }}
+              className="p-1 rounded-full hover:bg-white/10 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <span>{selectedMsgIds.size} Selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBulkCopy}
+              disabled={selectedMsgIds.size === 0}
+              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-semibold flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+              title="Copy selected messages"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy</span>
+            </button>
+            <button
+              onClick={handleBulkStar}
+              disabled={selectedMsgIds.size === 0}
+              className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 font-semibold flex items-center gap-1.5 disabled:opacity-40 text-amber-400 cursor-pointer"
+              title="Star selected messages"
+            >
+              <Star className="w-3.5 h-3.5" />
+              <span>Star</span>
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={selectedMsgIds.size === 0}
+              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-semibold flex items-center gap-1.5 disabled:opacity-40 cursor-pointer"
+              title="Delete selected messages"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── IN-CHAT SEARCH BAR WITH MEDIA FILTERS ── */}
       {showSearch && (
-        <div className={`px-4 py-2 border-b flex items-center gap-2 z-20 transition-colors ${
+        <div className={`px-4 py-2 border-b flex flex-col gap-2 z-20 transition-colors ${
           isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-[#ffffff] border-[#d1d7db] shadow-sm'
         }`}>
-          <Search className={`w-4 h-4 ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search in chat..."
-            className={`flex-1 bg-transparent text-sm focus:outline-none ${
-              isDark ? 'text-white placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#54656f]'
-            }`}
-            autoFocus
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className={`text-xs ${isDark ? 'text-[#8696a0] hover:text-white' : 'text-[#54656f] hover:text-[#111b21]'}`}>
-              ✕
+          <div className="flex items-center gap-2">
+            <Search className={`w-4 h-4 ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search in chat..."
+              className={`flex-1 bg-transparent text-sm focus:outline-none ${
+                isDark ? 'text-white placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#54656f]'
+              }`}
+              autoFocus
+            />
+            <span className={`text-[11px] font-mono ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`}>
+              {displayedMessages.length} {displayedMessages.length === 1 ? 'match' : 'matches'}
+            </span>
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className={`text-xs ${isDark ? 'text-[#8696a0] hover:text-white' : 'text-[#54656f] hover:text-[#111b21]'}`}>
+                ✕
+              </button>
+            )}
+            <button onClick={() => { setShowSearch(false); setMediaFilter('all'); setSearchQuery(''); }} className={`text-xs font-semibold ml-2 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
+              Done
             </button>
-          )}
-          <button onClick={() => setShowSearch(false)} className={`text-xs font-semibold ml-2 ${isDark ? 'text-[#00a884]' : 'text-[#008069]'}`}>
-            Done
-          </button>
+          </div>
+
+          {/* Quick Media Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'image', label: 'Photos 📸' },
+              { id: 'video', label: 'Videos 🎬' },
+              { id: 'voice', label: 'Voice 🎙️' },
+              { id: 'document', label: 'Docs 📄' },
+              { id: 'starred', label: 'Starred ⭐' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setMediaFilter(f.id as any)}
+                className={`px-2.5 py-0.5 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                  mediaFilter === f.id
+                    ? 'bg-emerald-500 text-white font-bold shadow-xs'
+                    : isDark
+                    ? 'bg-white/5 text-[#8696a0] hover:text-white hover:bg-white/10'
+                    : 'bg-black/5 text-[#54656f] hover:text-[#111b21] hover:bg-black/10'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -3470,26 +4194,56 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       {/* ── 3. CHAT MESSAGES CANVAS ── */}
       <div
+        ref={chatScrollRef}
+        onScroll={handleChatScroll}
         className="flex-1 overflow-y-auto px-4 py-3 space-y-2 relative scroll-smooth"
         style={getWallpaperStyle()}
       >
-        {/* End-to-End Encryption Banner - Clickable to open Security Section */}
+        {/* Load earlier messages button */}
+        {hasMoreMessages && (
+          <div className="flex justify-center my-2">
+            <button
+              type="button"
+              onClick={handleLoadOlderMessages}
+              disabled={isLoadingOlder}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isDark
+                  ? 'bg-[#182229] border-[#2a3942] text-[#00a884] hover:bg-[#202c33]'
+                  : 'bg-white border-[#d1d7db] text-[#008069] hover:bg-[#f0f2f5]'
+              }`}
+            >
+              {isLoadingOlder ? (
+                <>
+                  <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Loading earlier messages...</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Load earlier messages</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Security Banner: TLS Transport & Row-Level Security */}
         <div
           onClick={() => setShowSecurityModal(true)}
           className={`mx-auto max-w-sm p-3 rounded-xl text-center shadow my-2 cursor-pointer transition-colors ${
             isDark
-              ? 'bg-[#182229] border border-[#ffb800]/20 hover:border-[#ffb800]/40'
-              : 'bg-[#ffeecd] border border-[#f5c677] hover:bg-[#fff2d6]'
+              ? 'bg-[#182229] border border-emerald-500/20 hover:border-emerald-500/40'
+              : 'bg-[#e7fce3] border border-[#00a884]/30 hover:bg-[#dcf8c6]'
           }`}
         >
           <div className={`flex items-center justify-center gap-1.5 text-xs font-semibold mb-0.5 ${
-            isDark ? 'text-[#ffd279]' : 'text-[#7d5600]'
+            isDark ? 'text-emerald-400' : 'text-[#008069]'
           }`}>
-            <Lock className="w-3.5 h-3.5" />
-            <span>End-to-End Encrypted</span>
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>TLS Transport &amp; Row-Level Security</span>
           </div>
           <p className={`text-[11px] leading-tight ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`}>
-            Messages and calls are end-to-end encrypted. Tap to verify security &amp; safety numbers.
+            All messages are encrypted in transit via TLS 1.3 and isolated with PostgreSQL Row-Level Security. Tap to view details.
           </p>
         </div>
 
@@ -3508,12 +4262,12 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {displayedMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4 space-y-4 max-w-sm mx-auto">
             <div className="w-16 h-16 rounded-full bg-[#182229] border border-[#2a3942] flex items-center justify-center shadow-lg">
-              <Lock className="w-7 h-7 text-emerald-400" />
+              <ShieldCheck className="w-7 h-7 text-emerald-400" />
             </div>
             <div className="space-y-1">
               <h3 className="text-sm font-bold text-white">No messages yet</h3>
               <p className="text-xs text-[#8696a0]">
-                All messages and gallery photos sent between you and <span className="text-emerald-400 font-semibold">{partnerName}</span> are stored permanently on this device and secured with 256-bit encryption.
+                All messages and gallery photos sent between you and <span className="text-emerald-400 font-semibold">{isGroupChat ? activeConversation.name : partnerName}</span> are stored safely and protected with TLS transport encryption and PostgreSQL Row-Level Security.
               </p>
             </div>
             <button
@@ -3521,67 +4275,110 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#182229] border border-emerald-500/30 text-[11px] text-emerald-400 font-medium hover:bg-[#202c33] transition-colors"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verify Security Section</span>
+              <span>Verify Security Status</span>
             </button>
           </div>
         )}
 
         {/* Messages List */}
-        {displayedMessages.map((msg) => {
+        {displayedMessages.map((msg, index) => {
           const isMe = msg.sender === currentUser;
+          const prevMsg = index > 0 ? displayedMessages[index - 1] : null;
+          const isConsecutive = !!(prevMsg && prevMsg.sender === msg.sender);
           const reactions = msg.reactions || {};
           const totalReactions = Object.values(reactions).flat().length;
+          const isFirstUnread = msg.id === firstUnreadMsgId;
 
           return (
-            <div
-              key={msg.id}
-              className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}
-            >
-              {/* Message Bubble with Authentic WhatsApp Speech Tail */}
+            <React.Fragment key={msg.id}>
+              {/* Unread Messages Separator */}
+              {isFirstUnread && (
+                <div className="flex items-center justify-center my-3 select-none">
+                  <div className="h-px bg-emerald-500/30 flex-1 max-w-xs" />
+                  <span className="px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold font-mono tracking-wider mx-2 uppercase border border-emerald-500/30 shadow-xs">
+                    Unread Messages
+                  </span>
+                  <div className="h-px bg-emerald-500/30 flex-1 max-w-xs" />
+                </div>
+              )}
+
               <div
-                className={`relative max-w-[85%] sm:max-w-[70%] rounded-2xl px-3.5 py-1.5 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] transition-all select-none ${
-                  isMe
-                    ? isDark
-                      ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-[2px]'
-                      : 'bg-[#d9fdd3] text-[#111b21] rounded-tr-[2px]'
-                    : isDark
-                    ? 'bg-[#202c33] text-[#e9edef] rounded-tl-[2px]'
-                    : 'bg-[#ffffff] text-[#111b21] rounded-tl-[2px]'
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2 group relative ${
+                  isConsecutive ? 'mt-1' : 'mt-3 sm:mt-3.5'
                 }`}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setReactionBubbleId(msg.id);
-                }}
               >
-                {/* Authentic Speech Bubble Tail SVG */}
-                {isMe ? (
-                  <svg className="absolute -top-[0px] -right-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
-                    <path d="M0 0 C3 2, 7 4, 8 13 L0 13 Z" fill={isDark ? '#005c4b' : '#d9fdd3'} />
-                  </svg>
-                ) : (
-                  <svg className="absolute -top-[0px] -left-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
-                    <path d="M8 0 C5 2, 1 4, 0 13 L8 13 Z" fill={isDark ? '#202c33' : '#ffffff'} />
-                  </svg>
-                )}
-                {/* Pinned Indicator on Bubble */}
-                {msg.isPinned && (
-                  <div className="flex items-center gap-1 text-[10px] text-[#ffd279] font-semibold mb-1">
-                    <Pin className="w-2.5 h-2.5" />
-                    <span>Pinned Message</span>
+                {/* Selection Checkbox */}
+                {isSelectionMode && (
+                  <div
+                    onClick={() => handleToggleSelectMsg(msg.id)}
+                    className="self-center p-1 cursor-pointer select-none"
+                  >
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                      selectedMsgIds.has(msg.id)
+                        ? 'bg-emerald-500 border-emerald-400 text-white'
+                        : isDark ? 'border-white/30 hover:border-white/60' : 'border-black/30 hover:border-black/60'
+                    }`}>
+                      {selectedMsgIds.has(msg.id) && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </div>
                   </div>
                 )}
 
-                {/* Quoted Reply Preview on Bubble */}
-                {msg.replyTo && (
-                  <div className={`mb-2 p-2 rounded-lg border-l-4 border-emerald-500 text-xs select-none ${
-                    isDark ? 'bg-black/25' : 'bg-black/5'
-                  }`}>
-                    <span className="font-semibold text-emerald-400 block text-[11px] mb-0.5">
-                      {msg.replyTo.sender === currentUser ? 'You' : partnerName}
-                    </span>
-                    <span className="text-[#8696a0] line-clamp-1 text-[11px]">{msg.replyTo.text}</span>
-                  </div>
-                )}
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%] relative`}>
+                  {/* Message Bubble with Authentic Speech Tail */}
+                  <div
+                    id={`msg-${msg.id}`}
+                    className={`relative w-full rounded-2xl px-3.5 py-1.5 shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition-all select-none ${
+                      isConsecutive
+                        ? 'rounded-2xl'
+                        : isMe ? 'rounded-tr-[2px]' : 'rounded-tl-[2px]'
+                    }`}
+                    style={{
+                      backgroundColor: isMe ? activeTheme.bubbleOutgoing : activeTheme.bubbleIncoming,
+                      color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText,
+                      border: (isMe ? activeTheme.bubbleOutgoingBorder : activeTheme.bubbleIncomingBorder)
+                        ? `1px solid ${isMe ? activeTheme.bubbleOutgoingBorder : activeTheme.bubbleIncomingBorder}`
+                        : undefined,
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setReactionBubbleId(msg.id);
+                    }}
+                  >
+                    {/* Authentic Speech Bubble Tail SVG (only for cluster leader) */}
+                    {!isConsecutive && (
+                      isMe ? (
+                        <svg className="absolute -top-[0px] -right-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
+                          <path d="M0 0 C3 2, 7 4, 8 13 L0 13 Z" fill={activeTheme.bubbleOutgoing} />
+                        </svg>
+                      ) : (
+                        <svg className="absolute -top-[0px] -left-[7px] w-[8px] h-[13px] overflow-hidden pointer-events-none" viewBox="0 0 8 13">
+                          <path d="M8 0 C5 2, 1 4, 0 13 L8 13 Z" fill={activeTheme.bubbleIncoming} />
+                        </svg>
+                      )
+                    )}
+                    {/* Pinned Indicator on Bubble */}
+                    {msg.isPinned && (
+                      <div className="flex items-center gap-1 text-[10px] text-[#ffd279] font-semibold mb-1">
+                        <Pin className="w-2.5 h-2.5" />
+                        <span>Pinned Message</span>
+                      </div>
+                    )}
+
+                    {/* Quoted Reply Preview on Bubble - Click to jump */}
+                    {msg.replyTo && (
+                      <div
+                        onClick={() => msg.replyTo?.id && jumpToMessage(msg.replyTo.id)}
+                        className={`mb-2 p-2 rounded-lg border-l-4 border-emerald-500 text-xs select-none cursor-pointer hover:opacity-80 transition-opacity ${
+                          isDark ? 'bg-black/25' : 'bg-black/5'
+                        }`}
+                        title="Click to jump to quoted message"
+                      >
+                        <span className="font-semibold text-emerald-400 block text-[11px] mb-0.5">
+                          {msg.replyTo.sender === currentUser ? 'You' : partnerName}
+                        </span>
+                        <span className="text-[#8696a0] line-clamp-1 text-[11px]">{msg.replyTo.text}</span>
+                      </div>
+                    )}
 
                 {/* ── VIEW ONCE MEDIA (PHOTO OR VIDEO) ── */}
                 {msg.isViewOnce && (
@@ -3630,7 +4427,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                       )}
                     </div>
                     {msg.text && msg.text !== 'Photo' && msg.text !== 'High Definition Photo' && (
-                      <p className="text-sm leading-relaxed text-white pt-1">
+                      <p
+                        className="text-sm leading-relaxed pt-1"
+                        style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
+                      >
                         {renderFormattedText(msg.text)}
                       </p>
                     )}
@@ -3676,7 +4476,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                       </button>
                     </div>
                     {msg.text && msg.text !== 'Video' && (
-                      <p className="text-sm leading-relaxed text-white pt-1">
+                      <p
+                        className="text-sm leading-relaxed pt-1"
+                        style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
+                      >
                         {renderFormattedText(msg.text)}
                       </p>
                     )}
@@ -3877,17 +4680,40 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   </div>
                 )}
 
-                {/* ── REGULAR TEXT MESSAGE ── */}
-                {msg.type === 'text' && (
-                  <p className="text-[14.5px] leading-[20px] break-words text-[#e9edef] pr-1 pt-0.5">
+                {/* ── REGULAR TEXT OR DELETED MESSAGE ── */}
+                {msg.deletedForAll ? (
+                  <div className="flex items-center gap-1.5 text-white/50 italic text-[13.5px] py-1 select-none">
+                    <Ban className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
+                    <span>This message was deleted</span>
+                  </div>
+                ) : msg.type === 'text' ? (
+                  <p
+                    className="text-[14.5px] leading-[20px] break-words pr-1 pt-0.5"
+                    style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
+                  >
                     {renderFormattedText(msg.text)}
                   </p>
-                )}
+                ) : null}
 
                 {/* Bubble Footer: Timestamp & Checkmarks */}
-                <div className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5 text-[11px] text-white/65 select-none font-sans">
+                <div
+                  className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5 text-[11px] select-none font-sans"
+                  style={{
+                    color: isMe
+                      ? (isDark ? 'rgba(235, 245, 237, 0.65)' : 'rgba(27, 42, 32, 0.65)')
+                      : (isDark ? 'rgba(236, 238, 235, 0.65)' : 'rgba(31, 36, 33, 0.65)')
+                  }}
+                >
                   {msg.isStarred && (
                     <Star className="w-3 h-3 fill-amber-400 text-amber-400 mr-0.5" />
+                  )}
+                  {msg.isEdited && (
+                    <span
+                      className="text-[10px] text-white/50 italic mr-0.5 select-none"
+                      title={msg.editedAt ? `Edited at ${new Date(msg.editedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Edited'}
+                    >
+                      (edited)
+                    </span>
                   )}
                   <span>{msg.time}</span>
                   {renderMessageTicks(msg)}
@@ -3908,7 +4734,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 )}
               </div>
 
-              {/* Message Context Controls (Reply, Star, React, Pin, Delete) */}
+              {/* Message Context Controls (Reply, Star, Edit, React, Pin, Delete) */}
               <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 mt-1 px-1 text-xs text-[#8696a0]">
                 <button
                   onClick={() => handleStartReply(msg)}
@@ -3917,6 +4743,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 >
                   <CornerUpLeft className="w-3.5 h-3.5" />
                 </button>
+                <button
+                  onClick={() => handleCopyMessage(msg)}
+                  className="p-1 hover:text-white hover:bg-white/10 rounded cursor-pointer"
+                  title="Copy text"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                {msg.sender === currentUser && msg.type === 'text' && !msg.deletedForAll && (
+                  <button
+                    onClick={() => {
+                      setEditingMessage(msg);
+                      setEditText(msg.text);
+                    }}
+                    className="p-1 hover:text-white hover:bg-white/10 rounded cursor-pointer"
+                    title="Edit message"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={() => handleToggleStarMessage(msg.id)}
                   className={`p-1 hover:text-white hover:bg-white/10 rounded ${msg.isStarred ? 'text-amber-400' : ''}`}
@@ -3939,7 +4784,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   <Pin className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDeleteMessage(msg.id)}
+                  onClick={() => setDeleteDialogMsg(msg)}
                   className="p-1 hover:text-rose-400 hover:bg-rose-500/10 rounded"
                   title="Delete message"
                 >
@@ -3979,12 +4824,39 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   </button>
                 </div>
               )}
-            </div>
+                </div>
+              </div>
+            </React.Fragment>
           );
         })}
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Floating Scroll to Bottom / New Message Pill */}
+      {showScrollBottom && (
+        <button
+          onClick={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            setShowScrollBottom(false);
+            setUnreadCountBelow(0);
+          }}
+          className={`absolute bottom-20 right-5 z-20 px-3 py-1.5 rounded-full border shadow-lg flex items-center gap-1.5 text-xs font-medium transition-all hover:scale-105 active:scale-95 ${
+            isDark
+              ? 'bg-[#181c1b]/95 border-[#2b332e] text-[#ECEEEB] hover:bg-[#232926]'
+              : 'bg-white/95 border-[#E5DFD5] text-[#1F2421] hover:bg-[#F7F5F2]'
+          }`}
+          title="Jump to newest message"
+        >
+          <ChevronDown className="w-4 h-4 text-[#7E9F89]" />
+          <span>Newest</span>
+          {unreadCountBelow > 0 && (
+            <span className="ml-1 px-1.5 py-0.2 rounded-full bg-[#7E9F89] text-white text-[10px] font-bold">
+              {unreadCountBelow}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* ── QUOTED REPLY PREVIEW BANNER ── */}
       {replyingToMessage && (
@@ -4002,6 +4874,33 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           <button
             onClick={() => setReplyingToMessage(null)}
             className="p-1 rounded-full text-[#8696a0] hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── EDIT MESSAGE BANNER ── */}
+      {editingMessage && (
+        <div className={`border-t px-4 py-2 flex items-center justify-between z-30 animate-in fade-in slide-in-from-bottom-2 duration-150 transition-colors ${
+          isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-[#f0f2f5] border-[#d1d7db]'
+        }`}>
+          <div className="border-l-4 border-[#00a884] pl-2.5 overflow-hidden">
+            <span className="text-xs font-semibold text-[#00a884] flex items-center gap-1.5">
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Editing message</span>
+            </span>
+            <span className="text-xs text-[#8696a0] line-clamp-1 italic">
+              &ldquo;{editingMessage.text}&rdquo;
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setEditingMessage(null);
+              setEditText('');
+            }}
+            className="p-1 rounded-full text-[#8696a0] hover:text-white transition-colors"
+            title="Cancel editing"
           >
             <X className="w-4 h-4" />
           </button>
@@ -4048,18 +4947,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <Paperclip className="w-5 h-5" />
           </button>
 
-          {/* WhatsApp Attachment Sheet */}
+          {/* Attachment Sheet */}
           {showAttachMenu && (
-            <div className="absolute bottom-12 left-0 w-80 bg-[#233138] border border-[#2a3942] rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-2.5 text-center">
+            <div className={`absolute bottom-12 left-0 w-80 rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-2.5 text-center border ${
+              isDark ? 'bg-[#181c1b] border-[#2b332e] text-[#ECEEEB]' : 'bg-white border-[#E5DFD5] text-[#1F2421]'
+            }`}>
               {/* Document Option */}
               <button
                 onClick={() => {
                   docInputRef.current?.click();
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-blue-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
                   <FileText className="w-5 h-5" />
                 </div>
                 <span className="text-[11px] font-medium">Document</span>
@@ -4071,12 +4974,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   fileInputRef.current?.click();
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-purple-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
                   <ImageIcon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium">Gallery</span>
+                <span className="text-[11px] font-medium">Photos</span>
               </button>
 
               {/* Camera Option */}
@@ -4085,9 +4990,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   cameraInputRef.current?.click();
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-rose-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-[#A85A66]/15 text-[#A85A66] dark:bg-[#D48D98]/20 dark:text-[#D48D98] flex items-center justify-center shadow-xs">
                   <Camera className="w-5 h-5" />
                 </div>
                 <span className="text-[11px] font-medium">Camera</span>
@@ -4099,9 +5006,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   setShowPollModal(true);
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-teal-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
                   <BarChart2 className="w-5 h-5" />
                 </div>
                 <span className="text-[11px] font-medium">Poll</span>
@@ -4113,9 +5022,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   handleStartAudioRecording();
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-amber-600 text-white flex items-center justify-center shadow">
+                <div className="w-11 h-11 rounded-full bg-[#A85A66]/15 text-[#A85A66] dark:bg-[#D48D98]/20 dark:text-[#D48D98] flex items-center justify-center shadow-xs">
                   <FileAudio className="w-5 h-5" />
                 </div>
                 <span className="text-[11px] font-medium">Audio</span>
@@ -4124,13 +5035,15 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               {/* Location Option */}
               <button
                 onClick={() => {
-                  setInputText('📍 Shared Engineering Campus Library Coordinates: 13.0827° N, 80.2707° E');
+                  setInputText('📍 Shared Location Coordinates: 13.0827° N, 80.2707° E');
                   setShowAttachMenu(false);
                 }}
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/5 text-[#d1d7db]"
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
+                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
+                }`}
               >
-                <div className="w-11 h-11 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow">
-                  <span className="text-base">📍</span>
+                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
+                  <span className="text-sm font-semibold">📍</span>
                 </div>
                 <span className="text-[11px] font-medium">Location</span>
               </button>
@@ -4171,28 +5084,51 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
         ) : (
           <>
-            <div className={`flex-1 rounded-xl px-4 py-2.5 flex items-center gap-2 focus-within:ring-1 transition-all ${isDark ? "bg-[#2a3942] text-[#e9edef] focus-within:ring-[#00a884]/40" : "bg-white text-[#111b21] shadow-sm border border-[#d1d7db]/60 focus-within:ring-[#008069]/40"}`}>
-
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => handleInputTextChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSendText();
+            <div className={`flex-1 rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-end gap-2 focus-within:ring-1 transition-all ${
+              isDark 
+                ? "bg-[#181c1b] text-[#ECEEEB] border border-[#2b332e] focus-within:ring-[#4E6B58]/40" 
+                : "bg-white text-[#1F2421] shadow-xs border border-[#E5DFD5] focus-within:ring-[#4E6B58]/40"
+            }`}>
+              <textarea
+                value={editingMessage ? editText : inputText}
+                rows={1}
+                onChange={(e) => {
+                  if (editingMessage) {
+                    setEditText(e.target.value);
+                  } else {
+                    handleInputTextChange(e.target.value);
+                  }
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                 }}
-                placeholder="Type a message (*bold*, _italic_, ~strike~)"
-                className={`w-full bg-transparent text-[14.5px] outline-none ${isDark ? "text-[#e9edef] placeholder-[#8696a0]" : "text-[#111b21] placeholder-[#54656f]"}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (editingMessage) {
+                      handleConfirmEdit();
+                    } else {
+                      handleSendText();
+                    }
+                  } else if (e.key === 'Escape' && editingMessage) {
+                    setEditingMessage(null);
+                    setEditText('');
+                  }
+                }}
+                placeholder={editingMessage ? "Edit message..." : "Message"}
+                className={`w-full bg-transparent text-[14px] sm:text-[14.5px] outline-none resize-none leading-relaxed max-h-[120px] ${
+                  isDark ? "text-[#ECEEEB] placeholder-[#808B84]" : "text-[#1F2421] placeholder-[#737C76]"
+                }`}
               />
             </div>
 
-            {/* Mic / Send Button */}
-            {inputText.trim() ? (
+            {/* Mic / Send / Save Edit Button */}
+            {(editingMessage ? editText.trim() : inputText.trim()) ? (
               <button
-                onClick={handleSendText}
+                onClick={editingMessage ? handleConfirmEdit : handleSendText}
                 className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-                title="Send"
+                title={editingMessage ? "Save edit" : "Send"}
               >
-                <Send className="w-4 h-4 ml-0.5" />
+                {editingMessage ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Send className="w-4 h-4 ml-0.5" />}
               </button>
             ) : (
               <button
@@ -4533,7 +5469,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 {lightboxMedia.caption}
               </p>
             ) : (
-              <p className="text-xs text-[#8696a0]">End-to-end encrypted</p>
+              <p className="text-xs text-[#8696a0]">TLS 1.3 Transport Encrypted</p>
             )}
           </div>
         </div>
@@ -4551,7 +5487,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">Security &amp; Privacy Center</h3>
-                  <p className="text-[11px] text-[#8696a0]">End-to-End Encrypted Private Channel</p>
+                  <p className="text-[11px] text-[#8696a0]">TLS 1.3 Transport Encryption &amp; PostgreSQL RLS</p>
                 </div>
               </div>
               <button
@@ -4564,39 +5500,40 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             {/* Modal Body */}
             <div className="p-5 overflow-y-auto space-y-5 text-xs text-[#d1d7db]">
-              {/* E2EE Safety Number Verification */}
+              {/* Transport & Database Security Verification */}
               <div className="p-4 rounded-2xl bg-[#182229] border border-[#2a3942] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-emerald-400" />
-                    <span className="font-bold text-sm text-white">Encryption Safety Number</span>
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-sm text-white">Transport &amp; Access Architecture</span>
                   </div>
                   <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-mono text-[10px] font-bold">
-                    AES-256 Verified
+                    TLS 1.3 + RLS Active
                   </span>
                 </div>
 
                 <p className="text-[11px] text-[#8696a0] leading-relaxed">
-                  Compare this 60-digit cryptographic number with {partnerName} to verify that messages and gallery photos cannot be read by anyone else.
+                  Real-time communication is protected with TLS 1.3 transport encryption. At rest, PostgreSQL Row-Level Security (RLS) ensures only verified accounts have read and write privileges for active conversations.
                 </p>
 
-                {/* 60-Digit Safety Number in Groups of 5 */}
+                {/* Authenticated Participant Fingerprint */}
                 <div className="p-3.5 rounded-xl bg-[#0b141a] border border-white/5 font-mono text-center text-xs tracking-wider text-emerald-300 leading-relaxed select-all">
-                  52910 09102 00729 02200 81928 47291<br />
-                  93820 18472 90184 75619 38291 04928
+                  CONVERSATION ID: {activeChatId}<br />
+                  AUTH SENDER: {currentUser.toUpperCase()} • PEER: {partnerUser.toUpperCase()}<br />
+                  SECURITY POLICY: SUPABASE_RLS_V2_ENFORCED
                 </div>
 
                 <div className="flex items-center justify-between pt-1">
                   <button
                     onClick={handleCopySafetyCode}
-                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{copiedSafetyCode ? 'Copied to Clipboard!' : 'Copy Safety Number'}</span>
+                    <span>{copiedSafetyCode ? 'Copied to Clipboard!' : 'Copy Room Session Fingerprint'}</span>
                   </button>
                   <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
                     <CheckCheck className="w-3.5 h-3.5" />
-                    <span>Keys Authenticated</span>
+                    <span>RLS Verified</span>
                   </span>
                 </div>
               </div>
@@ -4888,6 +5825,35 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               <p className="text-xs text-emerald-400 font-medium">Verified 1-to-1 End-to-End Chat</p>
             </div>
 
+            {/* Special Milestone / Date Counter Card */}
+            <div
+              onClick={() => {
+                setShowContactInfo(false);
+                setShowDateCountModal(true);
+              }}
+              className="p-3.5 rounded-2xl bg-rose-950/30 hover:bg-rose-950/50 border border-rose-500/30 text-left cursor-pointer transition-all shadow-inner"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-400">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
+                  <span>Date Counter • 20 May 2026</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full">
+                  7:30
+                </span>
+              </div>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black font-mono text-rose-500">{dateCount.days}</span>
+                <span className="text-xs font-bold text-white">Days</span>
+                <span className="text-xs font-mono text-rose-300">
+                  {String(dateCount.hours).padStart(2, '0')}h {String(dateCount.minutes).padStart(2, '0')}m {String(dateCount.seconds).padStart(2, '0')}s
+                </span>
+              </div>
+              <p className="text-[10px] text-[#8696a0] mt-1">
+                Click to open live ticking counter &amp; milestone statistics
+              </p>
+            </div>
+
             {/* Security Section Button */}
             <button
               onClick={() => {
@@ -5141,58 +6107,264 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
       )}
 
-      {/* ── CHAT WALLPAPER SELECTOR MODAL ── */}
-      {showWallpaperModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111b21] border border-[#2a3942] rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#2a3942] pb-3">
-              <div className="flex items-center gap-2 text-white font-bold text-base">
-                <Palette className="w-5 h-5 text-teal-400" />
-                <span>Chat Wallpaper</span>
+      {/* ── UNIFIED 10-THEME & WALLPAPER SELECTOR MODAL ── */}
+      {(showThemeModal || showWallpaperModal) && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+          <div className={`border rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col transition-colors ${
+            isDark ? 'bg-[#111b21] border-[#2a3942] text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            {/* Modal Header */}
+            <div className={`flex items-center justify-between border-b pb-3 shrink-0 ${
+              isDark ? 'border-[#2a3942]' : 'border-slate-200'
+            }`}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
+                  <Palette className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base sm:text-lg">Themes &amp; Wallpapers</h3>
+                  <p className={`text-xs ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+                    Personalize your private 1-on-1 Dharya chat experience
+                  </p>
+                </div>
               </div>
               <button
-                onClick={() => setShowWallpaperModal(false)}
-                className="p-1 rounded-full text-[#8696a0] hover:text-white"
+                onClick={() => {
+                  setShowThemeModal(false);
+                  setShowWallpaperModal(false);
+                }}
+                className={`p-1.5 rounded-full hover:bg-white/10 transition-colors ${
+                  isDark ? 'text-[#8696a0] hover:text-white' : 'text-slate-400 hover:text-slate-800'
+                }`}
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-[#8696a0]">
-              Select a background theme for your WhatsApp chat conversation:
-            </p>
+            {/* Modal Tabs */}
+            <div className={`flex items-center gap-2 p-1 rounded-xl shrink-0 ${
+              isDark ? 'bg-[#202c33]' : 'bg-slate-100'
+            }`}>
+              <button
+                onClick={() => setThemeModalTab('themes')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  themeModalTab === 'themes'
+                    ? 'bg-teal-500 text-white shadow-sm'
+                    : isDark ? 'text-[#8696a0] hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                10 Color Themes
+              </button>
+              <button
+                onClick={() => setThemeModalTab('wallpapers')}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${
+                  themeModalTab === 'wallpapers'
+                    ? 'bg-teal-500 text-white shadow-sm'
+                    : isDark ? 'text-[#8696a0] hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Chat Wallpapers
+              </button>
+            </div>
 
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              {[
-                { id: 'doodle', label: 'Doodle (Classic)', bg: 'bg-[#0c1317] border-[#00a884]' },
-                { id: 'obsidian', label: 'Obsidian Dark', bg: 'bg-[#0a0f12] border-slate-700' },
-                { id: 'emerald', label: 'Emerald Green', bg: 'bg-[#071a14] border-emerald-800' },
-                { id: 'teal', label: 'Deep Teal', bg: 'bg-[#0b191e] border-teal-800' },
-                { id: 'coffee', label: 'Warm Coffee', bg: 'bg-[#181512] border-amber-900' },
-              ].map((wp) => (
-                <button
-                  key={wp.id}
-                  onClick={() => {
-                    setActiveWallpaper(wp.id);
-                    try {
-                      localStorage.setItem('whatsapp_custom_wallpaper', wp.id);
-                    } catch {}
-                    setShowWallpaperModal(false);
-                  }}
-                  className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all ${wp.bg} ${
-                    activeWallpaper === wp.id
-                      ? 'ring-2 ring-emerald-400 scale-[1.02]'
-                      : 'hover:border-white/40'
-                  }`}
-                >
-                  <span className="text-xs font-semibold text-white">{wp.label}</span>
-                  {activeWallpaper === wp.id && (
-                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Active
-                    </span>
-                  )}
-                </button>
-              ))}
+            {/* Modal Body / Scrollable Content */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-3 max-h-[60vh]">
+              {themeModalTab === 'themes' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {Object.values(THEMES).map((th) => {
+                    const isCurrent = themeId === th.id;
+                    return (
+                      <button
+                        key={th.id}
+                        onClick={() => handleSelectTheme(th.id)}
+                        className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all cursor-pointer ${
+                          isCurrent
+                            ? 'ring-2 ring-teal-400 border-teal-500 shadow-md scale-[1.01]'
+                            : isDark
+                            ? 'bg-[#182229] border-[#2a3942] hover:border-slate-500'
+                            : 'bg-slate-50 border-slate-200 hover:border-slate-400'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-inherit">{th.name}</span>
+                              {isCurrent && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/20 text-teal-400 font-bold flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> Active
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-[11px] line-clamp-1 mt-0.5 ${
+                              isDark ? 'text-[#8696a0]' : 'text-slate-500'
+                            }`}>
+                              {th.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Theme Miniature Bubble Preview */}
+                        <div
+                          className="p-2 rounded-xl text-[10px] space-y-1.5 border"
+                          style={{
+                            backgroundColor: th.bgMain,
+                            borderColor: th.border,
+                          }}
+                        >
+                          <div className="flex justify-end">
+                            <span
+                              className="px-2 py-0.5 rounded-lg max-w-[85%] font-medium"
+                              style={{
+                                backgroundColor: th.bubbleOutgoing,
+                                color: th.bubbleOutgoingText,
+                              }}
+                            >
+                              Hey Surya! 💕
+                            </span>
+                          </div>
+                          <div className="flex justify-start">
+                            <span
+                              className="px-2 py-0.5 rounded-lg max-w-[85%] font-medium"
+                              style={{
+                                backgroundColor: th.bubbleIncoming,
+                                color: th.bubbleIncomingText,
+                              }}
+                            >
+                              Hello Sadhana! ✨
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Palette Swatches */}
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20"
+                            style={{ backgroundColor: th.accent }}
+                            title="Accent Color"
+                          />
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20"
+                            style={{ backgroundColor: th.bubbleOutgoing }}
+                            title="Outgoing Bubble"
+                          />
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20"
+                            style={{ backgroundColor: th.bubbleIncoming }}
+                            title="Incoming Bubble"
+                          />
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20"
+                            style={{ backgroundColor: th.bgMain }}
+                            title="Main Background"
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className={`text-xs ${isDark ? 'text-[#8696a0]' : 'text-slate-600'}`}>
+                    Select a background pattern or color tone for the conversation canvas:
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {[
+                      { id: 'doodle', label: 'Doodle (Classic)', bg: 'bg-[#0c1317] border-[#00a884]' },
+                      { id: 'obsidian', label: 'Obsidian Dark', bg: 'bg-[#0a0f12] border-slate-700' },
+                      { id: 'emerald', label: 'Emerald Green', bg: 'bg-[#071a14] border-emerald-800' },
+                      { id: 'teal', label: 'Deep Teal', bg: 'bg-[#0b191e] border-teal-800' },
+                      { id: 'coffee', label: 'Warm Coffee', bg: 'bg-[#181512] border-amber-900' },
+                      { id: 'stars', label: 'Starry Sky', bg: 'bg-[#05070e] border-sky-800' },
+                      { id: 'gradient', label: 'Theme Gradient', bg: 'bg-gradient-to-br from-slate-900 to-indigo-950 border-indigo-700' },
+                    ].map((wp) => {
+                      const isCurrent = activeWallpaper === wp.id;
+                      return (
+                        <button
+                          key={wp.id}
+                          onClick={() => {
+                            setActiveWallpaper(wp.id);
+                            try {
+                              localStorage.setItem('whatsapp_custom_wallpaper', wp.id);
+                            } catch {}
+                            showToast(`Wallpaper set to ${wp.label}`, 'success');
+                          }}
+                          className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-20 transition-all cursor-pointer ${wp.bg} ${
+                            isCurrent
+                              ? 'ring-2 ring-emerald-400 scale-[1.02]'
+                              : 'hover:border-white/40'
+                          }`}
+                        >
+                          <span className="text-xs font-semibold text-white">{wp.label}</span>
+                          {isCurrent && (
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Active
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom Wallpaper Upload Button */}
+                  <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${
+                    isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-slate-50 border-slate-200'
+                  }`}>
+                    <div>
+                      <h4 className="text-xs font-bold text-inherit">Custom Wallpaper Photo</h4>
+                      <p className={`text-[11px] ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+                        Upload a personal picture or memory as your chat background
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      ref={customWallpaperFileRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const result = reader.result as string;
+                          if (result) {
+                            setActiveWallpaper(result);
+                            try {
+                              localStorage.setItem('whatsapp_custom_wallpaper', result);
+                            } catch {}
+                            showToast('Custom wallpaper applied!', 'success');
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                      }}
+                    />
+                    <button
+                      onClick={() => customWallpaperFileRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5"
+                    >
+                      <Images className="w-3.5 h-3.5" />
+                      <span>Upload</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className={`border-t pt-3 flex items-center justify-end shrink-0 ${
+              isDark ? 'border-[#2a3942]' : 'border-slate-200'
+            }`}>
+              <button
+                onClick={() => {
+                  setShowThemeModal(false);
+                  setShowWallpaperModal(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold transition-all shadow-sm"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
@@ -5210,6 +6382,76 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           onClose={handleCallFinished}
           channelRef={channelRef}
         />
+      )}
+
+      {/* ── SPECIAL MILESTONE DATE COUNTER MODAL (20 MAY 2026, 7:30) ── */}
+      <DateCounterModal
+        isOpen={showDateCountModal}
+        onClose={() => setShowDateCountModal(false)}
+        partnerName={partnerName}
+        isDark={isDark}
+        onShareToChat={(text) => {
+          setInputText(text);
+        }}
+      />
+
+      {/* ── MESSAGE DELETE CONFIRMATION DIALOG ── */}
+      {deleteDialogMsg && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className={`max-w-md w-full rounded-2xl border p-5 sm:p-6 shadow-xl space-y-4 animate-in fade-in zoom-in-95 duration-150 ${
+            isDark ? 'bg-[#181c1b] border-[#2b332e] text-[#ECEEEB]' : 'bg-white border-[#E5DFD5] text-[#1F2421]'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold">Delete Message?</h3>
+                <p className="text-xs text-[#808B84]">
+                  Deleted messages are moved to your Recycle Bin so they can be restored later or permanently removed.
+                </p>
+              </div>
+            </div>
+
+            {deleteDialogMsg.text && (
+              <div className={`p-3 rounded-xl text-xs line-clamp-2 italic border ${
+                isDark ? 'bg-[#131615] border-[#232926] text-[#959E98]' : 'bg-[#F7F5F2] border-[#E5DFD5] text-[#555E58]'
+              }`}>
+                &ldquo;{deleteDialogMsg.text}&rdquo;
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteDialogMsg(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                  isDark ? 'border-[#2b332e] text-[#959E98] hover:bg-white/5' : 'border-[#E5DFD5] text-[#555E58] hover:bg-black/5'
+                }`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteMessage(deleteDialogMsg.id, 'for-me')}
+                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                  isDark ? 'border-[#2b332e] hover:bg-white/5 text-[#ECEEEB]' : 'border-[#E5DFD5] hover:bg-black/5 text-[#1F2421]'
+                }`}
+              >
+                Delete for Me
+              </button>
+              {deleteDialogMsg.sender === currentUser && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMessage(deleteDialogMsg.id, 'for-everyone')}
+                  className="px-4 py-2 rounded-xl text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-colors"
+                >
+                  Delete for Everyone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

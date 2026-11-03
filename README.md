@@ -1,123 +1,145 @@
-# Dharya
+# Dharya — Private 1-on-1 Real-Time Space
 
-A private two-person space — beautiful animated login + real-time chat.
+A private, modern, real-time messaging, WebRTC calling, gallery, and life timeline platform built for **Surya & Sadhana**.
 
----
-
-## Login Page
-
-Live at **https://dharya-alpha.vercel.app**
-
-| User    | Username | Password   | Theme |
-|---------|----------|------------|-------|
-| Dharya  | DHARYA   | 09/10/2007 | 🌿 Green |
-| Sadhana | DHARYA   | 29/02/2008 | 🌸 Pink  |
-
-After a successful login the page redirects to `/chat/`.
+Live at: **[dharya.vercel.app](https://dharya.vercel.app)**
 
 ---
 
-## Chat App (`/chat`)
+## 🌟 Overview & Key Architecture
 
-A full-featured private real-time chat built with **Expo + Supabase**.
+Dharya consists of two complementary implementations:
+1. **Desktop & Mobile Web Application (`/studychat`)**:
+   - Production Vite + React + TypeScript + Tailwind CSS application compiled into a standalone bundle.
+   - Deployed seamlessly to Vercel via `vercel.json` static single-file routing.
+   - Triple-layer real-time synchronization (Supabase Realtime + Browser `BroadcastChannel` + `localStorage` storage events).
+   - Peer-to-peer WebRTC Audio & Video Calling with STUN/TURN traversal.
+   - Permanent multi-photo sharing, in-bubble playable HTML5 video player, audio notes with waveforms, document sharing.
+   - 10-Theme Engine (Premium Light, Premium Dark, Rose Romance, Lavender Dream, Midnight Blue, Emerald Forest, Sunset Twilight, Minimal White, AMOLED Black, Custom).
+   - Permanent message deletion with sender authorization (NO recycle bin for private chat messages).
+   - Dual interface mode: Private Space (Dharya) and optional Camouflage/Academic Portal mode.
 
-### Features
+2. **Mobile React Native Application (`/chat`)**:
+   - Cross-platform native mobile application built on **Expo SDK 57 + Expo Router v4**.
+   - Zustand state management, Supabase Realtime, and native device audio/camera integrations.
 
-- ✅ Real-time messaging via Supabase Realtime (Postgres Changes)
-- ✅ Message status: Sending → Sent → Delivered → Read (icon components, not emoji)
-- ✅ Typing indicator + online/offline presence + last seen
-- ✅ Reply-to-message with quote preview
-- ✅ Emoji reactions (tap & hold)
-- ✅ Delete for me / Delete for everyone
-- ✅ Edit messages within 15 minutes (marked "edited")
-- ✅ Search within chat (ilike query)
-- ✅ Photo, video, voice note, document sharing via Supabase Storage
-- ✅ View-once media
-- ✅ Chat wallpaper (upload or preset) — synced via Supabase
-- ✅ Dark / light theme per user
-- ✅ Mute conversation (1hr / 8hr / always)
-- ✅ Push notifications (Expo Notifications on mobile, browser on web)
-- ✅ Invite-code pairing (no account list needed)
-- ✅ Works on iOS, Android, and Web from a single codebase
+---
 
-### Tech Stack
+## 🔐 Authentication & Security
 
-| Layer       | Choice                          |
-|-------------|---------------------------------|
-| Framework   | Expo SDK 57 + Expo Router v4    |
-| UI          | React Native + lucide-react-native |
-| Backend     | Supabase (Auth, Realtime, DB, Storage) |
-| State       | Zustand                         |
-| Dates       | date-fns                        |
+Access to the private conversation is restricted to authorized users.
 
-### Setup
+### Configurable User Profiles
 
-1. **Create a Supabase project** at https://supabase.com
-2. Run `chat/supabase/schema.sql` in the Supabase SQL Editor
-3. Enable Realtime on `messages`, `reactions`, `profiles`, `chat_settings` tables
-4. Copy `chat/.env.local.example` → `chat/.env.local` and fill in your keys:
+| Profile | Identifier | Theme Association | Accent |
+|---------|------------|-------------------|--------|
+| **Surya** | `surya` | Emerald Forest | 🌿 Green |
+| **Sadhana** | `sadhana` | Rose Romance | 🌸 Pink |
 
-```
-EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
-```
+> **Security Advisory**: Never commit plain-text passwords or secret keys into public version control. If credentials were previously exposed in Git history, immediately rotate the access keys in Supabase Dashboard and update local environment files (`.env.local`).
 
-5. Install and run:
+---
+
+## 🚀 Key Features
+
+- **Two-User Real-Time Chat**: Sub-second synchronization between Surya and Sadhana across devices without page reloads.
+- **WebRTC Audio & Video Calling**: True peer-to-peer audio and video calls with incoming call screens, ringtones, mute/unmute, camera switching, call timers, and ICE reconnection handling.
+- **Multi-Photo & Video Sharing**: Select multiple photos, preview thumbnail carousel strip with individual removal before sending, permanent data/CDN URLs, and in-chat playable HTML5 video player.
+- **Voice Messages**: Browser `MediaRecorder` audio recording with animated waveform, duration badges, and `1x / 1.5x / 2x` playback speed controls.
+- **Permanent Message Deletion**: Strict sender authorization check (`sender_id === currentUser`). Deleted messages are permanently wiped from the database and broadcasted in real time to immediately disappear from both screens without a recycle bin.
+- **Pinned & Starred Messages**: Pin up to 3 priority messages with a sticky banner, star favorites, and review them in a dedicated drawer.
+- **Jump to Quoted Reply**: Smooth scrolling with highlight pulse animation to jumped messages.
+- **Persistent Drafts**: Auto-saved message drafts per user to prevent lost text across tabs.
+- **Message Search & Filters**: Search message text or filter instantly by media type (`All`, `Photos`, `Videos`, `Audio`, `Documents`, `Starred`).
+- **Offline Resilience**: Automatic connection state detection, offline warning banner, and automatic resynchronization upon reconnection.
+
+---
+
+## 🛠️ Local Development & Setup
+
+### Web Application (`studychat`)
 
 ```bash
-cd chat
+# Navigate to web application directory
+cd studychat
+
+# Install dependencies
 npm install
-npm run web       # web browser
-npm run android   # Android (requires Android Studio / device)
-npm run ios       # iOS (requires Xcode / Mac)
+
+# Start local dev server
+npm run dev
+
+# Build standalone production bundle
+npm run build
 ```
 
-### Project Structure
+The production output compiles to `studychat/dist/index.html` and is deployed to the root `index.html` for Vercel static serving.
 
-```
-chat/
-  app/
-    _layout.tsx       # Root layout (auth listener, GestureHandler)
-    index.tsx         # Redirect gate
-    auth.tsx          # Sign in / sign up / magic link
-    pair.tsx          # Invite-code pairing screen
-    chat.tsx          # Main chat screen (all features)
-    media-gallery.tsx # Media grid
-  src/
-    lib/
-      supabase.ts     # Supabase client + uploadMedia helper
-      colors.ts       # Dark/light colour palette
-      utils.ts        # Date formatting, edit window check
-    store/
-      authStore.ts    # Session, user, chatId, partnerId
-      chatStore.ts    # Messages, presence, settings, search
-    hooks/
-      useMessages.ts  # CRUD, realtime, delivery/read, search
-      usePresence.ts  # Typing indicator, online, last seen
-    components/
-      ChatHeader.tsx
-      MessageBubble.tsx
-      MessageInput.tsx
-      SettingsSheet.tsx
-      StatusIcon.tsx
-    types/
-      index.ts
-  supabase/
-    schema.sql        # Full Postgres schema + RLS + Storage
+### Mobile Application (`chat`)
+
+```bash
+# Navigate to mobile project directory
+cd chat
+
+# Install dependencies
+npm install
+
+# Start Expo dev server
+npm run start
+
+# Launch on web / Android / iOS
+npm run web
+npm run android
+npm run ios
 ```
 
 ---
 
-## Deployment
+## 🗄️ Database Setup & Migrations
 
-### Login page (static)
-The root `index.html` is deployed to Vercel as a static site via `vercel.json`.
+1. Log in to your [Supabase Dashboard](https://supabase.com/dashboard).
+2. Open the **SQL Editor**.
+3. Run the non-destructive schema migration located at `supabase_dharya_v2_migration.sql`:
+   - Adds necessary message columns (`reactions`, `pinned`, `starred_by`, `poll_options`).
+   - Creates composite indexes for fast chronological and pinned queries.
+   - Establishes strict Row-Level Security (RLS) policies for select, insert, update, and delete.
+   - Enables Supabase Realtime replication on `messages` and `user_profiles`.
 
-### Chat app (web)
-```bash
-cd chat
-npx expo export --platform web    # generates dist/
-vercel deploy dist/               # deploy to Vercel
+---
+
+## 🌐 Deployment to Vercel
+
+The application is deployed on Vercel with single-page application routing configured in `vercel.json`:
+
+```json
+{
+  "version": 2,
+  "cleanUrls": true,
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/gallery.html", "dest": "/gallery.html" },
+    { "src": "/login.html", "dest": "/login.html" },
+    { "src": "/engihub_logo.jpg", "dest": "/engihub_logo.jpg" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
 ```
 
-Add a rewrite in your Vercel project settings so `/chat/*` points at the chat app's deployment.
+To deploy via Vercel CLI:
+```bash
+vercel --prod
+```
+
+---
+
+## 🔒 Security & Privacy Best Practices
+
+1. **Environment Variables**: Store sensitive values in `.env.local` (which is excluded from Git via `.gitignore`).
+2. **Supabase Anon Key vs. Service Role Key**: Never use `service_role` keys on the client. Only the public `anon` key should be used with strict Row Level Security (RLS) policies enabled.
+3. **No Message Recycle Bin**: In alignment with private chat security guidelines, deleted messages are purged permanently without recoverable storage bins.

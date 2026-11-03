@@ -50,32 +50,34 @@ export const PrivatePortalNav: React.FC = () => {
           {/* Gallery Tab */}
           <button
             onClick={() => switchTab('gallery')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer relative ${
               isGallery
-                ? 'bg-[#00a884] text-white shadow-md scale-102'
-                : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
+                ? 'bg-[#4E6B58] text-white shadow-xs'
+                : 'text-[#808B84] hover:text-[#ECEEEB] hover:bg-white/5'
             }`}
           >
-            <Images className={`w-4 h-4 ${isGallery ? 'stroke-[2.5]' : 'text-[#00a884]'}`} />
+            <Images className={`w-4 h-4 ${isGallery ? 'stroke-[2]' : 'text-[#7E9F89]'}`} />
             <span>Gallery</span>
-            <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-              isGallery ? 'bg-black/30 text-white' : 'bg-[#111b21] text-[#00a884] border border-[#00a884]/30'
-            }`}>
-              {galleryCount}
-            </span>
+            {galleryCount > 0 && (
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-medium ${
+                isGallery ? 'bg-black/30 text-white' : 'bg-[#111b21] text-[#7E9F89] border border-[#7E9F89]/30'
+              }`}>
+                {galleryCount}
+              </span>
+            )}
           </button>
 
-          {/* Life Timeline Tab */}
+          {/* Memories Tab */}
           <button
             onClick={() => switchTab('timeline')}
-            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer relative ${
+            className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer relative ${
               isTimeline
-                ? 'bg-[#00a884] text-white shadow-md scale-102'
-                : 'text-[#8696a0] hover:text-[#e9edef] hover:bg-white/5'
+                ? 'bg-[#4E6B58] text-white shadow-xs'
+                : 'text-[#808B84] hover:text-[#ECEEEB] hover:bg-white/5'
             }`}
           >
-            <Clock className={`w-4 h-4 ${isTimeline ? 'stroke-[2.5]' : 'text-amber-400'}`} />
-            <span>Timeline</span>
+            <Clock className={`w-4 h-4 ${isTimeline ? 'stroke-[2]' : 'text-[#7E9F89]'}`} />
+            <span>Memories</span>
           </button>
         </div>
 

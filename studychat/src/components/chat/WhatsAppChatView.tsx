@@ -78,6 +78,7 @@ import {
   Wifi,
   WifiOff,
   Users,
+  User,
   AlertCircle,
   Edit2,
   RotateCw,
@@ -85,6 +86,7 @@ import {
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
+import { ChatSidePanel, SidePanelMode } from './ChatSidePanel';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { GalleryView } from '../gallery/GalleryView';
 import { LifeTimelineView } from '../timeline/LifeTimelineView';
@@ -232,8 +234,42 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
 
+  // ── SOUND & NOTIFICATION SETTINGS ──
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dharya_sound_enabled') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+
+  const [isConversationMuted, setIsConversationMuted] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dharya_chat_muted') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [browserNotificationsEnabled, setBrowserNotificationsEnabled] = useState<boolean>(() => {
+    try {
+      return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    } catch {
+      return false;
+    }
+  });
+
+  const [hideNotificationPreview, setHideNotificationPreview] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dharya_hide_notification_preview') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Synthesized notification chime via Web Audio API (cross-platform, zero external asset dependency)
   const playNotificationSound = () => {
+    if (isConversationMuted || !soundEnabled) return;
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
@@ -254,6 +290,38 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
+  const triggerBrowserNotification = (msg: ExtendedChatMessage) => {
+    if (isConversationMuted || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (document.visibilityState === 'visible') return;
+
+    try {
+      const body = hideNotificationPreview
+        ? 'New message received'
+        : msg.type === 'image'
+        ? '📷 Sent a photo'
+        : msg.type === 'video'
+        ? '🎬 Sent a video'
+        : msg.type === 'voice'
+        ? '🎤 Sent a voice note'
+        : msg.type === 'document'
+        ? `📄 Sent a file: ${msg.documentName || 'Document'}`
+        : msg.text;
+
+      new Notification(partnerName, {
+        body,
+        icon: '/favicon.ico',
+      });
+    } catch {}
+  };
+
+  // ── FOCUSED 2-USER CONVERSATION & SIDE PANEL STATES ──
+  const [sidePanelMode, setSidePanelMode] = useState<SidePanelMode>('none');
+  const [expandedMsgIds, setExpandedMsgIds] = useState<Record<string, boolean>>({});
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [isPlayingAudioPreview, setIsPlayingAudioPreview] = useState<boolean>(false);
+  const audioPreviewAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [activeMainView, setActiveMainView] = useState<'chat' | 'gallery' | 'timeline' | 'recycle'>(initialTab ?? 'chat');
   const [isMobileScreen, setIsMobileScreen] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -263,9 +331,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   });
 
   const [mobileView, setMobileView] = useState<'list' | 'conversation'>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      return initialTab === 'gallery' || initialTab === 'timeline' ? 'conversation' : 'list';
-    }
     return 'conversation';
   });
 
@@ -521,6 +586,15 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       localStorage.setItem('whatsapp_read_receipts_enabled', String(next));
     } catch {}
   };
+
+  // Last Seen Privacy State
+  const [shareLastSeen, setShareLastSeen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('whatsapp_share_last_seen') !== 'false';
+    } catch {
+      return true;
+    }
+  });
 
   // WhatsApp Message Status Ticks Renderer (Honest States: sending -> sent -> delivered -> read / failed)
   const renderMessageTicks = (msg: ExtendedChatMessage) => {
@@ -917,16 +991,34 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     logoutChat();
   };
 
-  // Emergency Panic Camouflage hotkey: Press Escape anywhere to camouflage
+  // Desktop Keyboard Shortcuts: Ctrl+F for search, Escape to close panels or clear reply/edit
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setSidePanelMode((prev) => (prev === 'search' ? 'none' : 'search'));
+        return;
+      }
+
       if (e.key === 'Escape') {
-        setDisguisePanic((prev) => !prev);
+        if (sidePanelMode !== 'none') {
+          setSidePanelMode('none');
+          return;
+        }
+        if (replyingToMessage) {
+          setReplyingToMessage(null);
+          return;
+        }
+        if (editingMessage) {
+          setEditingMessage(null);
+          setEditText('');
+          return;
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [sidePanelMode, replyingToMessage, editingMessage]);
 
   // Local heartbeat for instant same-browser & cross-tab detection
   useEffect(() => {
@@ -1096,6 +1188,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             // If incoming is from recipient: play notification and acknowledge honest delivery receipt
             if (incoming.sender !== currentUser) {
               playNotificationSound();
+              triggerBrowserNotification(incoming);
 
               // Send authentic delivered receipt event
               updateRemoteStatus(incoming.id, 'delivered');
@@ -1373,6 +1466,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               });
               if (incoming.sender !== currentUser) {
                 playNotificationSound();
+                triggerBrowserNotification(incoming);
                 updateRemoteStatus(incoming.id, 'delivered');
               }
             }
@@ -1923,9 +2017,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     dispatchSendMessage(newMsg);
   };
 
-  // Real Audio Recording with MediaRecorder
+  // ── VOICE RECORDING WITH PREVIEW BEFORE SENDING ──
   const handleStartAudioRecording = async () => {
     try {
+      if (recordedAudioUrl) {
+        URL.revokeObjectURL(recordedAudioUrl);
+        setRecordedAudioUrl(null);
+        setRecordedAudioBlob(null);
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
@@ -1945,8 +2044,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         setRecordingTimeSecs((prev) => prev + 1);
       }, 1000);
     } catch (err) {
-      console.warn('[Audio] Mic access denied; using standard voice note', err);
-      handleSendVoiceNote();
+      console.warn('[Audio] Mic access denied', err);
+      showToast('Microphone access denied. Please allow microphone permissions in your browser.', 'error');
     }
   };
 
@@ -1961,52 +2060,87 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setRecordingTimeSecs(0);
   };
 
-  const handleSendRealAudioRecording = () => {
+  const handleStopAndReviewAudioRecording = () => {
     const recorder = mediaRecorderRef.current;
     if (!recorder) return;
 
     if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-    const totalSecs = Math.max(1, recordingTimeSecs);
 
     recorder.onstop = () => {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Audio = reader.result as string;
-        const durStr = `${Math.floor(totalSecs / 60)}:${totalSecs % 60 < 10 ? '0' : ''}${totalSecs % 60}`;
-
-        const newMsg: ExtendedChatMessage = {
-          id: 'msg-voice-' + Date.now(),
-          sender: currentUser,
-          text: `Voice Note (${durStr})`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: Date.now(),
-          read: false,
-          status: 'sending',
-          type: 'voice',
-          audioUrl: base64Audio,
-          mediaUrl: base64Audio,
-          audioDuration: totalSecs,
-          duration: durStr,
-          replyTo: replyingToMessage
-            ? {
-                id: replyingToMessage.id,
-                sender: replyingToMessage.sender,
-                text: replyingToMessage.text || replyingToMessage.type || 'Message',
-              }
-            : undefined,
-        };
-
-        setReplyingToMessage(null);
-        dispatchSendMessage(newMsg);
-      };
-      reader.readAsDataURL(audioBlob);
+      const previewUrl = URL.createObjectURL(audioBlob);
+      setRecordedAudioBlob(audioBlob);
+      setRecordedAudioUrl(previewUrl);
+      setIsRecordingAudio(false);
       recorder.stream.getTracks().forEach((t) => t.stop());
     };
 
     recorder.stop();
-    setIsRecordingAudio(false);
+  };
+
+  const handleDiscardAudioPreview = () => {
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+    }
+    if (audioPreviewAudioRef.current) {
+      audioPreviewAudioRef.current.pause();
+    }
+    setRecordedAudioBlob(null);
+    setRecordedAudioUrl(null);
+    setIsPlayingAudioPreview(false);
     setRecordingTimeSecs(0);
+  };
+
+  const handleTogglePlayAudioPreview = () => {
+    if (!recordedAudioUrl) return;
+    if (!audioPreviewAudioRef.current) {
+      audioPreviewAudioRef.current = new Audio(recordedAudioUrl);
+      audioPreviewAudioRef.current.onended = () => setIsPlayingAudioPreview(false);
+    }
+    if (isPlayingAudioPreview) {
+      audioPreviewAudioRef.current.pause();
+      setIsPlayingAudioPreview(false);
+    } else {
+      audioPreviewAudioRef.current.play().catch(() => {});
+      setIsPlayingAudioPreview(true);
+    }
+  };
+
+  const handleSendAudioPreview = () => {
+    if (!recordedAudioBlob) return;
+    const totalSecs = Math.max(1, recordingTimeSecs);
+    const durStr = `${Math.floor(totalSecs / 60)}:${totalSecs % 60 < 10 ? '0' : ''}${totalSecs % 60}`;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Audio = reader.result as string;
+      const newMsg: ExtendedChatMessage = {
+        id: 'msg-voice-' + Date.now(),
+        sender: currentUser,
+        text: `Voice Note (${durStr})`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        read: false,
+        status: 'sending',
+        type: 'voice',
+        audioUrl: base64Audio,
+        mediaUrl: base64Audio,
+        audioDuration: totalSecs,
+        duration: durStr,
+        replyTo: replyingToMessage
+          ? {
+              id: replyingToMessage.id,
+              sender: replyingToMessage.sender,
+              text: replyingToMessage.text || replyingToMessage.type || 'Message',
+            }
+          : undefined,
+      };
+
+      setReplyingToMessage(null);
+      dispatchSendMessage(newMsg);
+      handleDiscardAudioPreview();
+    };
+    reader.readAsDataURL(recordedAudioBlob);
   };
 
   // Document File Upload
@@ -2955,666 +3089,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       />
 
       
-      {/* ══════ COLUMN 1: LEFT NAVIGATION RAIL (WhatsApp Web Desktop Rail) ══════ */}
-      <aside className={`hidden md:flex flex-col justify-between items-center w-[64px] border-r py-3.5 px-2 z-30 shrink-0 select-none transition-colors ${
-        isDark ? 'bg-[#202c33] border-[#222e35]' : 'bg-[#f0f2f5] border-[#d1d7db]'
-      }`}>
-        {/* Top Navigation Icons */}
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Chats Tab Button */}
-          <button
-            onClick={() => {
-              setActiveMainView('chat');
-              setMobileView('conversation');
-            }}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              activeMainView === 'chat'
-                ? isDark
-                  ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/30'
-                  : 'bg-[#d9fdd3] text-[#008069] shadow-sm ring-1 ring-[#008069]/30 font-semibold'
-                : isDark
-                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white'
-                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21]'
-            }`}
-            title="Chats"
-          >
-            <MessageSquare className="w-5 h-5" />
-            {activeMainView === 'chat' && (
-              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-[#00a884]' : 'bg-[#008069]'
-              }`} />
-            )}
-          </button>
-
-          {/* Gallery Button */}
-          <button
-            onClick={() => {
-              setActiveMainView('gallery');
-              setMobileView('conversation');
-            }}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              activeMainView === 'gallery'
-                ? isDark
-                  ? 'bg-[#374248] text-[#00a884] shadow-inner ring-1 ring-[#00a884]/40'
-                  : 'bg-[#d9fdd3] text-[#008069] shadow-sm ring-1 ring-[#008069]/30'
-                : isDark
-                ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-[#00a884]'
-                : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
-            }`}
-            title="Gallery"
-          >
-            <Images className="w-5 h-5" />
-            {activeMainView === 'gallery' && (
-              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-[#00a884]' : 'bg-[#008069]'
-              }`} />
-            )}
-          </button>
-
-          {/* Memories Button */}
-          <button
-            onClick={() => {
-              setActiveMainView('timeline');
-              setMobileView('conversation');
-            }}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              activeMainView === 'timeline'
-                ? isDark
-                  ? 'bg-[#2b3a30] text-[#7E9F89] shadow-inner ring-1 ring-[#7E9F89]/40'
-                  : 'bg-[#E4EDE6] text-[#4E6B58] shadow-xs ring-1 ring-[#4E6B58]/30'
-                : isDark
-                ? 'text-[#A3ADA5] hover:bg-[#242926] hover:text-[#ECEEEB]'
-                : 'text-[#5A655E] hover:bg-[#F0EDE8] hover:text-[#1F2421]'
-            }`}
-            title="Memories"
-          >
-            <Clock className="w-5 h-5" />
-            {activeMainView === 'timeline' && (
-              <span className={`absolute left-[-8px] top-2.5 bottom-2.5 w-1 rounded-r-full ${
-                isDark ? 'bg-[#7E9F89]' : 'bg-[#4E6B58]'
-              }`} />
-            )}
-          </button>
 
 
-          {/* Voice & Video Calls Button */}
-          <button
-            onClick={() => setShowCallModal('video')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-white' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#111b21]'
-            }`}
-            title="Voice &amp; Video Calls"
-          >
-            <Phone className="w-5 h-5" />
-          </button>
-
-          {/* Starred Messages Button */}
-          <button
-            onClick={() => setShowStarredModal(true)}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-amber-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-amber-600'
-            }`}
-            title="Starred messages"
-          >
-            <Star className="w-5 h-5" />
-            {messages.filter((m) => m.isStarred).length > 0 && (
-              <span className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ${
-                isDark ? 'ring-[#202c33]' : 'ring-[#f0f2f5]'
-              }`} />
-            )}
-          </button>
-
-          {/* ☀️ / 🌙 THEME SWITCHER BUTTON */}
-          <button
-            onClick={toggleTheme}
-            className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark
-                ? 'text-amber-400 hover:bg-[#2a3942]'
-                : 'text-indigo-600 hover:bg-[#e9edef]'
-            }`}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-
-        {/* Bottom System & Profile Icons */}
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* Study Curriculum Portal Button */}
-          <button
-            onClick={() => switchTab('home')}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-[#53bdeb]' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-blue-600'
-            }`}
-            title="Return to Study Portal &amp; Curriculum Library"
-          >
-            <BookOpen className="w-5 h-5" />
-          </button>
-
-          {/* Themes & Wallpaper Switcher (10 Themes) */}
-          <button
-            onClick={() => setShowThemeModal(true)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-teal-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-teal-600'
-            }`}
-            title="Themes &amp; Wallpapers (10 Themes)"
-          >
-            <Palette className="w-5 h-5" />
-          </button>
-
-          {/* Security & Privacy Settings */}
-          <button
-            onClick={() => setShowSecurityModal(true)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              isDark ? 'text-[#aebac1] hover:bg-[#2a3942] hover:text-emerald-400' : 'text-[#54656f] hover:bg-[#e9edef] hover:text-[#008069]'
-            }`}
-            title="Security &amp; Privacy (TLS 1.3 &amp; PostgreSQL RLS)"
-          >
-            <ShieldCheck className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-[#008069]'}`} />
-          </button>
-
-          <div className={`w-8 h-[1px] ${isDark ? 'bg-[#2a3942]' : 'bg-[#d1d7db]'}`} />
-
-          {/* Current User Profile Avatar */}
-          <button
-            onClick={() => setShowContactInfo(true)}
-            className={`relative w-9 h-9 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold text-sm flex items-center justify-center shadow-sm transition-all ${
-              isDark ? 'ring-1 ring-white/20 hover:ring-2 hover:ring-emerald-400' : 'ring-1 ring-black/10 hover:ring-2 hover:ring-[#008069]'
-            }`}
-            title={`${currentUser === 'surya' ? 'Surya' : 'Sadhana'} (Online Profile)`}
-          >
-            <span>{currentUser[0].toUpperCase()}</span>
-            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#00a884] border-2 ${
-              isDark ? 'border-[#202c33]' : 'border-[#f0f2f5]'
-            }`} />
-          </button>
-        </div>
-      </aside>
-
-      {/* ══════ COLUMN 2: LEFT CHATS SIDEBAR (WhatsApp Web Chats List) ══════ */}
-      <section
-        className={`w-full md:w-[380px] lg:w-[400px] xl:w-[420px] flex flex-col border-r shrink-0 h-full z-20 transition-colors ${
-          isDark ? 'bg-[#111b21] border-[#222e35]' : 'bg-[#ffffff] border-[#d1d7db]'
-        } ${mobileView === 'conversation' ? 'hidden md:flex' : 'flex'}`}
-      >
-        {/* Mobile WhatsApp App Bar (Visible on phone screens < md) */}
-        <div className={`md:hidden h-[56px] px-4 flex items-center justify-between border-b shrink-0 shadow-sm transition-colors ${
-          isDark ? 'bg-[#1f2c34] border-[#2a3942]/60 text-[#e9edef]' : 'bg-[#008069] border-transparent text-white'
-        }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-[21px] font-bold tracking-wide font-sans">WhatsApp</span>
-          </div>
-
-          <div className={`flex items-center gap-1 ${isDark ? 'text-[#aebac1]' : 'text-white'}`}>
-            {/* Theme Toggle Button on Mobile */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {isDark ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-white" />}
-            </button>
-
-            <button
-              onClick={() => cameraInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
-              title="Camera"
-            >
-              <Camera className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
-              title="Search"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-
-            {/* Mobile 3-dots Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSidebarMenu(!showSidebarMenu)}
-                className="p-2 rounded-full hover:bg-white/10 active:bg-white/15 transition-colors"
-                title="More options"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
-
-              {showSidebarMenu && (
-                <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
-                  <button
-                    onClick={() => {
-                      setActiveMainView('gallery');
-                      setShowSidebarMenu(false);
-                      setMobileView('conversation');
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-[#00a884] font-medium"
-                  >
-                    <Images className="w-4 h-4" />
-                    <span>Gallery</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowStarredModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <Star className="w-4 h-4 text-amber-400" />
-                    <span>Starred Messages</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowWallpaperModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <Palette className="w-4 h-4 text-teal-400" />
-                    <span>Chat Wallpaper</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowSecurityModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-300"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Security &amp; Privacy</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowStorageModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <HardDrive className="w-4 h-4 text-slate-300" />
-                    <span>Manage Storage</span>
-                  </button>
-                  <div className="h-[1px] bg-[#2a3942] my-1" />
-                  <button
-                    onClick={() => {
-                      switchTab('home');
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-sky-400"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>Study Curriculum Portal</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      logoutChat();
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-[#182229] transition-colors text-red-400 flex items-center gap-2.5"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Log out</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop WhatsApp Web Header Bar (Visible on laptop/desktop screens >= md) */}
-        <div className={`hidden md:flex h-[60px] px-4 items-center justify-between border-b shrink-0 transition-colors ${
-          isDark ? 'bg-[#202c33] border-[#222e35] text-[#e9edef]' : 'bg-[#f0f2f5] border-[#d1d7db] text-[#111b21]'
-        }`}>
-          <div className="flex items-center gap-2">
-            <span className="text-[20px] font-bold tracking-tight">Chats</span>
-          </div>
-
-          <div className={`flex items-center gap-1 ${isDark ? 'text-[#aebac1]' : 'text-[#54656f]'}`}>
-            <button
-              onClick={() => {
-                setActiveMainView('gallery');
-                setMobileView('conversation');
-              }}
-              className="p-2 rounded-full hover:bg-white/10 hover:text-[#00a884] transition-colors"
-              title="Gallery"
-            >
-              <Images className="w-5 h-5 text-[#00a884]" />
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveMainView('chat');
-                setMobileView('conversation');
-              }}
-              className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
-              title="New Chat"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-
-            {/* Desktop 3-dots Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSidebarMenu(!showSidebarMenu)}
-                className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
-                title="Menu"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </button>
-
-              {showSidebarMenu && (
-                <div className="absolute right-0 top-10 w-56 bg-[#233138] border border-[#2a3942] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#d1d7db]">
-                  <button
-                    onClick={() => {
-                      setActiveMainView('gallery');
-                      setShowSidebarMenu(false);
-                      setMobileView('conversation');
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-[#00a884] font-medium"
-                  >
-                    <Images className="w-4 h-4" />
-                    <span>Gallery</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowStarredModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <Star className="w-4 h-4 text-amber-400" />
-                    <span>Starred Messages</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowWallpaperModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <Palette className="w-4 h-4 text-teal-400" />
-                    <span>Chat Wallpaper</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowSecurityModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-emerald-300"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Security &amp; Privacy</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowStorageModal(true);
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5"
-                  >
-                    <HardDrive className="w-4 h-4 text-slate-300" />
-                    <span>Manage Storage</span>
-                  </button>
-                  <div className="h-[1px] bg-[#2a3942] my-1" />
-                  <button
-                    onClick={() => {
-                      switchTab('home');
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center gap-2.5 text-sky-400"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>Study Curriculum Portal</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      logoutChat();
-                      setShowSidebarMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors text-red-400 flex items-center gap-2.5"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Log out</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Search Bar Row (Desktop always visible, mobile toggleable or inline) */}
-        <div className={`px-3 py-2 items-center gap-2 border-b shrink-0 transition-colors ${
-          isDark ? 'bg-[#111b21] border-[#222e35]/40' : 'bg-[#ffffff] border-[#d1d7db]/50'
-        } ${showMobileSearch ? 'flex' : 'hidden md:flex'}`}>
-          <div className={`flex-1 rounded-lg px-3 py-1.5 flex items-center gap-2.5 focus-within:ring-1 transition-all ${
-            isDark ? 'bg-[#202c33] focus-within:ring-[#00a884]' : 'bg-[#f0f2f5] focus-within:ring-[#008069]'
-          }`}>
-            <Search className={`w-4 h-4 shrink-0 ${isDark ? 'text-[#8696a0]' : 'text-[#54656f]'}`} />
-            <input
-              type="text"
-              placeholder="Search or start new chat"
-              value={sidebarSearchQuery}
-              onChange={(e) => setSidebarSearchQuery(e.target.value)}
-              className={`bg-transparent text-xs sm:text-[13px] outline-none w-full ${
-                isDark ? 'text-[#e9edef] placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#54656f]'
-              }`}
-            />
-            {sidebarSearchQuery && (
-              <button onClick={() => setSidebarSearchQuery('')} className={isDark ? "text-[#8696a0] hover:text-white" : "text-[#54656f] hover:text-[#111b21]"}>
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={() => setChatFilter(chatFilter === 'unread' ? 'all' : 'unread')}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              chatFilter === 'unread'
-                ? (isDark ? 'bg-[#00a884] text-[#111b21]' : 'bg-[#008069] text-white')
-                : (isDark ? 'hover:bg-white/10 text-[#8696a0]' : 'hover:bg-black/5 text-[#54656f]')
-            }`}
-            title="Filter unread chats"
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Filter Chips Row */}
-        <div className={`px-3 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b shrink-0 ${
-          isDark ? 'border-[#222e35]/30' : 'border-[#d1d7db]/30'
-        }`}>
-          {(['all', 'unread', 'favorites', 'groups'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setChatFilter(tab)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-all ${
-                chatFilter === tab
-                  ? isDark
-                    ? 'bg-[#00a884]/20 text-[#00a884] border border-[#00a884]/40'
-                    : 'bg-[#e7fce3] text-[#008069] border border-[#008069]/30 font-bold'
-                  : isDark
-                  ? 'bg-[#202c33] text-[#8696a0] hover:text-white'
-                  : 'bg-[#f0f2f5] text-[#54656f] hover:text-[#111b21]'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Chats List Area */}
-        <div className={`flex-1 overflow-y-auto divide-y ${isDark ? 'divide-[#222e35]/30' : 'divide-[#f0f2f5]'}`}>
-          {filteredConversations.map((conv) => {
-            const { isSelected, isGroup, displayName, lastMsg, unreadCount } = getConversationDetails(conv);
-            return (
-              <div
-                key={conv.id}
-                onClick={() => handleSelectConversation(conv.id)}
-                className={`px-3 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
-                  isSelected
-                    ? isDark ? 'bg-[#2a3942]' : 'bg-[#f0f2f5]'
-                    : isDark ? 'hover:bg-[#202c33]' : 'hover:bg-[#f5f6f6]'
-                }`}
-              >
-                <div className="relative shrink-0">
-                  {isGroup ? (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 text-white flex items-center justify-center shadow">
-                      <Users className="w-6 h-6" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] text-white font-bold flex items-center justify-center text-base shadow">
-                      {partnerName[0]}
-                    </div>
-                  )}
-                  {!isGroup && isPartnerOnline && (
-                    <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#00a884] border-2 shadow-[0_0_6px_#00a884] ${
-                      isDark ? 'border-[#111b21]' : 'border-white'
-                    }`} />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[15px] font-semibold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#111b21]'}`}>
-                      {displayName}
-                    </span>
-                    <span className={`text-[11px] font-medium shrink-0 ml-1 ${
-                      unreadCount > 0 ? (isDark ? 'text-[#00a884]' : 'text-[#008069] font-bold') : (isDark ? 'text-[#8696a0]' : 'text-[#667781]')
-                    }`}>
-                      {lastMsg?.time || 'Active'}
-                    </span>
-                  </div>
-
-                  <div className={`flex items-center justify-between mt-1 text-[13px] ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`}>
-                    <div className="flex items-center gap-1 truncate max-w-[210px]">
-                      {lastMsg && lastMsg.sender === currentUser && renderMessageTicks(lastMsg)}
-                      <span className="truncate">
-                        {lastMsg ? (lastMsg.deletedForAll ? 'This message was deleted' : lastMsg.text || lastMsg.type || 'Media') : conv.description}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                      {!isGroup && (
-                        <Pin className={`w-3.5 h-3.5 rotate-45 ${isDark ? 'text-[#8696a0]' : 'text-[#667781]'}`} />
-                      )}
-                      {unreadCount > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full text-[11px] font-bold bg-[#00a884] text-[#111b21] min-w-[18px] text-center shadow-xs">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Mobile Floating Action Button (FAB) */}
-        <button
-          onClick={() => {
-            setActiveMainView('chat');
-            setMobileView('conversation');
-          }}
-          className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 rounded-full bg-[#00a884] active:bg-[#029071] text-[#111b21] flex items-center justify-center shadow-2xl shadow-emerald-950/80 active:scale-95 transition-transform"
-          title="Open Conversation"
-        >
-          <MessageSquare className="w-6 h-6 fill-current text-[#111b21]" />
-        </button>
-
-        {/* Mobile Bottom Navigation Bar (WhatsApp Mobile 2024-2026 Android & iOS UI) */}
-        <nav className={`md:hidden h-[64px] flex items-center justify-around px-2 z-30 shrink-0 select-none pb-[calc(env(safe-area-inset-bottom,0px))] border-t transition-colors ${
-          isDark ? 'bg-[#1f2c34] border-[#2a3942]/60' : 'bg-[#ffffff] border-[#d1d7db]/60 shadow-lg'
-        }`}>
-          <button
-            onClick={() => {
-              setActiveMainView('chat');
-              setMobileView('list');
-            }}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-              activeMainView === 'chat' && mobileView === 'list'
-                ? 'text-[#00a884]'
-                : 'text-[#8696a0] hover:text-white'
-            }`}
-          >
-            <div className={`px-4 py-0.5 rounded-full ${activeMainView === 'chat' && mobileView === 'list' ? 'bg-[#00a884]/20' : ''}`}>
-              <MessageSquare className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-semibold">Chats</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveMainView('gallery');
-              setMobileView('conversation');
-            }}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-              activeMainView === 'gallery'
-                ? 'text-[#00a884]'
-                : 'text-[#8696a0] hover:text-[#00a884]'
-            }`}
-          >
-            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'gallery' ? 'bg-[#00a884]/20' : ''}`}>
-              <Images className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-semibold">Gallery</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveMainView('timeline');
-              setMobileView('conversation');
-            }}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all ${
-              activeMainView === 'timeline'
-                ? 'text-amber-400'
-                : 'text-[#8696a0] hover:text-amber-400'
-            }`}
-          >
-            <div className={`relative px-4 py-0.5 rounded-full ${activeMainView === 'timeline' ? 'bg-amber-400/20' : ''}`}>
-              <Clock className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-semibold">Timeline</span>
-          </button>
 
 
-          <button
-            onClick={() => setShowCallModal('video')}
-            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
-          >
-            <div className="px-4 py-0.5 rounded-full">
-              <Phone className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-semibold">Calls</span>
-          </button>
 
-          <button
-            onClick={() => switchTab('home')}
-            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-sky-400 transition-all"
-          >
-            <div className="px-4 py-0.5 rounded-full">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <span className="text-[11px] font-semibold">Portal</span>
-          </button>
 
-          <button
-            onClick={() => setShowSecurityModal(true)}
-            className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-[#8696a0] hover:text-white transition-all"
-          >
-            <div className="px-4 py-0.5 rounded-full">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            </div>
-            <span className="text-[11px] font-semibold">Settings</span>
-          </button>
-        </nav>
-      </section>
 
-      {/* ══════ COLUMN 3: RIGHT MAIN PANE (Active Conversation or Gallery) ══════ */}
+
+      {/* ══════ FOCUSED TWO-USER CONVERSATION (SPACIOUS & CENTERED ON LAPTOP) ══════ */}
       <main
         className={`flex-1 flex flex-col h-full relative overflow-hidden transition-colors ${
           isDark ? 'bg-[#0b141a]' : 'bg-[#efeae2]'
-        } ${mobileView === 'list' ? 'hidden md:flex' : 'flex'}`}
+        }`}
       >
+        <div className="w-full max-w-5xl mx-auto flex flex-col h-full relative overflow-hidden shadow-2xl">
         {activeMainView === 'gallery' ? (
           /* Gallery View */
           <div className="w-full h-full flex flex-col bg-[#0c1317]">
@@ -3688,7 +3177,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           {/* Contact or Group Avatar */}
           <div
-            onClick={() => !isGroupChat && setShowContactInfo(true)}
+            onClick={() => !isGroupChat && setSidePanelMode((prev) => (prev === 'info' ? 'none' : 'info'))}
             className={`relative cursor-pointer flex items-center justify-center w-10 h-10 rounded-full text-white font-bold text-base shadow-sm ring-1 ring-white/10 ${
               isGroupChat
                 ? 'bg-gradient-to-tr from-sky-600 to-indigo-600'
@@ -3702,7 +3191,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </div>
 
           {/* Conversation Title & Live Status */}
-          <div onClick={() => !isGroupChat && setShowContactInfo(true)} className="cursor-pointer">
+          <div onClick={() => !isGroupChat && setSidePanelMode((prev) => (prev === 'info' ? 'none' : 'info'))} className="cursor-pointer">
             <div className="flex items-center gap-2">
               <h2 className={`text-[15px] font-semibold tracking-tight ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>
                 {isGroupChat ? activeConversation.name : partnerName}
@@ -3791,11 +3280,28 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           {/* In-chat Search */}
           <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
-            title="Search messages"
+            onClick={() => setSidePanelMode((prev) => (prev === 'search' ? 'none' : 'search'))}
+            className={`p-2 rounded-full transition-colors ${
+              sidePanelMode === 'search'
+                ? 'bg-[#00a884]/20 text-[#00a884]'
+                : 'hover:bg-white/10 hover:text-white'
+            }`}
+            title="Search messages (Ctrl+F)"
           >
             <Search className="w-4 h-4" />
+          </button>
+
+          {/* Shared Media & Docs */}
+          <button
+            onClick={() => setSidePanelMode((prev) => (prev === 'media' ? 'none' : 'media'))}
+            className={`p-2 rounded-full transition-colors ${
+              sidePanelMode === 'media'
+                ? 'bg-[#00a884]/20 text-[#00a884]'
+                : 'hover:bg-white/10 hover:text-white'
+            }`}
+            title="Shared media, files & voice notes"
+          >
+            <Images className="w-4 h-4" />
           </button>
 
           {/* 3-Dots Menu */}
@@ -3810,6 +3316,76 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             {showMenu && (
               <div className="absolute right-0 top-10 w-56 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
+                <button
+                  onClick={() => {
+                    handleSelectConversation(isGroupChat ? CHAT_ID : STUDY_GROUP_CHAT_ID);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-emerald-400"
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>{isGroupChat ? 'Private 1-on-1 Chat' : 'Study Group Room'}</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSidePanelMode('info');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-[#00a884]" />
+                    <span>Contact Info & Details</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSidePanelMode('media');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Images className="w-3.5 h-3.5 text-[#00a884]" />
+                    <span>Shared Media & Docs</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSidePanelMode('starred');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-300"
+                >
+                  <span className="flex items-center gap-2">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>Starred Messages</span>
+                  </span>
+                  <span className="text-[10px] text-[#8696a0] font-mono">
+                    {messages.filter((m) => m.isStarred).length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSidePanelMode('settings');
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <Palette className="w-3.5 h-3.5 text-[#7E9F89]" />
+                    <span>Themes & Settings</span>
+                  </span>
+                </button>
+
+                <div className="h-px bg-white/10 my-1" />
+
                 <button
                   onClick={() => {
                     toggleTheme();
@@ -4687,12 +4263,30 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     <span>This message was deleted</span>
                   </div>
                 ) : msg.type === 'text' ? (
-                  <p
-                    className="text-[14.5px] leading-[20px] break-words pr-1 pt-0.5"
-                    style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
-                  >
-                    {renderFormattedText(msg.text)}
-                  </p>
+                  <div>
+                    <p
+                      className="text-[14.5px] leading-[20px] break-words pr-1 pt-0.5"
+                      style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
+                    >
+                      {renderFormattedText(
+                        msg.text && msg.text.length > 360 && !expandedMsgIds[msg.id]
+                          ? msg.text.slice(0, 360) + '...'
+                          : msg.text
+                      )}
+                    </p>
+                    {msg.text && msg.text.length > 360 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedMsgIds((prev) => ({ ...prev, [msg.id]: !prev[msg.id] }));
+                        }}
+                        className="text-xs font-semibold text-[#00a884] hover:underline mt-1 cursor-pointer select-none inline-block"
+                      >
+                        {expandedMsgIds[msg.id] ? 'Show less' : 'Read more'}
+                      </button>
+                    )}
+                  </div>
                 ) : null}
 
                 {/* Bubble Footer: Timestamp & Checkmarks */}
@@ -5051,7 +4645,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           )}
         </div>
 
-        {/* Input Pill OR Live Recording Pill */}
+        {/* Input Pill OR Live Recording Pill OR Audio Preview Pill */}
         {isRecordingAudio ? (
           <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center justify-between gap-3 animate-in fade-in duration-200">
             <div className="flex items-center gap-2.5">
@@ -5061,21 +4655,58 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 {recordingTimeSecs % 60 < 10 ? '0' : ''}
                 {recordingTimeSecs % 60}
               </span>
-              <span className="text-xs text-[#8696a0] italic">Recording...</span>
+              <span className="text-xs text-[#8696a0] italic">Recording voice note...</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleCancelAudioRecording}
-                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors"
+                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
                 title="Discard voice note"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                onClick={handleSendRealAudioRecording}
-                className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105"
+                onClick={handleStopAndReviewAudioRecording}
+                className="w-8 h-8 rounded-full bg-[#4E6B58] hover:bg-[#3D5545] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
+                title="Stop and preview voice note"
+              >
+                <span className="w-3 h-3 rounded-xs bg-white" />
+              </button>
+            </div>
+          </div>
+        ) : recordedAudioUrl ? (
+          <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                type="button"
+                onClick={handleTogglePlayAudioPreview}
+                className="w-8 h-8 rounded-full bg-[#4E6B58] hover:bg-[#3D5545] text-white flex items-center justify-center shadow transition-colors cursor-pointer shrink-0"
+                title={isPlayingAudioPreview ? 'Pause preview' : 'Play preview'}
+              >
+                {isPlayingAudioPreview ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+              </button>
+              <div className="min-w-0">
+                <span className="text-xs font-semibold text-white block">Voice Note Preview</span>
+                <span className="text-[10px] text-[#8696a0] font-mono">
+                  {Math.floor(recordingTimeSecs / 60)}:{recordingTimeSecs % 60 < 10 ? '0' : ''}{recordingTimeSecs % 60}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDiscardAudioPreview}
+                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                title="Delete recording"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleSendAudioPreview}
+                className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
                 title="Send voice note"
               >
                 <Send className="w-3.5 h-3.5 ml-0.5" />
@@ -5170,6 +4801,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       )}
           </>
         )}
+        </div>
       </main>
 
       {/* ── MEDIA PREVIEW & SENDER MODAL (Photos & Videos - Supports Multiple Selection & Removals) ── */}
@@ -6452,6 +6084,88 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── COLLAPSIBLE RIGHT SIDE PANEL ── */}
+      {sidePanelMode !== 'none' && (
+        <ChatSidePanel
+          mode={sidePanelMode}
+          onClose={() => setSidePanelMode('none')}
+          isDark={isDark}
+          activeTheme={activeTheme}
+          partnerName={partnerName}
+          partnerUser={partnerUser}
+          currentUser={currentUser}
+          isPartnerOnline={isPartnerOnline}
+          partnerLastSeen={partnerLastSeen}
+          messages={messages}
+          onJumpToMessage={(id) => {
+            jumpToMessage(id);
+            if (isMobileScreen) setSidePanelMode('none');
+          }}
+          onOpenLightbox={(url, type) => {
+            setLightboxMedia({
+              url,
+              type,
+              sender: partnerUser,
+              time: 'Now',
+            });
+          }}
+          onToggleStar={handleToggleStarMessage}
+          onOpenDateCount={() => setShowDateCountModal(true)}
+          dateCount={dateCount}
+          onSelectTheme={handleSelectTheme}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => {
+            setSoundEnabled((prev) => {
+              const next = !prev;
+              localStorage.setItem('dharya_sound_enabled', String(next));
+              return next;
+            });
+          }}
+          browserNotificationsEnabled={browserNotificationsEnabled}
+          onRequestBrowserNotifications={() => {
+            if (typeof Notification !== 'undefined') {
+              Notification.requestPermission().then((perm) => {
+                const granted = perm === 'granted';
+                setBrowserNotificationsEnabled(granted);
+                showToast(granted ? 'Browser notifications enabled!' : 'Permission denied.', granted ? 'success' : 'info');
+              });
+            }
+          }}
+          hideNotificationPreview={hideNotificationPreview}
+          onToggleHidePreview={() => {
+            setHideNotificationPreview((prev) => {
+              const next = !prev;
+              localStorage.setItem('dharya_hide_notification_preview', String(next));
+              return next;
+            });
+          }}
+          isMuted={isConversationMuted}
+          onToggleMute={() => {
+            setIsConversationMuted((prev) => {
+              const next = !prev;
+              localStorage.setItem('dharya_chat_muted', String(next));
+              showToast(next ? 'Conversation muted.' : 'Conversation unmuted.', 'info');
+              return next;
+            });
+          }}
+          readReceiptsEnabled={readReceiptsEnabled}
+          onToggleReadReceipts={handleToggleReadReceipts}
+          shareLastSeen={shareLastSeen}
+          onToggleShareLastSeen={() => {
+            setShareLastSeen((prev) => {
+              const next = !prev;
+              localStorage.setItem('whatsapp_share_last_seen', String(next));
+              return next;
+            });
+          }}
+          onLogout={logoutChat}
+          onOpenRecycleBinFull={() => {
+            setActiveMainView('recycle');
+            setSidePanelMode('none');
+          }}
+        />
       )}
     </div>
   );

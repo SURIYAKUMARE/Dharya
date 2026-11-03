@@ -1,0 +1,18 @@
+{
+  "name": "Dharya — Private Messenger",
+  "short_name": "Dharya",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#131615",
+  "theme_color": "#131615",
+  "description": "Private real-time messenger and shared space for Surya & Sadhana",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%237E9F89'/><stop offset='100%25' stop-color='%234E6B58'/></linearGradient></defs><rect width='100' height='100' rx='28' fill='%23131615'/><path d='M50 72 C22 52 14 36 24 24 C32 14 44 18 50 28 C56 18 68 14 76 24 C86 36 78 52 50 72 Z' fill='url(%23g)'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

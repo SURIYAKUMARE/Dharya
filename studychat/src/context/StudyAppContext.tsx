@@ -290,28 +290,8 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return quickLogin('sadhana');
     }
 
-    // Default student demo credential
-    if (u === 'student' && (p === 'study123' || p === 'password' || p === '123456')) {
-      const prof: StudentProfile = {
-        username: 'student',
-        name: 'Alex Kumar',
-        studentId: 'ENG-2026-8841',
-        department: 'Computer Science',
-        semester: '4th Semester',
-      };
-      setStudent(prof);
-      setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
-      localStorage.setItem('study_chat_auth', 'true');
-      sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
-      localStorage.setItem('study_student_profile', JSON.stringify(prof));
-      setAssessmentNotice(null);
-      setActiveTab('chat');
-      return true;
-    }
-
-    // Incorrect credentials: set clear notice and do not abruptly redirect to assessment quiz
-    setAssessmentNotice('Invalid credentials. Please verify your Student ID and Access Key.');
+    // Access strictly restricted to Surya and Sadhana
+    setAssessmentNotice('Invalid credentials. Access is restricted to authorized personal accounts.');
     return false;
   };
 

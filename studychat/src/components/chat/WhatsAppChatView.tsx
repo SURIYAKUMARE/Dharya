@@ -49,7 +49,6 @@ import {
   FileText,
   Trash2,
   X,
-  Ticket,
   Play,
   Pause,
   Eye,
@@ -530,6 +529,84 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const toggleTheme = () => {
     const nextTheme: ThemeId = isDark ? 'light' : 'dark';
     handleSelectTheme(nextTheme);
+  };
+
+  // ── TYPOGRAPHY: CASUAL HANDWRITING (EXACT MATCH TO USER SCREENSHOT) VS STANDARD SANS ──
+  const [chatFont, setChatFont] = useState<'handwriting' | 'sans'>(() => {
+    try {
+      return (localStorage.getItem('dharya_chat_font') as 'handwriting' | 'sans') || 'handwriting';
+    } catch {
+      return 'handwriting';
+    }
+  });
+
+  const handleToggleChatFont = () => {
+    const next = chatFont === 'handwriting' ? 'sans' : 'handwriting';
+    setChatFont(next);
+    try {
+      localStorage.setItem('dharya_chat_font', next);
+    } catch {}
+    showToast(`Typography switched to ${next === 'handwriting' ? 'Playful Handwriting' : 'Standard WhatsApp'}`, 'info');
+  };
+
+  const fontClass = chatFont === 'handwriting'
+    ? "font-['Delius',_'Comfortaa',_cursive,sans-serif]"
+    : "font-sans";
+
+  // ── DHARYA COINS & TOKENS (₹ FEATURE FROM SCREENSHOT) ──
+  const [showCoinModal, setShowCoinModal] = useState<boolean>(false);
+  const [coinBalance, setCoinBalance] = useState<number>(() => {
+    try {
+      return parseInt(localStorage.getItem('dharya_coins_balance') || '350', 10);
+    } catch {
+      return 350;
+    }
+  });
+
+  const handleCollectDailyCoins = () => {
+    const newBal = coinBalance + 50;
+    setCoinBalance(newBal);
+    try {
+      localStorage.setItem('dharya_coins_balance', String(newBal));
+    } catch {}
+    const coinMsg: ExtendedChatMessage = {
+      id: `msg-coin-${Date.now()}`,
+      sender: currentUser,
+      text: `🪙 Collected daily Dharya Coins! (+50 Coins). Current Balance: ${newBal} Coins 🎉`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      status: 'sent',
+      type: 'text',
+      read: false,
+    };
+    dispatchSendMessage(coinMsg);
+    setShowCoinModal(false);
+    showToast('Collected 50 Coins! 🎉', 'success');
+  };
+
+  const handleSendCoinToken = (title: string, amount: number, note: string) => {
+    if (coinBalance < amount) {
+      showToast('Not enough coins balance!', 'error');
+      return;
+    }
+    const newBal = coinBalance - amount;
+    setCoinBalance(newBal);
+    try {
+      localStorage.setItem('dharya_coins_balance', String(newBal));
+    } catch {}
+    const tokenMsg: ExtendedChatMessage = {
+      id: `msg-token-${Date.now()}`,
+      sender: currentUser,
+      text: `🪙 ${title} (${amount} Coins)\n"${note}"\nSent with love ❤️`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      status: 'sent',
+      type: 'text',
+      read: false,
+    };
+    dispatchSendMessage(tokenMsg);
+    setShowCoinModal(false);
+    showToast(`Sent ${title}! ❤️`, 'success');
   };
 
   // Real Audio Recording with MediaRecorder
@@ -2377,6 +2454,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
+  // Authentic WhatsApp Repeating Vector Doodle Background
+  const getDoodleSvgDataUri = (isDarkTheme: boolean) => {
+    const strokeColor = isDarkTheme ? '%238696a0' : '%2354656f';
+    const opacity = isDarkTheme ? '0.08' : '0.12';
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='412' height='412' viewBox='0 0 412 412' fill='none' stroke='${strokeColor}' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' opacity='${opacity}'%3E%3Cg transform='translate(24, 20) scale(0.9)'%3E%3Cpath d='M6 10h22v12a8 8 0 0 1-8 8H14a8 8 0 0 1-8-8V10z'/%3E%3Cpath d='M28 14h4a4 4 0 0 1 4 4v2a4 4 0 0 1-4 4h-4'/%3E%3Cpath d='M12 4c0 2-2 3-2 5M17 3c0 2-2 3-2 5M22 4c0 2-2 3-2 5'/%3E%3Cpath d='M4 32h26'/%3E%3C/g%3E%3Cg transform='translate(130, 16) scale(0.85)'%3E%3Crect x='6' y='8' width='36' height='22' rx='10'/%3E%3Cpath d='M14 15v8M10 19h8'/%3E%3Ccircle cx='30' cy='16' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='34' cy='21' r='1.5' fill='${strokeColor}'/%3E%3C/g%3E%3Cg transform='translate(230, 14) scale(0.9)'%3E%3Ccircle cx='18' cy='18' r='14'/%3E%3Cellipse cx='18' cy='17' rx='8' ry='6'/%3E%3Ccircle cx='15' cy='17' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='21' cy='17' r='1.5' fill='${strokeColor}'/%3E%3Cpath d='M18 4V1M14 1h8M10 30c2 2 5 3 8 3s6-1 8-3'/%3E%3C/g%3E%3Cg transform='translate(340, 22) scale(0.85)'%3E%3Cpath d='M6 6h24a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H16l-7 6v-6H6a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6z'/%3E%3Cpath d='M14 16c1-2 3-3 4-1 1-2 3-1 4 1-1 3-4 6-4 6s-3-3-4-6z' fill='${strokeColor}'/%3E%3C/g%3E%3Cg transform='translate(26, 100) scale(0.85)'%3E%3Cpath d='M6 10h6l3-4h10l3 4h6a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z'/%3E%3Ccircle cx='20' cy='20' r='6'/%3E%3Ccircle cx='30' cy='13' r='1' fill='${strokeColor}'/%3E%3C/g%3E%3Cg transform='translate(136, 96) scale(0.85)'%3E%3Cpath d='M6 22V16a14 14 0 0 1 28 0v6'/%3E%3Crect x='4' y='20' width='6' height='12' rx='3' fill='${strokeColor}' fill-opacity='0.2'/%3E%3Crect x='30' y='20' width='6' height='12' rx='3' fill='${strokeColor}' fill-opacity='0.2'/%3E%3C/g%3E%3Cg transform='translate(242, 94) scale(0.85)'%3E%3Ccircle cx='18' cy='18' r='14'/%3E%3Cpolyline points='18,10 18,18 24,18'/%3E%3C/g%3E%3Cg transform='translate(346, 102) scale(0.85)'%3E%3Cpath d='M8 8c8-4 18-4 26 0L21 34z'/%3E%3Ccircle cx='18' cy='16' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='23' cy='22' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='25' cy='14' r='1.5' fill='${strokeColor}'/%3E%3C/g%3E%3Cg transform='translate(28, 180) scale(0.85)'%3E%3Ccircle cx='20' cy='20' r='10'/%3E%3Cellipse cx='20' cy='20' rx='18' ry='6' transform='rotate(-25 20 20)'/%3E%3C/g%3E%3Cg transform='translate(138, 182) scale(0.8)'%3E%3Cpath d='M16 2l4 8 9 1-7 6 2 9-8-4-8 4 2-9-7-6 9-1z' fill='${strokeColor}' fill-opacity='0.15'/%3E%3Ccircle cx='34' cy='6' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='2' cy='24' r='1' fill='${strokeColor}'/%3E%3C/g%3E%3Cg transform='translate(238, 180) scale(0.85)'%3E%3Cpath d='M6 14L8 6l8 4 8-4 2 8c2 4 2 9-2 13-3 3-9 3-12 0-4-4-4-9-2-13z'/%3E%3Ccircle cx='12' cy='16' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='20' cy='16' r='1.5' fill='${strokeColor}'/%3E%3Cpath d='M14 20l2 2 2-2'/%3E%3Cline x1='6' y1='18' x2='2' y2='17'/%3E%3Cline x1='6' y1='20' x2='2' y2='21'/%3E%3Cline x1='26' y1='18' x2='30' y2='17'/%3E%3Cline x1='26' y1='20' x2='30' y2='21'/%3E%3C/g%3E%3Cg transform='translate(346, 178) scale(0.85)'%3E%3Cpath d='M12 22c-4-3-6-7-6-11a11 11 0 1 1 22 0c0 4-2 8-6 11v4H12v-4z'/%3E%3Cpath d='M13 30h6M14 34h4'/%3E%3Cpath d='M16 11v5M13 13h6'/%3E%3C/g%3E%3Cg transform='translate(22, 260) scale(0.85)'%3E%3Ccircle cx='8' cy='24' r='7'/%3E%3Ccircle cx='32' cy='24' r='7'/%3E%3Cpath d='M8 24l10-10h6l8 10M18 14l4 10H14M22 10h4'/%3E%3C/g%3E%3Cg transform='translate(134, 264) scale(0.85)'%3E%3Cpath d='M18 7c2-4 6-5 9-2 4 4 4 9 0 14L18 28 9 19C5 14 5 9 9 5c3-3 7-2 9 2z' fill='${strokeColor}' fill-opacity='0.15'/%3E%3C/g%3E%3Cg transform='translate(236, 260) scale(0.85)'%3E%3Cpath d='M4 18L32 4 20 32l-5-10L4 18z'/%3E%3Cpath d='M15 22L32 4'/%3E%3C/g%3E%3Cg transform='translate(344, 262) scale(0.85)'%3E%3Ccircle cx='8' cy='24' r='5' fill='${strokeColor}'/%3E%3Ccircle cx='26' cy='20' r='5' fill='${strokeColor}'/%3E%3Cpath d='M13 24V8l18-4v16M13 14l18-4'/%3E%3C/g%3E%3Cg transform='translate(26, 342) scale(0.85)'%3E%3Ccircle cx='10' cy='16' r='8'/%3E%3Ccircle cx='28' cy='16' r='8'/%3E%3Cpath d='M18 16h2M2 14l-2-4M36 14l2-4'/%3E%3C/g%3E%3Cg transform='translate(132, 338) scale(0.85)'%3E%3Cpath d='M4 20c0-10 8-16 16-16s16 6 16 16c-3-2-7-2-10 0-3-2-8-2-11 0-3-2-8-2-11 0z'/%3E%3Cpath d='M20 4v22a4 4 0 0 1-8 0'/%3E%3C/g%3E%3Cg transform='translate(238, 340) scale(0.85)'%3E%3Cpath d='M6 30l4-1 18-18-3-3L7 26l-1 4z'/%3E%3Cpath d='M22 11l3 3'/%3E%3C/g%3E%3Cg transform='translate(342, 338) scale(0.85)'%3E%3Ccircle cx='18' cy='18' r='14'/%3E%3Ccircle cx='13' cy='15' r='1.5' fill='${strokeColor}'/%3E%3Ccircle cx='23' cy='15' r='1.5' fill='${strokeColor}'/%3E%3Cpath d='M12 21c2 3 5 4 6 4s4-1 6-4'/%3E%3C/g%3E%3C/svg%3E`;
+  };
+
   // Wallpaper Style Provider with Full 10-Theme Integration
   const getWallpaperStyle = () => {
     if (activeWallpaper === 'obsidian') {
@@ -2415,7 +2499,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
     return {
       backgroundColor: activeTheme.bgMain,
-      backgroundImage: `url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 90 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2353bdeb' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E")`,
+      backgroundImage: `url("${getDoodleSvgDataUri(isDark)}")`,
+      backgroundRepeat: 'repeat',
+      backgroundSize: '412px 412px',
     };
   };
 
@@ -3453,13 +3539,17 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-10 w-56 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
+              <div className={`absolute right-0 top-10 w-60 border rounded-2xl shadow-2xl py-1.5 z-50 text-xs transition-colors ${
+                isDark ? 'bg-[#1f2c34] border-[#2a3942] text-[#e9edef]' : 'bg-white border-[#e9edef] text-[#111b21]'
+              }`}>
                 <button
                   onClick={() => {
                     handleSelectConversation(isGroupChat ? CHAT_ID : STUDY_GROUP_CHAT_ID);
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-emerald-400"
+                  className={`w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium ${
+                    isDark ? 'text-emerald-400' : 'text-[#008069]'
+                  }`}
                 >
                   <span className="flex items-center gap-2">
                     <Users className="w-3.5 h-3.5" />
@@ -3472,7 +3562,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     setSidePanelMode('info');
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
                 >
                   <span className="flex items-center gap-2">
                     <User className="w-3.5 h-3.5 text-[#00a884]" />
@@ -3485,7 +3575,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     setSidePanelMode('media');
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
                 >
                   <span className="flex items-center gap-2">
                     <Images className="w-3.5 h-3.5 text-[#00a884]" />
@@ -3495,10 +3585,39 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
                 <button
                   onClick={() => {
+                    setShowCoinModal(true);
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-500"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>🪙</span>
+                    <span>Dharya Coins & Passes</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/15">
+                    {coinBalance} 🪙
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    handleToggleChatFont();
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>✍️</span>
+                    <span>Font: {chatFont === 'handwriting' ? 'Playful Handwriting' : 'Standard'}</span>
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
                     setSidePanelMode('starred');
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-300"
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-400"
                 >
                   <span className="flex items-center gap-2">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -3514,25 +3633,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     setSidePanelMode('settings');
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
                 >
                   <span className="flex items-center gap-2">
-                    <Palette className="w-3.5 h-3.5 text-[#7E9F89]" />
-                    <span>Themes & Settings</span>
+                    <Palette className="w-3.5 h-3.5 text-[#00a884]" />
+                    <span>Themes & Wallpaper</span>
                   </span>
                 </button>
 
-                <div className="h-px bg-white/10 my-1" />
+                <div className="h-px bg-current/10 my-1" />
 
                 <button
                   onClick={() => {
                     toggleTheme();
                     setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
+                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
                 >
                   <span className="flex items-center gap-2">
-                    {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-[#7E9F89]" />}
+                    {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-[#00a884]" />}
                     <span>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
                   </span>
                 </button>
@@ -3616,21 +3735,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     <span>Panic Camouflage</span>
                   </span>
                   <span className="text-[10px] text-[#8696a0] font-mono">Esc</span>
-                </button>
-
-                {/* HelpDesk 360 Admin Tickets */}
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    switchTab('admin-tickets');
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-blue-400"
-                >
-                  <span className="flex items-center gap-2">
-                    <Ticket className="w-3.5 h-3.5 text-blue-400" />
-                    <span>HelpDesk 360 (Admin)</span>
-                  </span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">v2.4</span>
                 </button>
 
                 <button
@@ -3925,7 +4029,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       <div
         ref={chatScrollRef}
         onScroll={handleChatScroll}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-2 relative scroll-smooth"
+        className={`flex-1 overflow-y-auto px-2.5 sm:px-4 py-2 relative scroll-smooth ${fontClass}`}
         style={getWallpaperStyle()}
       >
         {/* Load earlier messages button */}
@@ -4032,8 +4136,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               )}
 
               <div
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2 group relative ${
-                  isConsecutive ? 'mt-1' : 'mt-3 sm:mt-3.5'
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-1.5 group relative ${
+                  isConsecutive ? 'mt-[2.5px]' : 'mt-2.5 sm:mt-3'
                 }`}
               >
                 {/* Selection Checkbox */}
@@ -4044,7 +4148,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   >
                     <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                       selectedMsgIds.has(msg.id)
-                        ? 'bg-emerald-500 border-emerald-400 text-white'
+                        ? 'bg-[#00a884] border-[#00a884] text-white'
                         : isDark ? 'border-white/30 hover:border-white/60' : 'border-black/30 hover:border-black/60'
                     }`}>
                       {selectedMsgIds.has(msg.id) && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -4052,14 +4156,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   </div>
                 )}
 
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[70%] relative`}>
+                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[85%] sm:max-w-[78%] md:max-w-[72%] relative`}>
                   {/* Message Bubble with Authentic Speech Tail */}
                   <div
                     id={`msg-${msg.id}`}
-                    className={`relative w-full rounded-2xl px-3.5 py-1.5 shadow-[0_1px_1px_rgba(0,0,0,0.08)] transition-all select-none ${
+                    className={`relative w-full px-3 py-1.5 shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] transition-all select-none ${
                       isConsecutive
-                        ? 'rounded-2xl'
-                        : isMe ? 'rounded-tr-[2px]' : 'rounded-tl-[2px]'
+                        ? 'rounded-[8px]'
+                        : isMe ? 'rounded-[8px] rounded-tr-[2px]' : 'rounded-[8px] rounded-tl-[2px]'
                     }`}
                     style={{
                       backgroundColor: isMe ? activeTheme.bubbleOutgoing : activeTheme.bubbleIncoming,
@@ -4411,14 +4515,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
                 {/* ── REGULAR TEXT OR DELETED MESSAGE ── */}
                 {msg.deletedForAll ? (
-                  <div className="flex items-center gap-1.5 text-white/50 italic text-[13.5px] py-1 select-none">
+                  <div className="flex items-center gap-1.5 text-[#667781] italic text-[13.5px] py-1 select-none">
                     <Ban className="w-3.5 h-3.5 opacity-60 flex-shrink-0" />
                     <span>This message was deleted</span>
                   </div>
                 ) : msg.type === 'text' ? (
-                  <div>
+                  <div className="inline">
                     <p
-                      className="text-[14.5px] leading-[20px] break-words pr-1 pt-0.5"
+                      className={`text-[15px] sm:text-[15.5px] leading-[21px] break-words pr-1 pt-0.5 inline ${
+                        chatFont === 'handwriting' ? "font-['Delius',_'Comfortaa',_cursive,sans-serif]" : "font-sans"
+                      }`}
                       style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}
                     >
                       {renderFormattedText(
@@ -4434,7 +4540,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                           e.stopPropagation();
                           setExpandedMsgIds((prev) => ({ ...prev, [msg.id]: !prev[msg.id] }));
                         }}
-                        className="text-xs font-semibold text-[#00a884] hover:underline mt-1 cursor-pointer select-none inline-block"
+                        className="text-xs font-semibold text-[#00a884] hover:underline mt-1 cursor-pointer select-none inline-block ml-1"
                       >
                         {expandedMsgIds[msg.id] ? 'Show less' : 'Read more'}
                       </button>
@@ -4444,11 +4550,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
                 {/* Bubble Footer: Timestamp & Checkmarks */}
                 <div
-                  className="flex items-center justify-end gap-1 mt-0.5 -mb-0.5 text-[11px] select-none font-sans"
+                  className="inline-flex items-center justify-end gap-1 float-right mt-1 ml-2 text-[11px] select-none font-sans"
                   style={{
                     color: isMe
-                      ? (isDark ? 'rgba(235, 245, 237, 0.65)' : 'rgba(27, 42, 32, 0.65)')
-                      : (isDark ? 'rgba(236, 238, 235, 0.65)' : 'rgba(31, 36, 33, 0.65)')
+                      ? (isDark ? 'rgba(235, 245, 237, 0.65)' : '#667781')
+                      : (isDark ? 'rgba(236, 238, 235, 0.65)' : '#667781')
                   }}
                 >
                   {msg.isStarred && (
@@ -4654,225 +4760,113 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         </div>
       )}
 
-      {/* ── 4. CHAT INPUT BAR (WhatsApp Mobile floating pill + action button, WhatsApp Web flat bar) ── */}
-      <div className={`px-2 sm:px-3 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] md:pb-2 flex items-center gap-1.5 sm:gap-2 border-t z-30 flex-shrink-0 relative transition-colors ${
-        isDark ? 'bg-[#111b21] md:bg-[#202c33] border-[#222e35] md:border-[#2a3942]' : 'bg-[#ffffff] md:bg-[#f0f2f5] border-[#d1d7db]'
-      }`}>
-        {/* Emoji Button */}
-        <button
-          type="button"
-          onClick={() => {
-            setShowEmojiPicker((prev) => !prev);
-            setReactionTargetMsgId(null);
-          }}
-          className={`p-2 rounded-full transition-colors ${
-            showEmojiPicker
-              ? 'text-[#00a884] bg-white/10'
-              : '${isDark ? "text-[#8696a0] hover:text-[#d1d7db]" : "text-[#54656f] hover:text-[#111b21]"} hover:bg-white/5'
-          }`}
-          title={showEmojiPicker ? 'Close Emojis (Keyboard)' : 'Open Emoji Picker'}
-        >
-          {showEmojiPicker ? <Keyboard className="w-5 h-5" /> : <Smile className="w-5 h-5" />}
-        </button>
-
-        {/* Quick Camera Capture (Photo or Video) */}
-        <button
-          onClick={() => cameraInputRef.current?.click()}
-          className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
-          title="Camera (Photo & Video)"
-        >
-          <Camera className="w-5 h-5" />
-        </button>
-
-        {/* Paperclip Attach Button */}
-        <div className="relative">
-          <button
-            onClick={() => setShowAttachMenu(!showAttachMenu)}
-            className="p-2 text-[#8696a0] hover:text-[#d1d7db] rounded-full hover:bg-white/5 transition-colors"
-            title="Attach"
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
-
-          {/* Attachment Sheet */}
-          {showAttachMenu && (
-            <div className={`absolute bottom-12 left-0 w-80 rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-2.5 text-center border ${
-              isDark ? 'bg-[#181c1b] border-[#2b332e] text-[#ECEEEB]' : 'bg-white border-[#E5DFD5] text-[#1F2421]'
-            }`}>
-              {/* Document Option */}
-              <button
-                onClick={() => {
-                  docInputRef.current?.click();
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-medium">Document</span>
-              </button>
-
-              {/* Gallery Photos & Videos Option */}
-              <button
-                onClick={() => {
-                  fileInputRef.current?.click();
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
-                  <ImageIcon className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-medium">Photos</span>
-              </button>
-
-              {/* Camera Option */}
-              <button
-                onClick={() => {
-                  cameraInputRef.current?.click();
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#A85A66]/15 text-[#A85A66] dark:bg-[#D48D98]/20 dark:text-[#D48D98] flex items-center justify-center shadow-xs">
-                  <Camera className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-medium">Camera</span>
-              </button>
-
-              {/* Interactive Poll Option */}
-              <button
-                onClick={() => {
-                  setShowPollModal(true);
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
-                  <BarChart2 className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-medium">Poll</span>
-              </button>
-
-              {/* Audio Note Option */}
-              <button
-                onClick={() => {
-                  handleStartAudioRecording();
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#A85A66]/15 text-[#A85A66] dark:bg-[#D48D98]/20 dark:text-[#D48D98] flex items-center justify-center shadow-xs">
-                  <FileAudio className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-medium">Audio</span>
-              </button>
-
-              {/* Location Option */}
-              <button
-                onClick={() => {
-                  setInputText('📍 Shared Location Coordinates: 13.0827° N, 80.2707° E');
-                  setShowAttachMenu(false);
-                }}
-                className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-colors ${
-                  isDark ? 'hover:bg-white/5 text-[#A3ADA5]' : 'hover:bg-black/5 text-[#5A655E]'
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#4E6B58]/15 text-[#4E6B58] dark:bg-[#7E9F89]/20 dark:text-[#7E9F89] flex items-center justify-center shadow-xs">
-                  <span className="text-sm font-semibold">📍</span>
-                </div>
-                <span className="text-[11px] font-medium">Location</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Input Pill OR Live Recording Pill OR Audio Preview Pill */}
-        {isRecordingAudio ? (
-          <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center justify-between gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-              <span className="text-sm font-semibold text-white font-mono">
-                {Math.floor(recordingTimeSecs / 60)}:
-                {recordingTimeSecs % 60 < 10 ? '0' : ''}
-                {recordingTimeSecs % 60}
-              </span>
-              <span className="text-xs text-[#8696a0] italic">Recording voice note...</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCancelAudioRecording}
-                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
-                title="Discard voice note"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleStopAndReviewAudioRecording}
-                className="w-8 h-8 rounded-full bg-[#4E6B58] hover:bg-[#3D5545] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
-                title="Stop and preview voice note"
-              >
-                <span className="w-3 h-3 rounded-xs bg-white" />
-              </button>
-            </div>
-          </div>
-        ) : recordedAudioUrl ? (
-          <div className="flex-1 bg-[#2a3942] rounded-xl px-4 py-2 flex items-center justify-between gap-3 animate-in fade-in duration-200">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <button
-                type="button"
-                onClick={handleTogglePlayAudioPreview}
-                className="w-8 h-8 rounded-full bg-[#4E6B58] hover:bg-[#3D5545] text-white flex items-center justify-center shadow transition-colors cursor-pointer shrink-0"
-                title={isPlayingAudioPreview ? 'Pause preview' : 'Play preview'}
-              >
-                {isPlayingAudioPreview ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-              </button>
-              <div className="min-w-0">
-                <span className="text-xs font-semibold text-white block">Voice Note Preview</span>
-                <span className="text-[10px] text-[#8696a0] font-mono">
-                  {Math.floor(recordingTimeSecs / 60)}:{recordingTimeSecs % 60 < 10 ? '0' : ''}{recordingTimeSecs % 60}
+      {/* ── 4. CHAT INPUT BAR (WhatsApp Android Floating Pill + Action Button, Exact Replica of Screenshot) ── */}
+      <div
+        className="px-2 py-2 pb-[calc(env(safe-area-inset-bottom,0px)+6px)] z-30 flex-shrink-0 relative select-none"
+        style={{
+          backgroundColor: activeTheme.bgMain,
+          backgroundImage: `url("${getDoodleSvgDataUri(isDark)}")`,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '412px 412px',
+          backgroundPosition: 'bottom center',
+        }}
+      >
+        {/* Input Row */}
+        <div className="flex items-end gap-1.5 sm:gap-2 max-w-5xl mx-auto w-full">
+          {isRecordingAudio ? (
+            <div className="flex-1 bg-[#1f2c34] text-white rounded-[24px] px-4 py-2.5 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-150">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                <span className="text-sm font-semibold font-mono">
+                  {Math.floor(recordingTimeSecs / 60)}:
+                  {recordingTimeSecs % 60 < 10 ? '0' : ''}
+                  {recordingTimeSecs % 60}
                 </span>
+                <span className="text-xs text-[#8696a0] italic">Recording voice note...</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCancelAudioRecording}
+                  className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                  title="Discard voice note"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStopAndReviewAudioRecording}
+                  className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
+                  title="Stop and preview voice note"
+                >
+                  <span className="w-3 h-3 rounded-xs bg-white" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleDiscardAudioPreview}
-                className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
-                title="Delete recording"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleSendAudioPreview}
-                className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
-                title="Send voice note"
-              >
-                <Send className="w-3.5 h-3.5 ml-0.5" />
-              </button>
+          ) : recordedAudioUrl ? (
+            <div className="flex-1 bg-[#1f2c34] text-white rounded-[24px] px-4 py-2 flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-150">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <button
+                  type="button"
+                  onClick={handleTogglePlayAudioPreview}
+                  className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-colors cursor-pointer shrink-0"
+                  title={isPlayingAudioPreview ? 'Pause preview' : 'Play preview'}
+                >
+                  {isPlayingAudioPreview ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                </button>
+                <div className="min-w-0">
+                  <span className="text-xs font-semibold block">Voice Note Preview</span>
+                  <span className="text-[10px] text-[#8696a0] font-mono">
+                    {Math.floor(recordingTimeSecs / 60)}:{recordingTimeSecs % 60 < 10 ? '0' : ''}{recordingTimeSecs % 60}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDiscardAudioPreview}
+                  className="p-1.5 rounded-full text-rose-400 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                  title="Delete recording"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendAudioPreview}
+                  className="w-8 h-8 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow transition-transform hover:scale-105 cursor-pointer"
+                  title="Send voice note"
+                >
+                  <Send className="w-3.5 h-3.5 ml-0.5" />
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className={`flex-1 rounded-2xl px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-end gap-2 focus-within:ring-1 transition-all ${
-              isDark 
-                ? "bg-[#181c1b] text-[#ECEEEB] border border-[#2b332e] focus-within:ring-[#4E6B58]/40" 
-                : "bg-white text-[#1F2421] shadow-xs border border-[#E5DFD5] focus-within:ring-[#4E6B58]/40"
+          ) : (
+            /* Standard WhatsApp Input Pill (White Pill with Smile, Message, Paperclip, ₹, Camera) */
+            <div className={`flex-1 rounded-[24px] shadow-[0_1px_2px_rgba(11,20,26,0.18)] flex items-end px-2.5 py-1 min-h-[46px] transition-colors relative ${
+              isDark
+                ? 'bg-[#1f2c34] text-[#e9edef]'
+                : 'bg-white text-[#111b21]'
             }`}>
+              {/* Emoji Icon Button on Left */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEmojiPicker((prev) => !prev);
+                  setReactionTargetMsgId(null);
+                }}
+                className={`p-1.5 rounded-full transition-colors shrink-0 mb-0.5 ${
+                  showEmojiPicker
+                    ? 'text-[#00a884]'
+                    : isDark
+                    ? 'text-[#8696a0] hover:text-[#d1d7db]'
+                    : 'text-[#54656f] hover:text-[#111b21]'
+                }`}
+                title={showEmojiPicker ? 'Close Emojis' : 'Emojis'}
+              >
+                {showEmojiPicker ? <Keyboard className="w-6 h-6 stroke-[1.8]" /> : <Smile className="w-6 h-6 stroke-[1.8]" />}
+              </button>
+
+              {/* Message Textarea */}
               <textarea
                 value={editingMessage ? editText : inputText}
                 rows={1}
@@ -4899,32 +4893,176 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   }
                 }}
                 placeholder={editingMessage ? "Edit message..." : "Message"}
-                className={`w-full bg-transparent text-[14px] sm:text-[14.5px] outline-none resize-none leading-relaxed max-h-[120px] ${
-                  isDark ? "text-[#ECEEEB] placeholder-[#808B84]" : "text-[#1F2421] placeholder-[#737C76]"
-                }`}
+                className={`flex-1 bg-transparent text-[16px] leading-[22px] px-2 py-1.5 outline-none resize-none max-h-[120px] font-normal ${
+                  isDark ? 'text-[#e9edef] placeholder-[#8696a0]' : 'text-[#111b21] placeholder-[#667781]'
+                } ${fontClass}`}
               />
-            </div>
 
-            {/* Mic / Send / Save Edit Button */}
-            {(editingMessage ? editText.trim() : inputText.trim()) ? (
-              <button
-                onClick={editingMessage ? handleConfirmEdit : handleSendText}
-                className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-                title={editingMessage ? "Save edit" : "Send"}
-              >
-                {editingMessage ? <Check className="w-4 h-4 stroke-[2.5]" /> : <Send className="w-4 h-4 ml-0.5" />}
-              </button>
+              {/* Right Icons inside Pill: Paperclip, Rupee (₹), and Camera */}
+              <div className="flex items-center gap-0.5 shrink-0 mb-0.5">
+                {/* Paperclip Attach Button */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowAttachMenu((prev) => !prev)}
+                    className={`p-1.5 rounded-full transition-colors ${
+                      isDark ? 'text-[#8696a0] hover:text-[#d1d7db]' : 'text-[#54656f] hover:text-[#111b21]'
+                    }`}
+                    title="Attach"
+                  >
+                    <Paperclip className="w-5 h-5 -rotate-45 stroke-[1.8]" />
+                  </button>
+
+                  {/* Attachment Sheet Menu */}
+                  {showAttachMenu && (
+                    <div className={`absolute bottom-12 right-0 w-72 sm:w-80 rounded-2xl shadow-2xl p-3 z-50 grid grid-cols-3 gap-2.5 text-center border animate-in fade-in zoom-in-95 duration-150 ${
+                      isDark ? 'bg-[#1f2c34] border-[#2a3942] text-[#e9edef]' : 'bg-white border-[#e9edef] text-[#111b21]'
+                    }`}>
+                      {/* Document */}
+                      <button
+                        onClick={() => {
+                          docInputRef.current?.click();
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center shadow-xs">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-medium">Document</span>
+                      </button>
+
+                      {/* Photos & Videos Gallery */}
+                      <button
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-indigo-500/20 text-indigo-500 flex items-center justify-center shadow-xs">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-medium">Gallery</span>
+                      </button>
+
+                      {/* Camera */}
+                      <button
+                        onClick={() => {
+                          cameraInputRef.current?.click();
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center shadow-xs">
+                          <Camera className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-medium">Camera</span>
+                      </button>
+
+                      {/* Audio Note */}
+                      <button
+                        onClick={() => {
+                          handleStartAudioRecording();
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center shadow-xs">
+                          <FileAudio className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-medium">Audio</span>
+                      </button>
+
+                      {/* Interactive Poll */}
+                      <button
+                        onClick={() => {
+                          setShowPollModal(true);
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center shadow-xs">
+                          <BarChart2 className="w-5 h-5" />
+                        </div>
+                        <span className="text-[11px] font-medium">Poll</span>
+                      </button>
+
+                      {/* Location */}
+                      <button
+                        onClick={() => {
+                          setInputText('📍 Shared Location Coordinates: 13.0827° N, 80.2707° E');
+                          setShowAttachMenu(false);
+                        }}
+                        className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <div className="w-11 h-11 rounded-full bg-teal-500/20 text-teal-500 flex items-center justify-center shadow-xs">
+                          <span className="text-base">📍</span>
+                        </div>
+                        <span className="text-[11px] font-medium">Location</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Rupee Currency Icon Button (Shown when not typing) */}
+                {!(editingMessage ? editText.trim() : inputText.trim()) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCoinModal(true)}
+                    className={`p-1.5 rounded-full transition-colors ${
+                      isDark ? 'text-[#8696a0] hover:text-[#d1d7db]' : 'text-[#54656f] hover:text-[#111b21]'
+                    }`}
+                    title="Dharya Coins & Tokens (₹)"
+                  >
+                    <span className="w-5 h-5 rounded-full border-[1.8px] border-current flex items-center justify-center text-[11px] font-bold leading-none">
+                      ₹
+                    </span>
+                  </button>
+                )}
+
+                {/* Camera Button (Shown when not typing) */}
+                {!(editingMessage ? editText.trim() : inputText.trim()) && (
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className={`p-1.5 rounded-full transition-colors ${
+                      isDark ? 'text-[#8696a0] hover:text-[#d1d7db]' : 'text-[#54656f] hover:text-[#111b21]'
+                    }`}
+                    title="Camera"
+                  >
+                    <Camera className="w-5 h-5 stroke-[1.8]" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Standalone Circular Green Action Button (Mic / Send) */}
+          <button
+            type="button"
+            onClick={
+              editingMessage
+                ? handleConfirmEdit
+                : inputText.trim()
+                ? handleSendText
+                : handleStartAudioRecording
+            }
+            className="w-12 h-12 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-[0_1px_2px_rgba(11,20,26,0.25)] active:scale-95 transition-all shrink-0 cursor-pointer mb-0.5"
+            title={editingMessage ? "Save edit" : inputText.trim() ? "Send" : "Hold or tap to Record Voice Note"}
+          >
+            {editingMessage ? (
+              <Check className="w-5 h-5 stroke-[2.5]" />
+            ) : inputText.trim() ? (
+              <Send className="w-5 h-5 ml-0.5 stroke-[2.2]" />
             ) : (
-              <button
-                onClick={handleStartAudioRecording}
-                className="w-10 h-10 rounded-full bg-[#00a884] hover:bg-[#029071] text-white flex items-center justify-center shadow-md transition-all hover:scale-105 active:scale-95 flex-shrink-0"
-                title="Hold or tap to Record Voice Note"
-              >
-                <Mic className="w-4 h-4" />
-              </button>
+              <Mic className="w-5 h-5 stroke-[2.2]" />
             )}
-          </>
-        )}
+          </button>
+        </div>
+
+        {/* Android Bottom Navigation Pill */}
+        <div className="w-28 h-1 bg-[#cfd8dc] dark:bg-white/20 rounded-full mx-auto mt-2 mb-0.5 select-none pointer-events-none md:hidden" />
       </div>
 
       {/* ── WHATSAPP VECTOR SVG EMOJI PICKER DRAWER ── */}
@@ -6167,6 +6305,92 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           onClose={handleCallFinished}
           channelRef={channelRef}
         />
+      )}
+
+      {/* ── DHARYA COINS & TOKENS MODAL (₹ FEATURE FROM USER SCREENSHOT) ── */}
+      {showCoinModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto ${
+              isDark ? 'bg-[#1f2c34] text-[#e9edef] border border-[#2a3942]' : 'bg-white text-[#111b21] border border-[#e9edef]'
+            }`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-3 border-current/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg">
+                  🪙
+                </div>
+                <div>
+                  <h3 className="text-base font-bold leading-tight">Dharya Coins & Tokens</h3>
+                  <p className="text-xs text-[#8696a0]">Daily couple rewards, tokens & romantic passes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCoinModal(false)}
+                className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[#8696a0]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Current Balance & Daily Claim Banner */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                  Your Balance
+                </span>
+                <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                  {coinBalance} 🪙
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCollectDailyCoins}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs shadow-md hover:brightness-105 active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                <span>Collect +50 🪙</span>
+              </button>
+            </div>
+
+            {/* Send Romantic Tokens / Passes */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-[#8696a0] uppercase tracking-wider">
+                Send to {partnerName}
+              </h4>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { title: 'Send 50 Coins', cost: 50, icon: '🪙', note: 'Here are 50 coins for you!' },
+                  { title: 'Send 100 Coins', cost: 100, icon: '💰', note: 'Super love coin bonus!' },
+                  { title: 'Unlimited Hugs Pass', cost: 20, icon: '🤗', note: 'Redeemable anytime, non-expiring!' },
+                  { title: 'Coffee / Chai Date', cost: 30, icon: '☕', note: 'I owe you a coffee date!' },
+                  { title: 'Movie Night Pass', cost: 40, icon: '🎬', note: 'You pick the movie tonight!' },
+                  { title: 'Late Night Pizza', cost: 60, icon: '🍕', note: 'Pizza treat on me!' },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSendCoinToken(item.title, item.cost, item.note)}
+                    className="p-3 rounded-xl border border-current/10 hover:border-[#00a884] hover:bg-[#00a884]/5 transition-all text-left flex flex-col justify-between group cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono">
+                        {item.cost} 🪙
+                      </span>
+                    </div>
+                    <span className="text-xs font-semibold group-hover:text-[#00a884] transition-colors leading-tight">
+                      {item.title}
+                    </span>
+                    <span className="text-[10px] text-[#8696a0] line-clamp-1 mt-0.5">
+                      {item.note}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── SPECIAL MILESTONE DATE COUNTER MODAL (20 MAY 2026, 7:30) ── */}

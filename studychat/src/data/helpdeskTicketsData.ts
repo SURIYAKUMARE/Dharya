@@ -15,7 +15,6 @@ export interface HelpdeskTechnician {
   name: string;
   email: string;
   departmentId?: string;
-  [key: string]: any;
 }
 
 export interface HelpdeskDepartment {
@@ -23,7 +22,11 @@ export interface HelpdeskDepartment {
   name: string;
   description?: string;
   isActive?: boolean;
-  [key: string]: any;
+  userCount?: number;
+  ticketCount?: number;
+  assetCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TicketComment {

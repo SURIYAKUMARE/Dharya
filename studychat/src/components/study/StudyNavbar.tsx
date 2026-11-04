@@ -84,8 +84,17 @@ export const StudyNavbar: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right Indicator: Student Profile Status Pill */}
+          {/* Right Indicator: HelpDesk 360 Admin Tickets & Student Profile */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => switchTab('admin-tickets')}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-[#175CD3] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              title="HelpDesk 360 Admin Tickets"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+              <span>HelpDesk 360</span>
+            </button>
+
             <button
               onClick={() => switchTab('profile')}
               className="px-3 py-1.5 rounded-xl border border-[#E0D8CC] bg-white hover:bg-[#F9F6F0] text-[#334155] hover:text-[#0F172A] text-xs font-mono flex items-center gap-2 transition-all duration-150 shadow-2xs hover:shadow-sm group cursor-pointer"

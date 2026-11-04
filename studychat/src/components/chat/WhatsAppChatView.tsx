@@ -49,6 +49,7 @@ import {
   FileText,
   Trash2,
   X,
+  Ticket,
   Play,
   Pause,
   Eye,
@@ -3615,6 +3616,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                     <span>Panic Camouflage</span>
                   </span>
                   <span className="text-[10px] text-[#8696a0] font-mono">Esc</span>
+                </button>
+
+                {/* HelpDesk 360 Admin Tickets */}
+                <button
+                  onClick={() => {
+                    setShowMenu(false);
+                    switchTab('admin-tickets');
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-blue-400"
+                >
+                  <span className="flex items-center gap-2">
+                    <Ticket className="w-3.5 h-3.5 text-blue-400" />
+                    <span>HelpDesk 360 (Admin)</span>
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-mono">v2.4</span>
                 </button>
 
                 <button

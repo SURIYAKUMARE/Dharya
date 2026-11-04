@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData';
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile' | 'admin-tickets';
 
 export interface AssessmentRecord {
   topicId: string;
@@ -71,6 +71,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const isAuth = sessionStorage.getItem('study_chat_auth') === 'true' ||
                      localStorage.getItem('study_chat_auth') === 'true';
 
+      if (path.includes('admin') || hash.includes('admin') || path.includes('tickets') || hash.includes('tickets')) {
+        return 'admin-tickets';
+      }
       if (path.includes('academic') || hash === '#academic' || path.includes('curriculum')) {
         return 'home';
       }

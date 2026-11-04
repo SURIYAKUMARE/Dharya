@@ -71,3 +71,141 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   HelpDesk 360 Enterprise Design System (Exact Replica)
+   Source: https://helpdesk-360.vercel.app/admin/tickets
+   ============================================================ */
+:root {
+  --primary: #17253B;
+  --primary-hover: #0E1828;
+  --secondary: #175CD3;
+  --secondary-hover: #0F46A3;
+  --background: #F6F8FB;
+  --surface: #FFFFFF;
+  --surface-muted: #F1F4F9;
+  --surface-hover: #E9EFF7;
+  --text-primary: #17253B;
+  --text-secondary: #526176;
+  --text-tertiary: #7D8FA6;
+  --border: #E2E7EF;
+  --border-strong: #CBD5E1;
+  --accent: #175CD3;
+  --accent-hover: #0F46A3;
+  --accent-active: #0A3580;
+  --accent-light: #EEF4FD;
+  --accent-muted: #D7E5FA;
+  --gold: #D97706;
+  --gold-light: #FEF3C7;
+  --success: #16A36A;
+  --success-light: #ECFDF5;
+  --success-text: #0D6843;
+  --warning: #E9A23B;
+  --warning-light: #FFFBEB;
+  --warning-text: #92400E;
+  --error: #DC4545;
+  --error-light: #FEF2F2;
+  --error-text: #991B1B;
+  --danger: #DC4545;
+  --danger-light: #FEF2F2;
+  --danger-text: #991B1B;
+  --info: #175CD3;
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: #E2E7EF;
+  --header-bg: rgba(255, 255, 255, .96);
+  --header-border: #E2E7EF;
+  --card-bg: #FFFFFF;
+  --card-border: #E2E7EF;
+  --shadow-xs: 0 1px 2px rgba(21, 34, 56, .04);
+  --shadow-sm: 0 1px 3px rgba(21, 34, 56, .06), 0 1px 2px rgba(21, 34, 56, .04);
+  --shadow-md: 0 4px 8px -2px rgba(21, 34, 56, .06), 0 2px 4px -2px rgba(21, 34, 56, .03);
+  --shadow-lg: 0 8px 16px -4px rgba(21, 34, 56, .08), 0 4px 6px -2px rgba(21, 34, 56, .03);
+}
+
+.dark {
+  --primary: #152238;
+  --primary-hover: #1A2E4C;
+  --secondary: #3B82F6;
+  --secondary-hover: #60A5FA;
+  --background: #0B111E;
+  --surface: #10192A;
+  --surface-muted: #152238;
+  --surface-hover: #1A2A44;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border: #1E2D44;
+  --border-strong: #2A3C5B;
+  --accent: #3B82F6;
+  --accent-hover: #60A5FA;
+  --accent-active: #93C5FD;
+  --accent-light: #172554;
+  --accent-muted: #1E3A8A;
+  --gold: #F59E0B;
+  --gold-light: #451A03;
+  --success: #10B981;
+  --success-light: #064E3B;
+  --success-text: #6EE7B7;
+  --warning: #F59E0B;
+  --warning-light: #451A03;
+  --warning-text: #FCD34D;
+  --error: #EF4444;
+  --danger: #EF4444;
+  --danger-light: #450A0A;
+  --danger-text: #FCA5A5;
+  --info: #3B82F6;
+  --sidebar-bg: #0D1524;
+  --sidebar-border: #1E2D44;
+  --header-bg: rgba(13, 21, 36, .96);
+  --header-border: #1E2D44;
+  --card-bg: #10192A;
+  --card-border: #1E2D44;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, .2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .2);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, .4), 0 2px 4px -2px rgba(0, 0, 0, .2);
+  --shadow-lg: 0 8px 16px -4px rgba(0, 0, 0, .5), 0 4px 6px -2px rgba(0, 0, 0, .3);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.15); }
+}
+
+.live-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px var(--background);
+  animation: pulse-dot 2s cubic-bezier(.4, 0, .6, 1) infinite;
+}
+
+.brand-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--accent-muted);
+}
+
+.theme-toggle-btn {
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  cursor: pointer;
+}
+.theme-toggle-btn:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+}
+

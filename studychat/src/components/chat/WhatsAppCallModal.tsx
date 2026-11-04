@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { crossDeviceSync } from '../../services/crossDeviceSyncService';
 import {
   Phone,
   PhoneOff,
@@ -116,8 +117,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const isCleaningUpRef = useRef<boolean>(false);
   const callBroadcastRef = useRef<BroadcastChannel | null>(null);
 
-  // High-reliability triple signaling sender: Supabase Realtime + BroadcastChannel + localStorage
+  // High-reliability quadruple signaling sender: Cross-Device Sync + Supabase Realtime + BroadcastChannel + localStorage
   const sendSignal = useCallback((event: string, payload: any) => {
+    try {
+      crossDeviceSync.publish(event, payload);
+    } catch {}
+
     try {
       channelRef.current?.send({
         type: 'broadcast',

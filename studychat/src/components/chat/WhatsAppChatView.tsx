@@ -84,7 +84,9 @@ import {
   AlertCircle,
   Edit2,
   RotateCw,
-  Ban
+  Ban,
+  Circle,
+  GitBranch
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
@@ -3390,6 +3392,179 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
 
 
+
+      {/* ══════════════════════════════════════════════════════════
+          LEFT NAVIGATION SIDEBAR — Chat / Status / Gallery / Timeline
+          Styled to match the clean sectioned nav reference design
+      ══════════════════════════════════════════════════════════ */}
+      <aside className={`hidden md:flex flex-col w-[220px] shrink-0 h-full border-r z-30 overflow-y-auto transition-colors
+        ${isDark
+          ? 'bg-[#111b21] border-[#2a3942]'
+          : 'bg-white border-[#e2e8f0]'
+        }`}
+      >
+        {/* ── Branding / App identity ── */}
+        <div className={`px-5 pt-5 pb-4 border-b ${isDark ? 'border-[#2a3942]' : 'border-[#f1f5f9]'}`}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#00a884] to-[#128c7e] flex items-center justify-center shadow-md">
+              <Heart className="w-4 h-4 text-white fill-white" />
+            </div>
+            <div>
+              <p className={`text-[13px] font-black tracking-tight ${isDark ? 'text-[#e9edef]' : 'text-[#0f172a]'}`}>
+                Dharya
+              </p>
+              <p className={`text-[10px] font-medium ${isDark ? 'text-[#8696a0]' : 'text-[#64748b]'}`}>
+                Private Space
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Nav sections ── */}
+        <nav className="flex-1 px-3 py-4 space-y-6">
+
+          {/* SECTION: MAIN */}
+          <div>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.12em] px-3 mb-2 ${
+              isDark ? 'text-[#8696a0]' : 'text-[#94a3b8]'
+            }`}>
+              Main
+            </p>
+
+            {/* Chat */}
+            <button
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative ${
+                activeMainView === 'chat'
+                  ? isDark
+                    ? 'bg-[#00a884]/15 text-[#00a884]'
+                    : 'bg-[#00a884]/10 text-[#007a63]'
+                  : isDark
+                  ? 'text-[#8696a0] hover:bg-white/5 hover:text-[#e9edef]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]'
+              }`}
+            >
+              {/* Active left bar */}
+              {activeMainView === 'chat' && (
+                <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full ${
+                  isDark ? 'bg-[#00a884]' : 'bg-[#00a884]'
+                }`} />
+              )}
+              <MessageSquare className={`w-4 h-4 shrink-0 ${
+                activeMainView === 'chat' ? (isDark ? 'text-[#00a884]' : 'text-[#00a884]') : ''
+              }`} />
+              <span className="text-[13px] font-semibold">Chat</span>
+              {/* Unread badge */}
+              {messages.filter((m) => !m.read && m.sender !== currentUser).length > 0 && (
+                <span className="ml-auto px-1.5 py-0.5 rounded-full text-[9px] font-black bg-[#00a884] text-white min-w-[18px] text-center">
+                  {messages.filter((m) => !m.read && m.sender !== currentUser).length}
+                </span>
+              )}
+            </button>
+
+            {/* Status */}
+            <button
+              onClick={() => {
+                setActiveMainView('chat');
+                setMobileView('conversation');
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative mt-0.5 ${
+                isDark
+                  ? 'text-[#8696a0] hover:bg-white/5 hover:text-[#e9edef]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]'
+              }`}
+            >
+              <Circle className="w-4 h-4 shrink-0" />
+              <span className="text-[13px] font-semibold">Status</span>
+              {isPartnerOnline && (
+                <span className="ml-auto w-2 h-2 rounded-full bg-[#00a884] shadow-[0_0_6px_#00a884]" />
+              )}
+            </button>
+          </div>
+
+          {/* SECTION: MEDIA */}
+          <div>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.12em] px-3 mb-2 ${
+              isDark ? 'text-[#8696a0]' : 'text-[#94a3b8]'
+            }`}>
+              Media
+            </p>
+
+            {/* Gallery */}
+            <button
+              onClick={() => {
+                setActiveMainView('gallery');
+                setMobileView('conversation');
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative ${
+                activeMainView === 'gallery'
+                  ? isDark
+                    ? 'bg-[#00a884]/15 text-[#00a884]'
+                    : 'bg-[#00a884]/10 text-[#007a63]'
+                  : isDark
+                  ? 'text-[#8696a0] hover:bg-white/5 hover:text-[#e9edef]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]'
+              }`}
+            >
+              {activeMainView === 'gallery' && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-[#00a884]" />
+              )}
+              <Images className={`w-4 h-4 shrink-0 ${
+                activeMainView === 'gallery' ? 'text-[#00a884]' : ''
+              }`} />
+              <span className="text-[13px] font-semibold">Gallery</span>
+            </button>
+
+            {/* Timeline */}
+            <button
+              onClick={() => {
+                setActiveMainView('timeline');
+                setMobileView('conversation');
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group relative mt-0.5 ${
+                activeMainView === 'timeline'
+                  ? isDark
+                    ? 'bg-[#00a884]/15 text-[#00a884]'
+                    : 'bg-[#00a884]/10 text-[#007a63]'
+                  : isDark
+                  ? 'text-[#8696a0] hover:bg-white/5 hover:text-[#e9edef]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]'
+              }`}
+            >
+              {activeMainView === 'timeline' && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-[#00a884]" />
+              )}
+              <GitBranch className={`w-4 h-4 shrink-0 ${
+                activeMainView === 'timeline' ? 'text-[#00a884]' : ''
+              }`} />
+              <span className="text-[13px] font-semibold">Timeline</span>
+            </button>
+          </div>
+        </nav>
+
+        {/* ── User pill at bottom ── */}
+        <div className={`px-4 py-3 border-t ${isDark ? 'border-[#2a3942]' : 'border-[#f1f5f9]'}`}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#00a884] to-[#128c7e] flex items-center justify-center text-white font-bold text-xs shadow shrink-0">
+              {(student?.name?.[0] || 'S').toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className={`text-[12px] font-bold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#0f172a]'}`}>
+                {student?.name || 'Surya'}
+              </p>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00a884]" />
+                <p className={`text-[10px] ${isDark ? 'text-[#8696a0]' : 'text-[#64748b]'}`}>
+                  Online
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
 
       {/* ══════ FOCUSED TWO-USER CONVERSATION (SPACIOUS & CENTERED ON LAPTOP) ══════ */}
       <main

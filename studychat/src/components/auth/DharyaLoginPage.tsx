@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap } from 'lucide-react';
 import campusBg from '../../assets/campus_bg.jpg';
 
 export const DharyaLoginPage: React.FC = () => {
@@ -112,21 +112,6 @@ export const DharyaLoginPage: React.FC = () => {
             <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
               Verify your student identity to take proctored course assessments or record semester scores.
             </p>
-          </div>
-
-          {/* Way to Take Assessment Directly */}
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-400/25 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-slate-200 min-w-0">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="font-medium truncate text-[11.5px]">Open Assessment Module</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => switchTab('assessment')}
-              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-semibold transition-all shadow-md cursor-pointer text-[11px] shrink-0"
-            >
-              Take Assessment &rarr;
-            </button>
           </div>
 
           {/* Secure Verification Form (Completely blank, no pre-fill, autofill disabled) */}

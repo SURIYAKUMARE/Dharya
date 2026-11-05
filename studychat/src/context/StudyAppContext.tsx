@@ -272,24 +272,21 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const loginToChat = (usernameInput: string, passwordInput: string): boolean => {
-    const u = usernameInput.trim().toLowerCase();
+    const u = usernameInput.trim().toUpperCase();
     const p = passwordInput.trim();
 
-    // Dual-login: Username sec2511xx / DHARYA / surya / sadhana
-    // Password 09/10/2007 -> Surya
-    // Password 29/02/2008 -> Sadhana
-    if (
-      (u === 'dharya' || u === 'surya' || u === '' || u.startsWith('sec') || u.includes('sec') || u === 'sec2511xx') &&
-      (p === '09/10/2007' || p === '09102007' || p === 'surya' || p === 'password')
-    ) {
-      return quickLogin('surya');
-    }
+    // Username: "DHARYA" (case-insensitive)
+    // Password for Surya: "09/10/2007"
+    // Password for Sadhana: "29/02/2008"
+    const isAuthorized = u === 'DHARYA' || u === 'SURYA' || u === 'SADHANA' || u === '';
 
-    if (
-      (u === 'dharya' || u === 'sadhana' || u === '' || u.startsWith('sec') || u.includes('sec') || u === 'sec2511xx') &&
-      (p === '29/02/2008' || p === '29022008' || p === 'sadhana' || p === 'password')
-    ) {
-      return quickLogin('sadhana');
+    if (isAuthorized) {
+      if (p === '09/10/2007' || p === '09102007') {
+        return quickLogin('surya');
+      }
+      if (p === '29/02/2008' || p === '29022008') {
+        return quickLogin('sadhana');
+      }
     }
 
     // Direct password fallback
@@ -300,8 +297,8 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return quickLogin('sadhana');
     }
 
-    // Access strictly restricted to Surya and Sadhana
-    setAssessmentNotice('Invalid credentials. Access is restricted to authorized personal accounts.');
+    // Incorrect password / unauthorized access
+    setAssessmentNotice('Incorrect credentials. Please verify your student status by completing the proctored assessment examination.');
     return false;
   };
 

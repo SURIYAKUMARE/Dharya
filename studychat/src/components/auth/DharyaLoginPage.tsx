@@ -62,18 +62,16 @@ export const DharyaLoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 sm:p-6 font-sans select-none overflow-hidden">
-      {/* 1. Fullscreen College Campus HD Background - Crystal Clear & Sharp */}
+      {/* 1. Fullscreen College Campus Background - Exact Original Image */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${campusBg})`,
-          imageRendering: '-webkit-optimize-contrast',
-          filter: 'brightness(1.02) contrast(1.04)'
+          backgroundImage: `url(${campusBg})`
         }}
       />
 
-      {/* 2. Soft Natural Vignette (No blur, so campus building, lawn & pond are 100% HD and clear) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 pointer-events-none" />
+      {/* 2. Soft Ambient Tint for Natural Readability */}
+      <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
       {/* 3. Main Academic Authentication Container */}
       <div className="w-full max-w-md relative z-10">

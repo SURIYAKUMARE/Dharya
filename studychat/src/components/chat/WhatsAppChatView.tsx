@@ -62,6 +62,7 @@ import {
   Camera,
   Copy,
   BookOpen,
+  GraduationCap,
   Key,
   Keyboard,
   Plus,
@@ -3482,6 +3483,20 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </button>
         )}
 
+        {/* ── Quick Switch to Academic Mode (ENGIHUB) ── */}
+        <button
+          onClick={() => switchTab('home')}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-all shadow-xs cursor-pointer select-none ${
+            isDark
+              ? 'bg-[#152433] hover:bg-[#1d3246] border-[#224466] text-[#78B2E8]'
+              : 'bg-[#EFF6FF] hover:bg-[#DBEAFE] border-[#BFDBFE] text-[#1D4ED8]'
+          }`}
+          title="Return to ENGIHUB Academic Mode (Ctrl+Shift+D)"
+        >
+          <GraduationCap className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+          <span className="hidden sm:inline font-semibold">Academic Mode</span>
+        </button>
+
         {/* Action Icons */}
         <div className={`flex items-center gap-0.5 sm:gap-1.5 ${isDark ? "text-[#959E98]" : "text-[#555E58]"}`}>
           {/* Video Call */}
@@ -3542,6 +3557,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               <div className={`absolute right-0 top-10 w-60 border rounded-2xl shadow-2xl py-1.5 z-50 text-xs transition-colors ${
                 isDark ? 'bg-[#1f2c34] border-[#2a3942] text-[#e9edef]' : 'bg-white border-[#e9edef] text-[#111b21]'
               }`}>
+                <button
+                  onClick={() => {
+                    switchTab('home');
+                    setShowMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-semibold ${
+                    isDark ? 'text-blue-400' : 'text-[#1D4ED8]'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Academic Mode (ENGIHUB)</span>
+                  </span>
+                  <span className="text-[10px] opacity-70 font-mono">Portal</span>
+                </button>
+
                 <button
                   onClick={() => {
                     handleSelectConversation(isGroupChat ? CHAT_ID : STUDY_GROUP_CHAT_ID);

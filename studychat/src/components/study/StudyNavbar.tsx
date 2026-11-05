@@ -4,7 +4,7 @@ import { BookOpen, Calendar, User, Layers, Search, Sparkles } from 'lucide-react
 import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
-  const { activeTab, switchTab, student } = useStudyApp();
+  const { activeTab, switchTab, student, isChatAuthenticated } = useStudyApp();
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF8F5]/92 backdrop-blur-xl border-b border-[#E2D9CC]/90 pt-[env(safe-area-inset-top,0px)] transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
@@ -84,8 +84,19 @@ export const StudyNavbar: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right Indicator: HelpDesk 360 Admin Tickets & Student Profile */}
+          {/* Right Indicator: HelpDesk 360 Admin Tickets, Private Chat, & Student Profile */}
           <div className="flex items-center gap-2">
+            {isChatAuthenticated && (
+              <button
+                onClick={() => switchTab('chat')}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50/90 hover:bg-emerald-100 text-[#047857] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                title="Open Private Workspace & Chat (Ctrl+Shift+D)"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Chat</span>
+              </button>
+            )}
+
             <button
               onClick={() => switchTab('admin-tickets')}
               className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/80 hover:bg-blue-100 text-[#175CD3] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"

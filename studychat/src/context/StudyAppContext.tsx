@@ -90,10 +90,20 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return 'chat-login';
       }
 
-      // Default to Dharya messaging: Chat if logged in, otherwise Dharya Login
-      return isAuth ? 'chat' : 'chat-login';
+      if (path.includes('chat') || hash === '#chat' || window.location.search.toLowerCase().includes('mode=chat')) {
+        return isAuth ? 'chat' : 'chat-login';
+      }
+      if (path.includes('subjects') || hash === '#subjects' || path.includes('curriculum') || hash === '#curriculum') {
+        return 'subjects';
+      }
+      if (path.includes('profile') || hash === '#profile') {
+        return 'profile';
+      }
+
+      // Default to Academic Portal for all root visits and Google search engine crawlers:
+      return 'home';
     } catch {}
-    return 'chat-login';
+    return 'home';
   });
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(SUBJECTS_DATA[0]);
   const [selectedTopic, setSelectedTopic] = useState<TopicExplanation | null>(SUBJECTS_DATA[0].topics[0]);
@@ -314,8 +324,104 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }
     setActiveTab(tab);
+    try {
+      if (tab === 'home') {
+        if (window.location.hash) {
+          window.history.pushState(null, '', window.location.pathname);
+        }
+      } else if (tab === 'chat') {
+        window.location.hash = '#chat';
+      } else if (tab === 'gallery') {
+        window.location.hash = '#gallery';
+      } else if (tab === 'timeline') {
+        window.location.hash = '#timeline';
+      } else if (tab === 'chat-login') {
+        window.location.hash = '#login';
+      } else if (tab === 'admin-tickets') {
+        window.location.hash = '#tickets';
+      } else {
+        window.location.hash = `#${tab}`;
+      }
+    } catch {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Synchronize document title with active view
+  useEffect(() => {
+    try {
+      if (activeTab === 'home') {
+        document.title = 'ENGIHUB — Academic Learning Portal & Engineering Curriculum';
+      } else if (activeTab === 'subjects') {
+        document.title = 'Engineering Curriculum & Syllabus — ENGIHUB';
+      } else if (activeTab === 'topic-explanation') {
+        document.title = `${selectedTopic?.title || 'Course Unit'} — ENGIHUB Academic Portal`;
+      } else if (activeTab === 'planner') {
+        document.title = 'Study Planner & Timetable — ENGIHUB';
+      } else if (activeTab === 'profile') {
+        document.title = 'Student Profile — ENGIHUB Academic Portal';
+      } else if (activeTab === 'assessment') {
+        document.title = 'Proctored Assessment Quiz — ENGIHUB';
+      } else if (activeTab === 'admin-tickets') {
+        document.title = 'HelpDesk 360 — ITSM Enterprise Ticket Management';
+      } else if (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline') {
+        document.title = 'Dharya — Private Space';
+      } else if (activeTab === 'chat-login') {
+        document.title = 'Student Access Portal — ENGIHUB';
+      }
+    } catch {}
+  }, [activeTab, selectedTopic]);
+
+  // Handle browser back/forward and direct hash navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      try {
+        const hash = window.location.hash.toLowerCase();
+        if (hash === '#admin' || hash === '#tickets') {
+          setActiveTab('admin-tickets');
+        } else if (hash === '#academic' || hash === '#home' || hash === '#library' || hash === '') {
+          setActiveTab('home');
+        } else if (hash === '#subjects' || hash === '#curriculum') {
+          setActiveTab('subjects');
+        } else if (hash === '#planner') {
+          setActiveTab('planner');
+        } else if (hash === '#profile') {
+          setActiveTab('profile');
+        } else if (hash === '#chat') {
+          setActiveTab(isChatAuthenticated ? 'chat' : 'chat-login');
+        } else if (hash === '#login') {
+          setActiveTab('chat-login');
+        } else if (hash === '#gallery') {
+          setActiveTab(isChatAuthenticated ? 'gallery' : 'chat-login');
+        } else if (hash === '#timeline') {
+          setActiveTab(isChatAuthenticated ? 'timeline' : 'chat-login');
+        }
+      } catch {}
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [isChatAuthenticated]);
+
+  // Global toggle shortcut: Ctrl+Shift+D or Cmd+Shift+D to toggle between Academic Mode and Chat/Login
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        setActiveTab((prev) => {
+          if (prev === 'chat' || prev === 'chat-login' || prev === 'gallery' || prev === 'timeline') {
+            if (window.location.hash) {
+              window.history.pushState(null, '', window.location.pathname);
+            }
+            return 'home';
+          } else {
+            return isChatAuthenticated ? 'chat' : 'chat-login';
+          }
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isChatAuthenticated]);
 
   const addTask = (task: Omit<StudyPlanTask, 'id' | 'createdAt'>) => {
     addStudyPlanTask(task);

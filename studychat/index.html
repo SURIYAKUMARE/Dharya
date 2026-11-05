@@ -2,24 +2,104 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%2310b981'/><stop offset='50%25' stop-color='%2306b6d4'/><stop offset='100%25' stop-color='%23f43f5e'/></linearGradient></defs><rect width='100' height='100' rx='28' fill='%230f172a'/><path d='M50 72 C22 52 14 36 24 24 C32 14 44 18 50 28 C56 18 68 14 76 24 C86 36 78 52 50 72 Z' fill='url(%23g)'/></svg>" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%231D4ED8'/><stop offset='100%25' stop-color='%230F172A'/></linearGradient><linearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23FBBF24'/><stop offset='100%25' stop-color='%23F59E0B'/></linearGradient></defs><rect width='100' height='100' rx='24' fill='url(%23bg)'/><path d='M50 20 L82 34 L50 48 L18 34 Z' fill='url(%23gold)'/><path d='M50 52 L78 39.5 V58 C78 70 50 82 50 82 C50 82 22 70 22 58 V39.5 Z' fill='%23FFFFFF' opacity='0.9'/><path d='M82 36 V54' stroke='url(%23gold)' stroke-width='3' stroke-linecap='round'/><circle cx='82' cy='56' r='3.5' fill='url(%23gold)'/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b141a" />
+    <meta name="theme-color" content="#FAF8F5" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Dharya" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ENGIHUB" />
     <meta name="format-detection" content="telephone=no" />
-    <meta name="description" content="Dharya — Private 1-on-1 Real-Time Messaging, Calling, Gallery & Life Timeline" />
-    <link rel="manifest" href="/manifest.json" />
-    <title>Dharya — Private Real-Time Chat &amp; Memories</title>
+
+    <!-- Search Engine Optimization (SEO) & Google Indexing Metadata -->
+    <title>ENGIHUB — Academic Learning Portal &amp; Engineering Curriculum</title>
+    <meta name="description" content="ENGIHUB Academic Learning Portal. Access verified engineering curriculum, open textbook library, unit-by-unit syllabus problem sets, study planner, and module assessments." />
+    <meta name="keywords" content="ENGIHUB, Academic Portal, Engineering Curriculum, Computer Science, Electronics, GATE Model Syllabus, Engineering Textbooks, Study Planner, Assessments, Open Library" />
+    <meta name="author" content="ENGIHUB Academic Team" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://suriyakumare.github.io/Dharya/" />
+
+    <!-- Open Graph (OG) / Social Sharing Metadata -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ENGIHUB Academic Portal" />
+    <meta property="og:title" content="ENGIHUB — Academic Learning Portal &amp; Engineering Curriculum" />
+    <meta property="og:description" content="Access verified engineering curriculum, open textbook library, unit-by-unit syllabus problem sets, study planner, and module assessments." />
+    <meta property="og:url" content="https://suriyakumare.github.io/Dharya/" />
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ENGIHUB — Academic Learning Portal" />
+    <meta name="twitter:description" content="Comprehensive engineering study portal with textbook library, study planner, and module assessments." />
+
+    <!-- Schema.org JSON-LD Structured Data for Google Rich Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "ENGIHUB Academic Portal",
+      "url": "https://suriyakumare.github.io/Dharya/",
+      "description": "Comprehensive academic learning portal and engineering curriculum platform featuring open textbook libraries, syllabus breakdown, study planners, and module assessments.",
+      "applicationCategory": "EducationalApplication",
+      "educationalCredentialAwarded": "Engineering Course Completion",
+      "hasCredential": {
+        "@type": "EducationalOccupationalCredential",
+        "credentialCategory": "degree"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      }
+    }
+    </script>
+
+    <link rel="manifest" href="./manifest.json" />
+
     <!-- Google Fonts: Inter, Plus Jakarta Sans, and Screenshot Handwriting (Delius & Comfortaa) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Delius&family=Patrick+Hand&family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600;1,700;1,800&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-[#0b141a] text-[#e9edef] min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white overscroll-none">
-    <div id="root"></div>
+  <body class="bg-[#FAF8F5] text-[#0F172A] min-h-screen font-sans antialiased selection:bg-blue-500 selection:text-white overscroll-none">
+    <div id="root">
+      <!-- Accessible Academic Semantic Markup for Search Engine Crawlers (Googlebot, Bingbot) -->
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 1200px; margin: 0 auto; padding: 24px; color: #0F172A;">
+        <header style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E2D9CC; padding-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-weight: 900; font-size: 20px; color: #0F172A; letter-spacing: -0.5px;">ENGIHUB</span>
+            <span style="background: #EBF3FB; color: #1D4ED8; font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: bold; border: 1px solid #BFDBFE;">Academic Portal</span>
+          </div>
+          <nav style="display: flex; gap: 16px; font-size: 13px; color: #475569; font-weight: 500;">
+            <span>Library</span>
+            <span>Curriculum</span>
+            <span>Planner</span>
+            <span>Assessments</span>
+          </nav>
+        </header>
+        <main style="padding: 32px 0;">
+          <div style="background: #EBF3FB; border: 1px solid #BFDBFE; display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; color: #1D4ED8; font-weight: 600; margin-bottom: 12px;">
+            AICTE &amp; GATE Model Syllabus 2026
+          </div>
+          <h1 style="font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px; margin: 8px 0;">Open Engineering Library &amp; Academic Curriculum</h1>
+          <p style="color: #64748B; font-size: 15px; margin-top: 8px; max-width: 700px; line-height: 1.6;">
+            Comprehensive academic learning portal for engineering students. Borrow authoritative textbooks, access unit-by-unit syllabus problem sets, manage study schedules, and complete proctored module assessments across all disciplines.
+          </p>
+          <section style="margin-top: 32px;">
+            <h2 style="font-size: 20px; font-weight: 700; color: #1E293B;">Academic Disciplines &amp; Course Syllabus</h2>
+            <ul style="margin-top: 14px; color: #334155; line-height: 2; font-size: 14px;">
+              <li><strong>Sensors &amp; Transducers:</strong> Industrial Instrumentation, Resistive, Capacitive &amp; Inductive Transducers, Piezoelectric Sensors</li>
+              <li><strong>Control Systems Engineering:</strong> Transfer Functions, Time Response Analysis, Frequency Domain, Bode Plots &amp; Nyquist Criteria</li>
+              <li><strong>Data Structures &amp; Algorithms:</strong> Trees, Graphs, Hash Tables, Sorting, Dynamic Programming &amp; Algorithmic Complexity</li>
+              <li><strong>Database Management Systems (DBMS):</strong> Relational Algebra, SQL Normalization, ACID Transactions &amp; Indexing</li>
+              <li><strong>Object-Oriented Programming:</strong> Java Fundamentals, Inheritance, Polymorphism, Concurrency &amp; JVM Internals</li>
+              <li><strong>Python for Engineering:</strong> NumPy, SciPy, Pandas, Scientific Data Processing &amp; Automation</li>
+              <li><strong>Artificial Intelligence &amp; Machine Learning:</strong> Supervised Learning, Deep Neural Networks, Model Optimization</li>
+            </ul>
+          </section>
+        </main>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

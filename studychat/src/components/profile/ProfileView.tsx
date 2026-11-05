@@ -16,7 +16,7 @@ import {
 import confetti from 'canvas-confetti';
 
 export const ProfileView: React.FC = () => {
-  const { student, updateStudentProfile, assessmentRecord, isChatAuthenticated, logoutChat, tasks } = useStudyApp();
+  const { student, updateStudentProfile, assessmentRecord, isChatAuthenticated, logoutChat, tasks, switchTab } = useStudyApp();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(student?.name || 'Surya');
@@ -170,6 +170,27 @@ export const ProfileView: React.FC = () => {
             No assessments completed yet. Select a textbook topic and pass its timed assessment to record scores here.
           </div>
         )}
+      </div>
+
+      {/* Private Study Workspace & Messenger Card */}
+      <div className="p-6 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-4 h-4 text-[#1273C4]" />
+            <h4 className="text-sm font-bold text-[#0F172A] font-serif">
+              Private Student Workspace &amp; Messenger
+            </h4>
+          </div>
+          <p className="text-xs text-[#64748B] leading-relaxed">
+            Encrypted collaboration channel and study workspace. Press <kbd className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-[10px] text-gray-700">Ctrl+Shift+D</kbd> anywhere to toggle quickly.
+          </p>
+        </div>
+        <button
+          onClick={() => switchTab(isChatAuthenticated ? 'chat' : 'chat-login')}
+          className="px-5 py-2.5 rounded-xl bg-[#1273C4] hover:bg-[#0E5CA0] text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+        >
+          {isChatAuthenticated ? 'Open Workspace & Chat' : 'Student Verification'}
+        </button>
       </div>
 
       {/* Edit Profile Modal */}

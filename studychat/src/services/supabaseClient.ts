@@ -24,13 +24,13 @@ export function getSupabase(): SupabaseClient {
 export interface ChatMessage {
   id: string;
   chatId?: string;
-  sender: 'surya' | 'sadhana';
+  sender: 'surya' | 'sadhana' | 'system';
   text: string;
   time: string;
   timestamp: number;
   read: boolean;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-  type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document';
+  type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' | 'system';
   mediaUrl?: string;
   reactions?: Record<string, string[]>;
   replyTo?: { id: string; sender: string; text: string };

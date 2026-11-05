@@ -386,6 +386,23 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuLevel, setMenuLevel] = useState<'main' | 'more'>('main');
+  const [showDisappearingModal, setShowDisappearingModal] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [disappearingTimer, setDisappearingTimer] = useState<'off' | '24h' | '7d' | '90d'>(() => {
+    try {
+      return (localStorage.getItem('dharya_disappearing_timer') as 'off' | '24h' | '7d' | '90d') || 'off';
+    } catch {
+      return 'off';
+    }
+  });
+  const [isFavoritedChat, setIsFavoritedChat] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('dharya_chat_is_favorited') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [showStorageModal, setShowStorageModal] = useState(false);
@@ -2415,9 +2432,52 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setShowMenu(false);
   };
 
+  // WhatsApp Sub-menu Helpers (Add shortcut & Add to list)
+  const handleAddShortcut = () => {
+    try {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(window.location.href);
+      }
+    } catch {}
+    showToast('Shortcut created! Link copied to clipboard.', 'success');
+  };
+
+  const handleAddToList = () => {
+    setIsFavoritedChat((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dharya_chat_is_favorited', next ? 'true' : 'false');
+      } catch {}
+      showToast(next ? 'Added to your Favorites list ⭐' : 'Removed from Favorites list', 'success');
+      return next;
+    });
+  };
+
+  const handleSetDisappearingTimer = (val: 'off' | '24h' | '7d' | '90d') => {
+    setDisappearingTimer(val);
+    try {
+      localStorage.setItem('dharya_disappearing_timer', val);
+    } catch {}
+    const timerText = val === 'off'
+      ? 'You turned off disappearing messages.'
+      : `You updated the message timer. New messages will disappear from this chat ${val === '24h' ? '24 hours' : val === '7d' ? '7 days' : '90 days'} after they're sent.`;
+    const sysMsg: ExtendedChatMessage = {
+      id: `sys-${Date.now()}`,
+      sender: 'system',
+      text: timerText,
+      timestamp: Date.now(),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      read: true,
+      status: 'read',
+      type: 'system',
+    };
+    persistMessages([...messages, sysMsg]);
+    showToast(timerText, 'info');
+  };
+
   // Permanently Clear Chat (NO Recycle Bin - true permanent wipe for both users)
-  const handleClearAllChat = async () => {
-    if (!confirm('Permanently clear all chat messages? All messages will be permanently deleted for both users. This cannot be undone.')) {
+  const handleClearAllChat = async (skipConfirm: boolean = false) => {
+    if (!skipConfirm && !confirm('Permanently clear all chat messages? All messages will be permanently deleted for both users. This cannot be undone.')) {
       return;
     }
 
@@ -3152,8 +3212,17 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           m.documentName?.toLowerCase().includes(q)
       );
     }
+    if (disappearingTimer !== 'off') {
+      const durationMs = disappearingTimer === '24h'
+        ? 24 * 60 * 60 * 1000
+        : disappearingTimer === '7d'
+        ? 7 * 24 * 60 * 60 * 1000
+        : 90 * 24 * 60 * 60 * 1000;
+      const now = Date.now();
+      list = list.filter((m) => m.type === 'system' || m.sender === 'system' || (now - m.timestamp < durationMs));
+    }
     return list;
-  }, [messages, currentUser, searchQuery, mediaFilter]);
+  }, [messages, currentUser, searchQuery, mediaFilter, disappearingTimer]);
 
   // First unread incoming message ID for rendering the divider
   const firstUnreadMsgId = useMemo(() => {
@@ -3418,9 +3487,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           {/* Conversation Title & Live Status */}
           <div onClick={() => !isGroupChat && setSidePanelMode((prev) => (prev === 'info' ? 'none' : 'info'))} className="cursor-pointer">
             <div className="flex items-center gap-2">
-              <h2 className={`text-[15px] font-semibold tracking-tight ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>
+              <h2 className={`text-[16px] font-semibold tracking-tight ${fontClass} ${isDark ? "text-[#e9edef]" : "text-[#111b21]"}`}>
                 {isGroupChat ? activeConversation.name : partnerName}
               </h2>
+              {disappearingTimer !== 'off' && (
+                <span title={`Disappearing messages: ${disappearingTimer}`}>
+                  <Clock className="w-3 h-3 text-[#00a884]" />
+                </span>
+              )}
               {advancedPrivacy && (
                 <span title="Advanced Chat Privacy Enabled">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#00a884]" />
@@ -3445,20 +3519,20 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             </div>
 
             {isGroupChat ? (
-              <p className="text-[11px] text-[#8696a0] font-normal leading-tight truncate max-w-[200px] sm:max-w-xs">
+              <p className={`text-[12px] text-[#8696a0] font-normal leading-tight truncate max-w-[200px] sm:max-w-xs ${fontClass}`}>
                 {activeConversation.participants.map((p) => (p === currentUser ? 'You' : p === 'sadhana' ? 'Sadhana' : 'Surya')).join(', ')}
               </p>
             ) : isPartnerTyping ? (
-              <p className="text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse">
+              <p className={`text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse ${fontClass}`}>
                 <span>typing...</span>
               </p>
             ) : isPartnerOnline ? (
-              <p className="text-[12px] text-[#00a884] font-medium flex items-center gap-1.5 leading-tight">
+              <p className={`text-[12px] text-[#00a884] font-medium flex items-center gap-1.5 leading-tight ${fontClass}`}>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#00a884] animate-pulse" />
                 <span>online</span>
               </p>
             ) : (
-              <p className="text-[11.5px] text-[#8696a0] font-normal leading-tight">
+              <p className={`text-[12px] text-[#8696a0] font-normal leading-tight ${fontClass}`}>
                 {formatLastSeen(partnerLastSeen)}
               </p>
             )}
@@ -3543,375 +3617,141 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <Images className="w-4 h-4" />
           </button>
 
-          {/* 3-Dots Menu */}
+          {/* 3-Dots Menu (Exact WhatsApp Picture 2 & Picture 3 Feature) */}
           <div className="relative">
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+              onClick={() => {
+                if (showMenu) {
+                  setShowMenu(false);
+                } else {
+                  setMenuLevel('main');
+                  setShowMenu(true);
+                }
+              }}
+              className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
               title="More options"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
 
             {showMenu && (
-              <div className={`absolute right-0 top-10 w-60 border rounded-2xl shadow-2xl py-1.5 z-50 text-xs transition-colors ${
-                isDark ? 'bg-[#1f2c34] border-[#2a3942] text-[#e9edef]' : 'bg-white border-[#e9edef] text-[#111b21]'
-              }`}>
-                <button
+              <>
+                {/* Backdrop to close menu when clicking outside */}
+                <div
+                  className="fixed inset-0 z-40"
                   onClick={() => {
-                    switchTab('home');
                     setShowMenu(false);
+                    setMenuLevel('main');
                   }}
-                  className={`w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-semibold ${
-                    isDark ? 'text-blue-400' : 'text-[#1D4ED8]'
-                  }`}
+                />
+
+                {/* WhatsApp Menu Popover (Picture 2 & Picture 3) */}
+                <div
+                  className={`absolute right-0 top-11 min-w-[210px] w-56 sm:w-60 rounded-2xl shadow-2xl py-2 z-50 text-[16px] border select-none transition-all duration-150 animate-in fade-in zoom-in-95 ${
+                    isDark
+                      ? 'bg-[#233138] border-white/10 text-[#e9edef] shadow-black/70'
+                      : 'bg-white border-black/5 text-[#111b21] shadow-black/20'
+                  } ${fontClass}`}
                 >
-                  <span className="flex items-center gap-2">
-                    <GraduationCap className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Academic Mode (ENGIHUB)</span>
-                  </span>
-                  <span className="text-[10px] opacity-70 font-mono">Portal</span>
-                </button>
+                  {menuLevel === 'main' ? (
+                    /* MAIN MENU (Picture 2) */
+                    <div className="py-0.5">
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowSearch(true);
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Search
+                      </button>
 
-                <button
-                  onClick={() => {
-                    handleSelectConversation(isGroupChat ? CHAT_ID : STUDY_GROUP_CHAT_ID);
-                    setShowMenu(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium ${
-                    isDark ? 'text-emerald-400' : 'text-[#008069]'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>{isGroupChat ? 'Private 1-on-1 Chat' : 'Study Group Room'}</span>
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setSidePanelMode('media');
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Media, links, and docs
+                      </button>
 
-                <button
-                  onClick={() => {
-                    setSidePanelMode('info');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-[#00a884]" />
-                    <span>Contact Info & Details</span>
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowDisappearingModal(true);
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Disappearing messages
+                      </button>
 
-                <button
-                  onClick={() => {
-                    setSidePanelMode('media');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Images className="w-3.5 h-3.5 text-[#00a884]" />
-                    <span>Shared Media & Docs</span>
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowThemeModal(true);
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Chat theme
+                      </button>
 
-                <button
-                  onClick={() => {
-                    setShowCoinModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-500"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>🪙</span>
-                    <span>Dharya Coins & Passes</span>
-                  </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/15">
-                    {coinBalance} 🪙
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setMenuLevel('more');
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center justify-between tracking-wide"
+                      >
+                        <span>More</span>
+                        <span className="text-[12px] opacity-70">▸</span>
+                      </button>
+                    </div>
+                  ) : (
+                    /* SUB-MENU "MORE" (Picture 3) */
+                    <div className="py-0.5">
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setShowClearConfirm(true);
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide text-rose-500 dark:text-rose-400"
+                      >
+                        Clear chat
+                      </button>
 
-                <button
-                  onClick={() => {
-                    handleToggleChatFont();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>✍️</span>
-                    <span>Font: {chatFont === 'handwriting' ? 'Playful Handwriting' : 'Standard'}</span>
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleExportChat();
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Export chat
+                      </button>
 
-                <button
-                  onClick={() => {
-                    setSidePanelMode('starred');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium text-amber-400"
-                >
-                  <span className="flex items-center gap-2">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span>Starred Messages</span>
-                  </span>
-                  <span className="text-[10px] text-[#8696a0] font-mono">
-                    {messages.filter((m) => m.isStarred).length}
-                  </span>
-                </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleAddShortcut();
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Add shortcut
+                      </button>
 
-                <button
-                  onClick={() => {
-                    setSidePanelMode('settings');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Palette className="w-3.5 h-3.5 text-[#00a884]" />
-                    <span>Themes & Wallpaper</span>
-                  </span>
-                </button>
-
-                <div className="h-px bg-current/10 my-1" />
-
-                <button
-                  onClick={() => {
-                    toggleTheme();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-[#00a884]" />}
-                    <span>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveMainView('gallery');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-[#7E9F89] font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Images className="w-3.5 h-3.5 text-[#7E9F89]" />
-                    <span>Gallery</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveMainView('timeline');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-[#7E9F89] font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
-                    <span>Memories</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setActiveMainView('recycle');
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors flex items-center justify-between text-rose-300 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Recycle Bin</span>
-                  </span>
-                </button>
-
-                <div className="h-px bg-white/10 my-1" />
-
-                <button
-                  onClick={() => {
-                    setShowContactInfo(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-white/5 transition-colors"
-                >
-                  Contact Info
-                </button>
-
-                {/* Security & Privacy Section Option */}
-                <button
-                  onClick={() => {
-                    setShowSecurityModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-emerald-300 font-medium"
-                >
-                  <span className="flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Security &amp; Privacy</span>
-                  </span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono">TLS+RLS</span>
-                </button>
-
-                {/* Emergency Panic Button */}
-                <button
-                  onClick={() => {
-                    setDisguisePanic(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-amber-300"
-                >
-                  <span className="flex items-center gap-2">
-                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Panic Camouflage</span>
-                  </span>
-                  <span className="text-[10px] text-[#8696a0] font-mono">Esc</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowStarredModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-amber-300"
-                >
-                  <span className="flex items-center gap-2">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span>Starred Messages</span>
-                  </span>
-                  <span className="text-[10px] text-[#8696a0] font-mono">
-                    {messages.filter((m) => m.isStarred).length}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setIsSelectionMode((prev) => !prev);
-                    setSelectedMsgIds(new Set());
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-white cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Select Messages</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowDateCountModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-rose-300 cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
-                    <span>Date Counter (20 May 2026)</span>
-                  </span>
-                  <span className="text-[10px] text-rose-400 font-mono">{dateCount.days}d {dateCount.hours}h</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowThemeModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-teal-300 cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <Palette className="w-3.5 h-3.5 text-teal-400" />
-                    <span>Theme &amp; Wallpaper</span>
-                  </span>
-                  <span className="text-[10px] text-teal-400 font-mono capitalize">{activeTheme.name}</span>
-                </button>
-
-                <button
-                  onClick={handleExportChat}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-[#d1d7db]"
-                >
-                  <span className="flex items-center gap-2">
-                    <Download className="w-3.5 h-3.5 text-[#8696a0]" />
-                    <span>Export Chat</span>
-                  </span>
-                  <span className="text-[10px] text-[#8696a0]">.txt</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setShowStorageModal(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between"
-                >
-                  <span>Manage Storage</span>
-                  <span className="text-[10px] text-emerald-400 font-mono">{storageStats.totalMb} MB</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    handleTogglePrivacy();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between"
-                >
-                  <span>Advanced Privacy</span>
-                  <span className={`text-[10px] ${advancedPrivacy ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    {advancedPrivacy ? 'ON' : 'OFF'}
-                  </span>
-                </button>
-
-                {/* Read Receipts Toggle */}
-                <button
-                  onClick={() => {
-                    handleToggleReadReceipts();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between"
-                  title="Toggle WhatsApp Read Receipts (Blue Ticks)"
-                >
-                  <span className="flex items-center gap-2">
-                    <CheckCheck className={`w-3.5 h-3.5 ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-[#8696a0]'}`} />
-                    <span>Read Receipts</span>
-                  </span>
-                  <span className={`text-[10px] font-semibold ${readReceiptsEnabled ? 'text-[#53bdeb]' : 'text-slate-400'}`}>
-                    {readReceiptsEnabled ? 'ON' : 'OFF'}
-                  </span>
-                </button>
-
-                {chatPinEnabled && (
-                  <button
-                    onClick={() => {
-                      setIsChatLocked(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-[#182229] transition-colors flex items-center justify-between text-sky-300"
-                  >
-                    <span>Lock Chat Now</span>
-                    <Lock className="w-3 h-3 text-sky-400" />
-                  </button>
-                )}
-
-                <div className="h-px bg-white/10 my-1" />
-                <button
-                  onClick={() => {
-                    handleClearAllChat();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] text-rose-400 transition-colors"
-                >
-                  Clear chat
-                </button>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setShowMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-[#182229] text-slate-400 transition-colors"
-                >
-                  Exit / Switch Account
-                </button>
-              </div>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleAddToList();
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide"
+                      >
+                        Add to list
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -4146,6 +3986,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
         {/* Messages List */}
         {displayedMessages.map((msg, index) => {
+          if (msg.sender === 'system' || msg.type === 'system') {
+            return (
+              <div key={msg.id} className="flex justify-center my-2.5 select-none px-4">
+                <div className={`text-[12px] px-3.5 py-1.5 rounded-xl max-w-sm text-center shadow-xs flex items-center justify-center gap-1.5 ${
+                  isDark ? 'bg-[#182229]/90 text-[#8696a0] border border-white/5' : 'bg-[#f0f2f5] text-[#54656f] border border-black/5'
+                } ${fontClass}`}>
+                  <Clock className="w-3.5 h-3.5 text-[#00a884] shrink-0" />
+                  <span>{msg.text}</span>
+                </div>
+              </div>
+            );
+          }
+
           const isMe = msg.sender === currentUser;
           const prevMsg = index > 0 ? displayedMessages[index - 1] : null;
           const isConsecutive = !!(prevMsg && prevMsg.sender === msg.sender);
@@ -6434,6 +6287,112 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           setInputText(text);
         }}
       />
+
+      {/* ── WHATSAPP DISAPPEARING MESSAGES MODAL (Picture 2) ── */}
+      {showDisappearingModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-5 border transition-all ${
+              isDark ? 'bg-[#1f2c34] text-[#e9edef] border-[#2a3942]' : 'bg-white text-[#111b21] border-[#e9edef]'
+            } ${fontClass}`}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-3 border-current/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-[#00a884]/20 text-[#00a884] flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-[#00a884]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold leading-tight">Disappearing messages</h3>
+                  <p className="text-xs text-[#8696a0]">Message timer</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDisappearingModal(false)}
+                className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-[#8696a0] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#8696a0] leading-relaxed">
+              For more privacy and storage, all new messages will disappear from this chat for everyone after the selected duration.
+            </p>
+
+            {/* Radio Options */}
+            <div className="space-y-1.5">
+              {[
+                { label: '24 hours', value: '24h' },
+                { label: '7 days', value: '7d' },
+                { label: '90 days', value: '90d' },
+                { label: 'Off', value: 'off' },
+              ].map((opt) => (
+                <label
+                  key={opt.value}
+                  onClick={() => handleSetDisappearingTimer(opt.value as any)}
+                  className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-colors ${
+                    disappearingTimer === opt.value
+                      ? 'bg-[#00a884]/15 text-[#00a884] font-semibold'
+                      : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-80'
+                  }`}
+                >
+                  <span className="text-[15px]">{opt.label}</span>
+                  <input
+                    type="radio"
+                    name="disappearingTimer"
+                    value={opt.value}
+                    checked={disappearingTimer === opt.value}
+                    onChange={() => handleSetDisappearingTimer(opt.value as any)}
+                    className="accent-[#00a884] w-4 h-4 cursor-pointer"
+                  />
+                </label>
+              ))}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                onClick={() => setShowDisappearingModal(false)}
+                className="px-5 py-2 rounded-xl bg-[#00a884] hover:bg-[#008f6f] text-white text-sm font-semibold transition-colors cursor-pointer shadow-sm"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WHATSAPP CLEAR CHAT CONFIRMATION MODAL (Sub-menu Picture 3) ── */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div
+            className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 border transition-all ${
+              isDark ? 'bg-[#1f2c34] text-[#e9edef] border-[#2a3942]' : 'bg-white text-[#111b21] border-[#e9edef]'
+            } ${fontClass}`}
+          >
+            <h3 className="text-lg font-semibold leading-tight">Clear this chat?</h3>
+            <p className="text-sm text-[#8696a0] leading-relaxed">
+              Messages will be permanently cleared from this chat for everyone. This cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-3">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowClearConfirm(false);
+                  handleClearAllChat(true);
+                }}
+                className="px-5 py-2 rounded-xl text-sm font-semibold bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer shadow-sm"
+              >
+                Clear chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MESSAGE DELETE CONFIRMATION DIALOG ── */}
       {deleteDialogMsg && (

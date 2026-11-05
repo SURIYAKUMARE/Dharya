@@ -11,15 +11,9 @@ import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
 import { WhatsAppChatView } from './components/chat/WhatsAppChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
-import { HelpdeskAdminTicketsView } from './components/admin/HelpdeskAdminTicketsView';
 
 function AppContent() {
   const { activeTab, isChatAuthenticated, switchTab } = useStudyApp();
-
-  // Full-screen HelpDesk 360 Admin Tickets View
-  if (activeTab === 'admin-tickets') {
-    return <HelpdeskAdminTicketsView />;
-  }
 
   // Route protection guard: redirect unauthenticated access to private features
   React.useEffect(() => {

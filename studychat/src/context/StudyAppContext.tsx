@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData';
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile' | 'admin-tickets';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
 
 export interface AssessmentRecord {
   topicId: string;
@@ -71,9 +71,6 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const isAuth = sessionStorage.getItem('study_chat_auth') === 'true' ||
                      localStorage.getItem('study_chat_auth') === 'true';
 
-      if (path.includes('admin') || hash.includes('admin') || path.includes('tickets') || hash.includes('tickets')) {
-        return 'admin-tickets';
-      }
       if (path.includes('academic') || hash === '#academic' || path.includes('curriculum')) {
         return 'home';
       }
@@ -337,8 +334,6 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         window.location.hash = '#timeline';
       } else if (tab === 'chat-login') {
         window.location.hash = '#login';
-      } else if (tab === 'admin-tickets') {
-        window.location.hash = '#tickets';
       } else {
         window.location.hash = `#${tab}`;
       }
@@ -361,8 +356,6 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         document.title = 'Student Profile — ENGIHUB Academic Portal';
       } else if (activeTab === 'assessment') {
         document.title = 'Proctored Assessment Quiz — ENGIHUB';
-      } else if (activeTab === 'admin-tickets') {
-        document.title = 'HelpDesk 360 — ITSM Enterprise Ticket Management';
       } else if (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline') {
         document.title = 'Dharya — Private Space';
       } else if (activeTab === 'chat-login') {
@@ -376,9 +369,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const handleHashChange = () => {
       try {
         const hash = window.location.hash.toLowerCase();
-        if (hash === '#admin' || hash === '#tickets') {
-          setActiveTab('admin-tickets');
-        } else if (hash === '#academic' || hash === '#home' || hash === '#library' || hash === '') {
+        if (hash === '#academic' || hash === '#home' || hash === '#library' || hash === '') {
           setActiveTab('home');
         } else if (hash === '#subjects' || hash === '#curriculum') {
           setActiveTab('subjects');

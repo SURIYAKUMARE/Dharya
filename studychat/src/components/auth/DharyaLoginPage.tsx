@@ -75,10 +75,10 @@ export const DharyaLoginPage: React.FC = () => {
 
       {/* 3. Main Academic Authentication Container */}
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-[#0B132B]/88 border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md text-white space-y-6">
+        <div className="bg-[#0B132B] border border-[#1E293B] rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] text-white space-y-6">
 
           {/* Top Bar: Academic Session Badge & Library Shortcut */}
-          <div className="flex items-center justify-between text-xs pb-3 border-b border-white/10">
+          <div className="flex items-center justify-between text-xs pb-3 border-b border-[#1E293B]">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
               <span className="text-slate-300 font-mono tracking-wider uppercase text-[10.5px] font-semibold">
@@ -88,7 +88,7 @@ export const DharyaLoginPage: React.FC = () => {
             <button
               type="button"
               onClick={() => switchTab('home')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white transition-all border border-white/10 cursor-pointer text-xs font-medium"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#162032] hover:bg-[#1f2d47] text-slate-200 hover:text-white transition-all border border-[#2b3952] cursor-pointer text-xs font-medium"
               title="Return to Engineering Library & Curriculum"
             >
               <BookOpen className="w-3.5 h-3.5 text-blue-400" />
@@ -102,7 +102,7 @@ export const DharyaLoginPage: React.FC = () => {
               <GraduationCap className="w-7 h-7 stroke-[2.2]" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-400/30 text-[10px] font-mono font-bold tracking-wider uppercase mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#16233B] text-blue-300 border border-[#23385D] text-[10px] font-mono font-bold tracking-wider uppercase mb-1">
                 AICTE &amp; GATE MODEL SYLLABUS
               </div>
               <h1 className="text-2xl font-extrabold tracking-tight text-white font-serif">
@@ -137,7 +137,7 @@ export const DharyaLoginPage: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter Student ID / Username"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all font-sans"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#162032] border border-[#2b3952] text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all font-sans"
                 />
               </div>
             </div>
@@ -163,7 +163,7 @@ export const DharyaLoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/30 transition-all font-sans"
+                  className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-[#162032] border border-[#2b3952] text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all font-sans"
                 />
                 <button
                   type="button"
@@ -190,7 +190,7 @@ export const DharyaLoginPage: React.FC = () => {
           </form>
 
           {/* Academic Verification Footer */}
-          <div className="pt-2 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 border-t border-white/10">
+          <div className="pt-2 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 border-t border-[#1E293B]">
             <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
             <span>Authorized Proctored Academic Session</span>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap, CheckCircle2 } from 'lucide-react';
 import campusBg from '../../assets/campus_bg.jpg';
@@ -6,10 +6,17 @@ import campusBg from '../../assets/campus_bg.jpg';
 export const DharyaLoginPage: React.FC = () => {
   const { quickLogin, switchTab, setAssessmentNotice } = useStudyApp();
 
+  // Inputs are strictly never pre-filled or pre-written
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Force blank inputs whenever this screen mounts
+    setUsername('');
+    setPassword('');
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,11 +131,11 @@ export const DharyaLoginPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Secure Verification Form (No passwords or usernames pre-written) */}
-          <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          {/* Secure Verification Form (Completely blank, no pre-fill, autofill disabled) */}
+          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4 pt-1">
             {/* Student ID / Username Input */}
             <div className="space-y-1.5">
-              <label htmlFor="student-id" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="academic_student_id" className="block text-xs font-semibold text-slate-300">
                 Student ID / Username
               </label>
               <div className="relative">
@@ -136,10 +143,13 @@ export const DharyaLoginPage: React.FC = () => {
                   <User className="w-4 h-4" />
                 </div>
                 <input
-                  id="student-id"
-                  name="username"
+                  id="academic_student_id"
+                  name="academic_student_id"
                   type="text"
-                  autoComplete="username"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck="false"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -151,7 +161,7 @@ export const DharyaLoginPage: React.FC = () => {
 
             {/* Password Input */}
             <div className="space-y-1.5">
-              <label htmlFor="student-password" className="block text-xs font-semibold text-slate-300">
+              <label htmlFor="academic_student_passkey" className="block text-xs font-semibold text-slate-300">
                 Verification Password
               </label>
               <div className="relative">
@@ -159,10 +169,13 @@ export const DharyaLoginPage: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  id="student-password"
-                  name="password"
+                  id="academic_student_passkey"
+                  name="academic_student_passkey"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck="false"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

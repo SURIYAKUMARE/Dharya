@@ -71,24 +71,41 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const isAuth = sessionStorage.getItem('study_chat_auth') === 'true' ||
                      localStorage.getItem('study_chat_auth') === 'true';
 
-      if (path.includes('academic') || hash === '#academic' || path.includes('curriculum')) {
+      // 1. If user refreshed/reloaded the browser, ALWAYS return to Library ('home')!
+      const navEntries = typeof window !== 'undefined' && window.performance?.getEntriesByType?.('navigation');
+      const isReload = navEntries && navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === 'reload';
+      if (isReload) {
+        if (window.location.hash) {
+          try {
+            window.history.replaceState(null, '', window.location.pathname);
+          } catch {}
+        }
+        return 'home';
+      }
+
+      // 2. If URL hash or path points to login, always return to Library ('home')
+      if (hash === '#login' || path.includes('login')) {
+        try {
+          window.history.replaceState(null, '', window.location.pathname.replace(/login\.html/i, 'index.html'));
+        } catch {}
+        return 'home';
+      }
+
+      if (path.includes('academic') || hash === '#academic' || path.includes('curriculum') || hash === '#library' || hash === '#home') {
         return 'home';
       }
       if (path.includes('gallery') || hash === '#gallery') {
-        return isAuth ? 'gallery' : 'chat-login';
+        return isAuth ? 'gallery' : 'home';
       }
       if (path.includes('timeline') || hash === '#timeline') {
-        return isAuth ? 'timeline' : 'chat-login';
+        return isAuth ? 'timeline' : 'home';
       }
       if (path.includes('planner') || hash === '#planner') {
         return 'planner';
       }
-      if (path.includes('login') || hash === '#login') {
-        return 'chat-login';
-      }
 
       if (path.includes('chat') || hash === '#chat' || window.location.search.toLowerCase().includes('mode=chat')) {
-        return isAuth ? 'chat' : 'chat-login';
+        return isAuth ? 'chat' : 'home';
       }
       if (path.includes('subjects') || hash === '#subjects' || path.includes('curriculum') || hash === '#curriculum') {
         return 'subjects';
@@ -97,7 +114,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return 'profile';
       }
 
-      // Default to Academic Portal for all root visits and Google search engine crawlers:
+      // Default to Academic Library Portal for all visits:
       return 'home';
     } catch {}
     return 'home';
@@ -307,7 +324,12 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     sessionStorage.removeItem('study_chat_auth');
     localStorage.removeItem('study_chat_auth');
     localStorage.removeItem('studyportal_current_user');
-    setActiveTab('chat-login');
+    setActiveTab('home');
+    if (window.location.hash) {
+      try {
+        window.history.replaceState(null, '', window.location.pathname);
+      } catch {}
+    }
   };
 
   const switchTab = (tab: AppNavTab) => {
@@ -330,7 +352,10 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else if (tab === 'timeline') {
         window.location.hash = '#timeline';
       } else if (tab === 'chat-login') {
-        window.location.hash = '#login';
+        // Do not store #login in hash so refreshing automatically returns to Library ('home')
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       } else {
         window.location.hash = `#${tab}`;
       }
@@ -377,7 +402,10 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         } else if (hash === '#chat') {
           setActiveTab(isChatAuthenticated ? 'chat' : 'chat-login');
         } else if (hash === '#login') {
-          setActiveTab('chat-login');
+          setActiveTab('home');
+          try {
+            window.history.replaceState(null, '', window.location.pathname);
+          } catch {}
         } else if (hash === '#gallery') {
           setActiveTab(isChatAuthenticated ? 'gallery' : 'chat-login');
         } else if (hash === '#timeline') {

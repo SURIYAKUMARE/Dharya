@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap, CheckCircle2 } from 'lucide-react';
-import campusBg from '../../assets/campus_bg.png';
+import campusBg from '../../assets/campus_bg.jpg';
 
 export const DharyaLoginPage: React.FC = () => {
   const { quickLogin, switchTab, setAssessmentNotice } = useStudyApp();
@@ -55,18 +55,22 @@ export const DharyaLoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 sm:p-6 font-sans select-none overflow-hidden">
-      {/* 1. Fullscreen College Campus Background */}
+      {/* 1. Fullscreen College Campus HD Background - Crystal Clear & Sharp */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 transition-transform duration-1000"
-        style={{ backgroundImage: `url(${campusBg})` }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${campusBg})`,
+          imageRendering: '-webkit-optimize-contrast',
+          filter: 'brightness(1.02) contrast(1.04)'
+        }}
       />
 
-      {/* 2. Sophisticated Campus Overlay (allows campus building to shine through with high contrast) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0B132B]/80 via-[#0D1B2A]/70 to-[#050A14]/85 backdrop-blur-[2px]" />
+      {/* 2. Soft Natural Vignette (No blur, so campus building, lawn & pond are 100% HD and clear) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 pointer-events-none" />
 
       {/* 3. Main Academic Authentication Container */}
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-[#0F172A]/90 border border-white/15 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl text-white space-y-6">
+        <div className="bg-[#0B132B]/88 border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md text-white space-y-6">
 
           {/* Top Bar: Academic Session Badge & Library Shortcut */}
           <div className="flex items-center justify-between text-xs pb-3 border-b border-white/10">

@@ -14,12 +14,17 @@ import {
   BookMarked,
   CheckCircle2,
   Clock,
-  Award
+  Award,
+  ShieldCheck,
+  FileText,
+  HelpCircle,
+  Compass,
+  ArrowRight
 } from 'lucide-react';
 import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyHomePage: React.FC = () => {
-  const { openSubject, openTopic } = useStudyApp();
+  const { openSubject, openTopic, switchTab } = useStudyApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'eie' | 'cs' | 'software' | 'sciences'>('all');
 
@@ -94,8 +99,13 @@ export const StudyHomePage: React.FC = () => {
             </div>
             <div className="h-7 w-px bg-[#E2E8F0]" />
             <div className="text-center px-1">
+              <div className="text-base font-extrabold text-[#2563EB] font-mono">250+</div>
+              <div className="text-[10px] text-[#64748B] uppercase font-semibold">Questions</div>
+            </div>
+            <div className="h-7 w-px bg-[#E2E8F0]" />
+            <div className="text-center px-1">
               <div className="text-base font-extrabold text-[#059669] font-mono">100%</div>
-              <div className="text-[10px] text-[#64748B] uppercase font-semibold">Verified</div>
+              <div className="text-[10px] text-[#64748B] uppercase font-semibold">Accredited</div>
             </div>
           </div>
         </div>
@@ -208,6 +218,96 @@ export const StudyHomePage: React.FC = () => {
         {LIBRARY_SHELVES.map((shelf) => (
           <OpenLibraryShelf key={shelf.id} shelf={shelf} />
         ))}
+      </div>
+
+      {/* 3.5 Academic Information Hub & Library Services Bulletin */}
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#E5DFD5] shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#2563EB] font-bold uppercase tracking-wider mb-1">
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Library Services &amp; Information Portal</span>
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-[#0F172A] tracking-tight">
+              Central Engineering Library Hub
+            </h2>
+            <p className="text-xs text-[#64748B] mt-0.5">
+              Accredited reference collections, digital repository guidelines, and AICTE model curriculum information.
+            </p>
+          </div>
+          <span className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-mono font-bold flex items-center gap-2 self-start sm:self-auto">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Open 08:00 - 22:00 Daily</span>
+          </span>
+        </div>
+
+        {/* 3 Information Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1 */}
+          <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+              <BookMarked className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-[#0F172A]">Physical &amp; Reserve Library</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              18,450+ physical volumes cataloged under Dewey Decimal Classification. Automated RFID book checkout kiosks and designated silent study carrels.
+            </p>
+            <div className="pt-1 text-[11px] font-mono text-blue-600 font-semibold flex items-center gap-1">
+              <span>Section A to F • Level 2</span>
+            </div>
+          </div>
+
+          {/* Card 2 */}
+          <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-[#0F172A]">Digital Subscriptions &amp; NDLI</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Institutional access to National Digital Library of India (NDLI), IEEE Xplore, ScienceDirect, and ACM Digital Library with over 2,800 peer-reviewed e-textbooks.
+            </p>
+            <div className="pt-1 text-[11px] font-mono text-amber-700 font-semibold flex items-center gap-1">
+              <span>Campus Intranet &amp; VPN Linked</span>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2.5">
+            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+              <Award className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-[#0F172A]">GATE 2027 Examination Bank</h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Fully aligned with GATE &amp; IES model syllabus. Includes 250+ timed assessment questions, unit problem sets, and step-by-step formula derivations.
+            </p>
+            <div className="pt-1 text-[11px] font-mono text-emerald-700 font-semibold flex items-center gap-1">
+              <span>Outcome Based Education (OBE)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Assessment Quick Launchpad */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-md">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-400/20 text-blue-200 text-[10px] font-mono font-bold tracking-wider uppercase border border-blue-400/30">
+              TIMED VERIFICATION QUIZ
+            </div>
+            <h3 className="text-lg font-bold font-serif text-white">
+              Launch Proctored Assessment (25 Questions)
+            </h3>
+            <p className="text-xs text-blue-200 max-w-xl leading-relaxed">
+              Test your engineering readiness with timed multiple-choice questions across Mathematics, Instrumentation, Control Systems, C, Data Structures, Databases, and AI.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => switchTab('assessment')}
+            className="px-6 py-3 rounded-xl bg-white hover:bg-blue-50 text-blue-900 font-bold text-xs sm:text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
+          >
+            <span>Start Practice Assessment</span>
+            <ArrowRight className="w-4 h-4 text-blue-700" />
+          </button>
+        </div>
       </div>
 
       {/* 4. Engineering Disciplines Catalog (10 Courses • 40 Units) */}

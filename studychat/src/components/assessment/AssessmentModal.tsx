@@ -1,7 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { SUBJECTS_DATA } from '../../data/curriculumData';
-import { CheckCircle2, XCircle, Award, ArrowRight, HelpCircle, RefreshCw, X, Clock, AlertTriangle, ShieldAlert } from 'lucide-react';
+import {
+  getQuestionsForSubject,
+  getComprehensiveExamQuestions,
+  SUBJECT_QUESTION_BANKS,
+  AssessmentQuestion
+} from '../../data/assessmentQuestionBank';
+import {
+  CheckCircle2,
+  XCircle,
+  Award,
+  ArrowRight,
+  HelpCircle,
+  RefreshCw,
+  X,
+  Clock,
+  AlertTriangle,
+  BookOpen,
+  Layers,
+  GraduationCap
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const TOTAL_ASSESSMENT_TIME = 20 * 60; // 20 minutes in seconds
@@ -12,25 +31,18 @@ export const AssessmentModal: React.FC = () => {
   const currentTopic = selectedTopic || SUBJECTS_DATA[0].topics[0];
   const currentSubject = selectedSubject || SUBJECTS_DATA[0];
 
-  // Guarantee that every assessment session has more than 20 questions (25 questions)
-  const questions = useMemo(() => {
-    if (currentTopic?.assessmentQuestions && currentTopic.assessmentQuestions.length >= 20) {
-      return currentTopic.assessmentQuestions;
+  // Subject selector state: default to current subject, or allow switching to comprehensive / other subjects
+  const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>(() => {
+    return currentSubject?.id || 'all';
+  });
+
+  // Guarantee that every assessment session has exactly 25 rigorous, authentic engineering questions
+  const questions: AssessmentQuestion[] = useMemo(() => {
+    if (activeSubjectFilter === 'all') {
+      return getComprehensiveExamQuestions(25);
     }
-    const subjectQuestions = (currentSubject?.topics || []).flatMap((t) => t.assessmentQuestions || []);
-    if (subjectQuestions.length >= 20) {
-      return subjectQuestions;
-    }
-    const fallbackBank = SUBJECTS_DATA[0]?.topics[0]?.assessmentQuestions || [];
-    const combined = [...subjectQuestions];
-    for (const q of fallbackBank) {
-      if (!combined.some((item) => item.id === q.id)) {
-        combined.push(q);
-      }
-      if (combined.length >= 25) break;
-    }
-    return combined;
-  }, [currentTopic, currentSubject]);
+    return getQuestionsForSubject(activeSubjectFilter, 25);
+  }, [activeSubjectFilter]);
 
   // Track selected options: { questionId: selectedOptionIndex }
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
@@ -44,6 +56,14 @@ export const AssessmentModal: React.FC = () => {
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     if (isSubmitted) return;
     setSelectedAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
+  };
+
+  const handleSubjectChange = (newSubjectId: string) => {
+    setActiveSubjectFilter(newSubjectId);
+    setSelectedAnswers({});
+    setIsSubmitted(false);
+    setScore(0);
+    setTimeLeft(TOTAL_ASSESSMENT_TIME);
   };
 
   const handleSubmitAssessment = useCallback(() => {
@@ -112,15 +132,19 @@ export const AssessmentModal: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-mono text-[#1273C4] font-bold uppercase">
-              {currentSubject.title} Assessment Session
+              {activeSubjectFilter === 'all'
+                ? 'Comprehensive All-Engineering Mock GATE Examination'
+                : `${SUBJECTS_DATA.find((s) => s.id === activeSubjectFilter)?.title || currentSubject.title} Assessment Session`}
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
-              TIMED PROCTORED
+              TIMED PROCTORED • 25 QUESTIONS
             </span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#0F172A] tracking-tight font-serif">
-            {currentTopic.title}
+            {activeSubjectFilter === 'all'
+              ? 'Accredited Model Engineering Examination (GATE Standard)'
+              : SUBJECTS_DATA.find((s) => s.id === activeSubjectFilter)?.title || currentSubject.title}
           </h1>
         </div>
 
@@ -156,14 +180,57 @@ export const AssessmentModal: React.FC = () => {
           )}
 
           <button
-            onClick={() => switchTab('topic-explanation')}
+            onClick={() => switchTab('home')}
             className="p-2.5 rounded-2xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#64748B] hover:text-[#0F172A] shadow-2xs transition-colors cursor-pointer"
-            title="Exit Assessment"
+            title="Return to Library Hub"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
       </div>
+
+      {/* Subject / Discipline Selector for Targeted Assessment */}
+      {!isSubmitted && (
+        <div className="bg-white p-4 rounded-3xl border border-[#E5DFD5] shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-[#0F172A] flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
+              <Layers className="w-3.5 h-3.5 text-[#2563EB]" />
+              <span>Select Subject Question Bank</span>
+            </span>
+            <span className="text-[10px] text-[#2563EB] font-mono font-bold bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+              25 Accredited Questions
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1">
+            <button
+              type="button"
+              onClick={() => handleSubjectChange('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                activeSubjectFilter === 'all'
+                  ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                  : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#E2E8F0]'
+              }`}
+            >
+              ★ Mock GATE (All Disciplines)
+            </button>
+            {SUBJECTS_DATA.map((sub) => (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => handleSubjectChange(sub.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  activeSubjectFilter === sub.id
+                    ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                    : 'bg-[#F8FAFC] text-[#475569] hover:bg-[#F1F5F9] border border-[#E2E8F0]'
+                }`}
+              >
+                <span>{sub.icon}</span>
+                <span>{sub.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Assessment Status & Progress Bar */}
       {!isSubmitted ? (
@@ -217,7 +284,7 @@ export const AssessmentModal: React.FC = () => {
               onClick={openChatLogin}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-sm shadow-md transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>CONTINUE TO CHAT</span>
+              <span>PROCEED TO STUDENT PORTAL</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button

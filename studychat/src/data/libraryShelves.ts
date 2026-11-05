@@ -336,5 +336,76 @@ export const LIBRARY_SHELVES: LibraryShelfData[] = [
         tag: 'CONCURRENCY'
       }
     ]
+  },
+
+  // ==========================================
+  // SHELF 4: GATE & COMPETITIVE ENGINEERING ARCHIVES
+  // ==========================================
+  {
+    id: 'gate-reference',
+    title: 'GATE & Competitive Examination Archives',
+    linkText: 'GATE & Research Archives',
+    books: [
+      {
+        id: 'book-oppenheim-signals',
+        title: 'Signals & Systems',
+        author: 'Alan V. Oppenheim & Alan S. Willsky',
+        publisher: 'Pearson Education',
+        year: 2024,
+        subjectId: 'control-systems',
+        topicId: 'eie-freq-domain',
+        buttonType: 'borrow',
+        coverType: 'sawhney-measurements',
+        tag: 'SIGNALS • DSP'
+      },
+      {
+        id: 'book-morris-mano',
+        title: 'Digital Logic and Computer Design',
+        author: 'M. Morris Mano',
+        publisher: 'Pearson / Prentice Hall',
+        year: 2023,
+        subjectId: 'programming',
+        topicId: 'prog-bitwise',
+        buttonType: 'read',
+        coverType: 'c-kr',
+        tag: 'DIGITAL LOGIC'
+      },
+      {
+        id: 'book-khurmi-machines',
+        title: 'Theory of Machines & Engineering Mechanics',
+        author: 'R.S. Khurmi & J.K. Gupta',
+        publisher: 'S. Chand Publishing',
+        year: 2024,
+        subjectId: 'physics',
+        topicId: 'phys-laser',
+        buttonType: 'locate',
+        coverType: 'beiser',
+        tag: 'MECHANICS • GATE'
+      },
+      {
+        id: 'book-boylestad-electronic',
+        title: 'Electronic Devices and Circuit Theory',
+        author: 'Robert L. Boylestad & Louis Nashelsky',
+        publisher: 'Pearson Higher Ed',
+        year: 2023,
+        subjectId: 'sensors-transducers',
+        topicId: 'eie-signal-cond',
+        buttonType: 'borrow',
+        coverType: 'sawhney-measurements',
+        tag: 'ANALOG CIRCUITS'
+      },
+      {
+        id: 'book-gate-math-handbook',
+        title: 'Engineering Mathematics & Aptitude Handbook',
+        author: 'MADE EASY Editorial Board',
+        publisher: 'MADE EASY Publications',
+        year: 2026,
+        subjectId: 'mathematics',
+        topicId: 'math-multivariable',
+        buttonType: 'read',
+        coverType: 'grewal',
+        tag: 'GATE 2027 COMPREHENSIVE'
+      }
+    ]
   }
 ];

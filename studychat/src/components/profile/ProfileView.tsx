@@ -172,24 +172,24 @@ export const ProfileView: React.FC = () => {
         )}
       </div>
 
-      {/* Private Study Workspace & Messenger Card */}
+      {/* Academic Assessment & Student Verification */}
       <div className="p-6 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-[#1273C4]" />
             <h4 className="text-sm font-bold text-[#0F172A] font-serif">
-              Private Student Workspace &amp; Messenger
+              Academic Assessment &amp; Student Verification
             </h4>
           </div>
           <p className="text-xs text-[#64748B] leading-relaxed">
-            Encrypted collaboration channel and study workspace. Press <kbd className="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-[10px] text-gray-700">Ctrl+Shift+D</kbd> anywhere to toggle quickly.
+            Verify student identity to take proctored unit assessments and record official marks.
           </p>
         </div>
         <button
-          onClick={() => switchTab(isChatAuthenticated ? 'chat' : 'chat-login')}
+          onClick={() => switchTab('chat-login')}
           className="px-5 py-2.5 rounded-xl bg-[#1273C4] hover:bg-[#0E5CA0] text-white text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
         >
-          {isChatAuthenticated ? 'Open Workspace & Chat' : 'Student Verification'}
+          Take Assessment / Verify
         </button>
       </div>
 

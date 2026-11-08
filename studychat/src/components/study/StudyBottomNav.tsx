@@ -1,15 +1,16 @@
 import React from 'react';
 import { useStudyApp, AppNavTab } from '../../context/StudyAppContext';
-import { BookOpen, Layers, Calendar, User } from 'lucide-react';
+import { BookOpen, Layers, Calendar, User, MessageSquare } from 'lucide-react';
 
 export const StudyBottomNav: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
 
-  if (activeTab === 'chat') return null;
+  if (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline') return null;
 
   const navItems = [
     { id: 'home' as AppNavTab, label: 'Library', icon: BookOpen },
     { id: 'subjects' as AppNavTab, label: 'Curriculum', icon: Layers },
+    { id: 'chat' as AppNavTab, label: 'Chat', icon: MessageSquare },
     { id: 'planner' as AppNavTab, label: 'Planner', icon: Calendar },
     { id: 'profile' as AppNavTab, label: 'Profile', icon: User },
   ];

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, User, Layers, Search, Sparkles } from 'lucide-react';
+import { BookOpen, Calendar, User, Layers, Search, Sparkles, MessageSquare } from 'lucide-react';
 import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
@@ -84,8 +84,17 @@ export const StudyNavbar: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right Indicator: Student Profile */}
+          {/* Right Actions: Study Chat & Student Profile */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => switchTab('chat')}
+              className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/90 hover:bg-blue-100 text-[#1d4ed8] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer group"
+              title="Open Study Chat (Ctrl+Shift+D)"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-blue-600 group-hover:scale-110 transition-transform" />
+              <span>Study Chat</span>
+            </button>
+
             <button
               onClick={() => switchTab('profile')}
               className="px-3 py-1.5 rounded-xl border border-[#E0D8CC] bg-white hover:bg-[#F9F6F0] text-[#334155] hover:text-[#0F172A] text-xs font-mono flex items-center gap-2 transition-all duration-150 shadow-2xs hover:shadow-sm group cursor-pointer"

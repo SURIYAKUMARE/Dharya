@@ -44,7 +44,7 @@ export const Hero: React.FC<HeroProps> = ({
           transition={{ duration: 0.6, delay: 0.1 }}
           className="font-serif italic text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1] mb-5"
         >
-          Engineering Study Library
+          Open Engineering Library
         </motion.h1>
 
         {/* Subheading in Muted Gray */}

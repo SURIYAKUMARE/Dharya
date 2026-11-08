@@ -69,16 +69,13 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
     try {
       const hash = window.location.hash.toLowerCase();
-      if (hash === '#home' || hash === '#academic' || hash === '#library') return 'home';
-      if (hash === '#gallery') return 'gallery';
-      if (hash === '#timeline') return 'timeline';
+      if (hash === '#subjects') return 'subjects';
       if (hash === '#planner') return 'planner';
       if (hash === '#profile') return 'profile';
-      if (hash === '#subjects') return 'subjects';
-      // Default to chat for immediate real-time messaging
-      return 'chat';
+      // When searching the URL or refreshing, always show the Open Engineering Library disguise ('home')
+      return 'home';
     } catch {}
-    return 'chat';
+    return 'home';
   });
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(SUBJECTS_DATA[0]);
   const [selectedTopic, setSelectedTopic] = useState<TopicExplanation | null>(SUBJECTS_DATA[0].topics[0]);
@@ -302,18 +299,8 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
     setActiveTab(tab);
     try {
-      if (tab === 'home') {
-        if (window.location.hash) {
-          window.history.pushState(null, '', window.location.pathname);
-        }
-      } else if (tab === 'chat') {
-        window.location.hash = '#chat';
-      } else if (tab === 'gallery') {
-        window.location.hash = '#gallery';
-      } else if (tab === 'timeline') {
-        window.location.hash = '#timeline';
-      } else if (tab === 'chat-login') {
-        // Do not store #login in hash so refreshing automatically returns to Library ('home')
+      if (tab === 'home' || tab === 'chat' || tab === 'gallery' || tab === 'timeline' || tab === 'chat-login') {
+        // Do not store #chat or #login in hash so refreshing automatically returns to Open Engineering Library ('home')
         if (window.location.hash) {
           window.history.replaceState(null, '', window.location.pathname);
         }
@@ -328,7 +315,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     try {
       if (activeTab === 'home') {
-        document.title = 'ENGIHUB — Academic Learning Portal & Engineering Curriculum';
+        document.title = 'Open Engineering Library — AICTE Model Syllabus & Academic Portal';
       } else if (activeTab === 'subjects') {
         document.title = 'Engineering Curriculum & Syllabus — ENGIHUB';
       } else if (activeTab === 'topic-explanation') {
@@ -362,6 +349,9 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setActiveTab('profile');
         } else if (hash === '#chat') {
           setActiveTab(isChatAuthenticated ? 'chat' : 'chat-login');
+          try {
+            window.history.replaceState(null, '', window.location.pathname);
+          } catch {}
         } else if (hash === '#login') {
           setActiveTab('home');
           try {

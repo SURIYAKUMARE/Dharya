@@ -75,9 +75,9 @@ const MILESTONES: MilestoneItem[] = [
     subtitle: 'Started my Engineering journey',
     description: 'Started my Engineering journey at college. Meeting new friends, first lectures, and exciting dreams ahead for the four years to come.',
     pinX: 100,
-    pinY: 690,
-    cardX: 138,
-    cardY: 640,
+    pinY: 668,
+    cardX: 140,
+    cardY: 618,
     cardW: 290,
     cardH: 84,
     isFirstBase: true,
@@ -91,9 +91,9 @@ const MILESTONES: MilestoneItem[] = [
     subtitle: 'Rathinam Technical Campus',
     description: 'Stepping into 2nd year Artificial Intelligence & Machine Learning specialization at Rathinam Technical Campus. Advanced curriculum and lab projects.',
     pinX: 300,
-    pinY: 546,
-    cardX: 348,
-    cardY: 500,
+    pinY: 524,
+    cardX: 350,
+    cardY: 478,
     cardW: 280,
     cardH: 84,
   },
@@ -105,10 +105,10 @@ const MILESTONES: MilestoneItem[] = [
     title: 'Certification',
     subtitle: 'Completed Microsoft Fabric',
     description: 'Successfully completed the comprehensive Microsoft Fabric certification, demonstrating proficiency in cloud analytics and data workflows.',
-    pinX: 480,
-    pinY: 444,
+    pinX: 482,
+    pinY: 422,
     cardX: 508,
-    cardY: 380,
+    cardY: 378,
     cardW: 260,
     cardH: 84,
   },
@@ -120,10 +120,10 @@ const MILESTONES: MilestoneItem[] = [
     title: 'Project Launch',
     subtitle: 'TrustGuard AI (Live)',
     description: 'TrustGuard AI launched live into production! An intelligent real-time security framework with adaptive threat defense.',
-    pinX: 320,
-    pinY: 400,
+    pinX: 318,
+    pinY: 378,
     cardX: 60,
-    cardY: 335,
+    cardY: 334,
     cardW: 240,
     cardH: 84,
   },
@@ -136,9 +136,9 @@ const MILESTONES: MilestoneItem[] = [
     subtitle: 'Started Microsoft Internship',
     description: 'Kicked off prestigious software engineering summer internship at Microsoft, collaborating on enterprise cloud engineering systems.',
     pinX: 500,
-    pinY: 260,
-    cardX: 528,
-    cardY: 196,
+    pinY: 234,
+    cardX: 526,
+    cardY: 194,
     cardW: 260,
     cardH: 84,
   },
@@ -151,9 +151,9 @@ const MILESTONES: MilestoneItem[] = [
     subtitle: 'Won SAKTHI HACKFEST\'26',
     description: 'Bagged the 1st prize championship at SAKTHI HACKFEST\'26 after building a high-impact prototype in 36 continuous hours.',
     pinX: 364,
-    pinY: 208,
+    pinY: 174,
     cardX: 90,
-    cardY: 142,
+    cardY: 130,
     cardW: 250,
     cardH: 84,
   },
@@ -166,9 +166,9 @@ const MILESTONES: MilestoneItem[] = [
     subtitle: 'Finalist – NIYAM Project',
     description: 'Selected as national grand finalists at Smart India Hackathon (SIH 2026) presenting the NIYAM Project to nationwide juries.',
     pinX: 544,
-    pinY: 100,
-    cardX: 572,
-    cardY: 36,
+    pinY: 74,
+    cardX: 570,
+    cardY: 30,
     cardW: 260,
     cardH: 84,
   },
@@ -291,14 +291,15 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
             className="w-full h-auto drop-shadow-sm select-none"
             style={{ maxHeight: 'calc(100vh - 80px)' }}
           >
-            {/* ── 1. The Continuous Green Dashed Path ── */}
+            {/* ── 1. The Continuous Green Dashed Path with Perfect Heart Center ── */}
             <path
-              d="M 100 690 C 140 640, 220 590, 300 546 C 360 510, 430 490, 480 444 C 460 480, 370 460, 320 400 C 310 360, 360 365, 400 356 C 370 320, 340 270, 380 270 C 400 270, 406 290, 408 300 C 410 290, 416 270, 436 270 C 476 270, 450 320, 400 356 C 430 320, 470 290, 500 260 C 510 220, 430 236, 364 208 C 340 180, 470 150, 544 100"
+              d="M 100 668 C 170 630, 240 580, 300 524 C 360 490, 430 460, 482 422 C 460 460, 330 450, 318 378 C 320 420, 360 400, 408 358 C 340 320, 340 268, 374 266 C 396 266, 408 282, 408 296 C 408 282, 420 266, 442 266 C 476 268, 476 320, 408 358 C 440 375, 510 320, 500 234 C 480 200, 410 200, 364 174 C 340 145, 470 120, 544 74"
               fill="none"
               stroke="#236B38"
-              strokeWidth="2.6"
+              strokeWidth="2.8"
               strokeDasharray="6,6"
               strokeLinecap="round"
+              strokeLinejoin="round"
             />
 
             {/* ── 2. Waypoint Pins and Glowing Pink Ground Pills ── */}

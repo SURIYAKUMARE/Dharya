@@ -534,6 +534,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   // Starred messages modal
   const [showStarredModal, setShowStarredModal] = useState<boolean>(false);
+  const partnerOfflineTimerRef = useRef<any>(null);
 
   // Poll creation modal & form
   const [showPollModal, setShowPollModal] = useState<boolean>(false);
@@ -1138,6 +1139,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sidePanelMode, replyingToMessage, editingMessage]);
 
+  // Subscribe to real-time broker connection status
+  useEffect(() => {
+    const unsub = crossDeviceSync.onConnectionStatusChange((status) => {
+      setConnectionStatus(status);
+    });
+    return unsub;
+  }, []);
+
   // Local heartbeat for instant same-browser & cross-tab detection
   useEffect(() => {
     const markActive = () => {
@@ -1147,33 +1156,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     };
     markActive();
     const interval = setInterval(markActive, 2500);
-
-    const checkPartner = () => {
-      try {
-        const partnerActive = localStorage.getItem(`whatsapp_active_${partnerUser}`);
-        let onlineLocally = false;
-        if (partnerActive) {
-          const diff = Date.now() - Number(partnerActive);
-          if (diff < 5000) {
-            onlineLocally = true;
-          }
-        }
-
-        // Check Supabase presence state as well
-        const presenceState = channelRef.current?.presenceState?.() || {};
-        const partnerPresences = presenceState[partnerUser];
-        const onlineRemotely = Boolean(partnerPresences && partnerPresences.length > 0);
-
-        const isNowOnline = onlineLocally || onlineRemotely;
-        setIsPartnerOnline(isNowOnline);
-
-        if (!isNowOnline) {
-          const savedLastSeen = localStorage.getItem(`whatsapp_last_seen_${partnerUser}`);
-          if (savedLastSeen) setPartnerLastSeen(Number(savedLastSeen));
-        }
-      } catch {}
-    };
-    const partnerCheckInterval = setInterval(checkPartner, 2000);
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === `whatsapp_active_${partnerUser}`) {
@@ -1195,20 +1177,12 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       try {
         localStorage.removeItem(`whatsapp_active_${currentUser}`);
         localStorage.setItem(`whatsapp_last_seen_${currentUser}`, String(now));
-        if (channelRef.current) {
-          channelRef.current.send({
-            type: 'broadcast',
-            event: 'user_offline',
-            payload: { user: currentUser, lastSeen: now },
-          });
-        }
       } catch {}
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       clearInterval(interval);
-      clearInterval(partnerCheckInterval);
       window.removeEventListener('storage', handleStorage);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       handleBeforeUnload();
@@ -1719,6 +1693,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         if (event === 'new_message') {
           const incoming = payload as ExtendedChatMessage;
           if (incoming && incoming.id) {
+            const isFromOther = payload.deviceId
+              ? payload.deviceId !== crossDeviceSync.getDeviceId()
+              : incoming.sender !== currentUser;
+
             setMessages((prev) => {
               if (prev.some((m) => m.id === incoming.id)) return prev;
               const next = [...prev, incoming];
@@ -1730,22 +1708,36 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 60);
 
-            // If incoming is from partner: chime, browser alert & read receipts
-            if (incoming.sender !== currentUser) {
+            if (isFromOther) {
               playNotificationSound();
               triggerBrowserNotification(incoming);
 
-              // Acknowledge delivery
+              // 1. Immediately send DELIVERED status (shows Double Grey Tick for sender)
               crossDeviceSync.publish('message_status_update', {
                 msgId: incoming.id,
                 status: 'delivered',
+                deviceId: crossDeviceSync.getDeviceId(),
               });
 
-              // If active on chat, send read receipt
-              if (activeMainView === 'chat' && readReceiptsEnabledRef.current) {
+              // 2. If chat is active and tab is visible, immediately send READ status (shows Double Blue Tick for sender)
+              const isLookingAtChat =
+                activeMainView === 'chat' &&
+                typeof document !== 'undefined' &&
+                !document.hidden &&
+                document.visibilityState === 'visible';
+
+              if (isLookingAtChat && readReceiptsEnabledRef.current) {
                 crossDeviceSync.publish('message_status_update', {
                   msgId: incoming.id,
                   status: 'read',
+                  deviceId: crossDeviceSync.getDeviceId(),
+                });
+                setMessages((prev) => {
+                  const next = prev.map((m) =>
+                    m.id === incoming.id ? { ...m, status: 'read' as const, read: true } : m
+                  );
+                  persistMessages(next);
+                  return next;
                 });
               }
             }
@@ -1754,31 +1746,74 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           const { msgId, status } = payload;
           if (msgId && status) {
             setMessages((prev) => {
+              let updated = false;
+              const next = prev.map((m) => {
+                if (m.id === msgId) {
+                  // Do not downgrade a read message back to delivered
+                  if (m.status === 'read' && status === 'delivered') return m;
+                  updated = true;
+                  return {
+                    ...m,
+                    status: status as any,
+                    read: status === 'read' ? true : m.read,
+                  };
+                }
+                return m;
+              });
+              if (updated) persistMessages(next);
+              return next;
+            });
+          }
+        } else if (event === 'all_messages_read') {
+          const isFromOther = payload?.deviceId
+            ? payload.deviceId !== crossDeviceSync.getDeviceId()
+            : payload?.reader !== currentUser;
+          if (isFromOther) {
+            setMessages((prev) => {
               const next = prev.map((m) =>
-                m.id === msgId ? { ...m, status: status as any, read: status === 'read' ? true : m.read } : m
+                m.sender === currentUser ? { ...m, status: 'read' as const, read: true } : m
               );
               persistMessages(next);
               return next;
             });
           }
-        } else if (event === 'all_messages_read') {
-          if (payload?.reader === partnerUser) {
-            setMessages((prev) => {
-              const next = prev.map((m) => (m.sender === currentUser ? { ...m, status: 'read' as const, read: true } : m));
-              persistMessages(next);
-              return next;
-            });
-          }
         } else if (event === 'typing') {
-          if (payload?.user === partnerUser) {
+          const isFromOther = payload?.deviceId
+            ? payload.deviceId !== crossDeviceSync.getDeviceId()
+            : payload?.user === partnerUser;
+          if (isFromOther) {
             setIsPartnerTyping(true);
             if (partnerTypingTimerRef.current) clearTimeout(partnerTypingTimerRef.current);
             partnerTypingTimerRef.current = window.setTimeout(() => setIsPartnerTyping(false), 3000);
           }
         } else if (event === 'presence') {
-          if (payload?.user === partnerUser) {
-            setIsPartnerOnline(true);
-            if (payload.timestamp) setPartnerLastSeen(payload.timestamp);
+          const isFromOther = payload?.deviceId
+            ? payload.deviceId !== crossDeviceSync.getDeviceId()
+            : payload?.user === partnerUser;
+
+          if (isFromOther) {
+            if (payload.online !== false) {
+              setIsPartnerOnline(true);
+              const ts = payload.timestamp || Date.now();
+              setPartnerLastSeen(ts);
+              try {
+                localStorage.setItem(`whatsapp_last_seen_${partnerUser}`, String(ts));
+              } catch {}
+
+              // Watchdog timer: if partner heartbeats cease, set offline after 10s
+              if (partnerOfflineTimerRef.current) clearTimeout(partnerOfflineTimerRef.current);
+              partnerOfflineTimerRef.current = setTimeout(() => {
+                setIsPartnerOnline(false);
+              }, 10000);
+            } else {
+              setIsPartnerOnline(false);
+              if (partnerOfflineTimerRef.current) clearTimeout(partnerOfflineTimerRef.current);
+              const ts = payload.timestamp || Date.now();
+              setPartnerLastSeen(ts);
+              try {
+                localStorage.setItem(`whatsapp_last_seen_${partnerUser}`, String(ts));
+              } catch {}
+            }
           }
         } else if (event === 'reaction') {
           if (payload?.msgId && payload?.emoji) {
@@ -1834,23 +1869,41 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           }
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event, payload } }));
         } else if (event === 'sync_request') {
-          try {
-            const raw = localStorage.getItem(getChatStorageKey(activeChatId)) || localStorage.getItem(LOCAL_MESSAGES_KEY);
-            if (raw) {
-              const localMsgs = JSON.parse(raw);
-              if (Array.isArray(localMsgs) && localMsgs.length > 0) {
-                crossDeviceSync.publish('sync_response', {
-                  chatId: activeChatId,
-                  messages: localMsgs.slice(-60),
-                });
+          const isFromOther = payload?.deviceId
+            ? payload.deviceId !== crossDeviceSync.getDeviceId()
+            : payload?.requester !== currentUser;
+          if (isFromOther) {
+            try {
+              const raw = localStorage.getItem(getChatStorageKey(activeChatId)) || localStorage.getItem(LOCAL_MESSAGES_KEY);
+              if (raw) {
+                const localMsgs = JSON.parse(raw);
+                if (Array.isArray(localMsgs) && localMsgs.length > 0) {
+                  crossDeviceSync.publish('sync_response', {
+                    chatId: activeChatId,
+                    messages: localMsgs.slice(-80),
+                    deviceId: crossDeviceSync.getDeviceId(),
+                  });
+                }
               }
-            }
-          } catch {}
+            } catch {}
+          }
         } else if (event === 'sync_response') {
           if (payload?.messages && Array.isArray(payload.messages)) {
             setMessages((prev) => {
               const merged = mergeMessages(prev, payload.messages);
               persistMessages(merged);
+
+              // Acknowledge delivery for any unacknowledged partner messages
+              payload.messages.forEach((m: ExtendedChatMessage) => {
+                if (m.sender !== currentUser && m.id && m.status !== 'read') {
+                  crossDeviceSync.publish('message_status_update', {
+                    msgId: m.id,
+                    status: 'delivered',
+                    deviceId: crossDeviceSync.getDeviceId(),
+                  });
+                }
+              });
+
               return merged;
             });
           }
@@ -1989,6 +2042,53 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       };
     } catch {}
   }, [currentUser, partnerUser, activeChatId]);
+
+  // Active WhatsApp Read Receipts synchronization on tab focus, visibility change, and view change
+  useEffect(() => {
+    const markAllIncomingRead = () => {
+      if (activeMainView !== 'chat') return;
+      if (typeof document !== 'undefined' && (document.hidden || document.visibilityState !== 'visible')) return;
+      if (!readReceiptsEnabledRef.current) return;
+
+      setMessages((prev) => {
+        let hasUnread = false;
+        const unreadIds: string[] = [];
+        const next = prev.map((m) => {
+          if (m.sender !== currentUser && (!m.read || m.status !== 'read')) {
+            hasUnread = true;
+            unreadIds.push(m.id);
+            return { ...m, status: 'read' as const, read: true };
+          }
+          return m;
+        });
+
+        if (hasUnread) {
+          persistMessages(next);
+          crossDeviceSync.publish('all_messages_read', {
+            reader: currentUser,
+            readUpTo: Date.now(),
+            deviceId: crossDeviceSync.getDeviceId(),
+          });
+          unreadIds.forEach((id) => {
+            crossDeviceSync.publish('message_status_update', {
+              msgId: id,
+              status: 'read',
+              deviceId: crossDeviceSync.getDeviceId(),
+            });
+          });
+        }
+        return next;
+      });
+    };
+
+    markAllIncomingRead();
+    window.addEventListener('focus', markAllIncomingRead);
+    document.addEventListener('visibilitychange', markAllIncomingRead);
+    return () => {
+      window.removeEventListener('focus', markAllIncomingRead);
+      document.removeEventListener('visibilitychange', markAllIncomingRead);
+    };
+  }, [activeMainView, currentUser]);
 
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
@@ -2942,7 +3042,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     ];
     const randomTranscript = transcriptsList[Math.floor(Math.random() * transcriptsList.length)];
 
-    const initialStatus: 'sent' | 'delivered' = isPartnerOnlineRef.current ? 'delivered' : 'sent';
+    const initialStatus: 'sent' | 'delivered' = 'sent';
 
     const newMsg: ExtendedChatMessage = {
       id: 'msg-voice-' + Date.now(),
@@ -3674,22 +3774,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   <ShieldCheck className="w-3.5 h-3.5 text-[#00a884]" />
                 </span>
               )}
-              {/* Connection status indicator */}
-              <div className="flex items-center gap-1.5 ml-1">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    connectionStatus === 'connected'
-                      ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]'
-                      : connectionStatus === 'connecting'
-                      ? 'bg-amber-400 animate-pulse'
-                      : 'bg-rose-500'
-                  }`}
-                  title={`Connection: ${connectionStatus}`}
-                />
-                <span className="text-[10px] text-white/50 hidden lg:inline capitalize">
-                  {connectionStatus}
-                </span>
-              </div>
+              {/* Connection status indicator (only shown if disconnected or reconnecting) */}
+              {connectionStatus !== 'connected' && (
+                <div
+                  className="flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20"
+                  title={`Broker Connection: ${connectionStatus}`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      connectionStatus === 'connecting' ? 'bg-amber-400 animate-pulse' : 'bg-rose-500'
+                    }`}
+                  />
+                  <span className="text-[9px] text-amber-500 font-medium capitalize">
+                    {connectionStatus}
+                  </span>
+                </div>
+              )}
             </div>
 
             {isGroupChat ? (

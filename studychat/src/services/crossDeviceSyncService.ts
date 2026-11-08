@@ -29,36 +29,53 @@ export interface CrossDeviceEvent {
 }
 
 type EventCallback = (event: string, payload: any) => void;
+type StatusCallback = (status: 'connected' | 'connecting' | 'offline') => void;
 
 class CrossDeviceSyncService {
   private client: MqttClient | null = null;
   private listeners: Set<EventCallback> = new Set();
+  private statusListeners: Set<StatusCallback> = new Set();
   private isConnected = false;
   private currentUser: 'surya' | 'sadhana' | null = null;
   private processedMsgIds: Set<string> = new Set();
   private usingBackupBroker = false;
   private syncRequestThrottle = 0;
   private outboxQueue: string[] = [];
+  private heartbeatInterval: any = null;
 
   /**
    * Initialize real-time WebSocket channel
    */
   public init(user: 'surya' | 'sadhana') {
     this.currentUser = user;
+    this.startHeartbeat();
     this.connectMqtt();
 
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => {
         if (!this.isConnected) this.connectMqtt();
       });
+
       window.addEventListener('focus', () => {
+        this.broadcastPresence(true);
         this.requestSync();
       });
+
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
+          this.broadcastPresence(true);
           this.requestSync();
+        } else {
+          // Send offline if tab is hidden
+          this.broadcastPresence(false);
         }
       });
+
+      const handleUnload = () => {
+        this.broadcastPresence(false);
+      };
+      window.addEventListener('beforeunload', handleUnload);
+      window.addEventListener('pagehide', handleUnload);
     }
   }
 
@@ -70,6 +87,50 @@ class CrossDeviceSyncService {
     return () => {
       this.listeners.delete(callback);
     };
+  }
+
+  /**
+   * Subscribe to connection status changes
+   */
+  public onConnectionStatusChange(callback: StatusCallback): () => void {
+    this.statusListeners.add(callback);
+    callback(this.isConnected ? 'connected' : 'connecting');
+    return () => {
+      this.statusListeners.delete(callback);
+    };
+  }
+
+  public isBrokerConnected(): boolean {
+    return this.isConnected;
+  }
+
+  private notifyStatus(status: 'connected' | 'connecting' | 'offline') {
+    this.statusListeners.forEach((cb) => {
+      try { cb(status); } catch {}
+    });
+  }
+
+  /**
+   * Active heartbeat loop running every 3.5 seconds
+   */
+  private startHeartbeat() {
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    this.heartbeatInterval = setInterval(() => {
+      if (this.isConnected && this.currentUser) {
+        const isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true;
+        this.broadcastPresence(isVisible);
+      }
+    }, 3500);
+  }
+
+  public broadcastPresence(online: boolean) {
+    if (!this.currentUser) return;
+    this.publish('presence', {
+      user: this.currentUser,
+      deviceId: this.getDeviceId(),
+      online,
+      timestamp: Date.now(),
+    });
   }
 
   /**
@@ -98,6 +159,7 @@ class CrossDeviceSyncService {
 
       client.on('connect', () => {
         this.isConnected = true;
+        this.notifyStatus('connected');
         console.log(`[CrossDeviceSync] Connected to broker: ${brokerUrl}`);
 
         // Flush any buffered outbox messages
@@ -111,14 +173,8 @@ class CrossDeviceSyncService {
         client.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
           if (!err) {
             console.log(`[CrossDeviceSync] Subscribed to ${MQTT_TOPIC}`);
-            // Announce presence
-            if (this.currentUser) {
-              this.publish('presence', {
-                user: this.currentUser,
-                online: true,
-                timestamp: Date.now(),
-              });
-            }
+            // Announce presence immediately
+            this.broadcastPresence(typeof document !== 'undefined' ? document.visibilityState === 'visible' : true);
             // Request catch-up sync from partner device
             this.requestSync();
           }
@@ -148,6 +204,7 @@ class CrossDeviceSyncService {
 
       client.on('error', (err) => {
         console.warn('[CrossDeviceSync] MQTT error:', err);
+        this.notifyStatus('connecting');
         if (!this.usingBackupBroker) {
           this.usingBackupBroker = true;
           setTimeout(() => this.connectMqtt(), 1500);
@@ -156,10 +213,12 @@ class CrossDeviceSyncService {
 
       client.on('offline', () => {
         this.isConnected = false;
+        this.notifyStatus('offline');
       });
 
       client.on('close', () => {
         this.isConnected = false;
+        this.notifyStatus('offline');
       });
     } catch (err) {
       console.warn('[CrossDeviceSync] Initialization failed:', err);
@@ -275,6 +334,10 @@ class CrossDeviceSyncService {
   }
 
   public destroy() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
     if (this.client) {
       try {
         this.client.end(true);
@@ -282,6 +345,7 @@ class CrossDeviceSyncService {
       this.client = null;
     }
     this.listeners.clear();
+    this.statusListeners.clear();
   }
 }
 

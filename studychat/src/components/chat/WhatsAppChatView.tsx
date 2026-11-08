@@ -1827,6 +1827,27 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             setIncomingCall(null);
           }
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event, payload } }));
+        } else if (event === 'sync_request') {
+          try {
+            const raw = localStorage.getItem(getChatStorageKey(activeChatId)) || localStorage.getItem(LOCAL_MESSAGES_KEY);
+            if (raw) {
+              const localMsgs = JSON.parse(raw);
+              if (Array.isArray(localMsgs) && localMsgs.length > 0) {
+                crossDeviceSync.publish('sync_response', {
+                  chatId: activeChatId,
+                  messages: localMsgs.slice(-60),
+                });
+              }
+            }
+          } catch {}
+        } else if (event === 'sync_response') {
+          if (payload?.messages && Array.isArray(payload.messages)) {
+            setMessages((prev) => {
+              const merged = mergeMessages(prev, payload.messages);
+              persistMessages(merged);
+              return merged;
+            });
+          }
         }
       });
 

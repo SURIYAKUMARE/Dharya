@@ -4,13 +4,7 @@ import {
   CircleDot,
   Images,
   GitBranch,
-  GraduationCap,
-  BookOpen,
-  UserCircle,
-  Palette,
-  ShieldCheck,
   X,
-  Sparkles,
 } from 'lucide-react';
 
 export type MainNavView = 'chat' | 'status' | 'gallery' | 'timeline' | 'recycle';
@@ -38,8 +32,6 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
   studentName = 'Surya',
   isPartnerOnline = false,
   unreadCount = 0,
-  onOpenProfile,
-  onOpenAcademicMode,
 }) => {
   const isSelected = (view: MainNavView) => activeView === view;
 
@@ -51,19 +43,14 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
   // - Medium-weight slate inactive text with subtle hover
   const renderItem = (
     label: string,
-    view: MainNavView | null,
+    view: MainNavView,
     icon: React.ReactNode,
-    onClickCustom?: () => void,
     badge?: React.ReactNode
   ) => {
-    const active = view !== null && isSelected(view);
+    const active = isSelected(view);
 
     const handleClick = () => {
-      if (onClickCustom) {
-        onClickCustom();
-      } else if (view) {
-        onSelectView(view);
-      }
+      onSelectView(view);
       if (onCloseMobile) {
         onCloseMobile();
       }
@@ -158,7 +145,6 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
             'Chat',
             'chat',
             <MessageSquare className="w-5 h-5" strokeWidth={1.9} />,
-            undefined,
             unreadCount > 0 ? (
               <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[#1d68f6] text-white shadow-sm">
                 {unreadCount}
@@ -171,7 +157,6 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
             'Status',
             'status',
             <CircleDot className="w-5 h-5" strokeWidth={1.9} />,
-            undefined,
             isPartnerOnline ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -205,83 +190,26 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
             <GitBranch className="w-5 h-5" strokeWidth={1.9} />
           )}
         </div>
-
-        {/* ─── SECTION 3: INTELLIGENCE ─── */}
-        <div className="mb-5">
-          <h3
-            className={`text-[11px] font-bold uppercase tracking-[0.08em] px-3.5 mb-2 select-none ${
-              isDark ? 'text-[#8696a0]' : 'text-[#5b6b82]'
-            }`}
-          >
-            INTELLIGENCE
-          </h3>
-
-          {/* Academic Mode (Disguise trigger) */}
-          {renderItem(
-            'Academic Mode',
-            null,
-            <GraduationCap className="w-5 h-5" strokeWidth={1.9} />,
-            onOpenAcademicMode,
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              Disguise
-            </span>
-          )}
-
-          {/* Audit logs (Recycle Bin) */}
-          {renderItem(
-            'Audit logs',
-            'recycle',
-            <ShieldCheck className="w-5 h-5" strokeWidth={1.9} />
-          )}
-        </div>
-
-        {/* ─── SECTION 4: RESOURCES ─── */}
-        <div className="mb-4">
-          <h3
-            className={`text-[11px] font-bold uppercase tracking-[0.08em] px-3.5 mb-2 select-none ${
-              isDark ? 'text-[#8696a0]' : 'text-[#5b6b82]'
-            }`}
-          >
-            RESOURCES
-          </h3>
-
-          {/* Knowledge base */}
-          {renderItem(
-            'Knowledge base',
-            null,
-            <BookOpen className="w-5 h-5" strokeWidth={1.9} />,
-            () => {
-              onSelectView('status');
-            }
-          )}
-
-          {/* Account profile */}
-          {renderItem(
-            'Account profile',
-            null,
-            <UserCircle className="w-5 h-5" strokeWidth={1.9} />,
-            onOpenProfile,
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {studentName}
-            </span>
-          )}
-        </div>
       </div>
 
-      {/* ─── BOTTOM FOOTER (Divider + Design system) ─── */}
-      <div className="shrink-0 px-3.5 pb-4 pt-1">
-        <div className={`border-t mb-3 ${isDark ? 'border-[#222e35]' : 'border-slate-200'}`} />
-
-        {renderItem(
-          'Design system',
-          null,
-          <Palette className="w-5 h-5" strokeWidth={1.9} />,
-          onOpenProfile,
-          <span className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-            <Sparkles className="w-3.5 h-3.5" />
-            Active
-          </span>
-        )}
+      {/* ─── User identity at bottom ─── */}
+      <div className={`px-4 py-3 border-t ${isDark ? 'border-[#222e35]' : 'border-slate-200'}`}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+            {(studentName[0] || 'S').toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className={`text-[12px] font-bold truncate ${isDark ? 'text-[#e9edef]' : 'text-[#0f172a]'}`}>
+              {studentName}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+              <p className={`text-[10px] ${isDark ? 'text-[#8696a0]' : 'text-[#64748b]'}`}>
+                Online
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

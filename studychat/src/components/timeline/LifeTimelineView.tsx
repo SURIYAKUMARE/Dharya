@@ -1,16 +1,15 @@
 /**
  * LifeTimelineView.tsx
- * Ultra-unique, interactive Life Timeline & Memory River for Dharya.
- * Features:
- * - Winding chronological memory river with glowing gradient spine
- * - Alternating left/right desktop milestone cards with connector branches
- * - Relationship journey counter integration ("Days Together" milestone ribbons)
- * - Category tags with vivid color coding (Milestone, First Time, Special Date, Travel, Campus, Funny, Achievement)
- * - Photo attachments with interactive lightbox viewer
- * - Story playback / "Relive Journey" automatic memory walk-through
- * - Real-time full-text search across stories, dates, headlines, and locations
- * - Add, Edit, Copy Story, and Move-to-Recycle-Bin support
- * - Backed permanently by IndexedDB browser storage engine
+ * Ultra-unique, interactive Life Timeline & Serpentine Memory River for Dharya.
+ * 
+ * Accurately replicates the serpentine winding path design:
+ * - Continuous dashed green trail with waypoints and heart loop in the center
+ * - Teardrop location markers with glowing magenta anchor capsules
+ * - Mint Green and Blossom Pink pastel milestone cards matching the reference image
+ * - Bottom frosted summary pill: "My Journey | Jul 2024 – Nov 2026 | 7 Milestones"
+ * - Clickable cards that open story details, lightbox photo viewer, and memory editor
+ * - Seamless integration with IndexedDB for custom memories
+ * - View mode toggle between "Trail Map" (reference design) and "Story Stream"
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -46,6 +45,15 @@ import {
   Compass,
   Star,
   Quote,
+  Building2,
+  GraduationCap,
+  Rocket,
+  LayoutGrid,
+  Code2,
+  Trophy,
+  Target,
+  GitCommit,
+  Map,
 } from 'lucide-react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import {
@@ -103,20 +111,114 @@ function getTagConfig(tagName?: string): TagConfig {
   );
 }
 
-function getRelativeTime(dateStr: string, timestamp: number): string {
-  try {
-    const target = new Date(dateStr).getTime() || timestamp;
-    const diffDays = Math.round((Date.now() - target) / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays > 1 && diffDays < 30) return `${diffDays} days ago`;
-    if (diffDays >= 30 && diffDays < 365) return `${Math.floor(diffDays / 30)} mo ago`;
-    if (diffDays >= 365) return `${(diffDays / 365).toFixed(1)} yr ago`;
-    return 'Upcoming';
-  } catch {
-    return 'Milestone';
-  }
+export interface JourneyMilestone {
+  id: string;
+  title: string;
+  subtitle: string;
+  dateStr: string;
+  theme: 'green' | 'pink';
+  iconType: 'building' | 'graduation' | 'medal' | 'rocket' | 'microsoft' | 'code' | 'trophy';
+  pinX: number; // percentage X in container
+  pinY: number; // percentage Y in container
+  cardSide: 'left' | 'right';
+  description: string;
+  location?: string;
+  photoUrl?: string;
 }
+
+export const DEFAULT_JOURNEY_MILESTONES: JourneyMilestone[] = [
+  {
+    id: 'm1',
+    title: 'College Began',
+    subtitle: 'Started my Engineering journey',
+    dateStr: 'Jul 2024',
+    theme: 'green',
+    iconType: 'building',
+    pinX: 13,
+    pinY: 83,
+    cardSide: 'right',
+    description: 'Began the college journey! Exploring campus corridors, attending our very first lectures, meeting brilliant peers, and charting out ambitious dreams for the future.',
+    location: 'College Campus',
+  },
+  {
+    id: 'm2',
+    title: 'Year 2 – AIML',
+    subtitle: 'Rathinam Technical Campus',
+    dateStr: 'Sep 2025',
+    theme: 'pink',
+    iconType: 'graduation',
+    pinX: 38,
+    pinY: 71,
+    cardSide: 'right',
+    description: 'Stepping into 2nd year Artificial Intelligence & Machine Learning at Rathinam Technical Campus. Diving deep into data structures, algorithms, neural networks, and research labs.',
+    location: 'Rathinam Technical Campus',
+  },
+  {
+    id: 'm3',
+    title: 'Certification',
+    subtitle: 'Completed Microsoft Fabric',
+    dateStr: 'Jan 2026',
+    theme: 'green',
+    iconType: 'medal',
+    pinX: 62,
+    pinY: 59,
+    cardSide: 'right',
+    description: 'Successfully cleared the official Microsoft Fabric Analytics & Cloud Engineering certification after intensive hands-on practical architectures.',
+    location: 'Microsoft Certified Portal',
+  },
+  {
+    id: 'm4',
+    title: 'Project Launch',
+    subtitle: 'TrustGuard AI (Live)',
+    dateStr: 'Mar 2026',
+    theme: 'green',
+    iconType: 'rocket',
+    pinX: 42,
+    pinY: 48,
+    cardSide: 'left',
+    description: 'TrustGuard AI officially released live into production! An intelligent real-time security framework safeguarding digital workflows with adaptive defense.',
+    location: 'Cloud Production Release',
+  },
+  {
+    id: 'm5',
+    title: 'Internship',
+    subtitle: 'Started Microsoft Internship',
+    dateStr: 'Jun 2026',
+    theme: 'pink',
+    iconType: 'microsoft',
+    pinX: 64,
+    pinY: 31,
+    cardSide: 'right',
+    description: 'Joined Microsoft for the software engineering summer internship program. Building enterprise features and collaborating with world-class engineering teams.',
+    location: 'Microsoft Technology Center',
+  },
+  {
+    id: 'm6',
+    title: 'Hackathon',
+    subtitle: 'Won SAKTHI HACKFEST\'26',
+    dateStr: 'Sep 2026',
+    theme: 'pink',
+    iconType: 'code',
+    pinX: 47,
+    pinY: 23,
+    cardSide: 'left',
+    description: 'Bagged the coveted 1st Prize Championship at SAKTHI HACKFEST\'26 after building a high-impact prototype across 36 hours of relentless teamwork.',
+    location: 'Sakthi Hackfest Arena',
+  },
+  {
+    id: 'm7',
+    title: 'SIH 2026',
+    subtitle: 'Finalist – NIYAM Project',
+    dateStr: 'Nov 2026',
+    theme: 'green',
+    iconType: 'trophy',
+    pinX: 69,
+    pinY: 12,
+    cardSide: 'right',
+    description: 'Selected as national grand finalists at Smart India Hackathon (SIH 2026) representing the NIYAM Project on the national stage in front of industry juries.',
+    location: 'SIH National Grand Finale',
+  },
+];
 
 export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   isDark = true,
@@ -129,12 +231,18 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   const partnerName = owner === 'surya' ? 'Sadhana' : 'Surya';
   const dateCount = useDateCount();
 
+  // ── View Mode: 'trail' (Winding Path Map) vs 'stream' (Chronological Story Cards) ──
+  const [viewMode, setViewMode] = useState<'trail' | 'stream'>('trail');
+
   // ── Data State ───────────────────────────────────────────────────
   const [incidents, setIncidents] = useState<TimelineIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+
+  // ── Selected Milestone Modal State (from clicking trail cards) ──
+  const [selectedMilestone, setSelectedMilestone] = useState<JourneyMilestone | null>(null);
 
   // ── Modals & Creator State ───────────────────────────────────────
   const [showModal, setShowModal] = useState(false);
@@ -184,7 +292,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
     loadIncidents();
   }, [loadIncidents]);
 
-  // ── Filtered Incidents ───────────────────────────────────────────
+  // ── Filtered Incidents for Story Stream ──────────────────────────
   const filteredIncidents = useMemo(() => {
     let list = [...incidents];
 
@@ -209,6 +317,21 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
 
     return list;
   }, [incidents, selectedTag, searchQuery, sortOrder]);
+
+  // Combine custom incidents with default milestones for the trail
+  const activeTrailMilestones = useMemo(() => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return DEFAULT_JOURNEY_MILESTONES.filter(
+        (m) =>
+          m.title.toLowerCase().includes(q) ||
+          m.subtitle.toLowerCase().includes(q) ||
+          m.dateStr.toLowerCase().includes(q) ||
+          m.description.toLowerCase().includes(q)
+      );
+    }
+    return DEFAULT_JOURNEY_MILESTONES;
+  }, [searchQuery]);
 
   // ── Open Add/Edit Modal ──────────────────────────────────────────
   const handleOpenAdd = () => {
@@ -320,10 +443,10 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
     }
   };
 
-  const handleCopyStory = (inc: TimelineIncident) => {
-    const text = `📖 ${inc.incidentDate} — ${inc.title}\n${inc.location ? `📍 ${inc.location}\n` : ''}\n"${inc.incidentText}"`;
+  const handleCopyStory = (titleStr: string, dateStr: string, descStr: string) => {
+    const text = `📖 ${dateStr} — ${titleStr}\n"${descStr}"`;
     navigator.clipboard?.writeText(text);
-    setCopiedId(inc.id);
+    setCopiedId(titleStr);
     showToast('Copied story to clipboard ✨');
     setTimeout(() => setCopiedId(null), 2500);
   };
@@ -352,10 +475,34 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   const activeLightboxItem =
     lightboxIncidentIdx !== null ? filteredIncidents[lightboxIncidentIdx] : null;
 
+  // Render milestone icon matching the exact reference image
+  const renderMilestoneIcon = (type: JourneyMilestone['iconType'], theme: 'green' | 'pink') => {
+    const isGreen = theme === 'green';
+    const colorClass = isGreen ? 'text-[#15803D]' : 'text-[#BE185D]';
+    switch (type) {
+      case 'building':
+        return <Building2 className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'graduation':
+        return <GraduationCap className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'medal':
+        return <Award className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'rocket':
+        return <Rocket className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'microsoft':
+        return <LayoutGrid className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'code':
+        return <Code2 className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      case 'trophy':
+        return <Trophy className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+      default:
+        return <Sparkles className={`w-5 h-5 sm:w-6 sm:h-6 ${colorClass}`} strokeWidth={2.2} />;
+    }
+  };
+
   return (
     <div
       className={`w-full h-full flex flex-col overflow-hidden relative select-none font-sans transition-colors ${
-        isDark ? 'bg-[#0c1317] text-[#e9edef]' : 'bg-[#f8fafc] text-[#0f172a]'
+        isDark ? 'bg-[#0c1317] text-[#e9edef]' : 'bg-[#fafcf8] text-[#0f172a]'
       }`}
     >
       {/* ── Toast Notification ── */}
@@ -368,8 +515,8 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
 
       {/* ── Top Header Bar ── */}
       <header
-        className={`px-4 sm:px-6 py-3.5 border-b z-30 shrink-0 transition-colors ${
-          isDark ? 'bg-[#111b21] border-[#222e35]' : 'bg-white border-slate-200'
+        className={`px-4 sm:px-6 py-3 border-b z-30 shrink-0 transition-colors ${
+          isDark ? 'bg-[#111b21] border-[#222e35]' : 'bg-white border-slate-200/90'
         }`}
       >
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -389,386 +536,574 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               </button>
             )}
 
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-500 text-white flex items-center justify-center shadow-md">
-              <Heart className="w-5 h-5 fill-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#15803D] via-[#059669] to-[#be185d] text-white flex items-center justify-center shadow-md">
+              <Compass className="w-5 h-5 text-white" />
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight">Our Life Timeline</h1>
+                <h1 className="text-base sm:text-lg font-bold tracking-tight">Timeline Journey</h1>
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                     isDark
-                      ? 'bg-rose-500/15 text-rose-400'
-                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   }`}
                 >
-                  {incidents.length} chapters
+                  Jul 2024 – Nov 2026
                 </span>
               </div>
               <p className={`text-xs ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
-                Surya & {partnerName}'s private story stream
+                Winding Milestone Path • 7 Chapters
               </p>
             </div>
           </div>
 
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search chapters, memories, dates, locations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-9 pr-9 py-2 rounded-2xl text-xs sm:text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-rose-500 ${
-                isDark
-                  ? 'bg-[#1f2c34] border-[#2a3942] text-white placeholder-[#8696a0]'
-                  : 'bg-slate-100/80 border-slate-200 text-slate-800 placeholder-slate-400'
-              }`}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-
-          {/* Action CTAs */}
+          {/* View Mode Switcher: Trail Map vs Story Stream */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            {/* Relive Journey Button */}
-            {filteredIncidents.length > 0 && (
+            <div className={`p-1 rounded-2xl border flex items-center gap-1 ${
+              isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-slate-100 border-slate-200'
+            }`}>
               <button
-                onClick={() => {
-                  setLightboxIncidentIdx(0);
-                  setIsRelivingJourney(true);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                  isDark
-                    ? 'border-[#222e35] hover:bg-white/5 text-rose-400'
-                    : 'border-rose-200 hover:bg-rose-50 text-rose-600'
+                onClick={() => setViewMode('trail')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  viewMode === 'trail'
+                    ? 'bg-[#15803D] text-white shadow-sm font-bold'
+                    : isDark
+                    ? 'text-[#8696a0] hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Watch auto-playing memory slideshow"
+                title="Winding Trail Map View"
               >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Relive Journey</span>
+                <Map className="w-3.5 h-3.5" />
+                <span>Trail Map</span>
               </button>
-            )}
+
+              <button
+                onClick={() => setViewMode('stream')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  viewMode === 'stream'
+                    ? 'bg-[#15803D] text-white shadow-sm font-bold'
+                    : isDark
+                    ? 'text-[#8696a0] hover:text-white'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title="Story Stream List View"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Story Stream</span>
+              </button>
+            </div>
 
             {/* Add memory CTA */}
             <button
               onClick={handleOpenAdd}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition-all"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition-all"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Record Memory</span>
             </button>
           </div>
         </div>
-
-        {/* ── Category Filter Pills ── */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pt-3 border-t mt-3 border-slate-200/60 dark:border-slate-800 scrollbar-none">
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setSelectedTag('all')}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
-                selectedTag === 'all'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : isDark
-                  ? 'text-[#8696a0] hover:bg-white/5 hover:text-white'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              All Chapters ({incidents.length})
-            </button>
-
-            {PRESET_TAGS.map((t) => {
-              const active = selectedTag === t.id;
-              const count = incidents.filter((i) => i.tag === t.id).length;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedTag(t.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
-                    active
-                      ? `${t.bgBadge} ${t.borderBadge} border shadow-sm font-bold`
-                      : isDark
-                      ? 'text-[#8696a0] hover:bg-white/5 hover:text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <span>{t.emoji}</span>
-                  <span>{t.label}</span>
-                  {count > 0 && <span className="text-[10px] opacity-80">({count})</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Sort order toggle */}
-          <button
-            onClick={() => setSortOrder((s: SortOrder) => (s === 'newest' ? 'oldest' : 'newest'))}
-            className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors flex items-center gap-1 shrink-0 ${
-              isDark
-                ? 'border-[#222e35] text-[#8696a0] hover:text-white'
-                : 'border-slate-200 text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Filter className="w-3 h-3" />
-            <span>{sortOrder === 'newest' ? 'Newest first' : 'Storyline (Oldest first)'}</span>
-          </button>
-        </div>
       </header>
 
-      {/* ── Scrollable Timeline River ── */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-8">
-        {/* Relationship Counter Banner */}
-        {dateCount && (
-          <div
-            className={`max-w-4xl mx-auto rounded-3xl p-5 border relative overflow-hidden transition-all ${
-              isDark
-                ? 'bg-gradient-to-r from-rose-950/40 via-[#182229] to-pink-950/40 border-[#2a3942]'
-                : 'bg-gradient-to-r from-rose-50 via-white to-pink-50 border-rose-200/80 shadow-sm'
-            }`}
-          >
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shrink-0">
-                  <Sparkles className="w-6 h-6 fill-white" />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wider font-extrabold text-rose-500">
-                    Relationship Milestone Journey
-                  </p>
-                  <p className="text-base sm:text-lg font-bold mt-0.5">
-                    {dateCount.dateStr} • {dateCount.days}d {dateCount.hours}h {dateCount.minutes}m {dateCount.seconds}s
-                  </p>
-                </div>
-              </div>
+      {/* ── Main Scrollable Timeline Stage ── */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-6 lg:p-8 scrollbar-thin">
+        {/* ═══════════════════════════════════════════════════════════════
+            VIEW 1: WINDING SERPENTINE TRAIL MAP (Reference Design)
+        ═══════════════════════════════════════════════════════════════ */}
+        {viewMode === 'trail' && (
+          <div className="max-w-4xl mx-auto py-2 sm:py-6">
+            {/* The Trail Board with SVG Path & Overlaid Cards */}
+            <div className="relative w-full aspect-[800/1180] min-h-[780px] sm:min-h-[960px] md:min-h-[1050px] select-none">
+              {/* Background ambient subtle glow */}
+              <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-pink-500/5 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="flex items-center gap-3">
-                <div className="text-center px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-sm">
-                  <p className="text-xs font-bold text-rose-500">{incidents.length}</p>
-                  <p className="text-[10px] text-slate-400">Recorded</p>
-                </div>
-                <div className="text-center px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-sm">
-                  <p className="text-xs font-bold text-emerald-500">
-                    {incidents.filter((i) => i.photoUrl).length}
-                  </p>
-                  <p className="text-[10px] text-slate-400">Photos</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+              {/* ── SVG Winding Green Dashed Trail & Heart Loop ── */}
+              <svg
+                viewBox="0 0 800 1180"
+                className="absolute inset-0 w-full h-full pointer-events-none overflow-visible"
+              >
+                {/* Defs for gradients & filters */}
+                <defs>
+                  <filter id="trail-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#15803d" floodOpacity="0.25" />
+                  </filter>
+                </defs>
 
-        {/* Loading state */}
-        {loading && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            {[1, 2, 3].map((n) => (
+                {/* 1. Path from Node 1 (Jul 2024) to Heart */}
+                <path
+                  d="M 104 980 C 140 940, 240 890, 304 840 C 370 795, 470 755, 496 698 C 508 642, 420 615, 336 570 C 330 520, 360 480, 410 470"
+                  fill="none"
+                  stroke="#15803d"
+                  strokeWidth="2.5"
+                  strokeDasharray="6,6"
+                  strokeLinecap="round"
+                  filter="url(#trail-glow)"
+                />
+
+                {/* 2. Heart Loop in the Center */}
+                <path
+                  d="M 420 500 C 370 450 330 395 380 355 C 410 330 420 370 420 380 C 420 370 430 330 460 355 C 510 395 470 450 420 500 Z"
+                  fill="none"
+                  stroke="#15803d"
+                  strokeWidth="2.5"
+                  strokeDasharray="6,6"
+                  strokeLinecap="round"
+                  filter="url(#trail-glow)"
+                />
+
+                {/* 3. Path from Heart to Node 7 (Nov 2026) */}
+                <path
+                  d="M 425 470 C 455 435, 485 395, 512 368 C 525 325, 460 295, 376 273 C 350 240, 465 190, 552 143"
+                  fill="none"
+                  stroke="#15803d"
+                  strokeWidth="2.5"
+                  strokeDasharray="6,6"
+                  strokeLinecap="round"
+                  filter="url(#trail-glow)"
+                />
+              </svg>
+
+              {/* ── Soft Heart Pulse inside the Loop ── */}
               <div
-                key={n}
-                className="h-44 rounded-3xl bg-slate-200 dark:bg-white/5 animate-pulse"
-              />
-            ))}
-          </div>
-        )}
+                className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none"
+                style={{ left: '52.5%', top: '36.5%' }}
+              >
+                <Heart className="w-8 h-8 text-rose-500/20 fill-rose-500/10 animate-pulse" />
+              </div>
 
-        {/* Empty state */}
-        {!loading && filteredIncidents.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto">
-            <div className="w-16 h-16 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mb-4">
-              <Heart className="w-8 h-8" />
-            </div>
-            <h3 className="text-base font-bold">No memories in this view</h3>
-            <p className={`text-xs mt-1 mb-5 ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
-              {searchQuery
-                ? `No chapters match "${searchQuery}"`
-                : 'Begin documenting your life journey by adding your first memorable incident.'}
-            </p>
-            <button
-              onClick={handleOpenAdd}
-              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-colors"
-            >
-              Record First Memory
-            </button>
-          </div>
-        )}
-
-        {/* ── THE MEMORY RIVER (Alternating Desktop / Fluid Mobile) ── */}
-        {!loading && filteredIncidents.length > 0 && (
-          <div className="relative max-w-5xl mx-auto py-4">
-            {/* Illuminated Center Spine */}
-            <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-1 -translate-x-1/2 bg-gradient-to-b from-rose-500 via-pink-400 via-purple-500 to-amber-500 rounded-full opacity-40 shadow-[0_0_12px_rgba(244,63,94,0.3)] pointer-events-none" />
-
-            {/* Stream of Milestone Cards */}
-            <div className="space-y-10 sm:space-y-12">
-              {filteredIncidents.map((inc, index) => {
-                const tagConfig = getTagConfig(inc.tag);
-                const isEven = index % 2 === 0;
-                const relativeTime = getRelativeTime(inc.incidentDate, inc.timestamp);
+              {/* ── 7 Waypoint Nodes (Markers + Pastel Cards) ── */}
+              {activeTrailMilestones.map((m) => {
+                const isGreen = m.theme === 'green';
 
                 return (
-                  <div
-                    key={inc.id}
-                    className={`relative flex items-center flex-col md:flex-row ${
-                      isEven ? 'md:flex-row-reverse' : ''
-                    }`}
-                  >
-                    {/* Glowing Milestone Spine Node */}
+                  <React.Fragment key={m.id}>
+                    {/* Waypoint Location Pin & Ground Capsule */}
                     <div
-                      className={`absolute left-6 md:left-1/2 -translate-x-1/2 z-20 w-10 h-10 rounded-2xl flex items-center justify-center text-base border-2 bg-white dark:bg-[#111b21] shadow-lg transition-transform hover:scale-110 ${tagConfig.glow} ${tagConfig.borderBadge}`}
-                      style={{ borderColor: tagConfig.color }}
-                      title={`${inc.tag || 'Memory'}: ${inc.incidentDate}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center pointer-events-none"
+                      style={{ left: `${m.pinX}%`, top: `${m.pinY}%` }}
                     >
-                      <span>{tagConfig.emoji}</span>
+                      {/* Green Teardrop Map Marker Pin */}
+                      <div className="relative -top-1 transition-transform hover:scale-125 duration-200">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-[#15803D] drop-shadow-[0_2px_4px_rgba(0,0,0,0.22)]"
+                        >
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z" />
+                        </svg>
+                        {/* White inner center circle dot */}
+                        <span className="absolute top-[6px] sm:top-[8px] md:top-[9px] left-1/2 -translate-x-1/2 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white shadow-xs" />
+                      </div>
+
+                      {/* Glowing Pink/Magenta Anchor Capsule */}
+                      <div className="w-3.5 h-1.5 sm:w-4 sm:h-2 rounded-full bg-[#E11D48] shadow-[0_0_8px_rgba(225,29,72,0.7)] mt-[-2px]" />
                     </div>
 
-                    {/* Milestone Card Container */}
+                    {/* Milestone Pastel Card */}
                     <div
-                      className={`w-full pl-14 md:pl-0 md:w-[46%] ${
-                        isEven ? 'md:pr-10' : 'md:pl-10'
-                      }`}
+                      className="absolute -translate-y-1/2 z-10 w-[46%] sm:w-[42%] md:w-[38%] max-w-[310px]"
+                      style={{
+                        top: `${m.pinY}%`,
+                        ...(m.cardSide === 'right'
+                          ? { left: `calc(${m.pinX}% + 14px)` }
+                          : { right: `calc(${100 - m.pinX}% + 14px)` }),
+                      }}
                     >
-                      <article
-                        className={`rounded-3xl p-5 border transition-all duration-300 hover:shadow-xl group relative overflow-hidden ${
-                          isDark
-                            ? 'bg-[#182229]/90 border-[#2a3942] hover:border-rose-500/40 text-white'
-                            : 'bg-white border-slate-200/90 hover:border-rose-300 text-slate-900 shadow-sm'
+                      <div
+                        onClick={() => setSelectedMilestone(m)}
+                        className={`rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 md:p-4 border transition-all duration-200 hover:scale-[1.025] hover:shadow-xl cursor-pointer select-none flex items-center gap-2.5 sm:gap-3.5 ${
+                          isGreen
+                            ? isDark
+                              ? 'bg-[#12281e]/92 border-[#15803d]/45 hover:border-[#22c55e]/70 shadow-[0_4px_20px_rgba(21,128,61,0.18)] text-white'
+                              : 'bg-[#F0FDF4] border-[#BBF7D0] hover:border-[#86EFAC] shadow-[0_6px_22px_rgba(22,101,52,0.07)] text-slate-900'
+                            : isDark
+                            ? 'bg-[#2a1722]/92 border-[#be185d]/45 hover:border-[#f43f5e]/70 shadow-[0_4px_20px_rgba(190,24,93,0.18)] text-white'
+                            : 'bg-[#FDF2F8] border-[#FBCFE8] hover:border-[#F472B6] shadow-[0_6px_22px_rgba(190,24,93,0.07)] text-slate-900'
                         }`}
                       >
-                        {/* Top Metadata Row */}
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${tagConfig.bgBadge} ${tagConfig.borderBadge}`}
-                            >
-                              {tagConfig.emoji} {tagConfig.label}
-                            </span>
-                            <span className="text-[11px] font-mono text-slate-400">
-                              {inc.incidentDate}
-                            </span>
-                          </div>
-
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400">
-                            {relativeTime}
-                          </span>
-                        </div>
-
-                        {/* Attached Photo */}
-                        {inc.photoUrl && (
-                          <div
-                            onClick={() => setLightboxIncidentIdx(index)}
-                            className="relative mb-4 rounded-2xl overflow-hidden aspect-video bg-black/30 cursor-pointer group/photo shadow-md"
-                          >
-                            <img
-                              src={inc.photoUrl}
-                              alt={inc.title}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover/photo:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
-                              <span className="px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1.5">
-                                <ZoomIn className="w-3.5 h-3.5" />
-                                <span>View Full Photo</span>
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Title & Location */}
-                        <div className="space-y-1 mb-3">
-                          <h2 className="text-base sm:text-lg font-bold tracking-tight leading-snug">
-                            {inc.title}
-                          </h2>
-                          {inc.location && (
-                            <p className="text-xs text-rose-500 flex items-center gap-1 font-medium">
-                              <MapPin className="w-3 h-3" />
-                              <span>{inc.location}</span>
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Story Content with Quote Styling */}
+                        {/* Icon Container Badge */}
                         <div
-                          className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-line border relative ${
-                            isDark
-                              ? 'bg-[#111b21] border-[#222e35] text-slate-200'
-                              : 'bg-slate-50 border-slate-200 text-slate-700'
+                          className={`w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 border ${
+                            isGreen
+                              ? isDark
+                                ? 'bg-[#1b4332] border-[#2d6a4f]'
+                                : 'bg-[#DCFCE7] border-[#86EFAC]/50'
+                              : isDark
+                              ? 'bg-[#4c1d38] border-[#831843]'
+                              : 'bg-[#FCE7F3] border-[#F472B6]/50'
                           }`}
                         >
-                          <Quote className="w-4 h-4 text-rose-500/40 mb-1" />
-                          <p>{inc.incidentText}</p>
+                          {renderMilestoneIcon(m.iconType, m.theme)}
                         </div>
 
-                        {/* Bottom Action Strip */}
-                        <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-200/50 dark:border-white/5 text-xs">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleCopyStory(inc)}
-                              className={`p-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
-                                copiedId === inc.id
-                                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
-                                  : isDark
-                                  ? 'border-[#222e35] text-[#8696a0] hover:text-white hover:bg-white/5'
-                                  : 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        {/* Text & Date Content */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1 sm:gap-1.5">
+                            <Calendar
+                              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 ${
+                                isGreen
+                                  ? isDark ? 'text-emerald-400' : 'text-[#166534]'
+                                  : isDark ? 'text-rose-400' : 'text-[#9D174D]'
                               }`}
-                              title="Copy Story"
-                            >
-                              {copiedId === inc.id ? (
-                                <Check className="w-3.5 h-3.5" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                              <span className="text-[10px]">
-                                {copiedId === inc.id ? 'Copied' : 'Story'}
-                              </span>
-                            </button>
-
-                            <button
-                              onClick={() => handleOpenEdit(inc)}
-                              className={`p-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
-                                isDark
-                                  ? 'border-[#222e35] text-[#8696a0] hover:text-white hover:bg-white/5'
-                                  : 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            />
+                            <span
+                              className={`text-[10px] sm:text-[11.5px] font-semibold ${
+                                isGreen
+                                  ? isDark ? 'text-emerald-400' : 'text-[#166534]'
+                                  : isDark ? 'text-rose-400' : 'text-[#9D174D]'
                               }`}
-                              title="Edit Memory"
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
-                              <span className="text-[10px]">Edit</span>
-                            </button>
+                              {m.dateStr}
+                            </span>
                           </div>
 
-                          {/* Delete */}
-                          <button
-                            onClick={() => setDeleteTarget(inc)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                            title="Move to Recycle Bin"
+                          <h3
+                            className={`text-[12px] sm:text-[14px] md:text-[15px] font-extrabold tracking-tight truncate leading-tight mt-0.5 ${
+                              isGreen
+                                ? isDark ? 'text-[#e9edef]' : 'text-[#0F172A]'
+                                : isDark ? 'text-[#fda4af]' : 'text-[#9F1239]'
+                            }`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                            {m.title}
+                          </h3>
+
+                          <p
+                            className={`text-[9.5px] sm:text-[11px] truncate leading-snug mt-0.5 ${
+                              isDark ? 'text-[#8696a0]' : 'text-[#475569]'
+                            }`}
+                          >
+                            {m.subtitle}
+                          </p>
                         </div>
-                      </article>
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>
+
+            {/* ── Bottom Summary Banner: My Journey | Jul 2024 – Nov 2026 | 7 Milestones ── */}
+            <div className="mt-6 px-2">
+              <div
+                className={`w-full max-w-2xl mx-auto rounded-3xl p-3.5 sm:p-4.5 border transition-all duration-300 shadow-lg flex items-center justify-between select-none ${
+                  isDark
+                    ? 'bg-[#182229]/95 border-[#2a3942] text-white shadow-black/40'
+                    : 'bg-white/95 border-[#E2E8F0] text-slate-900 shadow-slate-200/50'
+                }`}
+              >
+                {/* Left: Pink Journey Chain Icon & Title */}
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-rose-50 to-pink-100 dark:from-rose-950/40 dark:to-pink-900/40 border border-rose-300/60 dark:border-rose-800 text-[#E11D48] flex items-center justify-center shrink-0 shadow-xs">
+                    <GitCommit className="w-5 h-5 sm:w-6 sm:h-6 rotate-45" strokeWidth={2.5} />
+                  </div>
+
+                  <div className="h-7 w-px bg-slate-200 dark:bg-white/10 shrink-0" />
+
+                  <div className="min-w-0">
+                    <h4 className="text-sm sm:text-base font-extrabold tracking-tight text-[#0F172A] dark:text-[#E9EDEF] truncate">
+                      My Journey
+                    </h4>
+                    <p className="text-[11px] sm:text-xs text-[#64748B] dark:text-[#8696A0] font-medium truncate">
+                      Jul 2024 – Nov 2026
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Pink Target Circle & Milestone Count */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-[#BE185D] dark:text-rose-400 font-extrabold text-xs sm:text-sm shrink-0 shadow-2xs">
+                  <Target className="w-4 h-4 text-[#BE185D] dark:text-rose-400 stroke-[2.3]" />
+                  <span>7 Milestones</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            VIEW 2: DETAILED STORY STREAM (Chronological Timeline Cards)
+        ═══════════════════════════════════════════════════════════════ */}
+        {viewMode === 'stream' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Relationship Counter Banner */}
+            {dateCount && (
+              <div
+                className={`rounded-3xl p-5 border relative overflow-hidden transition-all ${
+                  isDark
+                    ? 'bg-gradient-to-r from-rose-950/40 via-[#182229] to-pink-950/40 border-[#2a3942]'
+                    : 'bg-gradient-to-r from-rose-50 via-white to-pink-50 border-rose-200/80 shadow-sm'
+                }`}
+              >
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shrink-0">
+                      <Sparkles className="w-6 h-6 fill-white" />
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wider font-extrabold text-rose-500">
+                        Relationship Milestone Journey
+                      </p>
+                      <p className="text-base sm:text-lg font-bold mt-0.5">
+                        {dateCount.dateStr} • {dateCount.days}d {dateCount.hours}h {dateCount.minutes}m {dateCount.seconds}s
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-center px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-sm">
+                      <p className="text-xs font-bold text-rose-500">{incidents.length}</p>
+                      <p className="text-[10px] text-slate-400">Recorded</p>
+                    </div>
+                    <div className="text-center px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-sm">
+                      <p className="text-xs font-bold text-emerald-500">
+                        {incidents.filter((i) => i.photoUrl).length}
+                      </p>
+                      <p className="text-[10px] text-slate-400">Photos</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Empty state when no custom memories recorded yet */}
+            {filteredIncidents.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center max-w-sm mx-auto">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-[#15803d] flex items-center justify-center mb-4">
+                  <Compass className="w-8 h-8" />
+                </div>
+                <h3 className="text-base font-bold">Document Your Story</h3>
+                <p className={`text-xs mt-1 mb-5 ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+                  Record personal memories and reflections. They will be archived permanently in your private timeline.
+                </p>
+                <button
+                  onClick={handleOpenAdd}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-colors"
+                >
+                  Record First Memory
+                </button>
+              </div>
+            )}
+
+            {/* Stream of custom memories */}
+            {filteredIncidents.length > 0 && (
+              <div className="space-y-6">
+                {filteredIncidents.map((inc, index) => {
+                  const tagConfig = getTagConfig(inc.tag);
+
+                  return (
+                    <article
+                      key={inc.id}
+                      className={`rounded-3xl p-5 border transition-all duration-300 hover:shadow-xl group relative overflow-hidden ${
+                        isDark
+                          ? 'bg-[#182229]/90 border-[#2a3942] hover:border-emerald-500/40 text-white'
+                          : 'bg-white border-slate-200/90 hover:border-emerald-300 text-slate-900 shadow-sm'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${tagConfig.bgBadge} ${tagConfig.borderBadge}`}
+                          >
+                            {tagConfig.emoji} {tagConfig.label}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            {inc.incidentDate}
+                          </span>
+                        </div>
+                      </div>
+
+                      {inc.photoUrl && (
+                        <div
+                          onClick={() => setLightboxIncidentIdx(index)}
+                          className="relative mb-4 rounded-2xl overflow-hidden aspect-video bg-black/30 cursor-pointer group/photo shadow-md max-w-md"
+                        >
+                          <img
+                            src={inc.photoUrl}
+                            alt={inc.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover/photo:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-sm text-white text-xs font-semibold flex items-center gap-1.5">
+                              <ZoomIn className="w-3.5 h-3.5" />
+                              <span>View Full Photo</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-1 mb-3">
+                        <h2 className="text-base sm:text-lg font-bold tracking-tight leading-snug">
+                          {inc.title}
+                        </h2>
+                        {inc.location && (
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                            <MapPin className="w-3 h-3" />
+                            <span>{inc.location}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div
+                        className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-line border relative ${
+                          isDark
+                            ? 'bg-[#111b21] border-[#222e35] text-slate-200'
+                            : 'bg-slate-50 border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        <Quote className="w-4 h-4 text-emerald-500/40 mb-1" />
+                        <p>{inc.incidentText}</p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-200/50 dark:border-white/5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopyStory(inc.title, inc.incidentDate, inc.incidentText)}
+                            className={`p-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
+                              copiedId === inc.title
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30'
+                                : isDark
+                                ? 'border-[#222e35] text-[#8696a0] hover:text-white hover:bg-white/5'
+                                : 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                            title="Copy Story"
+                          >
+                            {copiedId === inc.title ? (
+                              <Check className="w-3.5 h-3.5" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                            <span className="text-[10px]">
+                              {copiedId === inc.title ? 'Copied' : 'Story'}
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={() => handleOpenEdit(inc)}
+                            className={`p-1.5 rounded-lg border transition-colors flex items-center gap-1 ${
+                              isDark
+                                ? 'border-[#222e35] text-[#8696a0] hover:text-white hover:bg-white/5'
+                                : 'border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                            }`}
+                            title="Edit Memory"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            <span className="text-[10px]">Edit</span>
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => setDeleteTarget(inc)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                          title="Move to Recycle Bin"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
 
+      {/* ── Modal: Milestone Detail Card (When clicking on Trail Map) ── */}
+      {selectedMilestone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div
+            className={`w-full max-w-md rounded-3xl p-6 shadow-2xl border ${
+              selectedMilestone.theme === 'green'
+                ? isDark
+                  ? 'bg-[#12281e] border-[#15803d]/50 text-white'
+                  : 'bg-[#F0FDF4] border-[#BBF7D0] text-slate-900'
+                : isDark
+                ? 'bg-[#2a1722] border-[#be185d]/50 text-white'
+                : 'bg-[#FDF2F8] border-[#FBCFE8] text-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                    selectedMilestone.theme === 'green'
+                      ? isDark
+                        ? 'bg-[#1b4332] border-[#2d6a4f]'
+                        : 'bg-[#DCFCE7] border-[#86EFAC]/60'
+                      : isDark
+                      ? 'bg-[#4c1d38] border-[#831843]'
+                      : 'bg-[#FCE7F3] border-[#F472B6]/60'
+                  }`}
+                >
+                  {renderMilestoneIcon(selectedMilestone.iconType, selectedMilestone.theme)}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-xs font-bold text-slate-500">
+                      {selectedMilestone.dateStr}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-extrabold tracking-tight">
+                    {selectedMilestone.title}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setSelectedMilestone(null)}
+                className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
+              📍 {selectedMilestone.subtitle}
+            </p>
+
+            <div className="p-4 rounded-2xl bg-white/70 dark:bg-black/30 border border-black/5 dark:border-white/10 text-xs sm:text-sm leading-relaxed mb-5">
+              <p>{selectedMilestone.description}</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  handleCopyStory(
+                    selectedMilestone.title,
+                    selectedMilestone.dateStr,
+                    selectedMilestone.description
+                  )
+                }
+                className="flex-1 py-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-white/80 dark:bg-white/10 hover:bg-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                {copiedId === selectedMilestone.title ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedId === selectedMilestone.title ? 'Copied' : 'Copy Story'}</span>
+              </button>
+
+              <button
+                onClick={() => setSelectedMilestone(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#15803D] hover:bg-[#166534] text-white text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Lightbox & Slideshow Modal ── */}
       {lightboxIncidentIdx !== null && activeLightboxItem && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between text-white animate-in fade-in duration-200">
-          {/* Top Bar */}
           <div className="px-4 py-3 flex items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/10 shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-white/70">
                 {lightboxIncidentIdx + 1} / {filteredIncidents.length}
               </span>
-              <span className="text-xs font-bold text-rose-400">
+              <span className="text-xs font-bold text-emerald-400">
                 {activeLightboxItem.incidentDate}
               </span>
             </div>
@@ -777,7 +1112,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               <button
                 onClick={() => setIsRelivingJourney(!isRelivingJourney)}
                 className={`p-2 rounded-xl transition-colors ${
-                  isRelivingJourney ? 'bg-rose-600 text-white' : 'hover:bg-white/10'
+                  isRelivingJourney ? 'bg-emerald-600 text-white' : 'hover:bg-white/10'
                 }`}
                 title={isRelivingJourney ? 'Pause Slideshow' : 'Play Slideshow'}
               >
@@ -796,7 +1131,6 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
             </div>
           </div>
 
-          {/* Center Stage */}
           <div className="flex-1 relative flex items-center justify-center p-4">
             <button
               onClick={() =>
@@ -820,14 +1154,14 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 />
               )}
               <div className="space-y-2 px-4">
-                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300">
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300">
                   {activeLightboxItem.tag || 'Milestone'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold tracking-tight">
                   {activeLightboxItem.title}
                 </h3>
                 {activeLightboxItem.location && (
-                  <p className="text-xs text-rose-400 font-medium">
+                  <p className="text-xs text-emerald-400 font-medium">
                     📍 {activeLightboxItem.location}
                   </p>
                 )}
@@ -865,7 +1199,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                <Compass className="w-5 h-5 text-[#15803d]" />
                 <h3 className="font-bold text-base">
                   {editingIncident ? 'Edit Milestone Chapter' : 'Record New Memory'}
                 </h3>
@@ -879,16 +1213,15 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
             </div>
 
             <form onSubmit={handleSaveIncident} className="space-y-4">
-              {/* Headline */}
               <div>
                 <label className="text-xs font-semibold text-slate-400">Headline Title</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Our First Long Walk, Campus Coffee Meetup..."
+                  placeholder="e.g. Hackathon Victory, New Certification, First Meetup..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                  className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                     isDark
                       ? 'bg-[#111b21] border-[#2a3942] text-white'
                       : 'bg-slate-50 border-slate-200 text-slate-900'
@@ -896,7 +1229,6 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 />
               </div>
 
-              {/* Date & Location Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-400">Date Happened</label>
@@ -905,7 +1237,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                     required
                     value={incidentDate}
                     onChange={(e) => setIncidentDate(e.target.value)}
-                    className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                    className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                       isDark
                         ? 'bg-[#111b21] border-[#2a3942] text-white'
                         : 'bg-slate-50 border-slate-200 text-slate-900'
@@ -917,10 +1249,10 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                   <label className="text-xs font-semibold text-slate-400">Location (Optional)</label>
                   <input
                     type="text"
-                    placeholder="e.g. Library rooftop, Beach..."
+                    placeholder="e.g. Campus, Convention Center..."
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                    className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                       isDark
                         ? 'bg-[#111b21] border-[#2a3942] text-white'
                         : 'bg-slate-50 border-slate-200 text-slate-900'
@@ -929,7 +1261,6 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 </div>
               </div>
 
-              {/* Tag Picker */}
               <div>
                 <label className="text-xs font-semibold text-slate-400">Category Tag</label>
                 <div className="flex flex-wrap gap-1.5 mt-1">
@@ -950,16 +1281,15 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 </div>
               </div>
 
-              {/* Story Narrative */}
               <div>
                 <label className="text-xs font-semibold text-slate-400">What Happened? (Full Story)</label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Write the full memory, conversation, or feelings here..."
+                  placeholder="Write the full memory, story, or feelings here..."
                   value={storyText}
                   onChange={(e) => setStoryText(e.target.value)}
-                  className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                  className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                     isDark
                       ? 'bg-[#111b21] border-[#2a3942] text-white'
                       : 'bg-slate-50 border-slate-200 text-slate-900'
@@ -967,12 +1297,11 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 />
               </div>
 
-              {/* Photo Upload */}
               <div>
                 <label className="text-xs font-semibold text-slate-400">Attach Photo (Optional)</label>
                 <div className="mt-1 flex items-center gap-3">
                   {photoPreview ? (
-                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-rose-500 shrink-0">
+                    <div className="relative w-20 h-20 rounded-2xl overflow-hidden border border-emerald-500 shrink-0">
                       <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -991,8 +1320,8 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                       onClick={() => fileInputRef.current?.click()}
                       className={`h-20 flex-1 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-2 text-xs transition-colors ${
                         isDark
-                          ? 'border-[#2a3942] hover:border-rose-500 text-slate-400'
-                          : 'border-slate-300 hover:border-rose-500 text-slate-500'
+                          ? 'border-[#2a3942] hover:border-emerald-500 text-slate-400'
+                          : 'border-slate-300 hover:border-emerald-500 text-slate-500'
                       }`}
                     >
                       <Camera className="w-5 h-5 mb-1" />
@@ -1009,7 +1338,6 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 </div>
               </div>
 
-              {/* Form buttons */}
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
@@ -1021,7 +1349,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white text-xs font-bold shadow-md"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md"
                 >
                   {isSubmitting ? 'Saving...' : editingIncident ? 'Update Milestone' : 'Record to Timeline'}
                 </button>

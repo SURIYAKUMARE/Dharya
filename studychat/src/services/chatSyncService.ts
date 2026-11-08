@@ -45,12 +45,13 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     minute: '2-digit',
   });
 
-  let msgType: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' = 'text';
+  let msgType: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' | 'contact' = 'text';
   if (row.poll_question) msgType = 'poll';
   else if (row.media_type === 'image') msgType = 'image';
   else if (row.media_type === 'video') msgType = 'video';
   else if (row.media_type === 'voice' || row.media_type === 'audio') msgType = 'voice';
   else if (row.media_type === 'document') msgType = 'document';
+  else if (row.media_type === 'contact') msgType = 'contact';
 
   let replyToObj: { id: string; sender: string; text: string } | undefined = undefined;
   if (row.reply_to) {
@@ -102,6 +103,7 @@ export function rowToMessage(row: any): ExtendedChatMessage {
     status,
     type: msgType,
     mediaUrl: deletedForAll ? undefined : (row.media_url || undefined),
+    mediaUrls: deletedForAll ? undefined : (row.formatted_content?.mediaUrls || undefined),
     thumbnailUrl: deletedForAll ? undefined : (row.media_thumb || undefined),
     reactions:
       typeof row.reactions === 'object' && row.reactions !== null ? row.reactions : {},
@@ -142,6 +144,7 @@ export function messageToRow(msg: ExtendedChatMessage, defaultChatId: string = C
     formatted_content: {
       transcript: msg.transcript || null,
       replyTo: msg.replyTo || null,
+      mediaUrls: msg.mediaUrls || null,
     },
     media_url: msg.mediaUrl || msg.documentUrl || msg.audioUrl || null,
     media_type: msg.type || 'text',

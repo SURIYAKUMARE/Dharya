@@ -59,6 +59,8 @@ import {
   Volume2,
   Clock,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Camera,
   Copy,
   BookOpen,
@@ -240,6 +242,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   useEffect(() => {
     isPartnerOnlineRef.current = isPartnerOnline;
   }, [isPartnerOnline]);
+
+  // Date badge label generator ("Today", "Yesterday", or formatted date)
+  const getDateDividerLabel = (timestamp: number): string => {
+    const d = new Date(timestamp);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      return 'Today';
+    }
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  };
 
   // ── SOUND & NOTIFICATION SETTINGS ──
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
@@ -800,6 +817,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     time: string;
     isViewOnce?: boolean;
     msgId?: string;
+    allUrls?: string[];
+    currentIndex?: number;
   } | null>(null);
 
   // Audio recording simulation state
@@ -1642,6 +1661,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             // Sync with Supabase on connect
             syncWithRemote.current();
+            // Start continuous background remote sync every 3s
+            const bgSyncTimer = setInterval(() => {
+              syncWithRemote.current();
+              crossDeviceSync.pollMissedEvents();
+            }, 3000);
+            const onWinFocus = () => {
+              syncWithRemote.current();
+              crossDeviceSync.pollMissedEvents();
+            };
+            window.addEventListener('focus', onWinFocus);
+            document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible') onWinFocus();
+            });
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             setConnectionStatus('offline');
           } else {
@@ -1688,7 +1720,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
         if (event === 'new_message') {
           const incoming = payload as ExtendedChatMessage;
-          if (incoming && incoming.sender !== currentUser) {
+          if (incoming && incoming.id) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === incoming.id)) return prev;
               const next = [...prev, incoming];
@@ -1696,21 +1728,24 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               return next;
             });
 
-            playNotificationSound();
-            triggerBrowserNotification(incoming);
+            // If incoming is from partner: chime, browser alert & read receipts
+            if (incoming.sender !== currentUser) {
+              playNotificationSound();
+              triggerBrowserNotification(incoming);
 
-            // Acknowledge delivery
-            crossDeviceSync.publish('message_status_update', {
-              msgId: incoming.id,
-              status: 'delivered',
-            });
-
-            // If active on chat, send read receipt
-            if (activeMainView === 'chat' && readReceiptsEnabledRef.current) {
+              // Acknowledge delivery
               crossDeviceSync.publish('message_status_update', {
                 msgId: incoming.id,
-                status: 'read',
+                status: 'delivered',
               });
+
+              // If active on chat, send read receipt
+              if (activeMainView === 'chat' && readReceiptsEnabledRef.current) {
+                crossDeviceSync.publish('message_status_update', {
+                  msgId: incoming.id,
+                  status: 'read',
+                });
+              }
             }
           }
         } else if (event === 'message_status_update') {
@@ -2708,7 +2743,56 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
     const total = pendingMediaList.length;
 
-    for (let i = 0; i < total; i++) {
+    // If multiple photos are selected, bundle them into a single authentic WhatsApp album collage
+    if (total > 1 && pendingMediaList.every((it) => it.type === 'image')) {
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < total; i++) {
+        const item = pendingMediaList[i];
+        let finalMediaUrl = item.url;
+        const cleanName = `${Date.now()}_${(item.fileName || 'photo.jpg').replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        if (item.file) {
+          try {
+            const uploadRes = await crossDeviceSync.uploadMediaAndBroadcast(item.file, cleanName, {
+              id: `msg-album-${Date.now()}-${i}`,
+              sender: currentUser,
+              timestamp: Date.now() + i,
+            });
+            if (uploadRes.cdnUrl) finalMediaUrl = uploadRes.cdnUrl;
+          } catch (e) {
+            console.warn('[handleSendMedia] Album upload fallback:', e);
+          }
+        }
+        uploadedUrls.push(finalMediaUrl);
+        setUploadProgressPct(Math.round(((i + 1) / total) * 90));
+      }
+
+      const albumMsg: ExtendedChatMessage = {
+        id: `msg-img-album-${Date.now()}`,
+        sender: currentUser,
+        text: mediaCaption.trim() || 'Photo',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        read: false,
+        status: 'sent',
+        type: 'image',
+        mediaUrl: uploadedUrls[0],
+        thumbnailUrl: uploadedUrls[0],
+        mediaUrls: uploadedUrls,
+        isHd: isHdSelected,
+        isViewOnce: isViewOnceSelected,
+        isOpened: false,
+        replyTo: replyingToMessage
+          ? {
+              id: replyingToMessage.id,
+              sender: replyingToMessage.sender,
+              text: replyingToMessage.text || replyingToMessage.type || 'Media',
+            }
+          : undefined,
+      };
+
+      await dispatchSendMessage(albumMsg);
+    } else {
+      for (let i = 0; i < total; i++) {
       const item = pendingMediaList[i];
       let finalMediaUrl = item.url;
       const isVideo = item.type === 'video';
@@ -2776,6 +2860,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       };
 
       await dispatchSendMessage(newMsg);
+      }
     }
 
     setUploadProgressPct(100);
@@ -2790,15 +2875,20 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   };
 
   // Open media in Fullscreen Lightbox / Media Viewer
-  const openLightbox = (msg: ExtendedChatMessage) => {
+  const openLightbox = (msg: ExtendedChatMessage, targetUrl?: string) => {
+    const urls = msg.mediaUrls && msg.mediaUrls.length > 0 ? msg.mediaUrls : [msg.mediaUrl || msg.thumbnailUrl || ''];
+    const activeUrl = targetUrl || urls[0] || '';
+    const curIdx = urls.indexOf(activeUrl);
     setLightboxMedia({
-      url: msg.mediaUrl || msg.thumbnailUrl || '',
+      url: activeUrl,
       type: msg.type === 'video' ? 'video' : 'image',
       caption: msg.text,
       sender: msg.sender,
       time: msg.time,
       isViewOnce: msg.isViewOnce,
       msgId: msg.id,
+      allUrls: urls,
+      currentIndex: curIdx >= 0 ? curIdx : 0,
     });
   };
 
@@ -3957,9 +4047,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       <div
         ref={chatScrollRef}
         onScroll={handleChatScroll}
-        className={`flex-1 overflow-y-auto px-2.5 sm:px-4 py-2 relative scroll-smooth ${fontClass}`}
+        className={`flex-1 overflow-y-auto px-2 sm:px-4 py-2 relative scroll-smooth ${fontClass}`}
         style={getWallpaperStyle()}
       >
+        {/* Centered Conversation Column for Authentic WhatsApp Layout */}
+        <div className="max-w-[960px] w-full mx-auto px-1 sm:px-3">
         {/* Load earlier messages button */}
         {hasMoreMessages && (
           <div className="flex justify-center my-2">
@@ -4008,16 +4100,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           </p>
         </div>
 
-        {/* Date Divider */}
-        <div className="flex justify-center my-3">
-          <span className={`px-3 py-1 rounded-lg text-[11px] font-medium shadow-sm uppercase tracking-wider ${
-            isDark
-              ? 'bg-[#182229] border border-[#2a3942]/60 text-[#8696a0]'
-              : 'bg-[#ffffff] border border-[#d1d7db] text-[#54656f]'
-          }`}>
-            Today
-          </span>
-        </div>
+{/* Dynamic date dividers are computed per-day in displayedMessages */}
 
         {/* Clean Empty State when no messages exist yet */}
         {displayedMessages.length === 0 && (
@@ -4043,21 +4126,38 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
         {/* Messages List */}
         {displayedMessages.map((msg, index) => {
+          const prevMsg = index > 0 ? displayedMessages[index - 1] : null;
+          const isNewDay = !prevMsg || new Date(prevMsg.timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
+
+          const dateDividerPill = isNewDay ? (
+            <div key={`date-${msg.id}`} className="flex justify-center my-3 select-none">
+              <span className={`px-3 py-1 rounded-[7.5px] text-[12px] font-medium shadow-[0_1px_0.5px_rgba(11,20,26,0.13)] uppercase tracking-wider ${
+                isDark
+                  ? 'bg-[#182229]/95 text-[#8696a0] border border-[#2a3942]/60'
+                  : 'bg-[#ffffff]/95 text-[#54656f] border border-[#d1d7db]/60'
+              }`}>
+                {getDateDividerLabel(msg.timestamp)}
+              </span>
+            </div>
+          ) : null;
+
           if (msg.sender === 'system' || msg.type === 'system') {
             return (
-              <div key={msg.id} className="flex justify-center my-2.5 select-none px-4">
-                <div className={`text-[12px] px-3.5 py-1.5 rounded-xl max-w-sm text-center shadow-xs flex items-center justify-center gap-1.5 ${
-                  isDark ? 'bg-[#182229]/90 text-[#8696a0] border border-white/5' : 'bg-[#f0f2f5] text-[#54656f] border border-black/5'
-                } ${fontClass}`}>
-                  <Clock className="w-3.5 h-3.5 text-[#00a884] shrink-0" />
-                  <span>{msg.text}</span>
+              <React.Fragment key={msg.id}>
+                {dateDividerPill}
+                <div key={msg.id} className="flex justify-center my-2.5 select-none px-4">
+                  <div className={`text-[12px] px-3.5 py-1.5 rounded-xl max-w-sm text-center shadow-xs flex items-center justify-center gap-1.5 ${
+                    isDark ? 'bg-[#182229]/90 text-[#8696a0] border border-white/5' : 'bg-[#f0f2f5] text-[#54656f] border border-black/5'
+                  } ${fontClass}`}>
+                    <Clock className="w-3.5 h-3.5 text-[#00a884] shrink-0" />
+                    <span>{msg.text}</span>
+                  </div>
                 </div>
-              </div>
+              </React.Fragment>
             );
           }
 
           const isMe = msg.sender === currentUser;
-          const prevMsg = index > 0 ? displayedMessages[index - 1] : null;
           const isConsecutive = !!(prevMsg && prevMsg.sender === msg.sender);
           const reactions = msg.reactions || {};
           const totalReactions = Object.values(reactions).flat().length;
@@ -4065,6 +4165,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           return (
             <React.Fragment key={msg.id}>
+              {dateDividerPill}
               {/* Unread Messages Separator */}
               {isFirstUnread && (
                 <div className="flex items-center justify-center my-3 select-none">
@@ -4184,22 +4285,89 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   </div>
                 )}
 
-                {/* ── REGULAR IMAGE MESSAGE ── */}
+                {/* ── REGULAR IMAGE MESSAGE & WHATSAPP PHOTO COLLAGE GRID ── */}
                 {msg.type === 'image' && !msg.isViewOnce && (
-                  <div className="space-y-1.5 mb-1 cursor-pointer" onClick={() => openLightbox(msg)}>
-                    <div className="relative rounded-xl overflow-hidden bg-black/40 max-h-80 group">
-                      <img
-                        src={msg.mediaUrl || msg.thumbnailUrl}
-                        alt="Photo"
-                        className="w-full h-auto object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
-                      />
-                      {/* HD Badge Overlay */}
-                      {msg.isHd && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5 shadow">
-                          <span>HD</span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="space-y-1.5 mb-1 select-none">
+                    {/* Multi-Photo WhatsApp Collage (2x2 Grid with +N Overlay) */}
+                    {msg.mediaUrls && msg.mediaUrls.length > 1 ? (
+                      <div>
+                        {msg.mediaUrls.length === 2 && (
+                          <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden max-w-[340px] sm:max-w-[420px]">
+                            {msg.mediaUrls.slice(0, 2).map((url, i) => (
+                              <img
+                                key={i}
+                                src={url}
+                                alt="Photo"
+                                onClick={() => openLightbox(msg, url)}
+                                className="w-full h-44 object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {msg.mediaUrls.length === 3 && (
+                          <div className="space-y-1 rounded-xl overflow-hidden max-w-[340px] sm:max-w-[420px]">
+                            <img
+                              src={msg.mediaUrls[0]}
+                              alt="Photo"
+                              onClick={() => openLightbox(msg, msg.mediaUrls![0])}
+                              className="w-full h-48 object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                            />
+                            <div className="grid grid-cols-2 gap-1">
+                              {msg.mediaUrls.slice(1, 3).map((url, i) => (
+                                <img
+                                  key={i}
+                                  src={url}
+                                  alt="Photo"
+                                  onClick={() => openLightbox(msg, url)}
+                                  className="w-full h-36 object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {msg.mediaUrls.length >= 4 && (
+                          <div className="grid grid-cols-2 gap-1 rounded-xl overflow-hidden max-w-[340px] sm:max-w-[420px]">
+                            {msg.mediaUrls.slice(0, 4).map((url, i) => {
+                              const isLast = i === 3;
+                              const extraCount = msg.mediaUrls!.length - 4;
+                              return (
+                                <div
+                                  key={i}
+                                  className="relative aspect-square overflow-hidden bg-black/40 cursor-pointer group"
+                                  onClick={() => openLightbox(msg, url)}
+                                >
+                                  <img
+                                    src={url}
+                                    alt="Photo"
+                                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-200"
+                                  />
+                                  {isLast && extraCount > 0 && (
+                                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center text-white font-bold text-2xl tracking-wide select-none">
+                                      +{extraCount}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Single Photo Bubble */
+                      <div className="relative rounded-xl overflow-hidden bg-black/40 max-h-80 group cursor-pointer" onClick={() => openLightbox(msg)}>
+                        <img
+                          src={msg.mediaUrl || msg.thumbnailUrl}
+                          alt="Photo"
+                          className="w-full h-auto object-cover rounded-xl transition-transform duration-200 group-hover:scale-[1.02]"
+                        />
+                        {/* HD Badge Overlay */}
+                        {msg.isHd && (
+                          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur border border-white/20 text-[9px] font-black tracking-widest text-white flex items-center gap-0.5 shadow">
+                            <span>HD</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {msg.text && msg.text !== 'Photo' && msg.text !== 'High Definition Photo' && (
                       <p
                         className="text-sm leading-relaxed pt-1"
@@ -4208,6 +4376,35 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                         {renderFormattedText(msg.text)}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* ── CONTACT CARD MESSAGE ── */}
+                {msg.type === 'contact' && (
+                  <div className="w-[260px] sm:w-[285px] py-1 select-none">
+                    <div className="flex items-center gap-3 p-2">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-300/40 dark:bg-white/10 flex items-center justify-center text-[#00a884] font-bold text-lg shrink-0 border border-black/10 dark:border-white/10">
+                        {msg.thumbnailUrl || msg.mediaUrl ? (
+                          <img src={msg.thumbnailUrl || msg.mediaUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-6 h-6 text-[#00a884]" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate" style={{ color: isMe ? activeTheme.bubbleOutgoingText : activeTheme.bubbleIncomingText }}>
+                          {msg.documentName || msg.text || 'Contact'}
+                        </p>
+                        <span className="text-[11px] opacity-75">Contact</span>
+                      </div>
+                    </div>
+                    <div className={`h-px w-full my-1 ${isDark ? 'bg-white/10' : 'bg-black/10'}`} />
+                    <button
+                      type="button"
+                      onClick={() => showToast(`Contact verified: ${msg.documentName || msg.text}`, 'success')}
+                      className="w-full py-1 text-center text-xs font-semibold text-[#00a884] hover:opacity-80 transition-opacity cursor-pointer"
+                    >
+                      Message
+                    </button>
                   </div>
                 )}
 
@@ -4513,9 +4710,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   {renderMessageTicks(msg)}
                 </div>
 
-                {/* Reaction Counter Pill */}
+                {/* Reaction Counter Pill (Aligned to left for incoming, right for outgoing) */}
                 {totalReactions > 0 && (
-                  <div className="absolute -bottom-2.5 right-2 bg-[#233138] border border-white/10 rounded-full px-1.5 py-0.5 shadow-md flex items-center gap-1 text-xs">
+                  <div className={`absolute -bottom-2.5 ${isMe ? 'right-2' : 'left-2'} ${
+                    isDark ? 'bg-[#202c33] text-white border-white/10' : 'bg-white text-[#111b21] border-black/10 shadow-sm'
+                  } border rounded-full px-1.5 py-0.5 shadow-md flex items-center gap-1 text-xs select-none`}>
                     {Object.entries(reactions).map(([emoji, users]) =>
                       users.length > 0 ? (
                         <span key={emoji} className="inline-flex items-center">
@@ -4625,6 +4824,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         })}
 
         <div ref={messagesEndRef} />
+        </div>{/* End centered conversation container */}
       </div>
 
       {/* Floating Scroll to Bottom / New Message Pill */}
@@ -5303,22 +5503,64 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             </div>
           </div>
 
-          {/* Center Content */}
-          <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
-            {lightboxMedia.type === 'video' ? (
-              <video
-                src={lightboxMedia.url}
-                controls
-                autoPlay
-                playsInline
-                className="max-h-[75vh] max-w-full rounded-xl shadow-2xl object-contain"
-              />
-            ) : (
-              <img
-                src={lightboxMedia.url}
-                alt="Fullscreen"
-                className="max-h-[75vh] max-w-full object-contain rounded-xl shadow-2xl"
-              />
+          {/* Center Content with Previous/Next Album Navigation */}
+          <div className="flex-1 flex items-center justify-between p-4 overflow-hidden relative">
+            {lightboxMedia.allUrls && lightboxMedia.allUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const urls = lightboxMedia.allUrls!;
+                  const cur = lightboxMedia.currentIndex || 0;
+                  const prevIdx = (cur - 1 + urls.length) % urls.length;
+                  setLightboxMedia({
+                    ...lightboxMedia,
+                    url: urls[prevIdx],
+                    currentIndex: prevIdx,
+                  });
+                }}
+                className="z-20 p-2.5 rounded-full bg-black/60 hover:bg-white/20 text-white backdrop-blur border border-white/10 transition-colors shadow-lg cursor-pointer"
+                title="Previous photo"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
+
+            <div className="flex-1 flex items-center justify-center h-full px-2">
+              {lightboxMedia.type === 'video' ? (
+                <video
+                  src={lightboxMedia.url}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[75vh] max-w-full rounded-xl shadow-2xl object-contain"
+                />
+              ) : (
+                <img
+                  src={lightboxMedia.url}
+                  alt="Fullscreen"
+                  className="max-h-[75vh] max-w-full object-contain rounded-xl shadow-2xl transition-all duration-200"
+                />
+              )}
+            </div>
+
+            {lightboxMedia.allUrls && lightboxMedia.allUrls.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const urls = lightboxMedia.allUrls!;
+                  const cur = lightboxMedia.currentIndex || 0;
+                  const nextIdx = (cur + 1) % urls.length;
+                  setLightboxMedia({
+                    ...lightboxMedia,
+                    url: urls[nextIdx],
+                    currentIndex: nextIdx,
+                  });
+                }}
+                className="z-20 p-2.5 rounded-full bg-black/60 hover:bg-white/20 text-white backdrop-blur border border-white/10 transition-colors shadow-lg cursor-pointer"
+                title="Next photo"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
             )}
           </div>
 

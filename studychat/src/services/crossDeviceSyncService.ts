@@ -24,8 +24,10 @@ class CrossDeviceSyncService {
   private isConnected = false;
   private reconnectTimer: any = null;
   private heartbeatTimer: any = null;
+  private pollTimer: any = null;
   private currentUser: 'surya' | 'sadhana' | null = null;
   private processedMsgIds: Set<string> = new Set();
+  private boundWindowListeners = false;
 
   /**
    * Initialize real-time listening channel
@@ -35,6 +37,25 @@ class CrossDeviceSyncService {
     this.connectSSE();
     this.startPresenceHeartbeat();
     this.pollMissedEvents();
+
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    this.pollTimer = setInterval(() => {
+      this.pollMissedEvents();
+    }, 2500);
+
+    if (!this.boundWindowListeners && typeof window !== 'undefined') {
+      this.boundWindowListeners = true;
+      window.addEventListener('focus', () => this.pollMissedEvents());
+      window.addEventListener('online', () => {
+        this.connectSSE();
+        this.pollMissedEvents();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.pollMissedEvents();
+        }
+      });
+    }
   }
 
   /**
@@ -74,12 +95,21 @@ class CrossDeviceSyncService {
       es.onmessage = (e) => {
         try {
           const raw = JSON.parse(e.data);
-          if (raw.event === 'message' && raw.message) {
+          if (raw.event === 'message') {
             let parsedData: CrossDeviceEvent | null = null;
-            try {
-              parsedData = JSON.parse(raw.message);
-            } catch {
-              // Might be raw string or already formatted
+            if (raw.message) {
+              if (typeof raw.message === 'string') {
+                try {
+                  parsedData = JSON.parse(raw.message);
+                } catch {
+                  // Might be raw text
+                }
+              } else if (typeof raw.message === 'object') {
+                parsedData = raw.message;
+              }
+            }
+            if (!parsedData && (raw as any).payload && (raw as any).event) {
+              parsedData = raw as any;
             }
 
             if (parsedData && parsedData.event) {
@@ -143,8 +173,21 @@ class CrossDeviceSyncService {
       for (const line of lines) {
         try {
           const raw = JSON.parse(line);
-          if (raw.event === 'message' && raw.message) {
-            const parsedData: CrossDeviceEvent = JSON.parse(raw.message);
+          if (raw.event === 'message') {
+            let parsedData: CrossDeviceEvent | null = null;
+            if (raw.message) {
+              if (typeof raw.message === 'string') {
+                try {
+                  parsedData = JSON.parse(raw.message);
+                } catch {}
+              } else if (typeof raw.message === 'object') {
+                parsedData = raw.message;
+              }
+            }
+            if (!parsedData && (raw as any).payload && (raw as any).event) {
+              parsedData = raw as any;
+            }
+
             if (parsedData && parsedData.event) {
               const dedupeKey = `${parsedData.event}_${parsedData.payload?.id || ''}_${parsedData.timestamp}`;
               if (this.processedMsgIds.has(dedupeKey)) continue;
@@ -187,6 +230,16 @@ class CrossDeviceSyncService {
         timestamp: Date.now(),
       };
 
+      const serializedData = JSON.stringify(data);
+
+      // Post with ntfy envelope ensuring raw.message contains serialized payload
+      const ntfyEnvelope = {
+        topic: CROSS_DEVICE_TOPIC,
+        message: serializedData,
+        title: 'Dharya Sync',
+        priority: 4,
+      };
+
       const res = await fetch(`${NTFY_BASE_URL}/${CROSS_DEVICE_TOPIC}`, {
         method: 'POST',
         headers: {
@@ -194,7 +247,7 @@ class CrossDeviceSyncService {
           'Priority': 'urgent',
           'Title': 'Dharya Messenger',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(ntfyEnvelope),
       });
 
       return res.ok;
@@ -276,6 +329,7 @@ class CrossDeviceSyncService {
     }
     clearTimeout(this.reconnectTimer);
     clearInterval(this.heartbeatTimer);
+    if (this.pollTimer) clearInterval(this.pollTimer);
     this.listeners.clear();
   }
 }

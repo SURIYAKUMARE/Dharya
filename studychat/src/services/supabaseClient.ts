@@ -30,8 +30,9 @@ export interface ChatMessage {
   timestamp: number;
   read: boolean;
   status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
-  type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' | 'system';
+  type?: 'text' | 'image' | 'video' | 'voice' | 'poll' | 'document' | 'contact' | 'system';
   mediaUrl?: string;
+  mediaUrls?: string[];
   reactions?: Record<string, string[]>;
   replyTo?: { id: string; sender: string; text: string };
   isSecret?: boolean;

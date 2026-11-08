@@ -100,7 +100,6 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [hasCameraAccess, setHasCameraAccess] = useState(false);
   const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
-  const [isSimulated, setIsSimulated] = useState(false);
 
   // WebRTC & Media Element Refs
   const pcRef = useRef<RTCPeerConnection | null>(null);
@@ -114,7 +113,6 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const durationTimerRef = useRef<number | null>(null);
   const ringtoneTimerRef = useRef<number | null>(null);
   const callTimeoutRef = useRef<number | null>(null);
-  const syntheticAnimRef = useRef<number | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const isCleaningUpRef = useRef<boolean>(false);
   const callBroadcastRef = useRef<BroadcastChannel | null>(null);
@@ -194,7 +192,6 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     if (durationTimerRef.current) clearInterval(durationTimerRef.current);
     if (ringtoneTimerRef.current) clearInterval(ringtoneTimerRef.current);
     if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
-    if (syntheticAnimRef.current) clearInterval(syntheticAnimRef.current);
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => {
@@ -208,92 +205,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     }
   }, []);
 
-  // Create an animated video/audio stream for partner (used in test/demo mode or when partner stream is connecting)
-  const createPartnerSyntheticStream = useCallback((withVideo: boolean): MediaStream => {
-    const stream = new MediaStream();
 
-    // 1. Audio tone
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const dest = ctx.createMediaStreamDestination();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = 440;
-        gain.gain.value = 0.005; // Gentle ambient sound
-        osc.connect(gain);
-        gain.connect(dest);
-        osc.start();
-        dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
-      }
-    } catch {}
-
-    // 2. Video stream: dynamic animated canvas with partner's avatar and lively wave animation
-    if (withVideo) {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          let frame = 0;
-          const draw = () => {
-            frame++;
-            // Background gradient
-            const grad = ctx.createLinearGradient(0, 0, 640, 480);
-            grad.addColorStop(0, '#091516');
-            grad.addColorStop(0.5, '#0b2b26');
-            grad.addColorStop(1, '#071312');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 640, 480);
-
-            // Animated pulsing aura around avatar
-            const radius = 60 + Math.sin(frame * 0.05) * 8;
-            ctx.beginPath();
-            ctx.arc(320, 200, radius + 22, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0, 168, 132, 0.2)';
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(320, 200, radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#00a884';
-            ctx.fill();
-
-            // Letter
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 50px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText((partnerName[0] || 'P').toUpperCase(), 320, 200);
-
-            // Partner name & live badge
-            ctx.font = 'bold 24px sans-serif';
-            ctx.fillText(partnerName, 320, 290);
-
-            ctx.fillStyle = '#25d366';
-            ctx.font = 'bold 13px sans-serif';
-            ctx.fillText('● Live HD Call Connected', 320, 320);
-
-            // Simulated live audio wave at bottom of partner stream
-            ctx.fillStyle = '#25d366';
-            for (let i = 0; i < 16; i++) {
-              const barHeight = Math.abs(Math.sin((frame + i * 10) * 0.1)) * 25 + 5;
-              ctx.fillRect(200 + i * 16, 380 - barHeight / 2, 8, barHeight);
-            }
-          };
-          draw();
-          syntheticAnimRef.current = window.setInterval(draw, 100);
-          const canvasStream = (canvas as any).captureStream ? (canvas as any).captureStream(20) : null;
-          if (canvasStream) {
-            canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => stream.addTrack(t));
-          }
-        }
-      } catch {}
-    }
-    return stream;
-  }, [partnerName]);
 
   // Safe fallback MediaStream generator when physical hardware camera/mic is blocked
   const createFallbackStream = (withVideo: boolean): MediaStream => {
@@ -697,27 +609,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     startCallTimer();
   };
 
-  // Immediate "Connect Call / Simulate Answer" for instant testing & demonstration
-  const handleSimulateAnswer = () => {
-    if (ringtoneTimerRef.current) clearInterval(ringtoneTimerRef.current);
-    if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
 
-    setIsSimulated(true);
-    const partnerStream = createPartnerSyntheticStream(callType === 'video');
-    remoteStreamRef.current = partnerStream;
-
-    if (remoteVideoRef.current && callType === 'video') {
-      remoteVideoRef.current.srcObject = partnerStream;
-      remoteVideoRef.current.play().catch(() => {});
-      setHasRemoteVideo(true);
-    }
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = partnerStream;
-      remoteAudioRef.current.play().catch(() => {});
-    }
-
-    startCallTimer();
-  };
 
   // Decline incoming call
   const handleDeclineIncomingCall = () => {
@@ -897,16 +789,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
                   {callStatus === 'connected' ? 'Connected • Live Audio' : `${callStatus}...`}
                 </p>
 
-                {/* Instant Test / Connect Button */}
-                {callStatus !== 'connected' && (
-                  <button
-                    onClick={handleSimulateAnswer}
-                    className="mt-4 px-4 py-2 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-lg flex items-center gap-2 mx-auto active:scale-95 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Connect Test Call (Live Demo)</span>
-                  </button>
-                )}
+
               </div>
             </div>
           )}
@@ -922,11 +805,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
                 <span>
                   {callStatus === 'connected' ? formatDuration(durationSecs) : `${callStatus}...`}
                 </span>
-                {isSimulated && (
-                  <span className="text-[10px] text-emerald-400 font-semibold px-1.5 rounded bg-emerald-500/20 ml-1">
-                    Demo
-                  </span>
-                )}
+
               </div>
             </div>
           </div>
@@ -1038,16 +917,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           {callStatus === 'connected' ? formatDuration(durationSecs) : `${callStatus}...`}
         </p>
 
-        {/* Instant Test / Connect Button */}
-        {callStatus !== 'connected' && (
-          <button
-            onClick={handleSimulateAnswer}
-            className="mt-3 px-4 py-2 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-lg flex items-center gap-2 mx-auto active:scale-95 cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Connect Voice Call (Live Demo)</span>
-          </button>
-        )}
+
       </div>
 
       {/* Center Animated Profile Avatar & Soundwaves */}

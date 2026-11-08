@@ -123,7 +123,7 @@ interface WhatsAppChatViewProps {
 }
 
 export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab = 'chat' }) => {
-  const { student, logoutChat, switchTab } = useStudyApp();
+  const { student, logoutChat, switchTab, quickLogin } = useStudyApp();
   const { showToast } = useToast();
 
   // Active user and partner details
@@ -1815,7 +1815,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           }
         } else if (event === 'call_offer' || event === 'call_accepted' || event === 'webrtc_ice_candidate' || event === 'call_declined' || event === 'call_ended') {
           if (event === 'call_offer') {
-            if (payload.recipient === currentUser || payload.to === currentUser) {
+            const isFromOtherDevice = payload.deviceId
+              ? payload.deviceId !== crossDeviceSync.getDeviceId()
+              : payload.from !== currentUser;
+
+            if (isFromOtherDevice) {
               setIncomingCall({
                 caller: payload.caller || payload.from || partnerUser,
                 type: payload.callType || payload.type || 'video',
@@ -3724,6 +3728,25 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <span className="hidden sm:inline">{dateCount.minutes}m {dateCount.seconds}s</span>
           </button>
         )}
+
+        {/* ── Active Account & 1-Click User Switcher ── */}
+        <button
+          onClick={() => {
+            const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
+            quickLogin(nextUser);
+            showToast(`Switched account to ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
+          }}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all shadow-xs cursor-pointer select-none ${
+            isDark
+              ? 'bg-[#182229] hover:bg-[#202c33] border-emerald-500/40 text-emerald-400'
+              : 'bg-[#e7fce3] hover:bg-[#dcf8c6] border-[#00a884]/40 text-[#008069]'
+          }`}
+          title={`Logged in as ${currentUser === 'surya' ? 'Surya' : 'Sadhana'}. Tap to switch to ${currentUser === 'surya' ? 'Sadhana' : 'Surya'}`}
+        >
+          <User className="w-3.5 h-3.5" />
+          <span className="capitalize">{currentUser}</span>
+          <span className="text-[10px] opacity-70 hidden md:inline">• Switch</span>
+        </button>
 
         {/* ── Quick Switch to Academic Mode (ENGIHUB) ── */}
         <button

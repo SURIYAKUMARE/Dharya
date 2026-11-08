@@ -13,6 +13,14 @@ export const MQTT_PRIMARY_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
 export const MQTT_BACKUP_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 export const MQTT_TOPIC = 'dharya/sync/surya_sadhana_v3';
 
+export const DEVICE_ID = typeof window !== 'undefined'
+  ? (sessionStorage.getItem('dharya_device_id') || (() => {
+      const id = 'dev_' + Math.random().toString(36).slice(2, 9);
+      try { sessionStorage.setItem('dharya_device_id', id); } catch {}
+      return id;
+    })())
+  : 'dev_server';
+
 export interface CrossDeviceEvent {
   event: string;
   payload: any;
@@ -176,11 +184,19 @@ class CrossDeviceSyncService {
     });
   }
 
+  public getDeviceId(): string {
+    return DEVICE_ID;
+  }
+
   /**
    * Publish an event to the other device with guaranteed delivery
    */
   public async publish(event: string, payload: any): Promise<boolean> {
     try {
+      if (payload && typeof payload === 'object' && !payload.deviceId) {
+        payload.deviceId = this.getDeviceId();
+      }
+
       const data: CrossDeviceEvent = {
         event,
         payload,

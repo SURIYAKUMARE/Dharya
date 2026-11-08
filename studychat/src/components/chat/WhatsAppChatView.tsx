@@ -852,10 +852,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
   };
 
-  // Save messages permanently to localStorage and broadcast
-  // Save messages permanently to localStorage and broadcast
+  // Save messages permanently to localStorage
   const persistMessages = (newMessages: ExtendedChatMessage[], targetChatId: string = activeChatIdRef.current) => {
-    setMessages(newMessages);
     try {
       const key = getChatStorageKey(targetChatId);
       localStorage.setItem(key, JSON.stringify(newMessages));
@@ -1727,6 +1725,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               persistMessages(next);
               return next;
             });
+
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 60);
 
             // If incoming is from partner: chime, browser alert & read receipts
             if (incoming.sender !== currentUser) {

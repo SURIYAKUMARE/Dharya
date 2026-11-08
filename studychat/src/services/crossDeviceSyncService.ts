@@ -38,6 +38,7 @@ class CrossDeviceSyncService {
   private processedMsgIds: Set<string> = new Set();
   private usingBackupBroker = false;
   private syncRequestThrottle = 0;
+  private outboxQueue: string[] = [];
 
   /**
    * Initialize real-time WebSocket channel
@@ -98,6 +99,14 @@ class CrossDeviceSyncService {
       client.on('connect', () => {
         this.isConnected = true;
         console.log(`[CrossDeviceSync] Connected to broker: ${brokerUrl}`);
+
+        // Flush any buffered outbox messages
+        while (this.outboxQueue.length > 0) {
+          const item = this.outboxQueue.shift();
+          if (item) {
+            client.publish(MQTT_TOPIC, item, { qos: 1 });
+          }
+        }
 
         client.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
           if (!err) {
@@ -211,6 +220,7 @@ class CrossDeviceSyncService {
           this.client!.publish(MQTT_TOPIC, serialized, { qos: 1 }, (err) => {
             if (err) {
               console.warn(`[CrossDeviceSync] MQTT publish error:`, err);
+              this.outboxQueue.push(serialized);
               resolve(false);
             } else {
               resolve(true);
@@ -219,9 +229,10 @@ class CrossDeviceSyncService {
         });
       }
 
-      // If disconnected, try reconnecting and buffer
+      // Buffer message in outbox and connect immediately
+      this.outboxQueue.push(serialized);
       this.connectMqtt();
-      return false;
+      return true;
     } catch (err) {
       console.warn(`[CrossDeviceSync] Failed to publish event "${event}":`, err);
       return false;

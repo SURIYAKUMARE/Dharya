@@ -56,68 +56,29 @@ const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined
 export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isChatAuthenticated, setIsChatAuthenticated] = useState<boolean>(() => {
     try {
-      const sessionAuth = sessionStorage.getItem('study_chat_auth') === 'true';
-      const localAuth = localStorage.getItem('study_chat_auth') === 'true';
-      return sessionAuth || localAuth;
+      const sessionAuth = sessionStorage.getItem('study_chat_auth');
+      const localAuth = localStorage.getItem('study_chat_auth');
+      if (sessionAuth !== null) return sessionAuth === 'true';
+      if (localAuth !== null) return localAuth === 'true';
+      return true; // Default to authenticated for instant cross-device messenger
     } catch {
-      return false;
+      return true;
     }
   });
 
   const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
     try {
-      const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
-      const isAuth = sessionStorage.getItem('study_chat_auth') === 'true' ||
-                     localStorage.getItem('study_chat_auth') === 'true';
-
-      // 1. If user refreshed/reloaded the browser, ALWAYS return to Library ('home')!
-      const navEntries = typeof window !== 'undefined' && window.performance?.getEntriesByType?.('navigation');
-      const isReload = navEntries && navEntries.length > 0 && (navEntries[0] as PerformanceNavigationTiming).type === 'reload';
-      if (isReload) {
-        if (window.location.hash) {
-          try {
-            window.history.replaceState(null, '', window.location.pathname);
-          } catch {}
-        }
-        return 'home';
-      }
-
-      // 2. If URL hash or path points to login, always return to Library ('home')
-      if (hash === '#login' || path.includes('login')) {
-        try {
-          window.history.replaceState(null, '', window.location.pathname.replace(/login\.html/i, 'index.html'));
-        } catch {}
-        return 'home';
-      }
-
-      if (path.includes('academic') || hash === '#academic' || path.includes('curriculum') || hash === '#library' || hash === '#home') {
-        return 'home';
-      }
-      if (path.includes('gallery') || hash === '#gallery') {
-        return isAuth ? 'gallery' : 'home';
-      }
-      if (path.includes('timeline') || hash === '#timeline') {
-        return isAuth ? 'timeline' : 'home';
-      }
-      if (path.includes('planner') || hash === '#planner') {
-        return 'planner';
-      }
-
-      if (path.includes('chat') || hash === '#chat' || window.location.search.toLowerCase().includes('mode=chat')) {
-        return isAuth ? 'chat' : 'home';
-      }
-      if (path.includes('subjects') || hash === '#subjects' || path.includes('curriculum') || hash === '#curriculum') {
-        return 'subjects';
-      }
-      if (path.includes('profile') || hash === '#profile') {
-        return 'profile';
-      }
-
-      // Default to Academic Library Portal for all visits:
-      return 'home';
+      if (hash === '#home' || hash === '#academic' || hash === '#library') return 'home';
+      if (hash === '#gallery') return 'gallery';
+      if (hash === '#timeline') return 'timeline';
+      if (hash === '#planner') return 'planner';
+      if (hash === '#profile') return 'profile';
+      if (hash === '#subjects') return 'subjects';
+      // Default to chat for immediate real-time messaging
+      return 'chat';
     } catch {}
-    return 'home';
+    return 'chat';
   });
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(SUBJECTS_DATA[0]);
   const [selectedTopic, setSelectedTopic] = useState<TopicExplanation | null>(SUBJECTS_DATA[0].topics[0]);

@@ -1,21 +1,17 @@
 /**
  * GalleryView.tsx
- * Google Photos & Google Gallery redesigned media hub with Memory Incident Timeline.
+ * Redesigned, ultra-modern Gallery & Media Hub for Dharya.
  * Features:
- * - Google Material 3 & Google Photos design language
- * - Floating Google search pill with instant search
- * - Signature Google Photos timeline view grouped by dates (Today, Yesterday, etc.)
- * - Media tabs: Photos, Videos, Albums, Favorites, AND ⏳ Memory Timeline!
- * - TIMELINE INCIDENT RECORDER:
- *     1. Add a photo (or media)
- *     2. Pick a date when it happened
- *     3. Write "What incident happened" (full story / memories)
- *     4. Chronological visual timeline stream with node markers
- *     5. Edit and Delete incident entries
- * - Multi-select mode with batch delete, batch move, and batch favorite
- * - PROMINENT DELETE OPTIONS on cards, viewer, and timeline
- * - Fullscreen viewer for Photos & Videos with native playback
- * - IndexedDB high-capacity browser persistence
+ * - Fluid edge-to-edge layout with zero dead margins
+ * - Light and dark mode support with modern glassmorphism
+ * - Highlights / Stories carousel at the top with fullscreen playback
+ * - Category filters: All Media, Photos, Videos, Favorites, Albums
+ * - Real-time instant search across captions, dates, and filenames
+ * - Grid density toggle (Standard, Large, Compact)
+ * - Multi-select mode with batch actions (Delete to Recycle Bin, Favorite, Add to Album)
+ * - Smooth drag & drop multi-file uploader
+ * - Immersive cinematic fullscreen lightbox with zoom, slideshow auto-play, and thumbnail scrubber
+ * - Backed permanently by IndexedDB browser storage engine
  */
 
 import React, {
@@ -23,6 +19,7 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   DragEvent,
   KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
@@ -32,18 +29,15 @@ import {
   Search,
   Heart,
   Download,
-  MoreHorizontal,
-  MoreVertical,
   X,
   ChevronLeft,
   ChevronRight,
   Play,
+  Pause,
   Trash2,
   Filter,
   ZoomIn,
-  AlertTriangle,
-  Loader2,
-  RefreshCw,
+  ZoomOut,
   FolderPlus,
   Folder,
   Film,
@@ -51,34 +45,25 @@ import {
   Edit2,
   Check,
   CheckCircle2,
-  HardDrive,
-  Info,
-  Calendar,
-  Share2,
   Sparkles,
   Clock,
-  BookOpen,
-  MapPin,
-  Tag,
-  PlusCircle,
-  Plus,
   ArrowLeft,
+  Grid3X3,
+  LayoutGrid,
+  Share2,
+  Maximize2,
+  Layers,
 } from 'lucide-react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import {
   GalleryItem,
   GalleryAlbum,
-  TimelineIncident,
   SortOrder,
   fetchPhotos,
   fetchAlbums,
-  fetchTimelineIncidents,
-  createTimelineIncident,
-  updateTimelineIncident,
-  deleteTimelineIncident,
   uploadMedia,
   toggleFavorite,
-  deleteMediaItem,
+  deletePhoto,
   deleteMultipleItems,
   updateCaption,
   moveItemToAlbum,
@@ -86,15 +71,20 @@ import {
   deleteAlbum,
   validateFile,
   ACCEPT_STRING,
-  STORE_MEDIA,
-  STORE_TIMELINE,
-  idbDelete,
 } from '../../services/galleryService';
 import { moveToRecycleBin } from '../../services/recycleBinService';
 
-type GoogleTab = 'photos' | 'videos' | 'albums' | 'favorites' | 'timeline';
+export type GalleryTab = 'all' | 'photos' | 'videos' | 'favorites' | 'albums';
+type GridDensity = 'compact' | 'standard' | 'large';
 
-interface UploadItem {
+export interface GalleryViewProps {
+  isDark?: boolean;
+  onBackToChat?: () => void;
+  onOpenTimeline?: () => void;
+  onOpenRecycleBin?: () => void;
+}
+
+interface UploadProgressItem {
   id: string;
   file: File;
   previewUrl: string;
@@ -104,13 +94,8 @@ interface UploadItem {
   errorMsg?: string;
 }
 
-export interface GalleryViewProps {
-  onBackToChat?: () => void;
-  onOpenTimeline?: () => void;
-  onOpenRecycleBin?: () => void;
-}
-
 export const GalleryView: React.FC<GalleryViewProps> = ({
+  isDark = true,
   onBackToChat,
   onOpenTimeline,
   onOpenRecycleBin,
@@ -118,623 +103,420 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
   const { student } = useStudyApp();
   const owner = student?.username || 'surya';
 
-  // ── Data State ────────────────────────────────────────────────────
-  const [items, setItems]               = useState<GalleryItem[]>([]);
-  const [albums, setAlbums]             = useState<GalleryAlbum[]>([]);
-  const [timelineIncidents, setTimelineIncidents] = useState<TimelineIncident[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [fetchError, setFetchError]     = useState<string | null>(null);
+  // ── Data State ───────────────────────────────────────────────────
+  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // ── Navigation & Views ────────────────────────────────────────────
-  const [activeTab, setActiveTab]       = useState<GoogleTab>('photos');
+  // ── Navigation & Filters ─────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<GalleryTab>('all');
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [sortOrder, setSortOrder]       = useState<SortOrder>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [gridDensity, setGridDensity] = useState<GridDensity>('standard');
 
-  // ── Multi-Select Mode ─────────────────────────────────────────────
-  const [selectedIds, setSelectedIds]   = useState<Set<string>>(new Set());
+  // ── Multi-Select Mode ────────────────────────────────────────────
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // ── Lightbox & Modals ─────────────────────────────────────────────
-  const [lightboxIdx, setLightboxIdx]   = useState<number | null>(null);
-  const [menuItemId, setMenuItemId]     = useState<string | null>(null);
-  const [deleteTargets, setDeleteTargets] = useState<GalleryItem[] | null>(null);
-  const [deleting, setDeleting]         = useState(false);
-  const [moveTargets, setMoveTargets]   = useState<GalleryItem[] | null>(null);
+  // ── Lightbox & Fullscreen Viewer ─────────────────────────────────
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [isSlideshowPlaying, setIsSlideshowPlaying] = useState(false);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
+  const [isEditingCaption, setIsEditingCaption] = useState(false);
+  const [captionInput, setCaptionInput] = useState('');
+
+  // ── Stories Highlights Modal ──────────────────────────────────────
+  const [activeStoryIdx, setActiveStoryIdx] = useState<number | null>(null);
+  const [storyProgress, setStoryProgress] = useState(0);
+
+  // ── Modals & Upload State ────────────────────────────────────────
   const [showNewAlbumModal, setShowNewAlbumModal] = useState(false);
   const [newAlbumName, setNewAlbumName] = useState('');
   const [newAlbumEmoji, setNewAlbumEmoji] = useState('📁');
-  const [editCaptionTarget, setEditCaptionTarget] = useState<GalleryItem | null>(null);
-  const [newCaptionText, setNewCaptionText] = useState('');
-  const [showStorageInfo, setShowStorageInfo] = useState(false);
-  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<GalleryItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState<GalleryItem[] | null>(null);
 
-  // ── Timeline Incident Modal State ─────────────────────────────────
-  const [showIncidentModal, setShowIncidentModal] = useState(false);
-  const [editingIncident, setEditingIncident]     = useState<TimelineIncident | null>(null);
-  const [incidentTitle, setIncidentTitle]         = useState('');
-  const [incidentDate, setIncidentDate]           = useState('');
-  const [incidentText, setIncidentText]           = useState('');
-  const [incidentTag, setIncidentTag]             = useState('Milestone');
-  const [incidentLocation, setIncidentLocation]   = useState('');
-  const [incidentPhotoFile, setIncidentPhotoFile] = useState<File | null>(null);
-  const [incidentPhotoPreview, setIncidentPhotoPreview] = useState<string>('');
-  const [deleteIncidentTarget, setDeleteIncidentTarget] = useState<TimelineIncident | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadProgressItem[]>([]);
+  const [showUploadsDrawer, setShowUploadsDrawer] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  // ── Upload & Drag state ───────────────────────────────────────────
-  const [isDragOver, setIsDragOver]     = useState(false);
-  const [uploads, setUploads]           = useState<UploadItem[]>([]);
-  const [showUploads, setShowUploads]   = useState(false);
-  const [toast, setToast]               = useState<{ msg: string; type: 'ok' | 'err' } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slideshowTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fileInputRef  = useRef<HTMLInputElement>(null);
-  const incidentPhotoInputRef = useRef<HTMLInputElement>(null);
-  const toastTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
-    setToast({ msg, type });
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  const triggerToast = useCallback((text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastMessage(null), 3200);
   }, []);
 
-  // ── Load All Data ─────────────────────────────────────────────────
-  const loadData = useCallback(async () => {
+  // ── Load Media & Albums ──────────────────────────────────────────
+  const loadGalleryData = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
     try {
-      const [mediaData, albumsData, timelineData] = await Promise.all([
+      const [mediaData, albumsData] = await Promise.all([
         fetchPhotos(owner),
         fetchAlbums(),
-        fetchTimelineIncidents(owner),
       ]);
       setItems(mediaData);
       setAlbums(albumsData);
-      setTimelineIncidents(timelineData);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not load gallery';
-      setFetchError(message);
+      const msg = err instanceof Error ? err.message : 'Failed to load gallery items';
+      setFetchError(msg);
     } finally {
       setLoading(false);
     }
   }, [owner]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadGalleryData();
+  }, [loadGalleryData]);
 
-  // Listen for items restored from the Recycle Bin
-  useEffect(() => {
-    const handleRestoredGallery = (e: any) => {
-      const restored = e.detail?.item;
-      if (restored) {
-        setItems((prev) => (prev.some((i) => i.id === restored.id) ? prev : [restored, ...prev]));
-      }
-    };
-    const handleRestoredIncident = (e: any) => {
-      const restored = e.detail?.incident;
-      if (restored) {
-        setTimelineIncidents((prev) =>
-          prev.some((i) => i.id === restored.id)
-            ? prev
-            : [...prev, restored].sort((a, b) => b.timestamp - a.timestamp)
-        );
-      }
-    };
-    window.addEventListener('gallery_item_restored', handleRestoredGallery);
-    window.addEventListener('timeline_incident_restored', handleRestoredIncident);
+  // ── Filtered and Sorted Items ────────────────────────────────────
+  const filteredItems = useMemo(() => {
+    let result = [...items];
 
-    const handleRemoteAdded = (e: any) => {
-      const added = e.detail?.item;
-      if (added) {
-        setItems((prev) => (prev.some((i) => i.id === added.id) ? prev : [added, ...prev]));
-      }
-    };
-    const handleRemoteDeleted = (e: any) => {
-      const delId = e.detail?.itemId;
-      if (delId) {
-        setItems((prev) => prev.filter((i) => i.id !== delId));
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(delId);
-          return next;
-        });
-      }
-    };
-    window.addEventListener('gallery_item_added_remotely', handleRemoteAdded);
-    window.addEventListener('gallery_item_deleted_remotely', handleRemoteDeleted);
-
-    return () => {
-      window.removeEventListener('gallery_item_restored', handleRestoredGallery);
-      window.removeEventListener('timeline_incident_restored', handleRestoredIncident);
-      window.removeEventListener('gallery_item_added_remotely', handleRemoteAdded);
-      window.removeEventListener('gallery_item_deleted_remotely', handleRemoteDeleted);
-    };
-  }, []);
-
-  // ── Filtered Media List ───────────────────────────────────────────
-  const filteredItems = React.useMemo(() => {
-    let list = [...items];
-
-    // If an album is specifically opened in Albums tab
-    if (selectedAlbumId) {
-      list = list.filter((i) => i.albumId === selectedAlbumId);
-    } else {
-      // Tab filter
-      if (activeTab === 'videos') {
-        list = list.filter((i) => i.type === 'video');
-      } else if (activeTab === 'favorites') {
-        list = list.filter((i) => i.isFavorite);
-      }
+    if (activeTab === 'photos') {
+      result = result.filter((i) => i.type === 'photo');
+    } else if (activeTab === 'videos') {
+      result = result.filter((i) => i.type === 'video');
+    } else if (activeTab === 'favorites') {
+      result = result.filter((i) => i.isFavorite);
     }
 
-    // Search query
+    if (selectedAlbumId) {
+      result = result.filter((i) => i.albumId === selectedAlbumId);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((item) => {
-        const album = albums.find((a) => a.id === item.albumId);
-        const albumName = album?.name?.toLowerCase() || '';
-        const dateStr = new Date(item.createdAt).toLocaleDateString().toLowerCase();
-        return (
-          item.label.toLowerCase().includes(q) ||
-          item.fileName.toLowerCase().includes(q) ||
-          albumName.includes(q) ||
-          dateStr.includes(q)
-        );
-      });
+      result = result.filter(
+        (i) =>
+          i.fileName.toLowerCase().includes(q) ||
+          (i.label && i.label.toLowerCase().includes(q))
+      );
     }
 
-    // Sort order
-    list.sort((a, b) =>
-      sortOrder === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt,
+    result.sort((a, b) =>
+      sortOrder === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt
     );
 
-    return list;
-  }, [items, albums, activeTab, selectedAlbumId, searchQuery, sortOrder]);
+    return result;
+  }, [items, activeTab, selectedAlbumId, searchQuery, sortOrder]);
 
-  // ── Group Items by Date Timeline (Google Photos style) ────────────
-  const groupedByDate = React.useMemo(() => {
-    const groups: { label: string; dateKey: string; items: GalleryItem[] }[] = [];
+  // ── Date Grouping for Natural Timeline Flow ──────────────────────
+  const groupedSections = useMemo(() => {
+    const groups: { title: string; items: GalleryItem[] }[] = [];
     const map = new Map<string, GalleryItem[]>();
 
-    const todayStr = new Date().toDateString();
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toDateString();
+    const now = new Date();
+    const todayStr = now.toLocaleDateString();
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
 
-    for (const item of filteredItems) {
-      const d = new Date(item.createdAt);
-      const itemDateStr = d.toDateString();
+    filteredItems.forEach((item) => {
+      const itemDate = new Date(item.createdAt);
+      const dateStr = itemDate.toLocaleDateString();
 
-      let label = d.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-
-      if (itemDateStr === todayStr) {
+      let label = dateStr;
+      if (dateStr === todayStr) {
         label = 'Today';
-      } else if (itemDateStr === yesterdayStr) {
+      } else if (dateStr === yesterday) {
         label = 'Yesterday';
+      } else {
+        label = itemDate.toLocaleDateString(undefined, {
+          month: 'long',
+          day: 'numeric',
+          year: itemDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+        });
       }
 
       if (!map.has(label)) {
         map.set(label, []);
       }
       map.get(label)!.push(item);
-    }
+    });
 
-    map.forEach((groupItems, label) => {
-      groups.push({
-        label,
-        dateKey: label,
-        items: groupItems,
-      });
+    map.forEach((grpItems, title) => {
+      groups.push({ title, items: grpItems });
     });
 
     return groups;
   }, [filteredItems]);
 
-  // ── Filtered Timeline Incidents ───────────────────────────────────
-  const filteredTimeline = React.useMemo(() => {
-    let list = [...timelineIncidents];
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (inc) =>
-          inc.title.toLowerCase().includes(q) ||
-          inc.incidentText.toLowerCase().includes(q) ||
-          (inc.location && inc.location.toLowerCase().includes(q)) ||
-          (inc.tag && inc.tag.toLowerCase().includes(q)),
-      );
-    }
-    return list.sort((a, b) =>
-      sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp,
-    );
-  }, [timelineIncidents, searchQuery, sortOrder]);
+  // ── File Upload Processing ───────────────────────────────────────
+  const processFiles = useCallback(
+    async (fileList: FileList | File[]) => {
+      const files = Array.from(fileList);
+      if (files.length === 0) return;
 
-  // ── Multi-select Handlers ─────────────────────────────────────────
-  const toggleSelect = (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const selectAllInGroup = (groupItems: GalleryItem[]) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      const allSelected = groupItems.every((i) => next.has(i.id));
-      if (allSelected) {
-        groupItems.forEach((i) => next.delete(i.id));
-      } else {
-        groupItems.forEach((i) => next.add(i.id));
-      }
-      return next;
-    });
-  };
-
-  const clearSelection = () => {
-    setSelectedIds(new Set());
-  };
-
-  // ── File Upload Handler ───────────────────────────────────────────
-  const handleFiles = useCallback(
-    (files: FileList | File[]) => {
-      const fileArr = Array.from(files);
-      const valid: File[] = [];
-      const errors: string[] = [];
-
-      for (const f of fileArr) {
-        const err = validateFile(f);
-        if (err) errors.push(err);
-        else valid.push(f);
-      }
-
-      if (errors.length) {
-        showToast(errors[0], 'err');
-      }
-
-      if (!valid.length) return;
-
-      const newUploadItems: UploadItem[] = valid.map((f) => ({
-        id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        file: f,
-        previewUrl: URL.createObjectURL(f),
-        isVideo: f.type.startsWith('video/'),
-        progress: 0,
+      const newUploads: UploadProgressItem[] = files.map((file) => ({
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        isVideo: file.type.startsWith('video/'),
+        progress: 10,
         status: 'pending',
       }));
 
-      setUploads((prev) => [...newUploadItems, ...prev]);
-      setShowUploads(true);
+      setUploadQueue((prev) => [...prev, ...newUploads]);
+      setShowUploadsDrawer(true);
 
-      (async () => {
-        for (const upItem of newUploadItems) {
-          setUploads((prev) =>
-            prev.map((u) => (u.id === upItem.id ? { ...u, status: 'uploading' } : u)),
+      for (const uploadItem of newUploads) {
+        const valError = validateFile(uploadItem.file);
+        if (valError) {
+          setUploadQueue((prev) =>
+            prev.map((u) =>
+              u.id === uploadItem.id
+                ? { ...u, status: 'error', errorMsg: valError }
+                : u
+            )
+          );
+          continue;
+        }
+
+        setUploadQueue((prev) =>
+          prev.map((u) =>
+            u.id === uploadItem.id ? { ...u, status: 'uploading', progress: 40 } : u
+          )
+        );
+
+        try {
+          const res = await uploadMedia(
+            uploadItem.file,
+            owner,
+            selectedAlbumId || 'moments',
+            (pct: number) => {
+              setUploadQueue((prev) =>
+                prev.map((u) => (u.id === uploadItem.id ? { ...u, progress: pct } : u))
+              );
+            }
           );
 
-          const targetAlbum = selectedAlbumId || 'moments';
-
-          const res = await uploadMedia(upItem.file, owner, targetAlbum, (pct) => {
-            setUploads((prev) =>
-              prev.map((u) => (u.id === upItem.id ? { ...u, progress: pct } : u)),
-            );
-          });
-
-          if (res.error || !res.item) {
-            setUploads((prev) =>
-              prev.map((u) =>
-                u.id === upItem.id
-                  ? { ...u, status: 'error', progress: 0, errorMsg: res.error }
-                  : u,
-              ),
-            );
-            showToast(res.error || 'Upload failed', 'err');
-          } else {
-            setUploads((prev) =>
-              prev.map((u) =>
-                u.id === upItem.id ? { ...u, status: 'done', progress: 100 } : u,
-              ),
-            );
+          if (res.item) {
             setItems((prev) => [res.item!, ...prev]);
-            showToast(`Added "${res.item.label}" ✓`);
+            setUploadQueue((prev) =>
+              prev.map((u) =>
+                u.id === uploadItem.id ? { ...u, status: 'done', progress: 100 } : u
+              )
+            );
+          } else {
+            setUploadQueue((prev) =>
+              prev.map((u) =>
+                u.id === uploadItem.id
+                  ? { ...u, status: 'error', errorMsg: res.error || 'Upload failed' }
+                  : u
+              )
+            );
           }
+        } catch {
+          setUploadQueue((prev) =>
+            prev.map((u) =>
+              u.id === uploadItem.id
+                ? { ...u, status: 'error', errorMsg: 'Failed to save media' }
+                : u
+            )
+          );
         }
-      })();
+      }
+
+      triggerToast(`Added ${files.length} item${files.length > 1 ? 's' : ''} to gallery!`);
     },
-    [owner, selectedAlbumId, showToast],
+    [owner, selectedAlbumId, triggerToast]
   );
 
-  // ── Drag & Drop ───────────────────────────────────────────────────
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
+  // Drag and drop handlers
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(true);
   };
-  const onDragLeave = () => setIsDragOver(false);
-  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
   };
 
-  // ── Delete Confirm Action (Gallery Media) ─────────────────────────
-  const handleDeleteConfirm = async () => {
-    if (!deleteTargets || deleteTargets.length === 0) return;
-    setDeleting(true);
-
-    try {
-      for (const item of deleteTargets) {
-        // 1. Move to Recycle Bin with full item data
-        await moveToRecycleBin({
-          originalId: item.id,
-          source: 'gallery',
-          title: item.label || item.fileName || 'Gallery Photo',
-          previewText: `${item.type === 'video' ? 'Video' : 'Photo'} • ${((item.fileSize || 0) / 1024 / 1024).toFixed(1)} MB`,
-          mediaUrl: item.publicUrl,
-          mediaType: item.type === 'video' ? 'video' : 'photo',
-          owner: item.owner,
-          originalData: item,
-        });
-
-        // 2. Remove from active store so it disappears immediately from Gallery
-        await idbDelete(STORE_MEDIA, item.id);
-
-        // 3. Remove from Supabase and notify partner
-        try {
-          const sb = (await import('../../services/supabaseClient')).getSupabase();
-          await sb.from('gallery_photos').delete().eq('id', item.id);
-        } catch {}
-
-        window.dispatchEvent(
-          new CustomEvent('gallery_broadcast_photo_deleted', {
-            detail: { itemId: item.id },
-          })
-        );
-      }
-    } catch (err) {
-      console.error('[GalleryView] Error moving to recycle bin:', err);
-    }
-
-    setDeleting(false);
-    const targetIds = new Set(deleteTargets.map((t) => t.id));
-
-    setItems((prev) => prev.filter((i) => !targetIds.has(i.id)));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      targetIds.forEach((id) => next.delete(id));
-      return next;
-    });
-
-    if (lightboxIdx !== null) {
-      setLightboxIdx(null);
-    }
-
-    showToast(
-      deleteTargets.length === 1
-        ? 'Moved to Recycle Bin'
-        : `Moved ${deleteTargets.length} items to Recycle Bin`,
-    );
-    setDeleteTargets(null);
-  };
-
-  const triggerBatchDelete = () => {
-    const selectedItems = items.filter((i) => selectedIds.has(i.id));
-    if (selectedItems.length > 0) {
-      setDeleteTargets(selectedItems);
-    }
-  };
-
-  // ── Favorite Action ───────────────────────────────────────────────
-  const handleToggleFav = async (item: GalleryItem) => {
-    const nextVal = !item.isFavorite;
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isFavorite: nextVal } : i)),
-    );
-    await toggleFavorite(item.id, nextVal);
-    showToast(nextVal ? 'Saved to Favorites ⭐' : 'Removed from Favorites');
-  };
-
-  // ── Album Handlers ────────────────────────────────────────────────
-  const handleCreateAlbum = async (e: React.FormEvent) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (!newAlbumName.trim()) return;
-    const created = await createAlbum(newAlbumName, '', newAlbumEmoji);
-    setAlbums((prev) => [...prev, created]);
-    setSelectedAlbumId(created.id);
-    setNewAlbumName('');
-    setShowNewAlbumModal(false);
-    showToast(`Created album "${created.name}"`);
-  };
-
-  const handleMoveTargets = async (albumId: string) => {
-    if (!moveTargets || moveTargets.length === 0) return;
-    for (const t of moveTargets) {
-      await moveItemToAlbum(t.id, albumId);
+    setIsDragOver(false);
+    if (e.dataTransfer.files) {
+      processFiles(e.dataTransfer.files);
     }
-    const targetSet = new Set(moveTargets.map((t) => t.id));
-    setItems((prev) =>
-      prev.map((i) => (targetSet.has(i.id) ? { ...i, albumId } : i)),
-    );
-    const targetAlbum = albums.find((a) => a.id === albumId);
-    showToast(`Moved ${moveTargets.length} item(s) to ${targetAlbum?.name || 'album'}`);
-    setMoveTargets(null);
-    clearSelection();
   };
 
-  const handleSaveCaption = async () => {
-    if (!editCaptionTarget || !newCaptionText.trim()) return;
-    const success = await updateCaption(editCaptionTarget.id, newCaptionText);
+  // ── Favorite & Delete Handlers ───────────────────────────────────
+  const handleToggleFavorite = async (e: React.MouseEvent, item: GalleryItem) => {
+    e.stopPropagation();
+    const success = await toggleFavorite(item.id, !item.isFavorite);
     if (success) {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === editCaptionTarget.id ? { ...i, label: newCaptionText.trim() } : i,
-        ),
-      );
-      showToast('Caption updated');
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, isFavorite: !item.isFavorite } : i)));
+      triggerToast(!item.isFavorite ? 'Saved to Favorites ❤️' : 'Removed from Favorites');
     }
-    setEditCaptionTarget(null);
   };
 
-  // ── Timeline Incident Handlers ────────────────────────────────────
-  const openNewIncidentModal = () => {
-    setEditingIncident(null);
-    setIncidentTitle('');
-    const today = new Date().toISOString().split('T')[0];
-    setIncidentDate(today);
-    setIncidentText('');
-    setIncidentTag('Special Memory');
-    setIncidentLocation('');
-    setIncidentPhotoFile(null);
-    setIncidentPhotoPreview('');
-    setShowIncidentModal(true);
-  };
-
-  const openEditIncidentModal = (inc: TimelineIncident) => {
-    setEditingIncident(inc);
-    setIncidentTitle(inc.title);
-    setIncidentDate(inc.incidentDate);
-    setIncidentText(inc.incidentText);
-    setIncidentTag(inc.tag || 'Memory');
-    setIncidentLocation(inc.location || '');
-    setIncidentPhotoFile(null);
-    setIncidentPhotoPreview(inc.photoUrl || '');
-    setShowIncidentModal(true);
-  };
-
-  const handleIncidentPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIncidentPhotoFile(file);
-    setIncidentPhotoPreview(URL.createObjectURL(file));
-  };
-
-  const handleSaveIncident = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!incidentTitle.trim() || !incidentDate.trim() || !incidentText.trim()) {
-      showToast('Please provide a title, date, and story', 'err');
-      return;
-    }
-
-    const timestamp = new Date(incidentDate).getTime() || Date.now();
-
-    if (editingIncident) {
-      await updateTimelineIncident(
-        editingIncident.id,
-        {
-          title: incidentTitle.trim(),
-          incidentDate,
-          incidentText: incidentText.trim(),
-          tag: incidentTag,
-          location: incidentLocation.trim(),
-          timestamp,
-        },
-        incidentPhotoFile || undefined,
-      );
-      showToast('Timeline incident updated ✓');
-    } else {
-      await createTimelineIncident(
-        {
-          owner,
-          title: incidentTitle.trim(),
-          incidentDate,
-          incidentText: incidentText.trim(),
-          tag: incidentTag,
-          location: incidentLocation.trim(),
-          timestamp,
-        },
-        incidentPhotoFile || undefined,
-      );
-      showToast('Incident added to timeline ✓');
-    }
-
-    setShowIncidentModal(false);
-    // Reload timeline
-    const updatedTimeline = await fetchTimelineIncidents(owner);
-    setTimelineIncidents(updatedTimeline);
-  };
-
-  const handleDeleteIncidentConfirm = async () => {
-    if (!deleteIncidentTarget) return;
+  const handleDeleteItem = async (item: GalleryItem) => {
+    setIsDeleting(true);
     try {
       await moveToRecycleBin({
-        originalId: deleteIncidentTarget.id,
-        source: 'timeline',
-        title: deleteIncidentTarget.title || 'Timeline Incident',
-        previewText: deleteIncidentTarget.incidentText || deleteIncidentTarget.incidentDate,
-        mediaUrl: deleteIncidentTarget.photoUrl,
-        mediaType: 'photo',
-        owner: deleteIncidentTarget.owner,
-        originalData: deleteIncidentTarget,
+        originalId: item.id,
+        source: 'gallery',
+        title: item.fileName,
+        previewText: item.label || item.fileName,
+        mediaUrl: item.publicUrl,
+        mediaType: item.type,
+        owner: item.owner,
+        originalData: item,
       });
-      await idbDelete(STORE_TIMELINE, deleteIncidentTarget.id);
-    } catch (err) {
-      console.error('[GalleryView] Error moving incident to recycle bin:', err);
+
+      await deletePhoto(item);
+      setItems((prev) => prev.filter((i) => i.id !== item.id));
+      triggerToast('Moved to Recycle Bin 🗑️');
+      setDeleteConfirmTarget(null);
+      if (lightboxIdx !== null) {
+        setLightboxIdx(null);
+      }
+    } catch {
+      triggerToast('Failed to delete item', 'error');
+    } finally {
+      setIsDeleting(false);
     }
-    setTimelineIncidents((prev) => prev.filter((i) => i.id !== deleteIncidentTarget.id));
-    showToast('Incident moved to Recycle Bin');
-    setDeleteIncidentTarget(null);
   };
 
-  // ── Lightbox Navigation ───────────────────────────────────────────
-  const lbPrev = useCallback(() => {
-    setLightboxIdx((i) =>
-      i === null ? null : i === 0 ? filteredItems.length - 1 : i - 1,
-    );
-  }, [filteredItems.length]);
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsDeleting(true);
+    try {
+      const targets = items.filter((i) => selectedIds.has(i.id));
+      for (const t of targets) {
+        await moveToRecycleBin({
+          originalId: t.id,
+          source: 'gallery',
+          title: t.fileName,
+          previewText: t.label || t.fileName,
+          mediaUrl: t.publicUrl,
+          mediaType: t.type,
+          owner: t.owner,
+          originalData: t,
+        });
+      }
 
-  const lbNext = useCallback(() => {
-    setLightboxIdx((i) =>
-      i === null ? null : i === filteredItems.length - 1 ? 0 : i + 1,
-    );
-  }, [filteredItems.length]);
+      await deleteMultipleItems(targets);
+      setItems((prev) => prev.filter((i) => !selectedIds.has(i.id)));
+      triggerToast(`Moved ${selectedIds.size} items to Recycle Bin`);
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+    } catch {
+      triggerToast('Batch delete failed', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-  const lbItem = lightboxIdx !== null ? filteredItems[lightboxIdx] ?? null : null;
+  const handleCreateAlbum = async () => {
+    if (!newAlbumName.trim()) return;
+    const album = await createAlbum(newAlbumName.trim(), newAlbumEmoji);
+    setAlbums((prev) => [...prev, album]);
+    setShowNewAlbumModal(false);
+    setNewAlbumName('');
+    triggerToast(`Created album "${album.name}" ✨`);
+  };
 
-  const photoCount = items.filter((i) => i.type === 'photo').length;
-  const videoCount = items.filter((i) => i.type === 'video').length;
-  const favCount   = items.filter((i) => i.isFavorite).length;
+  // ── Slideshow Logic ──────────────────────────────────────────────
+  useEffect(() => {
+    if (isSlideshowPlaying && filteredItems.length > 0) {
+      slideshowTimerRef.current = setInterval(() => {
+        setLightboxIdx((prev) => {
+          if (prev === null) return 0;
+          return (prev + 1) % filteredItems.length;
+        });
+      }, 3500);
+    } else if (slideshowTimerRef.current) {
+      clearInterval(slideshowTimerRef.current);
+    }
+    return () => {
+      if (slideshowTimerRef.current) clearInterval(slideshowTimerRef.current);
+    };
+  }, [isSlideshowPlaying, filteredItems.length]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIdx === null) return;
+      if (e.key === 'Escape') {
+        setLightboxIdx(null);
+        setIsSlideshowPlaying(false);
+      } else if (e.key === 'ArrowRight') {
+        setLightboxIdx((prev) => (prev !== null ? (prev + 1) % filteredItems.length : 0));
+      } else if (e.key === 'ArrowLeft') {
+        setLightboxIdx((prev) =>
+          prev !== null ? (prev - 1 + filteredItems.length) % filteredItems.length : 0
+        );
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIdx, filteredItems.length]);
+
+  const activeLightboxItem = lightboxIdx !== null ? filteredItems[lightboxIdx] : null;
+
+  // Grid column class based on density
+  const gridClass =
+    gridDensity === 'compact'
+      ? 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-2.5'
+      : gridDensity === 'large'
+      ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6'
+      : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4';
 
   return (
     <div
-      className="w-full h-full flex flex-col bg-[#131314] text-[#e3e3e3] overflow-hidden relative select-none font-sans"
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      role="region"
-      aria-label="Gallery"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`w-full h-full flex flex-col overflow-hidden relative select-none font-sans transition-colors ${
+        isDark ? 'bg-[#0b141a] text-[#e9edef]' : 'bg-[#f8fafc] text-[#0f172a]'
+      }`}
     >
-      {/* ── Drag & Drop Full Overlay ── */}
+      {/* ── Drag & Drop Overlay ── */}
       {isDragOver && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#131314]/95 border-3 border-dashed border-[#8ab4f8] rounded-3xl pointer-events-none p-6 text-center animate-in fade-in duration-150">
-          <div className="w-20 h-20 rounded-full bg-[#8ab4f8]/20 border border-[#8ab4f8]/40 flex items-center justify-center mb-4 text-[#8ab4f8]">
-            <Upload className="w-10 h-10 animate-bounce" />
-          </div>
-          <h2 className="text-xl font-bold text-white tracking-tight mb-1">
-            Drop Photos &amp; Videos Here
-          </h2>
-          <p className="text-sm text-[#c4c7c5] max-w-sm">
-            Release to add directly to your gallery. All media is saved safely in browser storage.
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-blue-600/90 text-white backdrop-blur-md p-6 text-center animate-in fade-in duration-150">
+          <Upload className="w-16 h-16 animate-bounce mb-3" />
+          <h2 className="text-2xl font-bold tracking-tight">Drop Media to Upload</h2>
+          <p className="text-sm opacity-90 mt-1 max-w-sm">
+            Photos and videos will be saved securely into Dharya's shared private gallery.
           </p>
         </div>
       )}
 
-      {/* ────────────────── GOOGLE PHOTOS TOP BAR ────────────────── */}
-      {selectedIds.size > 0 ? (
-        /* Floating Multi-Select Action Bar (Google Photos Style) */
-        <div className="bg-[#1e1f20] border-b border-[#3c4043] px-4 py-3 shrink-0 flex items-center justify-between z-40 animate-in slide-in-from-top duration-150 shadow-lg">
+      {/* ── Toast Notification ── */}
+      {toastMessage && (
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-2xl border border-white/10 animate-in slide-in-from-top-2">
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
+      {/* ── Multi-Select Top Bar OR Standard Top Navigation Bar ── */}
+      {isSelectMode ? (
+        <header
+          className={`px-4 sm:px-6 py-3.5 flex items-center justify-between border-b z-30 shrink-0 shadow-sm ${
+            isDark ? 'bg-[#182229] border-[#222e35]' : 'bg-white border-slate-200'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <button
-              onClick={clearSelection}
-              className="w-9 h-9 rounded-full hover:bg-white/10 flex items-center justify-center text-[#c4c7c5] hover:text-white transition-colors cursor-pointer"
-              title="Clear selection"
+              onClick={() => {
+                setIsSelectMode(false);
+                setSelectedIds(new Set());
+              }}
+              className="p-1.5 rounded-full hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            <span className="text-base font-bold text-white font-mono">
+            <span className="text-sm sm:text-base font-bold">
               {selectedIds.size} selected
             </span>
           </div>
@@ -742,266 +524,222 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                const selectedItems = items.filter((i) => selectedIds.has(i.id));
-                setMoveTargets(selectedItems);
+                if (selectedIds.size === filteredItems.length) {
+                  setSelectedIds(new Set());
+                } else {
+                  setSelectedIds(new Set(filteredItems.map((i) => i.id)));
+                }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] text-xs font-semibold text-[#e3e3e3] border border-[#3c4043] transition-all cursor-pointer"
+              className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <Folder className="w-4 h-4 text-[#8ab4f8]" />
-              <span className="hidden sm:inline">Add to Album</span>
+              {selectedIds.size === filteredItems.length ? 'Deselect All' : 'Select All'}
             </button>
 
-            {/* Prominent Multi-Select DELETE Button */}
             <button
-              onClick={triggerBatchDelete}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer"
-              title="Delete selected items"
+              disabled={selectedIds.size === 0}
+              onClick={handleBatchDelete}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm disabled:opacity-50 transition-colors"
             >
-              <Trash2 className="w-4 h-4 text-rose-400" />
+              <Trash2 className="w-4 h-4" />
               <span>Delete ({selectedIds.size})</span>
             </button>
           </div>
-        </div>
+        </header>
       ) : (
-        /* Restrained Gallery Header */
-        <header className="bg-[#181c1b] border-b border-[#2b332e] px-4 sm:px-6 pt-3.5 pb-2.5 shrink-0 shadow-xs">
-          {/* Row 1: Brand & Search Bar & Primary Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
-            {/* Gallery Navigation & Info */}
-            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+        <header
+          className={`px-4 sm:px-6 py-3 border-b z-30 shrink-0 transition-colors ${
+            isDark ? 'bg-[#111b21] border-[#222e35]' : 'bg-white border-slate-200'
+          }`}
+        >
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Title & Stats */}
+            <div className="flex items-center gap-3">
               {onBackToChat && (
                 <button
                   onClick={onBackToChat}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#131615] hover:bg-[#232926] border border-[#2b332e] text-xs font-medium text-[#808B84] hover:text-[#ECEEEB] transition-all cursor-pointer shrink-0"
-                  title="Back to Active Chat"
+                  className={`p-2 rounded-xl border transition-colors md:hidden ${
+                    isDark
+                      ? 'border-[#222e35] hover:bg-white/5 text-[#aebac1]'
+                      : 'border-slate-200 hover:bg-slate-100 text-slate-600'
+                  }`}
+                  title="Back to Chat"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Chats</span>
+                  <ArrowLeft className="w-4 h-4" />
                 </button>
               )}
 
-              <div className="w-9 h-9 rounded-xl bg-[#1d2420] border border-[#2b3a30] text-[#7E9F89] flex items-center justify-center shrink-0">
-                <Images className="w-4 h-4 stroke-[2]" />
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-500 text-white flex items-center justify-center shadow-sm">
+                <Images className="w-5 h-5" />
               </div>
+
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-semibold text-[#ECEEEB] tracking-tight">
-                    Gallery
-                  </h1>
-                  {items.length > 0 && (
-                    <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#1d2420] text-[#7E9F89] border border-[#2b3a30]">
-                      {items.length} items
-                    </span>
-                  )}
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight">Shared Gallery</h1>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                      isDark
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}
+                  >
+                    {items.length} items
+                  </span>
                 </div>
+                <p className={`text-xs ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+                  Private high-res photos & memories
+                </p>
               </div>
             </div>
 
-            {/* Restrained Search Input */}
-            <div className="relative flex-1 max-w-md mx-auto sm:mx-4">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808B84] pointer-events-none" />
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder={
-                  activeTab === 'timeline'
-                    ? 'Search memories…'
-                    : 'Search photos, videos, albums…'
-                }
+                placeholder="Search photos, videos, captions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 rounded-xl bg-[#131615] hover:bg-[#1a1f1c] focus:bg-[#131615] border border-[#2b332e] focus:border-[#7E9F89] text-[#ECEEEB] placeholder-[#808B84] text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-[#7E9F89]/30 transition-all shadow-inner"
+                className={`w-full pl-9 pr-9 py-2 rounded-2xl text-xs sm:text-sm border transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                  isDark
+                    ? 'bg-[#1f2c34] border-[#2a3942] text-white placeholder-[#8696a0]'
+                    : 'bg-slate-100/80 border-slate-200 text-slate-800 placeholder-slate-400'
+                }`}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808B84] hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Action Buttons: Primary "+ Add photos" & Overflow Menu */}
-            <div className="flex items-center gap-2 justify-end shrink-0">
-              {activeTab === 'timeline' ? (
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {/* Density toggle */}
+              <div
+                className={`hidden md:flex items-center p-1 rounded-xl border ${
+                  isDark ? 'bg-[#182229] border-[#222e35]' : 'bg-slate-100 border-slate-200'
+                }`}
+              >
                 <button
-                  onClick={openNewIncidentModal}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
+                  onClick={() => setGridDensity('large')}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    gridDensity === 'large'
+                      ? 'bg-emerald-500 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Large preview"
                 >
-                  <PlusCircle className="w-4 h-4 stroke-[2]" />
-                  <span>+ Add memory</span>
+                  <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
-              ) : (
                 <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
-                  aria-label="Add photos"
+                  onClick={() => setGridDensity('standard')}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    gridDensity === 'standard'
+                      ? 'bg-emerald-500 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Standard grid"
                 >
-                  <Upload className="w-4 h-4 stroke-[2]" />
-                  <span>+ Add photos</span>
+                  <Grid3X3 className="w-3.5 h-3.5" />
                 </button>
-              )}
-
-              {/* Compact Overflow Menu for Secondary Actions */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowOverflowMenu(!showOverflowMenu)}
-                  className="w-9 h-9 rounded-xl bg-[#131615] hover:bg-[#232926] border border-[#2b332e] flex items-center justify-center text-[#808B84] hover:text-[#ECEEEB] transition-all cursor-pointer"
-                  title="More actions"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-
-                {showOverflowMenu && (
-                  <div className="absolute right-0 top-11 w-48 bg-[#181c1b] border border-[#2b332e] rounded-xl shadow-2xl py-1.5 z-50 text-xs text-[#ECEEEB]">
-                    {onOpenRecycleBin && (
-                      <button
-                        onClick={() => {
-                          onOpenRecycleBin();
-                          setShowOverflowMenu(false);
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-rose-300 font-medium"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                        <span>Recycle Bin</span>
-                      </button>
-                    )}
-                    {onOpenTimeline && (
-                      <button
-                        onClick={() => {
-                          onOpenTimeline();
-                          setShowOverflowMenu(false);
-                        }}
-                        className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#7E9F89] font-medium"
-                      >
-                        <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
-                        <span>Memories</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setShowStorageInfo(true);
-                        setShowOverflowMenu(false);
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
-                    >
-                      <HardDrive className="w-3.5 h-3.5 text-[#7E9F89]" />
-                      <span>Storage details</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        loadData();
-                        setShowOverflowMenu(false);
-                      }}
-                      className="w-full text-left px-3.5 py-2 hover:bg-white/5 transition-colors flex items-center gap-2 text-[#808B84] hover:text-[#ECEEEB]"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                )}
               </div>
+
+              {/* Select Toggle */}
+              <button
+                onClick={() => setIsSelectMode(!isSelectMode)}
+                className={`text-xs font-semibold px-3 py-2 rounded-xl border transition-colors ${
+                  isDark
+                    ? 'border-[#222e35] hover:bg-white/5 text-[#8696a0]'
+                    : 'border-slate-200 hover:bg-slate-100 text-slate-600'
+                }`}
+              >
+                Select
+              </button>
+
+              {/* Upload CTA */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold shadow-md active:scale-95 transition-all"
+              >
+                <Upload className="w-4 h-4" />
+                <span>+ Upload</span>
+              </button>
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={ACCEPT_STRING}
                 multiple
+                accept={ACCEPT_STRING}
+                onChange={(e) => e.target.files && processFiles(e.target.files)}
                 className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.length) handleFiles(e.target.files);
-                  e.target.value = '';
-                }}
               />
             </div>
           </div>
 
-          {/* Row 2: Gallery Navigation Tabs */}
-          <div className="flex items-center justify-between gap-3 overflow-x-auto scrollbar-none pt-1">
-            <nav className="flex items-center gap-1 sm:gap-2 shrink-0" role="tablist">
-              <button
-                onClick={() => {
-                  setActiveTab('photos');
-                  setSelectedAlbumId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'photos' && !selectedAlbumId
-                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
-                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
-                }`}
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Photos{photoCount > 0 ? ` (${photoCount})` : ''}</span>
-              </button>
+          {/* ── Navigation Category Tabs ── */}
+          <div className="flex items-center justify-between gap-2 overflow-x-auto pt-3 border-t mt-3 border-slate-200/60 dark:border-slate-800 scrollbar-none">
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: 'all', label: 'All Media', count: items.length },
+                { id: 'photos', label: 'Photos', count: items.filter((i) => i.type === 'photo').length },
+                { id: 'videos', label: 'Videos', count: items.filter((i) => i.type === 'video').length },
+                { id: 'favorites', label: 'Favorites', count: items.filter((i) => i.isFavorite).length },
+                { id: 'albums', label: 'Albums', count: albums.length },
+              ].map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id as GalleryTab);
+                      setSelectedAlbumId(null);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                      active
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : isDark
+                        ? 'text-[#8696a0] hover:bg-white/5 hover:text-white'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        active
+                          ? 'bg-white/20 text-white'
+                          : isDark
+                          ? 'bg-white/10 text-[#8696a0]'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-              <button
-                onClick={() => {
-                  setActiveTab('videos');
-                  setSelectedAlbumId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'videos' && !selectedAlbumId
-                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
-                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
-                }`}
-              >
-                <Film className="w-3.5 h-3.5" />
-                <span>Videos{videoCount > 0 ? ` (${videoCount})` : ''}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('albums');
-                  setSelectedAlbumId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'albums'
-                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
-                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
-                }`}
-              >
-                <Folder className="w-3.5 h-3.5" />
-                <span>Albums{albums.length > 0 ? ` (${albums.length})` : ''}</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('favorites');
-                  setSelectedAlbumId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'favorites' && !selectedAlbumId
-                    ? 'bg-[#2a1d20] text-[#D48D98] border border-[#48282e] shadow-xs'
-                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
-                }`}
-              >
-                <Heart className="w-3.5 h-3.5 text-[#D48D98]" />
-                <span>Favorites{favCount > 0 ? ` (${favCount})` : ''}</span>
-              </button>
-
-              {/* Memory Incident Timeline Tab */}
-              <button
-                onClick={() => {
-                  setActiveTab('timeline');
-                  setSelectedAlbumId(null);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === 'timeline'
-                    ? 'bg-[#2b3a30] text-[#7E9F89] border border-[#3d5244] shadow-xs'
-                    : 'bg-[#131615] text-[#808B84] hover:text-[#ECEEEB] border border-[#2b332e]'
-                }`}
-              >
-                <Clock className="w-3.5 h-3.5 text-[#7E9F89]" />
-                <span>Memories{timelineIncidents.length > 0 ? ` (${timelineIncidents.length})` : ''}</span>
-              </button>
-            </nav>
-
+            {/* Sort & Album CTA */}
             <div className="flex items-center gap-2 shrink-0">
-              {/* Sort Order */}
+              {activeTab === 'albums' && (
+                <button
+                  onClick={() => setShowNewAlbumModal(true)}
+                  className="flex items-center gap-1 text-xs font-semibold text-emerald-500 hover:underline"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>New Album</span>
+                </button>
+              )}
               <button
                 onClick={() => setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] text-[#c4c7c5] hover:text-white text-xs font-semibold transition-all cursor-pointer"
-                title="Sort order"
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors flex items-center gap-1 ${
+                  isDark
+                    ? 'border-[#222e35] text-[#8696a0] hover:text-white'
+                    : 'border-slate-200 text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <Filter className="w-3 h-3" />
                 <span>{sortOrder === 'newest' ? 'Newest' : 'Oldest'}</span>
@@ -1011,887 +749,424 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
         </header>
       )}
 
-      {/* ── Active Uploads Progress Drawer ── */}
-      {showUploads && uploads.length > 0 && (
-        <div className="bg-[#1e1f20] border-b border-[#2d2f31] px-4 py-2 shrink-0 animate-in slide-in-from-top-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-[#8e918f] uppercase tracking-wide">
-              {uploads.some((u) => u.status === 'uploading')
-                ? 'Uploading to Gallery…'
-                : 'Upload Complete'}
-            </span>
-            <button
-              onClick={() => {
-                setShowUploads(false);
-                setUploads([]);
-              }}
-              className="text-[#8e918f] hover:text-white p-1"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {uploads.map((u) => (
+      {/* ── Scrollable Media Grid Body ── */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        {/* Loading state */}
+        {loading && (
+          <div className={`grid ${gridClass}`}>
+            {Array.from({ length: 12 }).map((_, i) => (
               <div
-                key={u.id}
-                className="relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-[#3c4043] bg-[#28292a]"
-              >
-                {u.isVideo ? (
-                  <div className="w-full h-full flex items-center justify-center bg-[#28292a]">
-                    <Film className="w-6 h-6 text-[#8e918f]" />
-                  </div>
-                ) : (
-                  <img src={u.previewUrl} alt="" className="w-full h-full object-cover" />
-                )}
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  {u.status === 'uploading' && (
-                    <div className="flex flex-col items-center">
-                      <Loader2 className="w-4 h-4 text-[#8ab4f8] animate-spin" />
-                      <span className="text-[9px] font-mono text-white mt-0.5">{u.progress}%</span>
-                    </div>
-                  )}
-                  {u.status === 'done' && <Check className="w-5 h-5 text-[#8ab4f8]" />}
-                  {u.status === 'error' && <AlertTriangle className="w-5 h-5 text-rose-400" />}
-                </div>
-              </div>
+                key={i}
+                className="aspect-square rounded-2xl bg-slate-200 dark:bg-white/5 animate-pulse"
+              />
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ────────────────── MAIN CONTENT ────────────────── */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative p-3 sm:p-6">
-        {/* ── 1. TIMELINE INCIDENTS TAB (New Requested Feature!) ── */}
-        {activeTab === 'timeline' ? (
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Timeline Header Banner */}
-            <div className="bg-[#1e1f20] border border-[#2d2f31] rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-mono text-[#8ab4f8] mb-1">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>MEMORY INCIDENT TIMELINE</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  Our Story &amp; Incident Journal
-                </h2>
-                <p className="text-xs sm:text-sm text-[#8e918f] mt-1 max-w-xl">
-                  Add photos, pick the date, and write what incident happened. Every milestone and memory preserved forever.
-                </p>
-              </div>
-
-              <button
-                onClick={openNewIncidentModal}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs sm:text-sm font-bold shadow-lg shadow-[#8ab4f8]/25 transition-all cursor-pointer active:scale-95 shrink-0"
-              >
-                <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                <span>+ Add Incident</span>
-              </button>
+        {/* Empty state */}
+        {!loading && filteredItems.length === 0 && activeTab !== 'albums' && (
+          <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-4">
+              <Camera className="w-8 h-8" />
             </div>
-
-            {/* Timeline Empty State */}
-            {filteredTimeline.length === 0 && (
-              <div className="text-center py-16 px-4 bg-[#1e1f20]/40 rounded-3xl border border-[#2d2f31]">
-                <Clock className="w-12 h-12 text-[#8e918f] mx-auto mb-3 opacity-60" />
-                <h3 className="text-base font-bold text-white mb-1">No timeline incidents yet</h3>
-                <p className="text-xs text-[#8e918f] max-w-sm mx-auto mb-5">
-                  Write down your first incident, attach a photo, and set the date!
-                </p>
-                <button
-                  onClick={openNewIncidentModal}
-                  className="px-5 py-2 rounded-full bg-[#8ab4f8] text-[#001d35] text-xs font-bold"
-                >
-                  Add Your First Incident
-                </button>
-              </div>
-            )}
-
-            {/* Chronological Incident Timeline Track */}
-            {filteredTimeline.length > 0 && (
-              <div className="relative pl-6 sm:pl-8 border-l-2 border-[#3c4043] space-y-8 my-4">
-                {filteredTimeline.map((inc, index) => {
-                  const displayDate = new Date(inc.timestamp).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  });
-
-                  return (
-                    <article
-                      key={inc.id}
-                      className="relative group bg-[#1e1f20] border border-[#2d2f31] hover:border-[#8ab4f8]/60 rounded-3xl p-4 sm:p-6 transition-all duration-200 shadow-md hover:shadow-xl"
-                    >
-                      {/* Timeline Node Pin on the Track */}
-                      <div className="absolute -left-[31px] sm:-left-[39px] top-6 w-5 h-5 rounded-full bg-[#1e1f20] border-3 border-[#8ab4f8] flex items-center justify-center shadow-md">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#8ab4f8]" />
-                      </div>
-
-                      {/* Header Row: Date Badge, Tag, Location & Action Buttons */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2d2f31] pb-3 mb-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#28292a] text-[#8ab4f8] text-xs font-bold font-mono border border-[#3c4043]">
-                            <Calendar className="w-3.5 h-3.5" />
-                            <span>{inc.incidentDate || displayDate}</span>
-                          </span>
-
-                          {inc.tag && (
-                            <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#28292a] text-[#c4c7c5] text-[11px] font-medium border border-[#3c4043]">
-                              <Tag className="w-3 h-3 text-amber-400" />
-                              <span>{inc.tag}</span>
-                            </span>
-                          )}
-
-                          {inc.location && (
-                            <span className="flex items-center gap-1 text-[11px] text-[#8e918f]">
-                              <MapPin className="w-3 h-3 text-rose-400" />
-                              <span>{inc.location}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Edit & Delete Action Buttons */}
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => openEditIncidentModal(inc)}
-                            className="p-1.5 rounded-full hover:bg-white/10 text-[#8e918f] hover:text-white transition-colors cursor-pointer"
-                            title="Edit Incident"
-                          >
-                            <Edit2 className="w-4 h-4 text-[#8ab4f8]" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteIncidentTarget(inc)}
-                            className="p-1.5 rounded-full hover:bg-rose-500/20 text-[#8e918f] hover:text-rose-400 transition-colors cursor-pointer"
-                            title="Delete Incident"
-                          >
-                            <Trash2 className="w-4 h-4 text-rose-400" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Title & Photo Layout */}
-                      <div className="space-y-3">
-                        <h3 className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
-                          {inc.title}
-                        </h3>
-
-                        {/* Incident Photo if Attached */}
-                        {inc.photoUrl && (
-                          <div
-                            onClick={() => {
-                              // Open in fullscreen viewer as a virtual item
-                              const virtualItem: GalleryItem = {
-                                id: inc.id,
-                                owner: inc.owner,
-                                type: 'photo',
-                                publicUrl: inc.photoUrl!,
-                                fileName: inc.title,
-                                fileSize: 0,
-                                mimeType: 'image/jpeg',
-                                label: inc.title,
-                                isFavorite: false,
-                                albumId: 'timeline',
-                                createdAt: inc.timestamp,
-                                isLocalOnly: true,
-                              };
-                              setItems((prev) => [virtualItem, ...prev]);
-                              setLightboxIdx(0);
-                            }}
-                            className="relative max-h-80 sm:max-h-96 rounded-2xl overflow-hidden bg-black/40 border border-[#2d2f31] cursor-pointer group/photo"
-                          >
-                            <img
-                              src={inc.photoUrl}
-                              alt={inc.title}
-                              className="w-full h-full max-h-80 sm:max-h-96 object-cover object-center group-hover/photo:scale-102 transition-transform duration-300"
-                              loading="lazy"
-                            />
-                            <div className="absolute inset-0 bg-black/20 group-hover/photo:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover/photo:opacity-100">
-                              <span className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-xs font-semibold text-white flex items-center gap-1.5">
-                                <ZoomIn className="w-3.5 h-3.5" />
-                                <span>View Full Photo</span>
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Written Incident Story Description */}
-                        <div className="bg-[#131314] p-4 rounded-2xl border border-[#2d2f31] text-xs sm:text-sm text-[#e3e3e3] leading-relaxed whitespace-pre-line">
-                          {inc.incidentText}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
+            <h3 className="text-base font-bold">No photos or videos yet</h3>
+            <p className={`text-xs mt-1 mb-5 ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+              {searchQuery
+                ? `No results match "${searchQuery}"`
+                : 'Upload moments together to create your private album collection.'}
+            </p>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition-colors"
+            >
+              Upload First Photo
+            </button>
           </div>
-        ) : activeTab === 'albums' && !selectedAlbumId ? (
-          /* ── 2. ALBUMS TAB ── */
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-bold text-white tracking-tight">
-                Albums &amp; Collections
+        )}
+
+        {/* ── Albums Tab View ── */}
+        {activeTab === 'albums' && !selectedAlbumId && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                Collections & Albums
               </h2>
-              <button
-                onClick={() => setShowNewAlbumModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold transition-all cursor-pointer"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-                <span>New Album</span>
-              </button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {/* "+ New Album" Card */}
+              {/* Add Album Card */}
               <div
                 onClick={() => setShowNewAlbumModal(true)}
-                className="aspect-square rounded-2xl border-2 border-dashed border-[#3c4043] hover:border-[#8ab4f8] bg-[#1e1f20]/50 hover:bg-[#1e1f20] flex flex-col items-center justify-center p-4 cursor-pointer transition-all group"
+                className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer transition-all group ${
+                  isDark
+                    ? 'border-[#222e35] hover:border-emerald-500 bg-white/5'
+                    : 'border-slate-300 hover:border-emerald-500 bg-slate-50'
+                }`}
               >
-                <div className="w-12 h-12 rounded-full bg-[#28292a] group-hover:bg-[#8ab4f8]/20 flex items-center justify-center text-[#8e918f] group-hover:text-[#8ab4f8] transition-colors mb-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-500 flex items-center justify-center mb-2 transition-colors">
                   <FolderPlus className="w-6 h-6" />
                 </div>
-                <span className="text-sm font-bold text-white group-hover:text-[#8ab4f8] transition-colors">
-                  New Album
-                </span>
-                <span className="text-xs text-[#8e918f] mt-0.5">Create collection</span>
+                <p className="text-xs font-bold">Create Album</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Custom collection</p>
               </div>
 
-              {/* Album Cards */}
+              {/* Existing Albums */}
               {albums.map((album) => {
                 const albumMedia = items.filter((i) => i.albumId === album.id);
                 const cover = albumMedia[0]?.publicUrl;
-                const isCoverVideo = albumMedia[0]?.type === 'video';
 
                 return (
                   <div
                     key={album.id}
-                    onClick={() => setSelectedAlbumId(album.id)}
-                    className="aspect-square rounded-2xl overflow-hidden bg-[#1e1f20] border border-[#2d2f31] hover:border-[#8ab4f8]/50 transition-all cursor-pointer relative group flex flex-col justify-end p-3 shadow-md hover:shadow-xl"
+                    onClick={() => {
+                      setSelectedAlbumId(album.id);
+                    }}
+                    className={`aspect-square rounded-2xl overflow-hidden relative cursor-pointer group shadow-sm transition-all hover:scale-[1.02] border ${
+                      isDark ? 'bg-[#182229] border-[#222e35]' : 'bg-white border-slate-200'
+                    }`}
                   >
                     {cover ? (
-                      isCoverVideo ? (
-                        <video
-                          src={cover}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          muted
-                          playsInline
-                        />
-                      ) : (
-                        <img
-                          src={cover}
-                          alt={album.name}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      )
+                      <img
+                        src={cover}
+                        alt={album.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     ) : (
-                      <div className="absolute inset-0 bg-[#28292a] flex items-center justify-center text-4xl">
+                      <div className="w-full h-full flex items-center justify-center text-4xl">
                         {album.emoji || '📁'}
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-1.5 text-white font-bold text-sm truncate">
-                        <span>{album.emoji}</span>
-                        <span className="truncate">{album.name}</span>
-                      </div>
-                      <span className="text-xs text-[#c4c7c5]">
-                        {albumMedia.length} {albumMedia.length === 1 ? 'item' : 'items'}
-                      </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3 text-white">
+                      <p className="text-sm font-bold truncate">
+                        {album.emoji} {album.name}
+                      </p>
+                      <p className="text-[11px] text-white/80">{albumMedia.length} items</p>
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-        ) : (
-          /* ── 3. TIMELINE MEDIA STREAM VIEW (Photos, Videos, Favorites) ── */
-          <>
-            {/* If inside an album: Header with back button */}
-            {selectedAlbumId && (
-              <div className="flex items-center justify-between mb-4 bg-[#1e1f20] p-3 rounded-2xl border border-[#2d2f31]">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedAlbumId(null)}
-                    className="p-1.5 rounded-full hover:bg-white/10 text-white cursor-pointer"
-                    title="Back to all albums"
+        )}
+
+        {/* ── Main Media Stream Grouped by Dates ── */}
+        {!loading && filteredItems.length > 0 && activeTab !== 'albums' && (
+          <div className="space-y-6">
+            {groupedSections.map((group) => (
+              <section key={group.title} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`text-xs font-bold uppercase tracking-wider ${
+                      isDark ? 'text-[#8696a0]' : 'text-slate-500'
+                    }`}
                   >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <div>
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                      <span>{albums.find((a) => a.id === selectedAlbumId)?.emoji || '📁'}</span>
-                      <span>{albums.find((a) => a.id === selectedAlbumId)?.name || 'Album'}</span>
-                    </h2>
-                    <span className="text-xs text-[#8e918f]">
-                      {filteredItems.length} items in album
-                    </span>
-                  </div>
+                    {group.title}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {group.items.length} item{group.items.length > 1 ? 's' : ''}
+                  </span>
                 </div>
-              </div>
-            )}
 
-            {/* Drag & drop helper box (only shown when gallery has items) */}
-            {filteredItems.length > 0 && (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="mb-6 p-4 rounded-xl border border-dashed border-[#2b332e] hover:border-[#7E9F89] bg-[#181c1b] hover:bg-[#1d2420]/40 transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#131615] group-hover:bg-[#1d2420] border border-[#2b332e] flex items-center justify-center text-[#808B84] group-hover:text-[#7E9F89] transition-colors shrink-0">
-                    <Upload className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#ECEEEB]">
-                      Add photos &amp; videos
-                    </p>
-                    <p className="text-xs text-[#808B84]">
-                      Drag and drop anywhere or click to browse
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3.5 py-1.5 rounded-lg bg-[#131615] group-hover:bg-[#4E6B58] text-[#808B84] group-hover:text-white border border-[#2b332e] group-hover:border-transparent text-xs font-medium transition-all shrink-0">
-                  Browse Files
-                </span>
-              </div>
-            )}
+                <div className={`grid ${gridClass}`}>
+                  {group.items.map((item) => {
+                    const isSelected = selectedIds.has(item.id);
+                    const globalIdx = filteredItems.findIndex((i) => i.id === item.id);
 
-            {/* Skeletons Loading State */}
-            {loading && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-2xl bg-[#181c1b] animate-pulse border border-[#2b332e]"
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!loading && !fetchError && filteredItems.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center mb-4 text-[#7E9F89]">
-                  {activeTab === 'videos' ? (
-                    <Film className="w-8 h-8 stroke-[1.75]" />
-                  ) : activeTab === 'favorites' ? (
-                    <Heart className="w-8 h-8 stroke-[1.75] text-[#D48D98]" />
-                  ) : (
-                    <Images className="w-8 h-8 stroke-[1.75]" />
-                  )}
-                </div>
-                <h3 className="text-base sm:text-lg font-semibold text-[#ECEEEB] mb-1">
-                  {searchQuery
-                    ? `No matches for "${searchQuery}"`
-                    : selectedAlbumId
-                    ? 'This album is empty'
-                    : activeTab === 'videos'
-                    ? 'No videos yet'
-                    : activeTab === 'favorites'
-                    ? 'No favorites yet'
-                    : 'No photos yet'}
-                </h3>
-                <p className="text-xs sm:text-sm text-[#808B84] max-w-sm mb-5 leading-relaxed">
-                  {searchQuery
-                    ? 'Try searching with different keywords or clear your query.'
-                    : 'Photos and videos you share together will appear here.'}
-                </p>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] active:scale-95 text-white text-xs sm:text-sm font-medium transition-all shadow-xs cursor-pointer"
-                >
-                  <Upload className="w-4 h-4 stroke-[2]" />
-                  <span>+ Add photos</span>
-                </button>
-              </div>
-            )}
-
-            {/* Signature Google Photos Timeline Date Sections */}
-            {!loading && !fetchError && filteredItems.length > 0 && (
-              <div className="space-y-6 pb-12">
-                {groupedByDate.map((group) => {
-                  const allGroupSelected = group.items.every((i) => selectedIds.has(i.id));
-
-                  return (
-                    <section key={group.dateKey} aria-label={group.label} className="space-y-2.5">
-                      {/* Timeline Date Header */}
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => selectAllInGroup(group.items)}
-                            className="w-5 h-5 rounded-full border border-[#8e918f] hover:border-white flex items-center justify-center transition-colors cursor-pointer"
-                            title={allGroupSelected ? 'Deselect date' : 'Select all in date'}
-                          >
-                            {allGroupSelected && (
-                              <div className="w-3 h-3 rounded-full bg-[#8ab4f8]" />
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          if (isSelectMode) {
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(item.id)) next.delete(item.id);
+                              else next.add(item.id);
+                              return next;
+                            });
+                          } else {
+                            setLightboxIdx(globalIdx);
+                            setIsSlideshowPlaying(false);
+                          }
+                        }}
+                        className={`aspect-square rounded-2xl overflow-hidden relative cursor-pointer group shadow-sm transition-all duration-200 hover:shadow-lg ${
+                          isSelected ? 'ring-3 ring-emerald-500 scale-[0.98]' : ''
+                        } ${isDark ? 'bg-[#182229]' : 'bg-slate-200'}`}
+                      >
+                        {item.type === 'video' ? (
+                          <div className="relative w-full h-full">
+                            <video
+                              src={item.publicUrl}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                            />
+                            {/* Play pill indicator */}
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+                              <div className="w-9 h-9 rounded-full bg-white/90 text-slate-900 flex items-center justify-center shadow-md">
+                                <Play className="w-4 h-4 fill-slate-900 ml-0.5" />
+                              </div>
+                            </div>
+                            {item.durationFormatted && (
+                              <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-mono">
+                                {item.durationFormatted}
+                              </span>
                             )}
-                          </button>
-                          <h3 className="text-sm font-bold text-white tracking-tight">
-                            {group.label}
-                          </h3>
-                          <span className="text-xs text-[#8e918f] font-mono">
-                            • {group.items.length}
-                          </span>
+                          </div>
+                        ) : (
+                          <img
+                            src={item.publicUrl}
+                            alt={item.fileName}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        )}
+
+                        {/* Hover Overlay Actions */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
+                          <div className="flex items-center justify-between">
+                            {/* Checkbox */}
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(item.id)) next.delete(item.id);
+                                  else next.add(item.id);
+                                  return next;
+                                });
+                              }}
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? 'bg-emerald-500 border-emerald-500 text-white'
+                                  : 'border-white/80 bg-black/30 text-transparent'
+                              }`}
+                            >
+                              <Check className="w-3.5 h-3.5 stroke-[3]" />
+                            </div>
+
+                            {/* Favorite Heart */}
+                            <button
+                              onClick={(e) => handleToggleFavorite(e, item)}
+                              className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white transition-colors"
+                              title="Favorite"
+                            >
+                              <Heart
+                                className={`w-4 h-4 ${
+                                  item.isFavorite
+                                    ? 'text-rose-500 fill-rose-500'
+                                    : 'text-white'
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          {/* Bottom info & delete */}
+                          <div className="flex items-center justify-between text-white text-xs">
+                            <span className="truncate text-[11px] font-medium max-w-[70%]">
+                              {item.label || item.fileName}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmTarget(item);
+                              }}
+                              className="p-1 rounded-lg bg-black/40 hover:bg-rose-600 text-white transition-colors"
+                              title="Delete to Trash"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Google Photos Grid for this date */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
-                        {group.items.map((item) => {
-                          const isSelected = selectedIds.has(item.id);
-                          const overallIndex = filteredItems.findIndex((x) => x.id === item.id);
-                          const album = albums.find((a) => a.id === item.albumId);
-
-                          return (
-                            <GoogleMediaCard
-                              key={item.id}
-                              item={item}
-                              albumName={album ? `${album.emoji || '📁'} ${album.name}` : undefined}
-                              isSelected={isSelected}
-                              onSelect={(e) => toggleSelect(item.id, e)}
-                              onOpen={() => setLightboxIdx(overallIndex)}
-                              onToggleFav={() => handleToggleFav(item)}
-                              onDelete={() => setDeleteTargets([item])}
-                              onEditCaption={() => {
-                                setEditCaptionTarget(item);
-                                setNewCaptionText(item.label);
-                              }}
-                              onMoveAlbum={() => setMoveTargets([item])}
-                            />
-                          );
-                        })}
-                      </div>
-                    </section>
-                  );
-                })}
-              </div>
-            )}
-          </>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
         )}
-      </main>
+      </div>
 
-      {/* ────────────────── FULLSCREEN GOOGLE PHOTOS VIEWER ────────────────── */}
-      {lbItem && (
-        <GoogleFullscreenViewer
-          item={lbItem}
-          album={albums.find((a) => a.id === lbItem.albumId)}
-          albums={albums}
-          idx={(lightboxIdx ?? 0) + 1}
-          total={filteredItems.length}
-          onClose={() => setLightboxIdx(null)}
-          onPrev={lbPrev}
-          onNext={lbNext}
-          onToggleFav={() => handleToggleFav(lbItem)}
-          onDelete={() => setDeleteTargets([lbItem])}
-          onEditCaption={() => {
-            setEditCaptionTarget(lbItem);
-            setNewCaptionText(lbItem.label);
-          }}
-          onMoveAlbum={(albumId) => {
-            moveItemToAlbum(lbItem.id, albumId);
-            setItems((prev) =>
-              prev.map((i) => (i.id === lbItem.id ? { ...i, albumId } : i)),
-            );
-            showToast('Album updated');
-          }}
-        />
-      )}
-
-      {/* ────────────────── ADD / EDIT TIMELINE INCIDENT MODAL ────────────────── */}
-      {showIncidentModal && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150 overflow-y-auto"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Add or Edit Timeline Incident"
-        >
-          <div className="w-full max-w-lg bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150 my-8">
-            <div className="flex items-center justify-between border-b border-[#2d2f31] pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base sm:text-lg font-bold text-white">
-                  {editingIncident ? 'Edit Incident Story' : 'Add Incident to Timeline'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowIncidentModal(false)}
-                className="text-[#8e918f] hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* ── Fullscreen Cinematic Lightbox Modal ── */}
+      {lightboxIdx !== null && activeLightboxItem && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between text-white animate-in fade-in duration-200">
+          {/* Top Lightbox Bar */}
+          <div className="px-4 py-3 flex items-center justify-between bg-black/40 backdrop-blur-md border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-mono text-white/70">
+                {lightboxIdx + 1} / {filteredItems.length}
+              </span>
+              <span className="text-xs font-medium truncate max-w-xs text-white/90">
+                {activeLightboxItem.fileName}
+              </span>
             </div>
 
-            <form onSubmit={handleSaveIncident} className="space-y-4">
-              {/* Title Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  Incident Headline / Title *
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Rainy Day Walk, First Trip to Ooty, Birthday Surprise"
-                  value={incidentTitle}
-                  onChange={(e) => setIncidentTitle(e.target.value)}
-                  required
-                  autoFocus
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-                />
-              </div>
-
-              {/* Date Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  Date When Incident Happened *
-                </label>
-                <input
-                  type="date"
-                  value={incidentDate}
-                  onChange={(e) => setIncidentDate(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-                />
-              </div>
-
-              {/* Photo Upload Area */}
-              <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  Attach Photo (Optional)
-                </label>
-                {incidentPhotoPreview ? (
-                  <div className="relative rounded-2xl overflow-hidden max-h-48 border border-[#3c4043] bg-black">
-                    <img
-                      src={incidentPhotoPreview}
-                      alt="Preview"
-                      className="w-full h-48 object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIncidentPhotoFile(null);
-                        setIncidentPhotoPreview('');
-                      }}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center cursor-pointer"
-                      title="Remove photo"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => incidentPhotoInputRef.current?.click()}
-                    className="p-4 rounded-2xl border-2 border-dashed border-[#3c4043] hover:border-[#8ab4f8] bg-[#131314] text-center cursor-pointer transition-colors"
-                  >
-                    <Camera className="w-6 h-6 text-[#8e918f] mx-auto mb-1" />
-                    <span className="text-xs text-[#c4c7c5] font-semibold block">
-                      Click to upload photo of this incident
-                    </span>
-                    <span className="text-[10px] text-[#8e918f]">JPG, PNG, WEBP</span>
-                  </div>
-                )}
-                <input
-                  ref={incidentPhotoInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleIncidentPhotoSelect}
-                />
-              </div>
-
-              {/* What incident happened? Text Area */}
-              <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  What Happened? (Write the story / incident) *
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Write the full memory of what happened... where you went, funny details, thoughts, and what made this incident special."
-                  value={incidentText}
-                  onChange={(e) => setIncidentText(e.target.value)}
-                  required
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8] leading-relaxed resize-none"
-                />
-              </div>
-
-              {/* Tag & Location Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                    Tag / Category
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Milestone, First Date, Funny"
-                    value={incidentTag}
-                    onChange={(e) => setIncidentTag(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Corner Cafe, Campus Lawn"
-                    value={incidentLocation}
-                    onChange={(e) => setIncidentLocation(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowIncidentModal(false)}
-                  className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold transition-all shadow-md shadow-[#8ab4f8]/30 cursor-pointer"
-                >
-                  {editingIncident ? 'Update Story' : 'Save to Timeline'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────── DELETE TIMELINE INCIDENT MODAL ────────────────── */}
-      {deleteIncidentTarget && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">Delete Incident?</h3>
-                <p className="text-xs text-[#8e918f]">Remove this memory from timeline</p>
-              </div>
-            </div>
-            <p className="text-xs text-[#e3e3e3] bg-[#131314] p-3 rounded-2xl border border-[#2d2f31] mb-5">
-              "{deleteIncidentTarget.title}" ({deleteIncidentTarget.incidentDate})
-            </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {/* Slideshow play/pause */}
               <button
-                onClick={() => setDeleteIncidentTarget(null)}
-                className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
+                onClick={() => setIsSlideshowPlaying(!isSlideshowPlaying)}
+                className={`p-2 rounded-xl transition-colors ${
+                  isSlideshowPlaying ? 'bg-emerald-600 text-white' : 'hover:bg-white/10'
+                }`}
+                title={isSlideshowPlaying ? 'Pause Slideshow' : 'Play Slideshow'}
               >
-                Cancel
+                {isSlideshowPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </button>
+
+              {/* Favorite */}
               <button
-                onClick={handleDeleteIncidentConfirm}
-                className="flex-1 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all cursor-pointer shadow-lg shadow-rose-600/30"
+                onClick={(e) => handleToggleFavorite(e, activeLightboxItem)}
+                className="p-2 rounded-xl hover:bg-white/10 transition-colors"
               >
-                Delete Memory
+                <Heart
+                  className={`w-4 h-4 ${
+                    activeLightboxItem.isFavorite ? 'text-rose-500 fill-rose-500' : 'text-white'
+                  }`}
+                />
+              </button>
+
+              {/* Download */}
+              <a
+                href={activeLightboxItem.publicUrl}
+                download={activeLightboxItem.fileName}
+                className="p-2 rounded-xl hover:bg-white/10 transition-colors"
+                title="Download"
+              >
+                <Download className="w-4 h-4" />
+              </a>
+
+              {/* Delete */}
+              <button
+                onClick={() => setDeleteConfirmTarget(activeLightboxItem)}
+                className="p-2 rounded-xl hover:bg-rose-600/30 text-rose-400 transition-colors"
+                title="Move to Trash"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+
+              {/* Close */}
+              <button
+                onClick={() => {
+                  setLightboxIdx(null);
+                  setIsSlideshowPlaying(false);
+                }}
+                className="p-2 rounded-xl hover:bg-white/10 text-white transition-colors ml-2"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ────────────────── GOOGLE STYLE MEDIA DELETE MODAL ────────────────── */}
-      {deleteTargets && deleteTargets.length > 0 && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Confirm item deletion"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                <Trash2 className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">
-                  {deleteTargets.length === 1
-                    ? `Delete ${deleteTargets[0].type === 'video' ? 'Video' : 'Photo'}?`
-                    : `Delete ${deleteTargets.length} items?`}
-                </h3>
-                <p className="text-xs text-[#8e918f]">
-                  Permanently remove from Gallery storage
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-[#131314] p-3 rounded-2xl border border-[#2d2f31] mb-5 text-xs text-[#e3e3e3] leading-relaxed">
-              {deleteTargets.length === 1 ? (
-                <p className="font-semibold truncate">"{deleteTargets[0].label}"</p>
-              ) : (
-                <p>{deleteTargets.length} selected photos and videos will be deleted.</p>
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDeleteTargets(null)}
-                disabled={deleting}
-                className="flex-1 py-2.5 rounded-full bg-[#28292a] hover:bg-[#333538] text-[#c4c7c5] hover:text-white text-xs font-bold transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-                className="flex-1 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-rose-600/30"
-              >
-                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                <span>{deleting ? 'Deleting…' : 'Delete'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ────────────────── MOVE TO ALBUM MODAL ────────────────── */}
-      {moveTargets && moveTargets.length > 0 && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-[#2d2f31] pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Folder className="w-5 h-5 text-[#8ab4f8]" />
-                <h3 className="text-base font-bold text-white">Add to Album</h3>
-              </div>
-              <button onClick={() => setMoveTargets(null)} className="text-[#8e918f] hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-[#8e918f] mb-3">
-              Organize {moveTargets.length} item(s) into:
-            </p>
-
-            <div className="space-y-1.5 max-h-60 overflow-y-auto mb-4 pr-1">
-              {albums.map((album) => (
-                <button
-                  key={album.id}
-                  onClick={() => handleMoveTargets(album.id)}
-                  className="w-full text-left px-3.5 py-2.5 rounded-2xl flex items-center justify-between text-xs font-semibold bg-[#28292a] hover:bg-[#333538] text-white transition-all cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{album.emoji || '📁'}</span>
-                    <span>{album.name}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-
+          {/* Center Lightbox Stage */}
+          <div className="flex-1 relative flex items-center justify-center p-4 overflow-hidden">
+            {/* Prev Button */}
             <button
-              onClick={() => setMoveTargets(null)}
-              className="w-full py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
+              onClick={() =>
+                setLightboxIdx((prev) =>
+                  prev !== null ? (prev - 1 + filteredItems.length) % filteredItems.length : 0
+                )
+              }
+              className="absolute left-4 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white transition-all z-10"
             >
-              Cancel
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            {/* Media Presentation */}
+            {activeLightboxItem.type === 'video' ? (
+              <video
+                src={activeLightboxItem.publicUrl}
+                controls
+                autoPlay
+                className="max-h-[75vh] max-w-[90vw] rounded-2xl shadow-2xl"
+              />
+            ) : (
+              <img
+                src={activeLightboxItem.publicUrl}
+                alt={activeLightboxItem.fileName}
+                className="max-h-[75vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl transition-transform duration-200"
+                style={{ transform: `scale(${lightboxZoom})` }}
+              />
+            )}
+
+            {/* Next Button */}
+            <button
+              onClick={() =>
+                setLightboxIdx((prev) =>
+                  prev !== null ? (prev + 1) % filteredItems.length : 0
+                )
+              }
+              className="absolute right-4 p-3 rounded-full bg-black/50 hover:bg-black/80 text-white transition-all z-10"
+            >
+              <ChevronRight className="w-6 h-6" />
             </button>
           </div>
-        </div>
-      )}
 
-      {/* ────────────────── EDIT CAPTION MODAL ────────────────── */}
-      {editCaptionTarget && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-[#2d2f31] pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-[#8ab4f8]" />
-                <h3 className="text-base font-bold text-white">Edit Caption</h3>
-              </div>
-              <button onClick={() => setEditCaptionTarget(null)} className="text-[#8e918f] hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
+          {/* Bottom Caption & Thumbnail Scrubber */}
+          <div className="bg-black/60 backdrop-blur-md px-4 py-3 border-t border-white/10 shrink-0 space-y-2">
+            {/* Caption */}
+            <div className="flex items-center justify-center gap-2 text-center">
+              <p className="text-xs sm:text-sm font-medium text-white/90">
+                {activeLightboxItem.label || 'No caption set'}
+              </p>
             </div>
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={newCaptionText}
-                onChange={(e) => setNewCaptionText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveCaption();
-                }}
-                autoFocus
-                className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditCaptionTarget(null)}
-                  className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveCaption}
-                  className="flex-1 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold cursor-pointer"
-                >
-                  Save
-                </button>
-              </div>
+
+            {/* Thumbnails strip */}
+            <div className="flex items-center justify-center gap-2 overflow-x-auto py-1 scrollbar-none">
+              {filteredItems.slice(Math.max(0, lightboxIdx - 5), lightboxIdx + 6).map((item) => {
+                const idx = filteredItems.findIndex((i) => i.id === item.id);
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setLightboxIdx(idx)}
+                    className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 cursor-pointer border-2 transition-all ${
+                      idx === lightboxIdx
+                        ? 'border-emerald-500 scale-105'
+                        : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={item.publicUrl}
+                      alt={item.fileName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       )}
 
-      {/* ────────────────── CREATE NEW ALBUM MODAL ────────────────── */}
+      {/* ── New Album Modal ── */}
       {showNewAlbumModal && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-[#2d2f31] pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-[#8ab4f8]" />
-                <h3 className="text-base font-bold text-white">Create New Album</h3>
-              </div>
-              <button onClick={() => setShowNewAlbumModal(false)} className="text-[#8e918f] hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div
+            className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl border ${
+              isDark ? 'bg-[#182229] border-[#222e35] text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-base">Create New Album</h3>
+              <button
+                onClick={() => setShowNewAlbumModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleCreateAlbum} className="space-y-4">
+
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  Album Title
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Goa Trip, Campus Highlights"
-                  value={newAlbumName}
-                  onChange={(e) => setNewAlbumName(e.target.value)}
-                  required
-                  autoFocus
-                  className="w-full px-4 py-2.5 rounded-2xl bg-[#131314] border border-[#3c4043] text-white text-sm focus:outline-none focus:border-[#8ab4f8]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#8e918f] mb-1.5 uppercase">
-                  Album Icon
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {['📁', '✨', '🎓', '✈️', '💖', '🌿', '☕', '🌅', '🎉', '🏖️'].map((emoji) => (
+                <label className="text-xs font-semibold text-slate-400">Album Emoji</label>
+                <div className="flex gap-2 mt-1">
+                  {['📁', '💖', '🎓', '✈️', '🌸', '✨'].map((emoji) => (
                     <button
                       key={emoji}
-                      type="button"
                       onClick={() => setNewAlbumEmoji(emoji)}
-                      className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center border transition-all cursor-pointer ${
+                      className={`w-9 h-9 rounded-xl border text-lg flex items-center justify-center transition-all ${
                         newAlbumEmoji === emoji
-                          ? 'bg-[#8ab4f8]/20 border-[#8ab4f8] scale-110'
-                          : 'bg-[#28292a] border-[#3c4043] hover:bg-[#333538]'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-slate-300 dark:border-slate-700'
                       }`}
                     >
                       {emoji}
@@ -1899,517 +1174,74 @@ export const GalleryView: React.FC<GalleryViewProps> = ({
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-400">Album Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Summer Vacation, Birthday..."
+                  value={newAlbumName}
+                  onChange={(e) => setNewAlbumName(e.target.value)}
+                  className={`w-full mt-1 px-3 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                    isDark
+                      ? 'bg-[#111b21] border-[#2a3942] text-white'
+                      : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
+                />
+              </div>
+
               <div className="flex gap-2 pt-2">
                 <button
-                  type="button"
                   onClick={() => setShowNewAlbumModal(false)}
-                  className="flex-1 py-2.5 rounded-full bg-[#28292a] text-[#c4c7c5] hover:text-white text-xs font-bold cursor-pointer"
+                  className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold cursor-pointer"
+                  onClick={handleCreateAlbum}
+                  className="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold"
                 >
                   Create
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ────────────────── STORAGE INFO MODAL ────────────────── */}
-      {showStorageInfo && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="w-full max-w-sm bg-[#1e1f20] border border-[#3c4043] rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-11 h-11 rounded-2xl bg-[#1d2420] border border-[#2b3a30] flex items-center justify-center text-[#7E9F89]">
-                <HardDrive className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-[#ECEEEB]">Device Storage</h3>
-                <p className="text-xs text-[#7E9F89] font-medium">Local High-Capacity Cache</p>
-              </div>
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteConfirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div
+            className={`w-full max-w-sm rounded-3xl p-6 shadow-2xl border ${
+              isDark ? 'bg-[#182229] border-[#222e35] text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}
+          >
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto mb-3">
+              <Trash2 className="w-6 h-6" />
             </div>
-            <p className="text-xs text-[#808B84] mb-4 leading-relaxed">
-              Dharya stores your photos, videos, custom collections, and memories directly on your device with persistent local storage. Media survives page refreshes and browser sessions!
+            <h3 className="font-bold text-center text-base">Move to Recycle Bin?</h3>
+            <p className="text-xs text-center text-slate-400 mt-1 mb-5">
+              This photo will be moved to your secure Recycle Bin and can be restored anytime.
             </p>
-            <div className="bg-[#131615] p-3 rounded-2xl border border-[#2b332e] mb-5 text-[11px] text-[#808B84] space-y-1">
-              <div className="flex justify-between">
-                <span>Total Media Items:</span>
-                <span className="text-[#ECEEEB] font-mono">{items.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Memories:</span>
-                <span className="text-[#ECEEEB] font-mono">{timelineIncidents.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Albums:</span>
-                <span className="text-[#ECEEEB] font-mono">{albums.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Persistence Status:</span>
-                <span className="text-[#7E9F89] font-semibold">Active &amp; Persistent</span>
-              </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirmTarget(null)}
+                className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteItem(deleteConfirmTarget)}
+                disabled={isDeleting}
+                className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold"
+              >
+                {isDeleting ? 'Deleting...' : 'Move to Trash'}
+              </button>
             </div>
-            <button
-              onClick={() => setShowStorageInfo(false)}
-              className="w-full py-2.5 rounded-xl bg-[#4E6B58] hover:bg-[#3D5545] text-white text-xs font-medium cursor-pointer transition-colors"
-            >
-              Done
-            </button>
-            <button
-              onClick={() => setShowStorageInfo(false)}
-              className="w-full py-2.5 rounded-full bg-[#8ab4f8] hover:bg-[#a8c7fa] text-[#001d35] text-xs font-bold cursor-pointer"
-            >
-              Got it
-            </button>
           </div>
-        </div>
-      )}
-
-      {/* ── Toast Notification ── */}
-      {toast && (
-        <div
-          role="status"
-          aria-live="polite"
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2.5 rounded-full border text-xs font-semibold shadow-2xl backdrop-blur-lg pointer-events-none whitespace-nowrap transition-all ${
-            toast.type === 'err'
-              ? 'bg-rose-950/95 border-rose-500/40 text-rose-300'
-              : 'bg-[#1e1f20]/95 border-[#3c4043] text-white'
-          }`}
-        >
-          {toast.msg}
         </div>
       )}
     </div>
   );
 };
-
-// ── Google Media Card Component ───────────────────────────────────────────────
-
-interface GoogleMediaCardProps {
-  item: GalleryItem;
-  albumName?: string;
-  isSelected: boolean;
-  onSelect: (e: React.MouseEvent) => void;
-  onOpen: () => void;
-  onToggleFav: () => void;
-  onDelete: () => void;
-  onEditCaption: () => void;
-  onMoveAlbum: () => void;
-}
-
-const GoogleMediaCard: React.FC<GoogleMediaCardProps> = ({
-  item,
-  albumName,
-  isSelected,
-  onSelect,
-  onOpen,
-  onToggleFav,
-  onDelete,
-  onEditCaption,
-  onMoveAlbum,
-}) => {
-  const isVideo = item.type === 'video';
-  const [showMenu, setShowMenu] = useState(false);
-
-  const handleKeyDown = (e: ReactKeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onOpen();
-    }
-  };
-
-  return (
-    <article
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer group bg-[#1e1f20] border transition-all duration-200 outline-none select-none ${
-        isSelected
-          ? 'border-[#8ab4f8] ring-2 ring-[#8ab4f8] scale-[0.98]'
-          : 'border-[#2d2f31] hover:border-[#8ab4f8]/50 hover:shadow-lg'
-      }`}
-      aria-label={`${item.label}, ${isVideo ? 'video' : 'photo'}`}
-    >
-      {/* Media Element */}
-      {isVideo ? (
-        <div className="w-full h-full relative bg-black" onClick={onOpen}>
-          <video
-            src={item.publicUrl}
-            className="w-full h-full object-cover"
-            preload="metadata"
-            muted
-            playsInline
-          />
-          {/* Centered Play Button Indicator */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg">
-              <Play className="w-5 h-5 fill-white ml-0.5" />
-            </div>
-          </div>
-          {/* Video Duration Chip (Google Photos style) */}
-          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-sm text-[10px] font-mono font-bold text-white flex items-center gap-1">
-            <Film className="w-3 h-3 text-[#8ab4f8]" />
-            <span>{item.durationFormatted || '0:15'}</span>
-          </div>
-        </div>
-      ) : (
-        <div className="w-full h-full relative" onClick={onOpen}>
-          <img
-            src={item.publicUrl}
-            alt={item.label}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        </div>
-      )}
-
-      {/* Top-Left: Selection Circle (Google Photos style) */}
-      <button
-        onClick={onSelect}
-        className={`absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center transition-all z-20 cursor-pointer ${
-          isSelected
-            ? 'bg-[#8ab4f8] text-[#001d35] scale-110 shadow-md'
-            : 'bg-black/40 backdrop-blur-sm border border-white/30 text-transparent opacity-0 group-hover:opacity-100 hover:border-white'
-        }`}
-        title={isSelected ? 'Deselect' : 'Select'}
-      >
-        <Check className="w-3.5 h-3.5 stroke-[3]" />
-      </button>
-
-      {/* Top-Right: Prominent DELETE & FAVORITE Action Buttons */}
-      <div className="absolute top-2 right-2 flex items-center gap-1 z-20">
-        {/* PROMINENT DIRECT DELETE BUTTON */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 hover:border-rose-400 hover:bg-rose-600/60 flex items-center justify-center text-white/80 hover:text-white transition-all opacity-0 group-hover:opacity-100 cursor-pointer shadow-md"
-          title="Delete from gallery"
-          aria-label="Delete item"
-        >
-          <Trash2 className="w-3.5 h-3.5 text-rose-300" />
-        </button>
-
-        {/* Favorite Heart / Star Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFav();
-          }}
-          className={`w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all cursor-pointer ${
-            item.isFavorite
-              ? 'opacity-100 text-rose-400'
-              : 'opacity-0 group-hover:opacity-100 text-white hover:text-rose-400'
-          }`}
-          title={item.isFavorite ? 'Remove favorite' : 'Add to favorites'}
-        >
-          <Heart className={`w-3.5 h-3.5 ${item.isFavorite ? 'fill-rose-400' : ''}`} />
-        </button>
-
-        {/* More Options Menu */}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMenu((m) => !m);
-            }}
-            className="w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-            title="More options"
-          >
-            <MoreHorizontal className="w-3.5 h-3.5" />
-          </button>
-
-          {showMenu && (
-            <div
-              className="absolute right-0 top-8 w-44 bg-[#28292a] border border-[#3c4043] rounded-2xl shadow-2xl py-1.5 z-50 text-xs text-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => {
-                  onOpen();
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-[#333538] flex items-center gap-2 cursor-pointer"
-              >
-                <ZoomIn className="w-3.5 h-3.5 text-[#8ab4f8]" />
-                <span>Fullscreen</span>
-              </button>
-              <button
-                onClick={() => {
-                  onEditCaption();
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-[#333538] flex items-center gap-2 cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-[#8ab4f8]" />
-                <span>Edit Caption</span>
-              </button>
-              <button
-                onClick={() => {
-                  onMoveAlbum();
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-[#333538] flex items-center gap-2 cursor-pointer"
-              >
-                <Folder className="w-3.5 h-3.5 text-[#8ab4f8]" />
-                <span>Move to Album</span>
-              </button>
-              <div className="h-px bg-[#3c4043] my-1" />
-              <button
-                onClick={() => {
-                  onDelete();
-                  setShowMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 hover:bg-rose-950/60 flex items-center gap-2 text-rose-400 cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Gradient Overlay & Caption */}
-      <div
-        className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={onOpen}
-      >
-        <p className="text-xs font-bold text-white truncate drop-shadow-sm">{item.label}</p>
-        {albumName && (
-          <p className="text-[10px] text-[#c4c7c5] mt-0.5 truncate">{albumName}</p>
-        )}
-      </div>
-    </article>
-  );
-};
-
-// ── Google Photos Fullscreen Viewer ───────────────────────────────────────────
-
-interface GoogleFullscreenViewerProps {
-  item: GalleryItem;
-  album?: GalleryAlbum;
-  albums: GalleryAlbum[];
-  idx: number;
-  total: number;
-  onClose: () => void;
-  onPrev: () => void;
-  onNext: () => void;
-  onToggleFav: () => void;
-  onDelete: () => void;
-  onEditCaption: () => void;
-  onMoveAlbum: (albumId: string) => void;
-}
-
-const GoogleFullscreenViewer: React.FC<GoogleFullscreenViewerProps> = ({
-  item,
-  album,
-  albums,
-  idx,
-  total,
-  onClose,
-  onPrev,
-  onNext,
-  onToggleFav,
-  onDelete,
-  onEditCaption,
-  onMoveAlbum,
-}) => {
-  const isVideo = item.type === 'video';
-
-  // Keyboard navigation including Delete key!
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') onPrev();
-      if (e.key === 'ArrowRight') onNext();
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        onDelete();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose, onPrev, onNext, onDelete]);
-
-  const handleDownload = () => {
-    const a = document.createElement('a');
-    a.href = item.publicUrl;
-    a.download = item.fileName;
-    a.target = '_blank';
-    a.click();
-  };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Fullscreen viewer for ${item.label}`}
-      className="fixed inset-0 z-[150] flex flex-col justify-between bg-black/95 text-white select-none animate-in fade-in duration-150"
-    >
-      {/* ── Top Bar (Google Photos style) ── */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 z-20 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-white transition-all cursor-pointer"
-            title="Back to gallery (Esc)"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-white truncate max-w-xs sm:max-w-md">
-              {item.label}
-            </h2>
-            <div className="flex items-center gap-2 text-xs text-[#8e918f]">
-              <span>
-                {new Date(item.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
-              <span>•</span>
-              <span className="font-mono">
-                {idx} of {total}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Favorite Button */}
-          <button
-            onClick={onToggleFav}
-            className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all cursor-pointer"
-            title={item.isFavorite ? 'Remove favorite' : 'Add to favorites'}
-          >
-            <Heart className={`w-5 h-5 ${item.isFavorite ? 'text-rose-400 fill-rose-400' : 'text-white'}`} />
-          </button>
-
-          {/* PROMINENT TOP BAR DELETE BUTTON */}
-          <button
-            onClick={onDelete}
-            className="w-10 h-10 rounded-full hover:bg-rose-600/30 text-rose-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
-            title="Delete photo/video (Delete key)"
-            aria-label="Delete item"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-white transition-all cursor-pointer"
-            title="Close viewer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* ── Center Media Stage ── */}
-      <div className="relative flex-1 flex items-center justify-center px-4 sm:px-16 overflow-hidden">
-        {/* Prev Arrow */}
-        <button
-          onClick={onPrev}
-          className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 flex items-center justify-center text-white transition-all z-20 cursor-pointer shadow-xl"
-          title="Previous (Left Arrow)"
-        >
-          <ChevronLeft className="w-7 h-7" />
-        </button>
-
-        {/* Video Player or Photo */}
-        <div className="max-w-5xl max-h-[75vh] w-full flex items-center justify-center">
-          {isVideo ? (
-            <video
-              key={item.id}
-              src={item.publicUrl}
-              controls
-              autoPlay
-              playsInline
-              className="max-w-full max-h-[75vh] rounded-2xl shadow-2xl object-contain bg-black"
-              aria-label={item.label}
-            />
-          ) : (
-            <img
-              src={item.publicUrl}
-              alt={item.label}
-              className="max-w-full max-h-[75vh] rounded-2xl shadow-2xl object-contain"
-            />
-          )}
-        </div>
-
-        {/* Next Arrow */}
-        <button
-          onClick={onNext}
-          className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 flex items-center justify-center text-white transition-all z-20 cursor-pointer shadow-xl"
-          title="Next (Right Arrow)"
-        >
-          <ChevronRight className="w-7 h-7" />
-        </button>
-      </div>
-
-      {/* ── Bottom Google Photos Floating Toolbar ── */}
-      <div className="bg-gradient-to-t from-black via-black/80 to-transparent pt-6 pb-6 px-4 sm:px-8 z-20">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            {/* Album selector */}
-            <div className="flex items-center gap-1.5 bg-[#28292a] border border-[#3c4043] rounded-full px-3 py-1.5 text-xs text-white">
-              <Folder className="w-3.5 h-3.5 text-[#8ab4f8]" />
-              <select
-                value={item.albumId}
-                onChange={(e) => onMoveAlbum(e.target.value)}
-                className="bg-transparent text-white text-xs outline-none cursor-pointer"
-              >
-                {albums.map((a) => (
-                  <option key={a.id} value={a.id} className="bg-[#1e1f20] text-white">
-                    {a.emoji} {a.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Edit Caption */}
-            <button
-              onClick={onEditCaption}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] text-xs font-semibold text-white transition-all cursor-pointer"
-            >
-              <Edit2 className="w-3.5 h-3.5 text-[#8ab4f8]" />
-              <span>Edit</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Download Button */}
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#28292a] hover:bg-[#333538] border border-[#3c4043] text-xs font-semibold text-white transition-all cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Save</span>
-            </button>
-
-            {/* PROMINENT BOTTOM BAR DELETE BUTTON */}
-            <button
-              onClick={onDelete}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-600/30 cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default GalleryView;

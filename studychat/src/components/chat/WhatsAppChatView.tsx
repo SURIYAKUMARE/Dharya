@@ -105,6 +105,7 @@ import { moveToRecycleBin } from '../../services/recycleBinService';
 import { THEMES, ThemeId, CHAT_WALLPAPERS, getStoredTheme, saveStoredTheme } from '../../config/themes';
 import { useToast } from '../common/Toast';
 import { DateCounterModal, useDateCount } from '../common/DateCounterModal';
+import { DHARYA_LOGO_DATA_URI } from '../../assets/dharyaLogoDataUri';
 
 export interface PendingMediaItem {
   id: string;
@@ -3727,13 +3728,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         isDark ? 'bg-[#1f2c34] md:bg-[#202c33] border-[#2a3942]' : 'bg-[#f0f2f5] border-[#d1d7db]'
       }`}>
         <div className="flex items-center gap-3">
-          {/* Mobile Back to Chats List Button */}
+          {/* Mobile Open Navigation Menu Button with Dharya Heart Logo */}
           <button
             onClick={() => setIsNavSidebarOpen(true)}
-            className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1 md:hidden"
+            className="p-1 -ml-1 rounded-xl hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1.5 md:hidden cursor-pointer"
             title="Open Navigation Menu"
           >
-            <Menu className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden border border-white/20 bg-white flex items-center justify-center p-0.5 shadow-xs shrink-0">
+              <img
+                src={DHARYA_LOGO_DATA_URI}
+                alt="Dharya Logo"
+                className="w-full h-full object-contain rounded-lg"
+              />
+            </div>
           </button>
           <button
             onClick={() => setMobileView('list')}

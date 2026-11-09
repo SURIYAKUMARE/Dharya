@@ -6,6 +6,7 @@ import {
   GitBranch,
   X,
 } from 'lucide-react';
+import { DHARYA_LOGO_DATA_URI } from '../../assets/dharyaLogoDataUri';
 
 export type MainNavView = 'chat' | 'status' | 'gallery' | 'timeline' | 'recycle';
 
@@ -110,26 +111,55 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
 
   const navContent = (
     <div className="flex flex-col h-full justify-between">
-      {/* Scrollable menu content */}
-      <div className="flex-1 overflow-y-auto px-3.5 py-4 scrollbar-thin">
-        {/* Mobile close header */}
-        <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-200/60 dark:border-slate-800 md:hidden">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              D
-            </div>
-            <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-              Dharya Navigation
-            </span>
+      {/* ─── Top Brand Header with Dharya Heart Logo (Navigation Bar Side) ─── */}
+      <div
+        className={`px-4 py-3.5 border-b flex items-center justify-between shrink-0 select-none ${
+          isDark ? 'border-[#222e35] bg-[#111b21]' : 'border-slate-100 bg-white'
+        }`}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative w-10 h-10 rounded-2xl overflow-hidden shadow-sm shrink-0 border border-slate-200/80 dark:border-white/10 bg-white flex items-center justify-center p-0.5 group">
+            <img
+              src={DHARYA_LOGO_DATA_URI}
+              alt="Dharya Logo"
+              className="w-full h-full object-contain rounded-xl transition-transform duration-200 group-hover:scale-105"
+            />
           </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <h2
+                className={`text-[15px] font-bold tracking-tight leading-tight truncate ${
+                  isDark ? 'text-white' : 'text-slate-900'
+                }`}
+              >
+                Dharya
+              </h2>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            </div>
+            <p
+              className={`text-[11px] font-medium leading-tight truncate ${
+                isDark ? 'text-[#8696a0]' : 'text-[#64748b]'
+              }`}
+            >
+              Private Portal
+            </p>
+          </div>
+        </div>
+
+        {/* Mobile close button when rendered in slide-out drawer */}
+        {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 md:hidden cursor-pointer"
+            title="Close navigation"
           >
             <X className="w-5 h-5" />
           </button>
-        </div>
+        )}
+      </div>
 
+      {/* Scrollable menu content */}
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 scrollbar-thin">
         {/* ─── SECTION 1: OPERATIONS (1. Chat & 2. Status) ─── */}
         <div className="mb-5">
           <h3

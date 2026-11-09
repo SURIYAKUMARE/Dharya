@@ -38,6 +38,7 @@ import {
   fetchTimelineIncidents,
   createTimelineIncident,
 } from '../../services/galleryService';
+import { DHARYA_LOGO_DATA_URI } from '../../assets/dharyaLogoDataUri';
 
 export interface LifeTimelineViewProps {
   isDark?: boolean;
@@ -262,17 +263,26 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
         </div>
       )}
 
-      {/* ── Subtle Top Bar with Back & Add Action ── */}
+      {/* ── Subtle Top Bar with Logo, Back & Add Action ── */}
       <div className="w-full max-w-[880px] mx-auto px-4 py-3 flex items-center justify-between shrink-0 z-20">
-        {onBackToChat ? (
-          <button
-            onClick={onBackToChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Chat</span>
-          </button>
-        ) : <div />}
+        <div className="flex items-center gap-2.5">
+          {onBackToChat && (
+            <button
+              onClick={onBackToChat}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Chat</span>
+            </button>
+          )}
+
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white border border-slate-200 shadow-2xs">
+            <div className="w-6 h-6 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-white flex items-center justify-center p-0.5">
+              <img src={DHARYA_LOGO_DATA_URI} alt="Dharya Logo" className="w-full h-full object-contain rounded-md" />
+            </div>
+            <span className="text-xs font-bold text-slate-800">Dharya</span>
+          </div>
+        </div>
 
         <button
           onClick={() => setShowAddModal(true)}

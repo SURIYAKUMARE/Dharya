@@ -367,7 +367,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
             <div className="w-6 h-6 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-white flex items-center justify-center p-0.5">
               <img src={DHARYA_LOGO_DATA_URI} alt="Dharya Logo" className="w-full h-full object-contain rounded-md" />
             </div>
-            <span className="text-xs font-bold text-slate-800">Dharya</span>
+            <span className="text-xs font-bold text-slate-800">Dhanya</span>
           </div>
         </div>
 

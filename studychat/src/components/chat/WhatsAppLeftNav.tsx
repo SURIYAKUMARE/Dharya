@@ -132,7 +132,7 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
                   isDark ? 'text-white' : 'text-slate-900'
                 }`}
               >
-                Dharya
+                Dhanya
               </h2>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             </div>

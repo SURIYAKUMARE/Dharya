@@ -17,8 +17,16 @@
 import { crossDeviceSync } from './crossDeviceSyncService';
 import { DHARYA_LOGO_DATA_URI } from '../assets/dharyaLogoDataUri';
 
-export type StatusMediaType = 'photo' | 'video' | 'text';
+export type StatusMediaType = 'photo' | 'video' | 'text' | 'audio';
 export type PrivacyMode = 'contacts' | 'except' | 'only' | 'private';
+
+export interface StatusSongInfo {
+  title: string;
+  artist?: string;
+  audioUrl: string;
+  coverUrl?: string;
+  duration?: number;
+}
 
 export interface StatusItem {
   id: string;
@@ -27,6 +35,8 @@ export interface StatusItem {
   authorAvatar: string;     // URL or base64 data URI
   type: StatusMediaType;
   mediaUrl: string;         // image/video URL or data URI
+  audioUrl?: string;        // audio/song URL or data URI
+  songInfo?: StatusSongInfo; // Song details
   caption?: string;
   textContent?: string;
   backgroundGradient?: string;
@@ -407,6 +417,8 @@ class StatusService {
     authorAvatar: string;
     type: StatusMediaType;
     mediaUrl: string;
+    audioUrl?: string;
+    songInfo?: StatusSongInfo;
     caption?: string;
     textContent?: string;
     backgroundGradient?: string;
@@ -423,6 +435,8 @@ class StatusService {
       authorAvatar: params.authorAvatar || DHARYA_LOGO_DATA_URI,
       type: params.type,
       mediaUrl: params.mediaUrl,
+      audioUrl: params.audioUrl,
+      songInfo: params.songInfo,
       caption: params.caption,
       textContent: params.textContent,
       backgroundGradient: params.backgroundGradient,

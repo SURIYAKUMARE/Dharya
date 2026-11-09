@@ -54,6 +54,9 @@ import {
   ChevronRight,
   User,
   Clock,
+  Music,
+  Disc,
+  FileAudio,
 } from 'lucide-react';
 import {
   statusService,
@@ -61,6 +64,7 @@ import {
   StatusViewRecord,
   StatusReaction,
   StatusHighlight,
+  StatusSongInfo,
   PrivacyMode,
   DHANYA_SUNSET_AVATAR,
 } from '../../services/statusService';
@@ -103,6 +107,101 @@ const PRESET_FONTS = [
   { id: 'cursive', name: 'Handwriting', family: 'cursive' },
 ];
 
+export interface PresetSong {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
+  notes: number[];
+}
+
+const PRESET_SONGS: PresetSong[] = [
+  {
+    id: 's1',
+    title: 'Munbe Vaa (Love Melody)',
+    artist: 'A.R. Rahman • Sillunu Oru Kaadhal',
+    coverUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=400&q=80',
+    notes: [261.63, 329.63, 392.0, 523.25, 440.0, 392.0, 349.23, 329.63],
+  },
+  {
+    id: 's2',
+    title: 'Enna Sona (Romantic Acoustic)',
+    artist: 'Arijit Singh • OK Jaanu',
+    coverUrl: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=400&q=80',
+    notes: [329.63, 392.0, 440.0, 523.25, 587.33, 523.25, 440.0, 392.0],
+  },
+  {
+    id: 's3',
+    title: 'Vaseegara (Soulful Chimes)',
+    artist: 'Harris Jayaraj • Minnale',
+    coverUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+    notes: [293.66, 349.23, 440.0, 523.25, 440.0, 392.0, 329.63, 293.66],
+  },
+  {
+    id: 's4',
+    title: 'Kanmani Anbodu (Heartfelt)',
+    artist: 'Ilaiyaraaja • Gunaa',
+    coverUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=400&q=80',
+    notes: [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 440.0, 329.63],
+  },
+  {
+    id: 's5',
+    title: 'Sunset Acoustic Guitar',
+    artist: 'Dhanya Chill Melody',
+    coverUrl: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=400&q=80',
+    notes: [392.0, 440.0, 523.25, 587.33, 659.25, 587.33, 523.25, 440.0],
+  },
+];
+
+function createMelodyWavDataUri(notes: number[], durationSec = 15): string {
+  if (typeof window === 'undefined') return '';
+  const sampleRate = 22050;
+  const numSamples = sampleRate * durationSec;
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
+
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  };
+
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+
+  const noteDuration = durationSec / notes.length;
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    const noteIdx = Math.floor(t / noteDuration) % notes.length;
+    const freq = notes[noteIdx];
+    const noteTime = t % noteDuration;
+    const envelope = Math.exp(-noteTime * 2.2);
+    const sampleVal = (Math.sin(2 * Math.PI * freq * noteTime) * 0.7 +
+                       Math.sin(2 * Math.PI * freq * 2 * noteTime) * 0.3) * envelope;
+    const clamped = Math.max(-1, Math.min(1, sampleVal)) * 0.6;
+    view.setInt16(44 + i * 2, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
+  }
+
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return 'data:audio/wav;base64,' + btoa(binary);
+}
+
 export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   isDark = false,
   studentName = 'Surya',
@@ -138,16 +237,21 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const [partnerMenuOpen, setPartnerMenuOpen] = useState(false);
 
   // ── Add Status Form States ──
-  const [creatorMode, setCreatorMode] = useState<'media' | 'text'>('media');
+  const [creatorMode, setCreatorMode] = useState<'media' | 'text' | 'song'>('media');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewMediaUrl, setPreviewMediaUrl] = useState<string>('');
-  const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
+  const [mediaType, setMediaType] = useState<'photo' | 'video' | 'audio'>('photo');
   const [statusCaption, setStatusCaption] = useState('');
   const [textStatusContent, setTextStatusContent] = useState('');
   const [textGradient, setTextGradient] = useState(PRESET_GRADIENTS[0]);
   const [textFont, setTextFont] = useState(PRESET_FONTS[0].family);
   const [activeFilter, setActiveFilter] = useState<'none' | 'vivid' | 'soft' | 'warm' | 'bw' | 'pink'>('none');
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Attached Song / Music State
+  const [attachedSong, setAttachedSong] = useState<StatusSongInfo | null>(null);
+  const [customSongTitle, setCustomSongTitle] = useState('');
+  const [customSongArtist, setCustomSongArtist] = useState('');
 
   // Drawing Canvas
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
@@ -158,6 +262,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   // File Inputs
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
 
   // ── Viewer States ──
   const [activeStoryIdx, setActiveStoryIdx] = useState(0);
@@ -167,6 +272,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const [showViewerSheet, setShowViewerSheet] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
   const videoPlayerRef = useRef<HTMLVideoElement | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // ── Active Stories for Current Viewer ──
   const currentViewerStories = useMemo(() => {
@@ -194,8 +300,11 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   useEffect(() => {
     if (!activeStoryItem || isStoryPaused || showViewerSheet) return;
 
-    if (activeStoryItem.type === 'video' && videoPlayerRef.current) {
-      // Synchronized with video element
+    if (
+      (activeStoryItem.type === 'video' && videoPlayerRef.current) ||
+      (activeStoryItem.type === 'audio' && audioPlayerRef.current)
+    ) {
+      // Synchronized with video or audio element
       return;
     }
 
@@ -241,6 +350,55 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
     }
   };
 
+  // Audio / Song Time Update Listener
+  const handleAudioTimeUpdate = () => {
+    if (!audioPlayerRef.current || isStoryPaused) return;
+    const aud = audioPlayerRef.current;
+    if (activeStoryItem?.type === 'audio' && aud.duration) {
+      const p = (aud.currentTime / aud.duration) * 100;
+      setStoryProgress(p);
+      if (aud.ended) {
+        if (activeStoryIdx < currentViewerStories.length - 1) {
+          setActiveStoryIdx((idx) => idx + 1);
+          setStoryProgress(0);
+        } else {
+          setActiveStoryGroup(null);
+        }
+      }
+    }
+  };
+
+  // Sync Pause/Resume for Video & Audio
+  useEffect(() => {
+    if (videoPlayerRef.current) {
+      if (isStoryPaused) {
+        videoPlayerRef.current.pause();
+      } else {
+        videoPlayerRef.current.play().catch(() => {});
+      }
+    }
+    if (audioPlayerRef.current) {
+      if (isStoryPaused) {
+        audioPlayerRef.current.pause();
+      } else {
+        audioPlayerRef.current.play().catch(() => {});
+      }
+    }
+  }, [isStoryPaused]);
+
+  // Reset progress when switching stories
+  useEffect(() => {
+    setStoryProgress(0);
+    if (videoPlayerRef.current) {
+      videoPlayerRef.current.currentTime = 0;
+      videoPlayerRef.current.play().catch(() => {});
+    }
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.currentTime = 0;
+      audioPlayerRef.current.play().catch(() => {});
+    }
+  }, [activeStoryIdx]);
+
   // ── Open Media File ──
   const handleSelectMedia = (file: File) => {
     const isVid = file.type.startsWith('video/');
@@ -254,6 +412,41 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
       setShowAddModal(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  // ── Select Custom Audio File ──
+  const handleSelectAudio = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUri = (e.target?.result as string) || '';
+      const cleanName = file.name.replace(/\.[^/.]+$/, '');
+      const newSong: StatusSongInfo = {
+        title: cleanName,
+        artist: currentUser === 'surya' ? 'Surya' : 'Dhanya',
+        audioUrl: dataUri,
+        coverUrl: currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR,
+      };
+      setAttachedSong(newSong);
+      setCustomSongTitle(cleanName);
+      setCustomSongArtist(currentUser === 'surya' ? 'Surya' : 'Dhanya');
+      showToast?.(`Loaded audio: ${cleanName} 🎵`, 'success');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── Select Preset Melody Song ──
+  const handleSelectPresetSong = (preset: PresetSong) => {
+    const dataUri = createMelodyWavDataUri(preset.notes);
+    const newSong: StatusSongInfo = {
+      title: preset.title,
+      artist: preset.artist,
+      audioUrl: dataUri,
+      coverUrl: preset.coverUrl,
+    };
+    setAttachedSong(newSong);
+    setCustomSongTitle(preset.title);
+    setCustomSongArtist(preset.artist);
+    showToast?.(`Selected ${preset.title} 🎶`, 'info');
   };
 
   // ── Canvas Drawing Logic ──
@@ -307,16 +500,41 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
       drawingData = canvasRef.current.toDataURL('image/png');
     }
 
+    const authorName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
+    const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
+
     try {
-      if (creatorMode === 'media') {
+      if (creatorMode === 'song') {
+        if (!attachedSong?.audioUrl) {
+          showToast?.('Please choose or upload a song / audio track', 'error');
+          setIsPublishing(false);
+          return;
+        }
+
+        const songToSave: StatusSongInfo = {
+          title: customSongTitle.trim() || attachedSong.title,
+          artist: customSongArtist.trim() || attachedSong.artist || authorName,
+          audioUrl: attachedSong.audioUrl,
+          coverUrl: attachedSong.coverUrl || authorAvatar,
+        };
+
+        await statusService.publishStatus({
+          owner: currentUser,
+          authorName,
+          authorAvatar,
+          type: 'audio',
+          mediaUrl: songToSave.coverUrl || authorAvatar,
+          audioUrl: songToSave.audioUrl,
+          songInfo: songToSave,
+          caption: statusCaption.trim(),
+          backgroundGradient: textGradient,
+        });
+      } else if (creatorMode === 'media') {
         if (!previewMediaUrl) {
           showToast?.('Please select a photo or video', 'error');
           setIsPublishing(false);
           return;
         }
-
-        const authorName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
-        const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
 
         await statusService.publishStatus({
           owner: currentUser,
@@ -324,6 +542,14 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           authorAvatar,
           type: mediaType,
           mediaUrl: previewMediaUrl,
+          audioUrl: attachedSong?.audioUrl,
+          songInfo: attachedSong
+            ? {
+                ...attachedSong,
+                title: customSongTitle.trim() || attachedSong.title,
+                artist: customSongArtist.trim() || attachedSong.artist,
+              }
+            : undefined,
           caption: statusCaption.trim(),
           filter: activeFilter !== 'none' ? activeFilter : undefined,
           drawingDataUrl: drawingData,
@@ -336,28 +562,37 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           return;
         }
 
-        const authorName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
-        const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
-
         await statusService.publishStatus({
           owner: currentUser,
           authorName,
           authorAvatar,
           type: 'text',
           mediaUrl: '',
+          audioUrl: attachedSong?.audioUrl,
+          songInfo: attachedSong
+            ? {
+                ...attachedSong,
+                title: customSongTitle.trim() || attachedSong.title,
+                artist: customSongArtist.trim() || attachedSong.artist,
+              }
+            : undefined,
           textContent: textStatusContent.trim(),
           backgroundGradient: textGradient,
           fontFamily: textFont,
+          caption: statusCaption.trim(),
         });
       }
 
-      showToast?.('Status published successfully ✨', 'success');
+      showToast?.('Status published successfully 🎉', 'success');
       setShowAddModal(false);
       // Reset form
       setPreviewMediaUrl('');
       setSelectedFile(null);
       setStatusCaption('');
       setTextStatusContent('');
+      setAttachedSong(null);
+      setCustomSongTitle('');
+      setCustomSongArtist('');
       setActiveFilter('none');
       clearCanvas();
     } catch {
@@ -947,13 +1182,17 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {activeStoryItem.type === 'video' && (
+              {(activeStoryItem.type === 'video' ||
+                activeStoryItem.type === 'audio' ||
+                activeStoryItem.audioUrl ||
+                activeStoryItem.songInfo?.audioUrl) && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsVideoMuted((m) => !m);
                   }}
                   className="p-2 rounded-full bg-black/40 text-white hover:bg-black/60 cursor-pointer"
+                  title={isVideoMuted ? 'Unmute' : 'Mute'}
                 >
                   {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </button>
@@ -986,6 +1225,28 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
 
           {/* Central Media Content Stage */}
           <div className="relative flex-1 w-full max-w-xl flex items-center justify-center overflow-hidden">
+            {/* Audio Element for pure audio or background music */}
+            {(activeStoryItem.audioUrl || activeStoryItem.songInfo?.audioUrl) && (
+              <audio
+                ref={audioPlayerRef}
+                src={activeStoryItem.audioUrl || activeStoryItem.songInfo?.audioUrl}
+                autoPlay
+                playsInline
+                muted={isVideoMuted}
+                onTimeUpdate={handleAudioTimeUpdate}
+                onEnded={() => {
+                  if (activeStoryItem.type === 'audio') {
+                    if (activeStoryIdx < currentViewerStories.length - 1) {
+                      setActiveStoryIdx((idx) => idx + 1);
+                      setStoryProgress(0);
+                    } else {
+                      setActiveStoryGroup(null);
+                    }
+                  }
+                }}
+              />
+            )}
+
             {/* Tap areas for prev / next story */}
             <div
               className="absolute left-0 top-0 bottom-0 w-1/3 z-20 cursor-pointer"
@@ -1010,7 +1271,22 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               }}
             />
 
-            {/* Media Rendering */}
+            {/* Floating Music Pill for Photo/Text status with Background Music */}
+            {activeStoryItem.type !== 'audio' && (activeStoryItem.songInfo || activeStoryItem.audioUrl) && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-bold shadow-lg flex items-center gap-2">
+                <div className="flex items-center gap-0.5">
+                  <span className={`w-0.5 h-3 bg-[#F22679] ${isStoryPaused ? '' : 'animate-pulse'}`} />
+                  <span className={`w-0.5 h-4 bg-[#16852D] ${isStoryPaused ? '' : 'animate-pulse delay-75'}`} />
+                  <span className={`w-0.5 h-2 bg-pink-300 ${isStoryPaused ? '' : 'animate-pulse delay-150'}`} />
+                </div>
+                <Music className="w-3.5 h-3.5 text-pink-400" />
+                <span className="truncate max-w-[180px]">
+                  {activeStoryItem.songInfo?.title || 'Background Song'}
+                </span>
+              </div>
+            )}
+
+            {/* Media Rendering: Photo */}
             {activeStoryItem.type === 'photo' && (
               <div className="relative w-full h-full flex items-center justify-center">
                 <img
@@ -1036,6 +1312,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               </div>
             )}
 
+            {/* Media Rendering: Video */}
             {activeStoryItem.type === 'video' && (
               <div className="relative w-full h-full flex items-center justify-center">
                 <video
@@ -1050,6 +1327,79 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               </div>
             )}
 
+            {/* Media Rendering: Pure Song / Audio Status */}
+            {activeStoryItem.type === 'audio' && (
+              <div
+                className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center select-none overflow-hidden"
+                style={{
+                  background:
+                    activeStoryItem.backgroundGradient ||
+                    'radial-gradient(circle at center, #2e1065 0%, #0f172a 100%)',
+                }}
+              >
+                {/* Ambient Glow */}
+                <div className="absolute w-72 h-72 rounded-full bg-[#F22679]/20 blur-3xl animate-pulse pointer-events-none" />
+
+                {/* Spinning Vinyl Record Disc */}
+                <div className="relative mb-6">
+                  <div
+                    className={`w-52 h-52 sm:w-60 sm:h-60 rounded-full bg-slate-950 border-4 border-slate-700/80 shadow-2xl flex items-center justify-center p-2 relative ${
+                      isStoryPaused ? '' : 'animate-spin'
+                    }`}
+                    style={{ animationDuration: '6s', animationTimingFunction: 'linear' }}
+                  >
+                    <div className="absolute inset-3 rounded-full border border-slate-800/80 pointer-events-none" />
+                    <div className="absolute inset-7 rounded-full border border-slate-800/80 pointer-events-none" />
+                    <div className="absolute inset-12 rounded-full border border-slate-800/80 pointer-events-none" />
+
+                    {/* Center Album Art */}
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-white/40 shadow-inner flex items-center justify-center bg-black relative">
+                      <img
+                        src={activeStoryItem.songInfo?.coverUrl || activeStoryItem.mediaUrl || DHARYA_LOGO_DATA_URI}
+                        alt="Song Art"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute w-4 h-4 rounded-full bg-slate-900 border-2 border-white shadow-xs" />
+                    </div>
+                  </div>
+
+                  {/* Music Badge */}
+                  <div className="absolute -bottom-2 right-4 px-3 py-1 rounded-full bg-[#16852D] text-white text-[10px] font-bold shadow-lg flex items-center gap-1.5 border border-white/20">
+                    <Music className="w-3 h-3 animate-bounce" />
+                    <span>MUSIC</span>
+                  </div>
+                </div>
+
+                {/* Track Title & Artist */}
+                <div className="z-10 space-y-1 max-w-sm px-4">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight drop-shadow-md">
+                    {activeStoryItem.songInfo?.title || 'Romantic Melody'}
+                  </h3>
+                  <p className="text-xs sm:text-sm font-semibold text-pink-300 drop-shadow-xs">
+                    {activeStoryItem.songInfo?.artist || 'Dhanya & Surya'}
+                  </p>
+                </div>
+
+                {/* Live Soundwave Equalizer Bars */}
+                <div className="flex items-center gap-1.5 my-4 z-10">
+                  {[12, 24, 18, 32, 22, 14, 28, 16, 26, 20].map((h, i) => (
+                    <span
+                      key={i}
+                      className={`w-1 rounded-full bg-gradient-to-t from-[#16852D] to-[#F22679] ${
+                        isStoryPaused ? 'opacity-40' : 'animate-pulse'
+                      }`}
+                      style={{
+                        height: isStoryPaused ? '8px' : `${h}px`,
+                        animationDelay: `${i * 90}ms`,
+                        animationDuration: '600ms',
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Media Rendering: Text Status */}
             {activeStoryItem.type === 'text' && (
               <div
                 className="w-full h-full flex items-center justify-center p-8 text-center text-white"
@@ -1191,7 +1541,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               </button>
             </div>
 
-            {/* Mode Switcher: Media vs Text Status */}
+            {/* Mode Switcher: Media vs Text vs Song */}
             <div className="flex p-1 rounded-2xl bg-slate-100 mt-4 mb-4 gap-1">
               <button
                 type="button"
@@ -1218,7 +1568,29 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 <Type className="w-4 h-4 text-[#F22679]" />
                 <span>Text Status</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setCreatorMode('song')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  creatorMode === 'song'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Music className="w-4 h-4 text-violet-600" />
+                <span>Song / Audio</span>
+              </button>
             </div>
+
+            {/* Hidden Audio File Input */}
+            <input
+              ref={audioInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={(e) => e.target.files?.[0] && handleSelectAudio(e.target.files[0])}
+              className="hidden"
+            />
 
             {/* ── Mode 1: Media Upload / Camera ── */}
             {creatorMode === 'media' && (
@@ -1257,7 +1629,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                         />
                       </div>
                     ) : (
-                      <video src={previewMediaUrl} controls className="max-h-72 w-full object-contain" />
+                      <video src={previewMediaUrl} controls playsInline className="max-h-72 w-full object-contain" />
                     )}
 
                     {/* Change Media Button */}
@@ -1267,7 +1639,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                         setSelectedFile(null);
                         clearCanvas();
                       }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80"
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 cursor-pointer"
                       title="Remove Media"
                     >
                       <X className="w-4 h-4" />
@@ -1282,7 +1654,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                       className="h-28 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#16852D] bg-slate-50 flex flex-col items-center justify-center p-3 text-xs font-bold text-slate-700 hover:text-[#16852D] transition-colors cursor-pointer"
                     >
                       <ImageIcon className="w-6 h-6 mb-1 text-[#16852D]" />
-                      <span>Choose from Gallery</span>
+                      <span>Choose Photo / Video</span>
                     </button>
 
                     {/* Camera Button */}
@@ -1292,7 +1664,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                       className="h-28 rounded-2xl border-2 border-dashed border-slate-200 hover:border-[#F22679] bg-slate-50 flex flex-col items-center justify-center p-3 text-xs font-bold text-slate-700 hover:text-[#F22679] transition-colors cursor-pointer"
                     >
                       <Camera className="w-6 h-6 mb-1 text-[#F22679]" />
-                      <span>Take Photo / Video</span>
+                      <span>Capture Camera</span>
                     </button>
                   </div>
                 )}
@@ -1380,6 +1752,65 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   </div>
                 )}
 
+                {/* Attach Background Music (Optional) */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-pink-600" />
+                      <span>Background Music (Optional)</span>
+                    </span>
+                    {attachedSong && (
+                      <button
+                        type="button"
+                        onClick={() => setAttachedSong(null)}
+                        className="text-[11px] font-bold text-rose-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {attachedSong ? (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-pink-200">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shrink-0">
+                          <Music className="w-3.5 h-3.5 animate-bounce" />
+                        </div>
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">{attachedSong.title}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{attachedSong.artist}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Attached
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                        {PRESET_SONGS.map((ps) => (
+                          <button
+                            key={ps.id}
+                            type="button"
+                            onClick={() => handleSelectPresetSong(ps)}
+                            className="px-2.5 py-1 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white hover:border-pink-300 hover:bg-pink-50 text-slate-700 shrink-0 transition-colors cursor-pointer"
+                          >
+                            🎵 {ps.title}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => audioInputRef.current?.click()}
+                        className="w-full py-1.5 rounded-xl border border-dashed border-slate-300 hover:border-pink-500 bg-white text-xs font-semibold text-slate-600 hover:text-pink-600 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <FileAudio className="w-3.5 h-3.5" />
+                        <span>Upload Any Song (MP3 / WAV / M4A)</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Caption Input */}
                 <div>
                   <label className="text-xs font-bold text-slate-500">Caption (Optional)</label>
@@ -1410,6 +1841,65 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     onChange={(e) => setTextStatusContent(e.target.value)}
                     className="w-full bg-transparent text-white text-xl sm:text-2xl font-extrabold text-center resize-none placeholder-white/60 focus:outline-none"
                   />
+                </div>
+
+                {/* Attach Background Music (Optional for Text Status) */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5 text-pink-600" />
+                      <span>Background Music (Optional)</span>
+                    </span>
+                    {attachedSong && (
+                      <button
+                        type="button"
+                        onClick={() => setAttachedSong(null)}
+                        className="text-[11px] font-bold text-rose-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+
+                  {attachedSong ? (
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-pink-200">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="w-7 h-7 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 shrink-0">
+                          <Music className="w-3.5 h-3.5 animate-bounce" />
+                        </div>
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">{attachedSong.title}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{attachedSong.artist}</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Attached
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                        {PRESET_SONGS.map((ps) => (
+                          <button
+                            key={ps.id}
+                            type="button"
+                            onClick={() => handleSelectPresetSong(ps)}
+                            className="px-2.5 py-1 rounded-xl text-[11px] font-semibold border border-slate-200 bg-white hover:border-pink-300 hover:bg-pink-50 text-slate-700 shrink-0 transition-colors cursor-pointer"
+                          >
+                            🎵 {ps.title}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => audioInputRef.current?.click()}
+                        className="w-full py-1.5 rounded-xl border border-dashed border-slate-300 hover:border-pink-500 bg-white text-xs font-semibold text-slate-600 hover:text-pink-600 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      >
+                        <FileAudio className="w-3.5 h-3.5" />
+                        <span>Upload Any Song (MP3 / WAV / M4A)</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Color Gradient Picker */}
@@ -1448,6 +1938,144 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                       >
                         {font.name}
                       </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Mode 3: Dedicated Song / Audio Status Creator ── */}
+            {creatorMode === 'song' && (
+              <div className="space-y-4">
+                {/* Vinyl Preview Disc Card */}
+                <div
+                  className="w-full rounded-2xl p-5 flex flex-col items-center justify-center text-center text-white shadow-inner relative overflow-hidden"
+                  style={{ background: textGradient }}
+                >
+                  <div
+                    className="w-24 h-24 rounded-full bg-slate-950 border-4 border-slate-800 shadow-xl flex items-center justify-center relative mb-2.5 animate-spin"
+                    style={{ animationDuration: '8s', animationTimingFunction: 'linear' }}
+                  >
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/40 bg-black flex items-center justify-center">
+                      <img
+                        src={
+                          attachedSong?.coverUrl ||
+                          (currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR)
+                        }
+                        alt="Album Art"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute w-2 h-2 rounded-full bg-slate-900 border border-white" />
+                  </div>
+
+                  <h4 className="font-extrabold text-base text-white drop-shadow-md truncate max-w-full px-2">
+                    {customSongTitle || attachedSong?.title || 'Choose a Song Below'}
+                  </h4>
+                  <p className="text-xs text-pink-200 font-medium">
+                    {customSongArtist || attachedSong?.artist || 'Surya & Dhanya'}
+                  </p>
+
+                  {/* Audio Player preview if song is selected */}
+                  {attachedSong?.audioUrl && (
+                    <div className="mt-3 w-full max-w-xs">
+                      <audio src={attachedSong.audioUrl} controls className="w-full h-8" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Preset Melody Songs */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5 mb-1.5">
+                    <Music className="w-3.5 h-3.5 text-[#16852D]" />
+                    <span>Preset Romantic Melodies</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PRESET_SONGS.map((ps) => (
+                      <button
+                        key={ps.id}
+                        type="button"
+                        onClick={() => handleSelectPresetSong(ps)}
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                          attachedSong?.title === ps.title
+                            ? 'bg-pink-50 border-[#F22679] ring-2 ring-[#F22679]/20'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-200 shrink-0">
+                          <img src={ps.coverUrl} alt={ps.title} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="overflow-hidden flex-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">{ps.title}</p>
+                          <p className="text-[10px] text-slate-500 truncate">{ps.artist}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom Audio Upload Button */}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => audioInputRef.current?.click()}
+                    className="w-full py-2.5 rounded-2xl border-2 border-dashed border-slate-200 hover:border-violet-500 bg-slate-50 hover:bg-violet-50 text-xs font-bold text-slate-700 hover:text-violet-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <FileAudio className="w-4 h-4 text-violet-600" />
+                    <span>Upload Song / Audio from Phone or Laptop (MP3, WAV, M4A)</span>
+                  </button>
+                </div>
+
+                {/* Song Title & Artist Customization */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500">Song Title</label>
+                    <input
+                      type="text"
+                      placeholder="Title"
+                      value={customSongTitle}
+                      onChange={(e) => setCustomSongTitle(e.target.value)}
+                      className="w-full mt-1 px-3 py-1.5 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-500">Artist / Dedication</label>
+                    <input
+                      type="text"
+                      placeholder="Artist"
+                      value={customSongArtist}
+                      onChange={(e) => setCustomSongArtist(e.target.value)}
+                      className="w-full mt-1 px-3 py-1.5 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Caption / Dedication Note */}
+                <div>
+                  <label className="text-xs font-bold text-slate-500">Dedication Note (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="Dedication message..."
+                    value={statusCaption}
+                    onChange={(e) => setStatusCaption(e.target.value)}
+                    className="w-full mt-1 px-3.5 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Background Gradient Picker */}
+                <div>
+                  <label className="text-xs font-bold text-slate-500">Visualizer Theme</label>
+                  <div className="flex gap-2 mt-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    {PRESET_GRADIENTS.map((g, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setTextGradient(g)}
+                        className={`w-7 h-7 rounded-full shrink-0 border-2 cursor-pointer ${
+                          textGradient === g ? 'scale-110 border-slate-900' : 'border-transparent'
+                        }`}
+                        style={{ background: g }}
+                      />
                     ))}
                   </div>
                 </div>

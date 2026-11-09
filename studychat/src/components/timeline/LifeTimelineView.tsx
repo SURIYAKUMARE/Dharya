@@ -87,73 +87,7 @@ const WAYPOINT_SLOTS: WaypointSlot[] = [
   { pinX: 544, pinY: 74, cardX: 570, cardY: 30, cardW: 260, cardH: 84 },
 ];
 
-const INITIAL_DEFAULT_MILESTONES: MilestoneItem[] = [
-  {
-    id: 'm1',
-    theme: 'green',
-    iconType: 'building',
-    dateStr: 'Jul 2024',
-    title: 'College Began',
-    subtitle: 'Started my Engineering journey',
-    description: 'Started my Engineering journey at college. Meeting new friends, first lectures, and exciting dreams ahead for the four years to come.',
-  },
-  {
-    id: 'm2',
-    theme: 'pink',
-    iconType: 'graduation',
-    dateStr: 'Sep 2025',
-    title: 'Year 2 – AIML',
-    subtitle: 'Rathinam Technical Campus',
-    description: 'Stepping into 2nd year Artificial Intelligence & Machine Learning specialization at Rathinam Technical Campus. Advanced curriculum and lab projects.',
-  },
-  {
-    id: 'm3',
-    theme: 'green',
-    iconType: 'medal',
-    dateStr: 'Jan 2026',
-    title: 'Certification',
-    subtitle: 'Completed Microsoft Fabric',
-    description: 'Successfully completed the comprehensive Microsoft Fabric certification, demonstrating proficiency in cloud analytics and data workflows.',
-  },
-  {
-    id: 'm4',
-    theme: 'green',
-    iconType: 'rocket',
-    dateStr: 'Mar 2026',
-    title: 'Project Launch',
-    subtitle: 'TrustGuard AI (Live)',
-    description: 'TrustGuard AI launched live into production! An intelligent real-time security framework with adaptive threat defense.',
-  },
-  {
-    id: 'm5',
-    theme: 'pink',
-    iconType: 'microsoft',
-    dateStr: 'Jun 2026',
-    title: 'Internship',
-    subtitle: 'Started Microsoft Internship',
-    description: 'Kicked off prestigious software engineering summer internship at Microsoft, collaborating on enterprise cloud engineering systems.',
-  },
-  {
-    id: 'm6',
-    theme: 'pink',
-    iconType: 'code',
-    dateStr: 'Sep 2026',
-    title: 'Hackathon',
-    subtitle: 'Won SAKTHI HACKFEST\'26',
-    description: 'Bagged the 1st prize championship at SAKTHI HACKFEST\'26 after building a high-impact prototype in 36 continuous hours.',
-  },
-  {
-    id: 'm7',
-    theme: 'green',
-    iconType: 'trophy',
-    dateStr: 'Nov 2026',
-    title: 'SIH 2026',
-    subtitle: 'Finalist – NIYAM Project',
-    description: 'Selected as national grand finalists at Smart India Hackathon (SIH 2026) presenting the NIYAM Project to nationwide juries.',
-  },
-];
-
-const STORAGE_KEY = 'dharya_timeline_milestones_v2';
+const STORAGE_KEY = 'dhanya_timeline_milestones_clean_v2';
 
 export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   isDark = false,
@@ -161,16 +95,34 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
 }) => {
   const { student } = useStudyApp();
 
-  // Load from local storage or defaults
+  // Load from local storage, completely purged of any demo cards
   const [milestones, setMilestones] = useState<MilestoneItem[]>(() => {
     try {
+      // Purge all legacy demo caches
+      localStorage.removeItem('dharya_timeline_milestones_v1');
+      localStorage.removeItem('dharya_timeline_milestones_v2');
+      localStorage.removeItem('dharya_timeline_milestones_v3');
+      localStorage.removeItem('dhanya_timeline_milestones_clean_v1');
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          // Filter out any mock demo items
+          return parsed.filter(
+            (m) =>
+              !m.id?.startsWith('m1') &&
+              !m.id?.startsWith('m2') &&
+              !m.id?.startsWith('m3') &&
+              !m.id?.startsWith('m4') &&
+              !m.id?.startsWith('m5') &&
+              !m.id?.startsWith('m6') &&
+              !m.id?.startsWith('m7') &&
+              m.title !== 'College Began'
+          );
+        }
       }
     } catch {}
-    return INITIAL_DEFAULT_MILESTONES;
+    return []; // Clean slate by default - No demo cards
   });
 
   const saveMilestones = useCallback((items: MilestoneItem[]) => {
@@ -185,7 +137,6 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showResetMenu, setShowResetMenu] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Form states for adding custom memory
@@ -295,15 +246,7 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
   const handleClearAll = () => {
     saveMilestones([]);
     setSelectedMilestone(null);
-    setShowResetMenu(false);
-    showToast('All demo cards cleared 🧹');
-  };
-
-  const handleRestoreDefaults = () => {
-    saveMilestones(INITIAL_DEFAULT_MILESTONES);
-    setSelectedMilestone(null);
-    setShowResetMenu(false);
-    showToast('Restored reference milestones 🔄');
+    showToast('Timeline cleared 🧹');
   };
 
   const renderIcon = (type: MilestoneIconType, theme: 'green' | 'pink') => {
@@ -372,33 +315,15 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 relative">
-          {/* Reset / Clear Demo Menu */}
-          <button
-            onClick={() => setShowResetMenu((prev) => !prev)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            title="Options to reset or clear demo cards"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Options</span>
-          </button>
-
-          {showResetMenu && (
-            <div className="absolute top-10 right-24 w-48 rounded-2xl bg-white border border-slate-200 shadow-xl py-1.5 z-50 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95 duration-100">
-              <button
-                onClick={handleRestoreDefaults}
-                className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-blue-600" />
-                <span>Restore Reference Demo</span>
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="w-full px-3.5 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear All Cards</span>
-              </button>
-            </div>
+          {milestones.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              title="Clear all cards"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Clear All</span>
+            </button>
           )}
 
           {/* + Add Memory Button */}
@@ -467,17 +392,21 @@ export const LifeTimelineView: React.FC<LifeTimelineViewProps> = ({
               );
             })}
 
-            {/* ── Empty State if No Milestones ── */}
+            {/* ── Empty State if No Milestones (Clean Canvas without Demo Clutter) ── */}
             {milestones.length === 0 && (
-              <foreignObject x="230" y="440" width="400" height="120">
-                <div className="w-full h-full rounded-2xl p-4 bg-white/90 border border-slate-200 text-center flex flex-col items-center justify-center shadow-lg">
-                  <p className="text-sm font-bold text-slate-800">No milestones yet</p>
-                  <p className="text-xs text-slate-500 mt-0.5 mb-2.5">Start crafting your life journey memory trail</p>
+              <foreignObject x="240" y="440" width="380" height="135">
+                <div className="w-full h-full rounded-3xl p-5 bg-white/95 border border-emerald-200/90 text-center flex flex-col items-center justify-center shadow-xl backdrop-blur-md">
+                  <div className="flex items-center gap-1.5 text-sm font-extrabold text-slate-800">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span>Your Memory Journey</span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1 mb-3">Add your real milestones along the winding trail</p>
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#236B38] text-white font-bold text-xs shadow-sm hover:opacity-90 cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-[#236B38] hover:bg-[#1B5E20] text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
                   >
-                    + Add Your First Milestone
+                    <PlusCircle className="w-4 h-4" />
+                    <span>+ Add Your First Milestone</span>
                   </button>
                 </div>
               </foreignObject>

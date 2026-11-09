@@ -131,6 +131,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
+  const [dhanyaMenuOpen, setDhanyaMenuOpen] = useState(false);
 
   // ── Add Status Form States ──
   const [creatorMode, setCreatorMode] = useState<'media' | 'text'>('media');
@@ -731,19 +732,51 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 </div>
               </div>
 
-              {/* Three-dot menu button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveStoryGroup('dhanya');
-                  setActiveStoryIdx(0);
-                }}
-                className="p-2 rounded-full hover:bg-black/5 text-slate-600 transition-colors cursor-pointer"
-                title="View Status Options"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
+              {/* Three-dot menu button with View & Delete options */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDhanyaMenuOpen((prev) => !prev);
+                  }}
+                  className="p-2 rounded-full hover:bg-black/5 text-slate-600 transition-colors cursor-pointer"
+                  title="Status Options"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+
+                {dhanyaMenuOpen && (
+                  <div className="absolute right-0 top-10 w-44 rounded-2xl bg-white border border-slate-200 shadow-xl py-1 z-50 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDhanyaMenuOpen(false);
+                        setActiveStoryGroup('dhanya');
+                        setActiveStoryIdx(0);
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#16852D]" />
+                      <span>View Status</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDhanyaMenuOpen(false);
+                        if (recentUpdates.dhanyaStatuses[0]) {
+                          statusService.deleteStatus(recentUpdates.dhanyaStatuses[0].id, 'surya');
+                          showToast?.('Status cleared 🗑️', 'info');
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete Status</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">

@@ -79,6 +79,7 @@ export interface WhatsAppStatusViewProps {
   onBackToChat?: () => void;
   onOpenGallery?: () => void;
   onOpenTimeline?: () => void;
+  onSwitchUser?: () => void;
   showToast?: (msg: string, type?: 'success' | 'error' | 'info') => void;
   doodleSvgUri?: string;
 }
@@ -105,7 +106,10 @@ const PRESET_FONTS = [
 export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   isDark = false,
   studentName = 'Surya',
+  partnerName = 'Dhanya',
+  partnerUser,
   onBackToChat,
+  onSwitchUser,
   showToast,
 }) => {
   const currentUser = studentName.toLowerCase() === 'sadhana' ? 'sadhana' : 'surya';
@@ -123,7 +127,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const archivedStatuses = useMemo(() => statusService.getArchivedStatuses(currentUser), [currentUser]);
 
   // ── UI Modals & Navigation States ──
-  const [activeStoryGroup, setActiveStoryGroup] = useState<'dhanya' | 'my' | null>(null);
+  const [activeStoryGroup, setActiveStoryGroup] = useState<'partner' | 'my' | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -131,7 +135,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [dhanyaMenuOpen, setDhanyaMenuOpen] = useState(false);
+  const [partnerMenuOpen, setPartnerMenuOpen] = useState(false);
 
   // ── Add Status Form States ──
   const [creatorMode, setCreatorMode] = useState<'media' | 'text'>('media');
@@ -166,23 +170,25 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
 
   // ── Active Stories for Current Viewer ──
   const currentViewerStories = useMemo(() => {
-    if (activeStoryGroup === 'dhanya') return recentUpdates.dhanyaStatuses;
+    if (activeStoryGroup === 'partner') return recentUpdates.statuses;
     if (activeStoryGroup === 'my') return myStatuses;
     return [];
-  }, [activeStoryGroup, recentUpdates.dhanyaStatuses, myStatuses]);
+  }, [activeStoryGroup, recentUpdates.statuses, myStatuses]);
 
   const activeStoryItem = currentViewerStories[activeStoryIdx] || null;
 
   // ── Record View on Open ──
   useEffect(() => {
-    if (activeStoryItem && activeStoryGroup === 'dhanya') {
+    if (activeStoryItem && activeStoryGroup === 'partner') {
+      const viewerName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
+      const viewerAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
       statusService.recordView(activeStoryItem.id, {
         id: currentUser,
-        name: studentName,
-        avatar: DHARYA_LOGO_DATA_URI,
+        name: viewerName,
+        avatar: viewerAvatar,
       });
     }
-  }, [activeStoryItem, activeStoryGroup, currentUser, studentName]);
+  }, [activeStoryItem, activeStoryGroup, currentUser]);
 
   // ── Story Progress Timer ──
   useEffect(() => {
@@ -309,10 +315,13 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           return;
         }
 
+        const authorName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
+        const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
+
         await statusService.publishStatus({
           owner: currentUser,
-          authorName: studentName,
-          authorAvatar: DHARYA_LOGO_DATA_URI,
+          authorName,
+          authorAvatar,
           type: mediaType,
           mediaUrl: previewMediaUrl,
           caption: statusCaption.trim(),
@@ -327,10 +336,13 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           return;
         }
 
+        const authorName = currentUser === 'surya' ? 'Surya' : 'Dhanya';
+        const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
+
         await statusService.publishStatus({
           owner: currentUser,
-          authorName: studentName,
-          authorAvatar: DHARYA_LOGO_DATA_URI,
+          authorName,
+          authorAvatar,
           type: 'text',
           mediaUrl: '',
           textContent: textStatusContent.trim(),
@@ -476,8 +488,24 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           </div>
         </div>
 
-        {/* Right Action Icons: Search & Three-Dots Menu */}
+        {/* Right Action Icons: Switch Account, Search & Three-Dots Menu */}
         <div className="flex items-center gap-2 relative">
+          {onSwitchUser && (
+            <button
+              onClick={onSwitchUser}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all shadow-2xs cursor-pointer select-none ${
+                currentUser === 'surya'
+                  ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-pink-50 hover:bg-pink-100 border-pink-300 text-pink-700'
+              }`}
+              title={`Logged in as ${currentUser === 'surya' ? 'Surya' : 'Sadhana (Dhanya)'}. Tap to switch account.`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>{currentUser === 'surya' ? 'Surya' : 'Sadhana'}</span>
+              <span className="text-[10px] opacity-70 hidden sm:inline">⇄ Switch</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsSearchActive((prev) => !prev)}
             className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-100 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
@@ -583,7 +611,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               {/* Outer Green Ring */}
               <div className="w-16 h-16 rounded-full p-0.5 border-2 border-[#16852D] flex items-center justify-center bg-white shadow-xs">
                 <img
-                  src={DHARYA_LOGO_DATA_URI}
+                  src={currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR}
                   alt="My Profile"
                   className="w-full h-full rounded-full object-cover"
                 />
@@ -690,18 +718,18 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
             </h3>
           </div>
 
-          {/* Dhanya's Status Card (Only Dhanya, matching Reference Image) */}
-          {recentUpdates.dhanyaStatuses.length > 0 ? (
+          {/* Partner's Status Card (Dynamic: Dhanya for Surya, Surya for Sadhana) */}
+          {recentUpdates.statuses.length > 0 ? (
             <div
               onClick={() => {
-                setActiveStoryGroup('dhanya');
+                setActiveStoryGroup('partner');
                 setActiveStoryIdx(0);
                 setStoryProgress(0);
               }}
               className="w-full rounded-[26px] p-3.5 bg-[#F3FAF5] border border-[#D1EBD9]/70 flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99] shadow-2xs"
             >
               <div className="flex items-center gap-3.5">
-                {/* Dhanya Profile with Vivid Green Story Ring */}
+                {/* Partner Profile with Green Story Ring */}
                 <div className="relative">
                   <div
                     className={`w-14 h-14 rounded-full p-0.5 border-2 flex items-center justify-center bg-white shadow-xs ${
@@ -709,8 +737,8 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     }`}
                   >
                     <img
-                      src={DHANYA_SUNSET_AVATAR}
-                      alt="Dhanya"
+                      src={recentUpdates.partnerAvatar}
+                      alt={recentUpdates.partnerName}
                       className="w-full h-full rounded-full object-cover"
                     />
                   </div>
@@ -720,14 +748,17 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h4 className="text-[17px] font-bold text-slate-900 tracking-tight leading-tight">
-                      Dhanya
+                      {recentUpdates.partnerName}
                     </h4>
-                    <span className="text-[#F22679] text-base leading-none font-bold">♡</span>
+                    {recentUpdates.partnerName === 'Dhanya' && (
+                      <span className="text-[#F22679] text-base leading-none font-bold">♡</span>
+                    )}
                   </div>
                   <p className="text-[12.5px] text-slate-500 font-medium leading-tight mt-1">
                     {recentUpdates.lastUpdated
                       ? getRelativeTime(recentUpdates.lastUpdated)
-                      : '10 minutes ago'}
+                      : 'Just now'}
+                    {recentUpdates.statuses.length > 1 && ` • ${recentUpdates.statuses.length} updates`}
                   </p>
                 </div>
               </div>
@@ -738,7 +769,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDhanyaMenuOpen((prev) => !prev);
+                    setPartnerMenuOpen((prev) => !prev);
                   }}
                   className="p-2 rounded-full hover:bg-black/5 text-slate-600 transition-colors cursor-pointer"
                   title="Status Options"
@@ -746,13 +777,13 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   <MoreVertical className="w-4 h-4" />
                 </button>
 
-                {dhanyaMenuOpen && (
+                {partnerMenuOpen && (
                   <div className="absolute right-0 top-10 w-44 rounded-2xl bg-white border border-slate-200 shadow-xl py-1 z-50 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDhanyaMenuOpen(false);
-                        setActiveStoryGroup('dhanya');
+                        setPartnerMenuOpen(false);
+                        setActiveStoryGroup('partner');
                         setActiveStoryIdx(0);
                       }}
                       className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
@@ -763,9 +794,9 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDhanyaMenuOpen(false);
-                        if (recentUpdates.dhanyaStatuses[0]) {
-                          statusService.deleteStatus(recentUpdates.dhanyaStatuses[0].id, 'surya');
+                        setPartnerMenuOpen(false);
+                        if (recentUpdates.statuses[0]) {
+                          statusService.deleteStatus(recentUpdates.statuses[0].id, currentUser);
                           showToast?.('Status cleared 🗑️', 'info');
                         }
                       }}
@@ -780,7 +811,9 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
             </div>
           ) : (
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-              <p className="text-xs text-slate-500 font-medium">No recent updates right now.</p>
+              <p className="text-xs text-slate-500 font-medium">
+                No recent updates from {recentUpdates.partnerName} right now.
+              </p>
             </div>
           )}
         </section>
@@ -907,7 +940,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-sm tracking-tight">{activeStoryItem.authorName}</span>
-                  {activeStoryGroup === 'dhanya' && <span className="text-[#F22679]">♡</span>}
+                  {activeStoryItem.authorName === 'Dhanya' && <span className="text-[#F22679]">♡</span>}
                 </div>
                 <span className="text-[11px] text-white/75">{getRelativeTime(activeStoryItem.createdAt)}</span>
               </div>
@@ -1041,7 +1074,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
 
           {/* ── Bottom Bar: Reactions & Replies (for Dhanya) OR View Count Sheet (for My Status) ── */}
           <div className="w-full max-w-xl mx-auto px-4 py-3 z-30 bg-gradient-to-t from-black/90 to-transparent">
-            {activeStoryGroup === 'dhanya' ? (
+            {activeStoryGroup !== 'my' ? (
               <div className="space-y-2">
                 {/* Quick Emoji Reaction Pill Buttons */}
                 <div className="flex items-center justify-center gap-3 py-1">
@@ -1063,7 +1096,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    placeholder="Reply to Dhanya ♡..."
+                    placeholder={`Reply to ${activeStoryItem.authorName}...`}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}

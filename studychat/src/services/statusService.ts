@@ -88,28 +88,14 @@ export interface StatusPrivacySettings {
 export const DHANYA_SUNSET_AVATAR =
   'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80';
 
-// ── Default Curated Initial Status for Dhanya (Matching Reference Image) ──
-const INITIAL_DHANYA_STATUS: StatusItem = {
-  id: 'status_dhanya_initial',
-  owner: 'dhanya',
-  authorName: 'Dhanya',
-  authorAvatar: DHANYA_SUNSET_AVATAR,
-  type: 'photo',
-  mediaUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=1200&q=85',
-  caption: 'Golden evening peace ♡ Sunsets are proof that endings can often be beautiful too.',
-  createdAt: Date.now() - 10 * 60 * 1000, // 10 minutes ago
-  expiresAt: Date.now() + 23 * 60 * 60 * 1000 + 50 * 60 * 1000,
-  privacy: 'contacts',
-};
-
 // ── Local Storage Keys ───────────────────────────────────────────────────
-const STORAGE_STATUSES = 'dhanya_status_items_v2';
-const STORAGE_VIEWS = 'dhanya_status_views_v2';
-const STORAGE_REACTIONS = 'dhanya_status_reactions_v2';
-const STORAGE_REPLIES = 'dhanya_status_replies_v2';
-const STORAGE_HIGHLIGHTS = 'dhanya_status_highlights_v2';
-const STORAGE_PRIVACY = 'dhanya_status_privacy_v2';
-const STORAGE_MUTED = 'dhanya_status_muted_v2';
+const STORAGE_STATUSES = 'dhanya_status_items_v3';
+const STORAGE_VIEWS = 'dhanya_status_views_v3';
+const STORAGE_REACTIONS = 'dhanya_status_reactions_v3';
+const STORAGE_REPLIES = 'dhanya_status_replies_v3';
+const STORAGE_HIGHLIGHTS = 'dhanya_status_highlights_v3';
+const STORAGE_PRIVACY = 'dhanya_status_privacy_v3';
+const STORAGE_MUTED = 'dhanya_status_muted_v3';
 
 // ── Status Service Class ─────────────────────────────────────────────────
 class StatusService {
@@ -126,6 +112,7 @@ class StatusService {
   private mutedUsers: string[] = [];
   private listeners: Set<() => void> = new Set();
   private isInitialized = false;
+  private channel: BroadcastChannel | null = null;
 
   constructor() {
     this.init();
@@ -133,20 +120,68 @@ class StatusService {
 
   private init() {
     if (this.isInitialized) return;
+    this.setupMultiTabSync();
     this.loadFromStorage();
     this.setupCrossDeviceSync();
     this.isInitialized = true;
   }
 
+  private setupMultiTabSync() {
+    if (typeof window !== 'undefined') {
+      try {
+        if ('BroadcastChannel' in window) {
+          this.channel = new BroadcastChannel('dhanya_status_broadcast');
+          this.channel.onmessage = (event) => {
+            if (event?.data?.type === 'reload') {
+              this.loadFromStorage();
+              this.notify();
+            }
+          };
+        }
+      } catch {}
+
+      window.addEventListener('storage', (e) => {
+        if (e.key && e.key.startsWith('dhanya_status_')) {
+          this.loadFromStorage();
+          this.notify();
+        }
+      });
+    }
+  }
+
+  private broadcastLocalSync() {
+    try {
+      this.channel?.postMessage({ type: 'reload', time: Date.now() });
+    } catch {}
+  }
+
   private loadFromStorage() {
     try {
-      const s = localStorage.getItem(STORAGE_STATUSES);
+      // Migrate from v2 if present, but purge demo items
+      let s = localStorage.getItem(STORAGE_STATUSES);
+      if (!s) {
+        const v2 = localStorage.getItem('dhanya_status_items_v2');
+        if (v2) {
+          try {
+            const parsedV2 = JSON.parse(v2);
+            if (Array.isArray(parsedV2)) {
+              const clean = parsedV2.filter((item: StatusItem) => item.id !== 'status_dhanya_initial');
+              localStorage.setItem(STORAGE_STATUSES, JSON.stringify(clean));
+              s = JSON.stringify(clean);
+            }
+          } catch {}
+        }
+      }
+
       if (s) {
-        this.statuses = JSON.parse(s);
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) {
+          this.statuses = parsed.filter((item: StatusItem) => item.id !== 'status_dhanya_initial');
+        } else {
+          this.statuses = [];
+        }
       } else {
-        // Seed default initial status from Dhanya matching the reference image
-        this.statuses = [INITIAL_DHANYA_STATUS];
-        this.persistStatuses();
+        this.statuses = [];
       }
 
       const v = localStorage.getItem(STORAGE_VIEWS);
@@ -168,7 +203,7 @@ class StatusService {
       if (m) this.mutedUsers = JSON.parse(m);
     } catch (err) {
       console.warn('Failed to load status records from storage:', err);
-      this.statuses = [INITIAL_DHANYA_STATUS];
+      this.statuses = [];
     }
   }
 
@@ -176,6 +211,7 @@ class StatusService {
     try {
       localStorage.setItem(STORAGE_STATUSES, JSON.stringify(this.statuses));
     } catch {}
+    this.broadcastLocalSync();
     this.notify();
   }
 
@@ -183,6 +219,7 @@ class StatusService {
     try {
       localStorage.setItem(STORAGE_VIEWS, JSON.stringify(this.views));
     } catch {}
+    this.broadcastLocalSync();
     this.notify();
   }
 
@@ -190,6 +227,7 @@ class StatusService {
     try {
       localStorage.setItem(STORAGE_REACTIONS, JSON.stringify(this.reactions));
     } catch {}
+    this.broadcastLocalSync();
     this.notify();
   }
 
@@ -197,6 +235,7 @@ class StatusService {
     try {
       localStorage.setItem(STORAGE_REPLIES, JSON.stringify(this.replies));
     } catch {}
+    this.broadcastLocalSync();
     this.notify();
   }
 
@@ -264,15 +303,16 @@ class StatusService {
   // ── Query Active Statuses (24-Hour Expiry Lifecycle) ──
   public getActiveStatuses(currentUserId: string): StatusItem[] {
     const now = Date.now();
+    const uid = currentUserId.toLowerCase();
     return this.statuses.filter((s) => {
       // Must not be expired (>24 hours)
       if (s.expiresAt <= now) return false;
 
       // Privacy enforcement
-      if (s.owner === currentUserId) return true;
+      if (s.owner.toLowerCase() === uid) return true;
       if (s.privacy === 'private') return false;
-      if (s.privacy === 'except' && s.excludedContacts?.includes(currentUserId)) return false;
-      if (s.privacy === 'only' && !s.includedContacts?.includes(currentUserId)) return false;
+      if (s.privacy === 'except' && s.excludedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
+      if (s.privacy === 'only' && !s.includedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
 
       return true;
     });
@@ -281,44 +321,82 @@ class StatusService {
   // ── Get My Active Statuses ──
   public getMyStatuses(userId: string): StatusItem[] {
     const now = Date.now();
-    return this.statuses.filter((s) => s.owner === userId && s.expiresAt > now);
+    const uid = userId.toLowerCase();
+    return this.statuses
+      .filter((s) => {
+        if (s.expiresAt <= now) return false;
+        const owner = s.owner.toLowerCase();
+        if (uid === 'sadhana' || uid === 'dhanya') {
+          return owner === 'sadhana' || owner === 'dhanya';
+        }
+        return owner === uid;
+      })
+      .sort((a, b) => a.createdAt - b.createdAt);
   }
 
-  // ── Get Recent Updates (Only Dhanya) ──
+  // ── Get Recent Updates (Partner's Status) ──
+  // If Surya views: shows Dhanya's status updates
+  // If Sadhana views: shows Surya's status updates
   public getRecentUpdates(currentUserId: string): {
-    dhanyaStatuses: StatusItem[];
+    partnerId: string;
+    partnerName: string;
+    partnerAvatar: string;
+    statuses: StatusItem[];
     hasUnseen: boolean;
     lastUpdated: number;
+    dhanyaStatuses: StatusItem[];
   } {
     const now = Date.now();
-    const active = this.statuses.filter((s) => {
-      if (s.owner !== 'dhanya') return false;
-      if (s.expiresAt <= now) return false;
+    const uid = currentUserId.toLowerCase();
+    const isSurya = uid === 'surya';
+    const partnerId = isSurya ? 'sadhana' : 'surya';
+    const partnerName = isSurya ? 'Dhanya' : 'Surya';
+    const defaultAvatar = isSurya ? DHANYA_SUNSET_AVATAR : DHARYA_LOGO_DATA_URI;
 
-      // Check privacy
+    const partnerStatuses = this.statuses.filter((s) => {
+      if (s.expiresAt <= now) return false;
+      const owner = s.owner.toLowerCase();
+
+      // If viewing as Surya: display partner's (Sadhana/Dhanya) statuses
+      if (isSurya) {
+        if (owner === 'surya') return false;
+      } else {
+        // If viewing as Sadhana/Dhanya: display partner's (Surya) statuses
+        if (owner === 'sadhana' || owner === 'dhanya') return false;
+      }
+
+      // Check privacy settings
       if (s.privacy === 'private') return false;
-      if (s.privacy === 'except' && s.excludedContacts?.includes(currentUserId)) return false;
-      if (s.privacy === 'only' && !s.includedContacts?.includes(currentUserId)) return false;
+      if (s.privacy === 'except' && s.excludedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
+      if (s.privacy === 'only' && !s.includedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
 
       return true;
     });
 
-    active.sort((a, b) => a.createdAt - b.createdAt);
+    partnerStatuses.sort((a, b) => a.createdAt - b.createdAt);
 
-    // Check if user has viewed all active Dhanya statuses
+    // Check if current user has viewed all partner statuses
     const viewedIds = new Set(
       this.views
-        .filter((v) => v.viewerId === currentUserId)
+        .filter((v) => v.viewerId.toLowerCase() === uid)
         .map((v) => v.statusId)
     );
 
-    const hasUnseen = active.some((s) => !viewedIds.has(s.id));
-    const lastUpdated = active.length > 0 ? active[active.length - 1].createdAt : 0;
+    const hasUnseen = partnerStatuses.some((s) => !viewedIds.has(s.id));
+    const lastUpdated = partnerStatuses.length > 0 ? partnerStatuses[partnerStatuses.length - 1].createdAt : 0;
+    const partnerAvatar =
+      partnerStatuses.length > 0 && partnerStatuses[partnerStatuses.length - 1].authorAvatar
+        ? partnerStatuses[partnerStatuses.length - 1].authorAvatar
+        : defaultAvatar;
 
     return {
-      dhanyaStatuses: active,
+      partnerId,
+      partnerName,
+      partnerAvatar,
+      statuses: partnerStatuses,
       hasUnseen,
       lastUpdated,
+      dhanyaStatuses: partnerStatuses, // backwards compatibility
     };
   }
 
@@ -375,12 +453,17 @@ class StatusService {
     const status = this.statuses.find((s) => s.id === statusId);
     if (!status) return null;
 
+    const owner = status.owner.toLowerCase();
+    const vid = viewer.id.toLowerCase();
+
     // Do not record self view as a spectator
-    if (status.owner === viewer.id) return null;
+    if (owner === vid || ((owner === 'sadhana' || owner === 'dhanya') && (vid === 'sadhana' || vid === 'dhanya'))) {
+      return null;
+    }
 
     // Avoid duplicate view records for the same viewer on the same status
     const existing = this.views.find(
-      (v) => v.statusId === statusId && v.viewerId === viewer.id
+      (v) => v.statusId === statusId && v.viewerId.toLowerCase() === vid
     );
 
     if (existing) {
@@ -473,7 +556,9 @@ class StatusService {
     if (!status) return false;
 
     // Authorization check
-    if (status.owner !== requesterId && requesterId !== 'surya') {
+    const req = requesterId.toLowerCase();
+    const owner = status.owner.toLowerCase();
+    if (owner !== req && req !== 'surya' && !(owner === 'sadhana' && req === 'dhanya')) {
       return false;
     }
 

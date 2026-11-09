@@ -3668,6 +3668,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             isPartnerOnline={isPartnerOnline}
             partnerLastSeen={partnerLastSeen}
             dateCount={dateCount}
+            onSwitchUser={() => {
+              const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
+              quickLogin(nextUser);
+              showToast(`Switched account to ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
+            }}
             onBackToChat={() => {
               setActiveMainView('chat');
               setMobileView('conversation');

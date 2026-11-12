@@ -17,22 +17,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Verify Android Environment
+      - name: Make Gradlew Executable Early
+        run: |
+          chmod +x studychat/android/gradlew
+          chmod +x studychat/android/gradlew.bat || true
+
+      - name: Accept Android SDK Licenses & Prepare Platforms
         run: |
           echo "ANDROID_HOME: $ANDROID_HOME"
-          echo "Java version:"
-          java -version
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "platforms;android-35" "platforms;android-34" "build-tools;34.0.0" || true
 
       - name: Install NPM Dependencies
         run: |
@@ -49,13 +54,13 @@ jobs:
           cd studychat
           npx cap sync android
 
-      - name: Make Gradlew Executable
+      - name: Ensure Gradlew Permissions
         run: chmod +x studychat/android/gradlew
 
       - name: Build APK with Gradle
         run: |
           cd studychat/android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Collect Generated APK
         run: |
@@ -82,8 +87,9 @@ jobs:
             Install the native Android app on your phone to access Dhanya Navigation:
             - **App Name:** Dhanya
             - **Package:** `com.dhanya.navigation`
-            - **Features:** Private Chat, Real-Time Status (Photos, Videos, Melodies, Vinyl Visualizer), Photo Gallery, Timeline
+            - **Features:** Private Chat, AI Smart Notifications, Real-Time Status, Photo Gallery, Timeline
             - **Direct Download:** Download `Dhanya.apk` below and open it on your phone.
           files: apk-output/Dhanya.apk
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

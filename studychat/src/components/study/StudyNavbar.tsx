@@ -1,10 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, User, Layers, Search, Sparkles, MessageSquare } from 'lucide-react';
+import { BookOpen, Calendar, User, Layers, Search, Sparkles, MessageSquare, Bell, BellRing } from 'lucide-react';
 import { EngineeringLogo } from '../common/EngineeringLogo';
+import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
+import { smartNotificationService } from '../../services/smartNotificationService';
 
 export const StudyNavbar: React.FC = () => {
   const { activeTab, switchTab, student } = useStudyApp();
+  const [showNotifModal, setShowNotifModal] = useState<boolean>(false);
+  const [unreadCount, setUnreadCount] = useState<number>(() =>
+    smartNotificationService.getUnreadCount()
+  );
+
+  useEffect(() => {
+    const unsub = smartNotificationService.subscribe(() => {
+      setUnreadCount(smartNotificationService.getUnreadCount());
+    });
+    return unsub;
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 bg-[#FAF8F5]/92 backdrop-blur-xl border-b border-[#E2D9CC]/90 pt-[env(safe-area-inset-top,0px)] transition-all select-none shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
@@ -84,8 +97,25 @@ export const StudyNavbar: React.FC = () => {
             </button>
           </nav>
 
-          {/* Right Actions: Study Chat & Student Profile */}
+          {/* Right Actions: Study Chat, Notifications & Student Profile */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNotifModal(true)}
+              className="p-2 rounded-xl border border-[#E0D8CC] bg-white hover:bg-[#F9F6F0] text-[#334155] relative transition-colors shadow-2xs"
+              title="Smart Notifications"
+            >
+              {unreadCount > 0 ? (
+                <BellRing className="w-4 h-4 text-[#16852D]" />
+              ) : (
+                <Bell className="w-4 h-4 text-slate-600" />
+              )}
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[#F22679] text-white shadow-xs">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => switchTab('chat')}
               className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/90 hover:bg-blue-100 text-[#1d4ed8] text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer group"
@@ -114,6 +144,15 @@ export const StudyNavbar: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <NotificationCenterModal
+        isOpen={showNotifModal}
+        onClose={() => setShowNotifModal(false)}
+        onSelectNotification={() => {
+          switchTab('chat');
+        }}
+        isDark={false}
+      />
     </header>
   );
 };

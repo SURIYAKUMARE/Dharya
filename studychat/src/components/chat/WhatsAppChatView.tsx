@@ -90,7 +90,9 @@ import {
   Ban,
   Circle,
   GitBranch,
-  Menu
+  Menu,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { EmojiSvg, EMOJI_REGEX } from './EmojiSvg';
 import { WhatsAppEmojiPicker } from './WhatsAppEmojiPicker';
@@ -98,6 +100,8 @@ import { ChatSidePanel, SidePanelMode } from './ChatSidePanel';
 import { WhatsAppCallModal } from './WhatsAppCallModal';
 import { WhatsAppLeftNav, MainNavView } from './WhatsAppLeftNav';
 import { WhatsAppStatusView } from './WhatsAppStatusView';
+import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
+import { smartNotificationService, SmartNotification } from '../../services/smartNotificationService';
 import { GalleryView } from '../gallery/GalleryView';
 import { LifeTimelineView } from '../timeline/LifeTimelineView';
 import { RecycleBinView } from '../recycle/RecycleBinView';
@@ -316,28 +320,23 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     } catch {}
   };
 
+  // ── AI SMART NOTIFICATIONS SYSTEM (Never exposes raw message text) ──
+  const [showNotificationCenter, setShowNotificationCenter] = useState<boolean>(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(() =>
+    smartNotificationService.getUnreadCount()
+  );
+
+  useEffect(() => {
+    const unsub = smartNotificationService.subscribe(() => {
+      setUnreadNotifCount(smartNotificationService.getUnreadCount());
+    });
+    return unsub;
+  }, []);
+
   const triggerBrowserNotification = (msg: ExtendedChatMessage) => {
-    if (isConversationMuted || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-    if (document.visibilityState === 'visible') return;
-
-    try {
-      const body = hideNotificationPreview
-        ? 'New message received'
-        : msg.type === 'image'
-        ? '📷 Sent a photo'
-        : msg.type === 'video'
-        ? '🎬 Sent a video'
-        : msg.type === 'voice'
-        ? '🎤 Sent a voice note'
-        : msg.type === 'document'
-        ? `📄 Sent a file: ${msg.documentName || 'Document'}`
-        : msg.text;
-
-      new Notification(partnerName, {
-        body,
-        icon: '/favicon.ico',
-      });
-    } catch {}
+    if (isConversationMuted) return;
+    const senderDisplay = msg.sender === 'sadhana' ? 'Sadhana' : 'Surya';
+    smartNotificationService.processIncomingMessage(msg, senderDisplay);
   };
 
   // ── FOCUSED 2-USER CONVERSATION & SIDE PANEL STATES ──
@@ -3925,6 +3924,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             <Images className="w-4 h-4" />
           </button>
 
+          {/* AI Smart Notifications Center */}
+          <button
+            onClick={() => setShowNotificationCenter(true)}
+            className="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors relative"
+            title="Smart Notifications"
+          >
+            {unreadNotifCount > 0 ? (
+              <BellRing className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Bell className="w-4 h-4" />
+            )}
+            {unreadNotifCount > 0 && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[#F22679] ring-2 ring-emerald-400 animate-pulse" />
+            )}
+          </button>
+
           {/* 3-Dots Menu (Exact WhatsApp Picture 2 & Picture 3 Feature) */}
           <div className="relative">
             <button
@@ -7023,6 +7038,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           }}
         />
       )}
+
+      {/* ── AI SMART NOTIFICATION CENTER MODAL ── */}
+      <NotificationCenterModal
+        isOpen={showNotificationCenter}
+        onClose={() => setShowNotificationCenter(false)}
+        onSelectNotification={(notif) => {
+          if (notif.chatId && notif.chatId !== activeChatId) {
+            handleSelectConversation(notif.chatId);
+          }
+        }}
+        isDark={isDark}
+      />
     </div>
   );
 };

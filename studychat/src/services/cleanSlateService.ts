@@ -12,6 +12,7 @@
 
 import { clearRemoteChat, CHAT_ID, STUDY_GROUP_CHAT_ID } from './chatSyncService';
 import { statusService } from './statusService';
+import { smartNotificationService } from './smartNotificationService';
 import { getSupabase } from './supabaseClient';
 
 export const CLEAN_SLATE_VERSION_KEY = 'dhanya_clean_slate_fresh_v6';
@@ -95,6 +96,9 @@ export function purgeAllLocalDataSync(): void {
 
     // Reset status service in memory
     statusService.clearAll();
+
+    // Reset smart notifications in memory
+    smartNotificationService.clearAllNotifications();
 
     // Wipe IndexedDB databases
     if ('indexedDB' in window) {

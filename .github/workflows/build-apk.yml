@@ -27,16 +27,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: studychat/package.json
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify Android Environment
+        run: |
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "Java version:"
+          java -version
 
       - name: Install NPM Dependencies
         run: |
           cd studychat
-          npm install
+          npm install --no-audit
 
       - name: Build Web Application
         run: |

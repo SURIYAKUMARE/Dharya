@@ -4060,6 +4060,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                         Add shortcut
                       </button>
 
+                      <a
+                        href="https://github.com/SURIYAKUMARE/Dharya/releases"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowMenu(false)}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide text-emerald-600 dark:text-emerald-400 font-semibold"
+                      >
+                        📱 Download Android APK
+                      </a>
+
                       <button
                         onClick={() => {
                           setShowMenu(false);

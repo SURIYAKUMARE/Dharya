@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dhanya</string>
+    <string name="title_activity_main">Dhanya</string>
+    <string name="package_name">com.dhanya.navigation</string>
+    <string name="custom_url_scheme">com.dhanya.navigation</string>
+</resources>

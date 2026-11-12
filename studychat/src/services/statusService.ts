@@ -646,6 +646,28 @@ class StatusService {
   public getMutedUsers(): string[] {
     return this.mutedUsers;
   }
+
+  // ── Wipe all data (for fresh clean slate) ──
+  public clearAll() {
+    this.statuses = [];
+    this.views = [];
+    this.reactions = [];
+    this.replies = [];
+    this.highlights = [];
+    this.mutedUsers = [];
+    try {
+      localStorage.removeItem(STORAGE_STATUSES);
+      localStorage.removeItem(STORAGE_VIEWS);
+      localStorage.removeItem(STORAGE_REACTIONS);
+      localStorage.removeItem(STORAGE_REPLIES);
+      localStorage.removeItem(STORAGE_HIGHLIGHTS);
+      localStorage.removeItem(STORAGE_MUTED);
+      localStorage.removeItem('dhanya_status_items_v2');
+      localStorage.removeItem('dhanya_status_items_v1');
+    } catch {}
+    this.broadcastLocalSync();
+    this.notify();
+  }
 }
 
 export const statusService = new StatusService();

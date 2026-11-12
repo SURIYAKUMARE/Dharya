@@ -24,6 +24,7 @@ import {
   CHAT_ID,
 } from '../../services/chatSyncService';
 import { crossDeviceSync } from '../../services/crossDeviceSyncService';
+import { performFullCleanSlateReset } from '../../services/cleanSlateService';
 import {
   MessageSquare,
   Images,
@@ -2653,12 +2654,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     persistMessages([]);
     setShowMenu(false);
 
+    const targetChatId = activeChatIdRef.current || CHAT_ID;
+
     // Permanently delete all messages from Supabase DB
-    clearRemoteChat(CHAT_ID).catch((err) => {
+    clearRemoteChat(targetChatId).catch((err) => {
       console.warn('Failed to clear remote chat:', err);
     });
 
-    const clearPayload = { clearedBy: currentUser, chatId: CHAT_ID };
+    const clearPayload = { clearedBy: currentUser, chatId: targetChatId };
     crossDeviceSync.publish('chat_cleared', clearPayload);
     try {
       const activeChannel = channelRef.current || getSupabase().channel('whatsapp-one-on-one-room');
@@ -4025,6 +4028,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                       </button>
 
                       <button
+                        onClick={async () => {
+                          setShowMenu(false);
+                          if (window.confirm('Delete all messages, photos, videos, and statuses to make the app completely fresh like a brand new user?')) {
+                            await performFullCleanSlateReset();
+                            window.location.reload();
+                          }
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer block tracking-wide text-rose-600 dark:text-rose-400 font-semibold border-b border-black/5 dark:border-white/5"
+                      >
+                        Reset All (Fresh New User)
+                      </button>
+
+                      <button
                         onClick={() => {
                           setShowMenu(false);
                           handleExportChat();
@@ -4263,18 +4279,24 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {/* Clean Empty State when no messages exist yet */}
         {displayedMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center py-16 px-4 space-y-4 max-w-sm mx-auto">
-            <div className="w-16 h-16 rounded-full bg-[#182229] border border-[#2a3942] flex items-center justify-center shadow-lg">
-              <ShieldCheck className="w-7 h-7 text-emerald-400" />
+            <div className={`w-16 h-16 rounded-full border flex items-center justify-center shadow-lg ${
+              isDark ? 'bg-[#182229] border-[#2a3942]' : 'bg-white border-emerald-200 shadow-md'
+            }`}>
+              <ShieldCheck className="w-7 h-7 text-emerald-500" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-white">No messages yet</h3>
-              <p className="text-xs text-[#8696a0]">
-                All messages and gallery photos sent between you and <span className="text-emerald-400 font-semibold">{isGroupChat ? activeConversation.name : partnerName}</span> are stored safely and protected with TLS transport encryption and PostgreSQL Row-Level Security.
+              <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>No messages yet</h3>
+              <p className={`text-xs ${isDark ? 'text-[#8696a0]' : 'text-slate-500'}`}>
+                All messages and gallery photos sent between you and <span className="text-emerald-500 font-semibold">{isGroupChat ? activeConversation.name : partnerName}</span> are stored safely and protected with TLS transport encryption and PostgreSQL Row-Level Security.
               </p>
             </div>
             <button
               onClick={() => setShowSecurityModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#182229] border border-emerald-500/30 text-[11px] text-emerald-400 font-medium hover:bg-[#202c33] transition-colors"
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-medium transition-colors ${
+                isDark
+                  ? 'bg-[#182229] border-emerald-500/30 text-emerald-400 hover:bg-[#202c33]'
+                  : 'bg-white border-emerald-500/40 text-emerald-700 hover:bg-emerald-50 shadow-xs'
+              }`}
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Verify Security Status</span>

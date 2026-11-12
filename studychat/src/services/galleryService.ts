@@ -855,3 +855,19 @@ export async function deleteTimelineIncident(id: string): Promise<boolean> {
   }
 }
 
+/**
+ * Wipe all local gallery media, recycle bin, and custom timeline incidents
+ */
+export async function clearAllGalleryData(): Promise<void> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction([STORE_MEDIA, STORE_RECYCLE, STORE_TIMELINE], 'readwrite');
+    tx.objectStore(STORE_MEDIA).clear();
+    tx.objectStore(STORE_RECYCLE).clear();
+    tx.objectStore(STORE_TIMELINE).clear();
+  } catch (err) {
+    console.warn('[galleryService] clearAllGalleryData error:', err);
+  }
+}
+
+

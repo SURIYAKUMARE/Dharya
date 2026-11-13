@@ -23,22 +23,17 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Make Gradlew Executable Early
+      - name: Accept Android SDK Licenses & Install SDK
         run: |
-          chmod +x studychat/android/gradlew
-          chmod +x studychat/android/gradlew.bat || true
-
-      - name: Accept Android SDK Licenses
-        run: |
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0" || true
 
       - name: Install NPM Dependencies
         run: |
@@ -53,10 +48,12 @@ jobs:
       - name: Sync Capacitor Android
         run: |
           cd studychat
-          npx --yes @capacitor/cli sync android
+          npx cap sync android
 
       - name: Ensure Gradlew Permissions
-        run: chmod +x studychat/android/gradlew
+        run: |
+          chmod +x studychat/android/gradlew
+          chmod +x studychat/android/gradlew.bat || true
 
       - name: Build APK with Gradle
         run: |
@@ -91,6 +88,5 @@ jobs:
             - **Features:** Private Chat, AI Smart Notifications, Real-Time Status, Photo Gallery, Timeline
             - **Direct Download:** Download `Dhanya.apk` below and open it on your phone.
           files: apk-output/Dhanya.apk
-          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

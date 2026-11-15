@@ -119,16 +119,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     }
 
-    // Check Credential Fallback
-    if ((u === 'surya' || u === 'dharya' || u === 'sadhana') && (p === '09/10/2007' || p === '09102007' || p === 'surya')) {
-      setCurrentUser(USERS.sadhana);
-      sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
-      localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+    // Check Surya (09/10/2007) -> Space for Surya
+    if ((u === 'surya' || u === 'sec25ei091' || u === 'dharya' || u === '') && (p === '09/10/2007' || p === '09102007' || p === 'surya')) {
+      setCurrentUser(USERS.surya);
+      sessionStorage.setItem(AUTH_STORAGE_KEY, 'surya');
+      localStorage.setItem(AUTH_STORAGE_KEY, 'surya');
       return true;
     }
 
-    // Check Sadhana
-    if ((u === 'sadhana' || u === 'dharya') && (p === '29/02/2008' || p === '29022008' || p === 'sn@2902' || p === 'Sn@2902' || p === 'sadhana')) {
+    // Check Sadhana (29/02/2008 or Sn@2902) -> Space for Sadhana
+    if ((u === 'sadhana' || u === 'sec25ei091' || u === 'dharya' || u === '') && (p === '29/02/2008' || p === '29022008' || p === 'sn@2902' || p === 'Sn@2902' || p === 'sadhana')) {
       setCurrentUser(USERS.sadhana);
       sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
       localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');

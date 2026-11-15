@@ -85,7 +85,9 @@ export const PrivatePortalNav: React.FC = () => {
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#202c33] border border-[#2a3942] text-xs font-mono text-[#d1d7db]">
             <span className="w-2 h-2 rounded-full bg-[#00a884] animate-pulse" />
-            <span className="font-semibold text-white capitalize">{student?.name || 'SADHANA N'}</span>
+            <span className="font-semibold text-white capitalize">
+              {student?.username === 'surya' ? 'Surya' : 'Sadhana'}
+            </span>
           </div>
         </div>
       </div>

@@ -28,35 +28,25 @@ export const DharyaLoginPage: React.FC = () => {
     const u = username.trim().toUpperCase();
     const p = password.trim();
 
-    // 1. Authorized Credential Set 1: SEC25EI091 & Sn@2902
-    if (u === 'SEC25EI091' && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
+    // 1. Authorized Credential Set 1: SEC25EI091 & Sn@2902 (Sadhana)
+    if ((u === 'SEC25EI091' || u === 'SADHANA' || u === 'SADHANA N' || u === 'DHARYA' || u === '') && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
       quickLogin('sadhana');
       return;
     }
 
-    // 2. Authorized Credential Set 2: Surya: "SURYA" / "DHARYA" & "09/10/2007"
-    if ((u === 'SURYA' || u === 'DHARYA' || u === '') && (p === '09/10/2007' || p === '09102007')) {
+    // 2. Authorized Credential Set 2: SEC25EI091 & 09/10/2007 (Surya)
+    if ((u === 'SEC25EI091' || u === 'SURYA' || u === 'DHARYA' || u === '') && (p === '09/10/2007' || p === '09102007')) {
       quickLogin('surya');
       return;
     }
 
-    // 3. Authorized Credential Set 3: Sadhana: "SADHANA" / "DHARYA" & "29/02/2008" (or Sn@2902)
-    if ((u === 'SADHANA' || u === 'SADHANA N' || u === 'DHARYA' || u === '') && (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
-      quickLogin('sadhana');
-      return;
-    }
-
-    // Direct password match fallback if username is omitted
-    if (p === 'Sn@2902' || p === 'sn@2902') {
+    // Direct password match fallback
+    if (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
       return;
     }
     if (p === '09/10/2007' || p === '09102007') {
       quickLogin('surya');
-      return;
-    }
-    if (p === '29/02/2008' || p === '29022008') {
-      quickLogin('sadhana');
       return;
     }
 

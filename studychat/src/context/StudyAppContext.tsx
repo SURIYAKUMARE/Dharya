@@ -247,7 +247,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
     const prof: StudentProfile = {
       username: user,
-      name: user === 'surya' ? 'Surya' : 'SADHANA N',
+      name: 'SADHANA N',
       studentId: 'SEC25EI091',
       department: 'Electronics and Instrumentation Engineering',
       college: 'Sri Sairam Engineering College',

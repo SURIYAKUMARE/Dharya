@@ -3626,7 +3626,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         isOpenMobile={isNavSidebarOpen}
         onCloseMobile={() => setIsNavSidebarOpen(false)}
         isDark={isDark}
-        studentName={student?.name || 'SADHANA N'}
+        studentName={currentUser === 'surya' ? 'Surya' : 'Sadhana'}
         isPartnerOnline={isPartnerOnline}
         unreadCount={messages.filter((m) => !m.read && m.sender !== currentUser).length}
         onOpenProfile={() => setSidePanelMode((prev) => (prev === 'info' ? 'none' : 'info'))}
@@ -3664,16 +3664,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Status & Live Presence View */
           <WhatsAppStatusView
             isDark={isDark}
-            studentName={student?.name || 'SADHANA N'}
+            studentName={currentUser === 'surya' ? 'Surya' : 'Sadhana'}
             partnerName={partnerName}
             partnerUser={partnerUser}
             isPartnerOnline={isPartnerOnline}
             partnerLastSeen={partnerLastSeen}
             dateCount={dateCount}
             onSwitchUser={() => {
-              const nextUser = 'sadhana';
+              const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
               quickLogin(nextUser);
-              showToast('Active account: SADHANA N', 'info');
+              showToast(`Active account: ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
             }}
             onBackToChat={() => {
               setActiveMainView('chat');
@@ -3848,18 +3848,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {/* ── Active Account & 1-Click User Switcher ── */}
         <button
           onClick={() => {
-            quickLogin('sadhana');
-            showToast('Active account: SADHANA N', 'info');
+            const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
+            quickLogin(nextUser);
+            showToast(`Active account: ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
           }}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all shadow-xs cursor-pointer select-none ${
             isDark
               ? 'bg-[#182229] hover:bg-[#202c33] border-emerald-500/40 text-emerald-400'
               : 'bg-[#e7fce3] hover:bg-[#dcf8c6] border-[#00a884]/40 text-[#008069]'
           }`}
-          title="Active profile: SADHANA N (SEC25EI091)"
+          title={`Active profile: ${currentUser === 'surya' ? 'Surya' : 'Sadhana'} • Click to switch`}
         >
           <User className="w-3.5 h-3.5" />
-          <span className="capitalize">{student?.name || 'SADHANA N'}</span>
+          <span className="capitalize">{currentUser === 'surya' ? 'Surya' : 'Sadhana'}</span>
         </button>
 
         {/* ── Secure Lock & Return to Academic Mode (ENGIHUB) ── */}

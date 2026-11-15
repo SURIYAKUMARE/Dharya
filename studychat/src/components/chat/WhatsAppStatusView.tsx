@@ -767,10 +767,10 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
                   : 'bg-pink-50 hover:bg-pink-100 border-pink-300 text-pink-700'
               }`}
-              title="Active profile: SADHANA N (SEC25EI091)"
+              title={`Active profile: ${currentUser === 'surya' ? 'Surya' : 'Sadhana'} • Click to switch`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>SADHANA N</span>
+              <span>{currentUser === 'surya' ? 'Surya' : 'Sadhana'}</span>
               <span className="text-[10px] opacity-70 hidden sm:inline">⇄ Switch</span>
             </button>
           )}

@@ -1,43 +1,37 @@
 import { execSync } from 'child_process';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const androidDir = path.join(__dirname, 'android');
-const logFile = path.join(androidDir, 'gradle-build.log');
 
 console.log('=== RUNNING GRADLE DIAGNOSTIC IN NODE ===');
+const isWin = process.platform === 'win32';
+const gradlewCmd = isWin ? 'gradlew.bat' : './gradlew';
+
 try {
-  const isWin = process.platform === 'win32';
-  const gradlewCmd = isWin ? 'gradlew.bat' : './gradlew';
+  if (!isWin) {
+    execSync('chmod +x gradlew gradlew.bat', { cwd: androidDir });
+  }
+} catch (e) {}
 
-  try {
-    if (!isWin) {
-      execSync('chmod +x gradlew gradlew.bat', { cwd: androidDir });
-    }
-  } catch (e) {}
-
+try {
   const output = execSync(`${gradlewCmd} assembleDebug --no-daemon --stacktrace`, {
     cwd: androidDir,
     encoding: 'utf8',
     stdio: 'pipe'
   });
   console.log('=== GRADLE BUILD SUCCEEDED ===');
-  fs.writeFileSync(logFile, output);
+  console.log(output);
 } catch (error) {
-  console.error('=== GRADLE DIAGNOSTIC LOGGED ===');
-  let logContent = '';
-  if (error.stdout) {
-    console.log('STDOUT:\n', error.stdout);
-    logContent += `STDOUT:\n${error.stdout}\n`;
-  }
-  if (error.stderr) {
-    console.error('STDERR:\n', error.stderr);
-    logContent += `STDERR:\n${error.stderr}\n`;
-  }
-  logContent += `ERROR: ${error.message}\n`;
-  try {
-    fs.writeFileSync(logFile, logContent);
-  } catch (e) {}
+  const out = (error.stderr || error.stdout || error.message || '').toString();
+  // Find lines with FAILURE, ERROR, or Exception
+  const keyLines = out
+    .split('\n')
+    .filter((l) => /FAILURE|ERROR|Exception|caused by|failed/i.test(l))
+    .slice(0, 10)
+    .join(' --- ');
+
+  console.error('DIAGNOSTIC ERROR SUMMARY:', keyLines);
+  throw new Error(`GRADLE_FAIL: ${keyLines || out.slice(-500)}`);
 }

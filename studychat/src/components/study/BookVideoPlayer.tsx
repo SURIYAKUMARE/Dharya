@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { VideoResource } from '../../data/bookMediaResources';
 import {
   Play,
@@ -9,7 +9,8 @@ import {
   Layers,
   GraduationCap,
   ListVideo,
-  ChevronRight
+  ChevronRight,
+  Search
 } from 'lucide-react';
 
 interface BookVideoPlayerProps {
@@ -19,14 +20,33 @@ interface BookVideoPlayerProps {
 
 export const BookVideoPlayer: React.FC<BookVideoPlayerProps> = ({ videos, bookTitle }) => {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
-  const activeVideo = videos[activeVideoIndex] || videos[0];
+  const [filterTag, setFilterTag] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredVideos = useMemo(() => {
+    return videos.filter((vid) => {
+      const matchesSearch =
+        !searchQuery ||
+        vid.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vid.channel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vid.topicTag.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesTag =
+        filterTag === 'all' ||
+        vid.topicTag.toLowerCase().includes(filterTag.toLowerCase());
+
+      return matchesSearch && matchesTag;
+    });
+  }, [videos, searchQuery, filterTag]);
+
+  const activeVideo = filteredVideos[activeVideoIndex] || videos[0];
 
   if (!videos || videos.length === 0) return null;
 
   return (
     <div className="rounded-3xl bg-white border border-[#E5DFD5] shadow-sm overflow-hidden space-y-0">
       {/* Header Bar */}
-      <div className="px-6 py-4.5 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-transparent border-b border-[#E8E2D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="px-5 sm:px-6 py-4.5 bg-gradient-to-r from-red-500/5 via-orange-500/5 to-transparent border-b border-[#E8E2D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20 shrink-0">
             <Youtube className="w-5 h-5" />
@@ -34,11 +54,11 @@ export const BookVideoPlayer: React.FC<BookVideoPlayerProps> = ({ videos, bookTi
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-md border border-red-200">
-                Curated Video Lectures ({videos.length})
+                {videos.length} Curated Video Lectures
               </span>
               <span className="text-xs text-slate-400 font-mono hidden sm:inline">•</span>
               <span className="text-xs text-slate-500 font-medium hidden sm:inline">
-                NPTEL, MIT OCW &amp; Top Educators
+                NPTEL, 3Blue1Brown, MIT OCW &amp; Gate Smashers
               </span>
             </div>
             <h3 className="text-base sm:text-lg font-bold font-serif text-[#0F172A] mt-0.5">
@@ -51,7 +71,7 @@ export const BookVideoPlayer: React.FC<BookVideoPlayerProps> = ({ videos, bookTi
           href={`https://www.youtube.com/watch?v=${activeVideo.youtubeId}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 hover:text-red-600 transition-all shadow-2xs self-start sm:self-auto"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 hover:text-red-600 transition-all shadow-2xs self-start sm:self-auto cursor-pointer"
         >
           <span>Open on YouTube</span>
           <ExternalLink className="w-3.5 h-3.5" />
@@ -133,19 +153,34 @@ export const BookVideoPlayer: React.FC<BookVideoPlayerProps> = ({ videos, bookTi
         </div>
 
         {/* Playlist Drawer (4 cols) */}
-        <div className="lg:col-span-4 p-4 sm:p-6 bg-[#FAF8F5]/80 flex flex-col space-y-3">
-          <div className="flex items-center justify-between border-b border-[#E8E2D8] pb-3">
+        <div className="lg:col-span-4 p-4 sm:p-5 bg-[#FAF8F5]/80 flex flex-col space-y-3">
+          <div className="flex items-center justify-between border-b border-[#E8E2D8] pb-2.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <ListVideo className="w-4 h-4 text-red-500" />
-              <span>Video Playlist</span>
+              <span>Video Playlist ({filteredVideos.length})</span>
             </span>
             <span className="text-[11px] font-mono text-slate-400">
-              {activeVideoIndex + 1} / {videos.length}
+              {activeVideoIndex + 1} / {filteredVideos.length}
             </span>
           </div>
 
-          <div className="space-y-2 overflow-y-auto max-h-[480px] pr-1">
-            {videos.map((vid, idx) => {
+          {/* Quick Playlist Search */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setActiveVideoIndex(0);
+              }}
+              placeholder="Filter videos or lectures..."
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-400 shadow-2xs"
+            />
+          </div>
+
+          <div className="space-y-2 overflow-y-auto max-h-[460px] pr-1">
+            {filteredVideos.map((vid, idx) => {
               const isSelected = activeVideoIndex === idx;
               return (
                 <button
@@ -190,7 +225,7 @@ export const BookVideoPlayer: React.FC<BookVideoPlayerProps> = ({ videos, bookTi
           </div>
 
           <div className="mt-auto pt-3 border-t border-[#E8E2D8] text-[11px] text-slate-500 font-mono">
-            💡 Tip: Embedded videos run in ad-free privacy enhanced mode without tracking.
+            💡 Tip: All videos are curated to match AICTE &amp; GATE 2026 model syllabi.
           </div>
         </div>
       </div>

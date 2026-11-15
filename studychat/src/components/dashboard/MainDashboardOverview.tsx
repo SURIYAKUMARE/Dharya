@@ -33,7 +33,7 @@ export const MainDashboardOverview: React.FC<MainDashboardOverviewProps> = ({
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const { student } = useStudyApp();
 
-  const activeName = studentName || student?.name || 'Surya';
+  const activeName = studentName || student?.name || 'SADHANA N';
   const evalStats = getEvaluationStats();
 
   // Connect live stats from real application data

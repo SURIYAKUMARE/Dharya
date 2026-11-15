@@ -102,8 +102,8 @@ export const EvaluationView: React.FC = () => {
             </h1>
             <p className="text-xs sm:text-sm text-[#64748B] max-w-2xl leading-relaxed">
               Continuous examination transcripts, GATE mock scores, and domain competency analytics for candidate{' '}
-              <strong className="text-[#0F172A] font-semibold">{student?.name || 'Surya'}</strong> (
-              <span className="font-mono">{student?.studentId || 'ENG-2024-0910'}</span>).
+              <strong className="text-[#0F172A] font-semibold">{student?.name || 'SADHANA N'}</strong> (
+              <span className="font-mono">{student?.studentId || 'SEC25EI091'}</span> • {student?.department || 'Electronics and Instrumentation Engineering'}).
             </p>
           </div>
 
@@ -608,10 +608,10 @@ export const EvaluationView: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-            <div><strong>Candidate Name:</strong> {student?.name || 'Surya'}</div>
-            <div><strong>Student ID:</strong> {student?.studentId || 'ENG-2024-0910'}</div>
-            <div><strong>Department:</strong> {student?.department || 'Computer Science & Engineering'}</div>
-            <div><strong>Semester:</strong> {student?.semester || 'Semester 4'}</div>
+            <div><strong>Candidate Name:</strong> {student?.name || 'SADHANA N'}</div>
+            <div><strong>Student ID:</strong> {student?.studentId || 'SEC25EI091'}</div>
+            <div><strong>Department:</strong> {student?.department || 'Electronics and Instrumentation Engineering'}</div>
+            <div><strong>Institution:</strong> {student?.college || 'Sri Sairam Engineering College'}</div>
           </div>
 
           <div className="border border-gray-300 rounded p-4 mb-6">

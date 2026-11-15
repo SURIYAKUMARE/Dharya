@@ -19,28 +19,28 @@ export interface UserProfile {
 export const USERS: Record<UserKey, UserProfile> = {
   surya: {
     id: 'surya',
-    name: 'Surya',
-    partnerName: 'Sadhana',
+    name: 'SADHANA N',
+    partnerName: 'SADHANA N',
     partnerKey: 'sadhana',
     emoji: '🌿',
     partnerEmoji: '❤️',
     theme: 'th-g',
     accentColor: '#10b981',
     accentGlow: 'rgba(16,185,129,0.25)',
-    greeting: 'Welcome back, Surya 🌿',
+    greeting: 'Welcome back, SADHANA N ✨',
     avatarLetter: 'S'
   },
   sadhana: {
     id: 'sadhana',
-    name: 'Sadhana',
-    partnerName: 'Surya',
+    name: 'SADHANA N',
+    partnerName: 'SADHANA N',
     partnerKey: 'surya',
     emoji: '❤️',
     partnerEmoji: '🌿',
     theme: 'th-p',
     accentColor: '#f43f5e',
     accentGlow: 'rgba(244,63,94,0.25)',
-    greeting: 'Welcome back, Sadhana ❤️',
+    greeting: 'Welcome back, SADHANA N ✨',
     avatarLetter: 'S'
   }
 };
@@ -119,11 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     }
 
-    // Check Surya
-    if ((u === 'surya' || u === 'dharya') && (p === '09/10/2007' || p === '09102007' || p === 'surya')) {
-      setCurrentUser(USERS.surya);
-      sessionStorage.setItem(AUTH_STORAGE_KEY, 'surya');
-      localStorage.setItem(AUTH_STORAGE_KEY, 'surya');
+    // Check Credential Fallback
+    if ((u === 'surya' || u === 'dharya' || u === 'sadhana') && (p === '09/10/2007' || p === '09102007' || p === 'surya')) {
+      setCurrentUser(USERS.sadhana);
+      sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+      localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
       return true;
     }
 

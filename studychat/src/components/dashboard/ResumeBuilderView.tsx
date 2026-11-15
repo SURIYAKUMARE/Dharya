@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { FileEdit, Download, Printer, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export const ResumeBuilderView: React.FC = () => {
-  const [name, setName] = useState('Surya');
-  const [title, setTitle] = useState('Full Stack Software Engineer');
-  const [email, setEmail] = useState('surya@algotutor.io');
+  const [name, setName] = useState('SADHANA N');
+  const [title, setTitle] = useState('Electronics and Instrumentation Engineer');
+  const [email, setEmail] = useState('sec25ei091@sairam.edu.in');
   const [phone, setPhone] = useState('+91 98765 43210');
   const [summary, setSummary] = useState(
     'Passionate Full-Stack Developer with strong foundations in Data Structures, Algorithms, Distributed Systems, and MERN stack. Solved 380+ coding problems and developed multi-tier microservices.'

@@ -65,28 +65,20 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess, onOpenSecretMod
           </p>
         </div>
 
-        {/* 2-User Direct Switcher (Surya & Sadhana Only) */}
+        {/* Institutional Student Quick Access */}
         <div className="mb-6">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span>Verified Student Profiles</span>
-            <span className="text-[10px] text-emerald-400 font-mono">2 Registered Users</span>
+            <span>Institutional Profile</span>
+            <span className="text-[10px] text-emerald-400 font-mono">Sri Sairam Engineering College</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('surya')}
-              className="px-3 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]" />
-              <span>🌿 Surya</span>
-            </button>
+          <div>
             <button
               type="button"
               onClick={() => handleQuickLogin('sadhana')}
-              className="px-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full px-3 py-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98]"
             >
-              <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_8px_#f43f5e]" />
-              <span>❤️ Sadhana</span>
+              <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_#3b82f6]" />
+              <span>SADHANA N • SEC25EI091</span>
             </button>
           </div>
         </div>
@@ -134,16 +126,10 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess, onOpenSecretMod
           {/* Live Name Detection Indicator */}
           {detectedUserKey && (
             <div
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all ${
-                detectedUserKey === 'surya'
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
-                  : 'bg-rose-500/15 border-rose-500/40 text-rose-300'
-              }`}
+              className="py-2 px-3 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
             >
               <Sparkles className="w-3.5 h-3.5 animate-bounce" />
-              <span>
-                {detectedUserKey === 'surya' ? 'Surya detected ✓' : 'Sadhana detected ✓'}
-              </span>
+              <span>SADHANA N detected ✓</span>
             </div>
           )}
 

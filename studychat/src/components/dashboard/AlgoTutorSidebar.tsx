@@ -1,4 +1,5 @@
 import React from 'react';
+import { useStudyApp } from '../../context/StudyAppContext';
 import {
   LayoutDashboard,
   GraduationCap,
@@ -96,6 +97,8 @@ export const AlgoTutorSidebar: React.FC<AlgoTutorSidebarProps> = ({
   isOpenMobile,
   onCloseMobile
 }) => {
+  const { student } = useStudyApp();
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -192,8 +195,8 @@ export const AlgoTutorSidebar: React.FC<AlgoTutorSidebarProps> = ({
             S
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-[#172B4D] truncate">Surya</div>
-            <div className="text-[10px] text-[#64748B] truncate font-mono">Rank #54 • 8019 pts</div>
+            <div className="text-xs font-bold text-[#172B4D] truncate">{student?.name || 'SADHANA N'}</div>
+            <div className="text-[10px] text-[#64748B] truncate font-mono">{student?.studentId || 'SEC25EI091'}</div>
           </div>
         </div>
       </aside>

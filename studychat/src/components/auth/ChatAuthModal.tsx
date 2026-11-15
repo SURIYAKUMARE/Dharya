@@ -23,34 +23,17 @@ export const ChatAuthModal: React.FC = () => {
       return;
     }
 
-    // 2. Authorized Set 2: Surya: "SURYA" / "DHARYA" & "09/10/2007"
-    const isAuthorized = u === 'DHARYA' || u === 'SURYA' || u === 'SADHANA' || u === '';
+    // 2. Authorized Set 2: "SADHANA" / "DHARYA" & "09/10/2007" / "29/02/2008" / "Sn@2902"
+    const isAuthorized = u === 'DHARYA' || u === 'SADHANA' || u === 'SADHANA N' || u === '';
 
-    if (isAuthorized && (p === '09/10/2007' || p === '09102007')) {
-      quickLogin('surya');
-      switchTab('chat');
-      return;
-    }
-
-    // 3. Authorized Set 3: Sadhana: "SADHANA" / "DHARYA" & "29/02/2008" (or Sn@2902)
-    if (isAuthorized && (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
+    if (isAuthorized && (p === '09/10/2007' || p === '09102007' || p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
       quickLogin('sadhana');
       switchTab('chat');
       return;
     }
 
     // Direct password match fallback
-    if (p === 'Sn@2902' || p === 'sn@2902') {
-      quickLogin('sadhana');
-      switchTab('chat');
-      return;
-    }
-    if (p === '09/10/2007' || p === '09102007') {
-      quickLogin('surya');
-      switchTab('chat');
-      return;
-    }
-    if (p === '29/02/2008' || p === '29022008') {
+    if (p === 'Sn@2902' || p === 'sn@2902' || p === '09/10/2007' || p === '09102007' || p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
       switchTab('chat');
       return;

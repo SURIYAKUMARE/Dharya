@@ -34,28 +34,14 @@ export const DharyaLoginPage: React.FC = () => {
       return;
     }
 
-    // 2. Authorized Credential Set 2: Surya: "SURYA" / "DHARYA" & "09/10/2007"
-    if ((u === 'SURYA' || u === 'DHARYA' || u === '') && (p === '09/10/2007' || p === '09102007')) {
-      quickLogin('surya');
-      return;
-    }
-
-    // 3. Authorized Credential Set 3: Sadhana: "SADHANA" / "DHARYA" & "29/02/2008" (or Sn@2902)
-    if ((u === 'SADHANA' || u === 'DHARYA' || u === '') && (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
+    // 2. Authorized Credential Set 2: "SADHANA" / "DHARYA" & "09/10/2007" / "29/02/2008" / "Sn@2902"
+    if ((u === 'SADHANA' || u === 'SADHANA N' || u === 'DHARYA' || u === '') && (p === '09/10/2007' || p === '09102007' || p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
       quickLogin('sadhana');
       return;
     }
 
     // Direct password match fallback if username is omitted
-    if (p === 'Sn@2902' || p === 'sn@2902') {
-      quickLogin('sadhana');
-      return;
-    }
-    if (p === '09/10/2007' || p === '09102007') {
-      quickLogin('surya');
-      return;
-    }
-    if (p === '29/02/2008' || p === '29022008') {
+    if (p === 'Sn@2902' || p === 'sn@2902' || p === '09/10/2007' || p === '09102007' || p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
       return;
     }
@@ -108,14 +94,17 @@ export const DharyaLoginPage: React.FC = () => {
             </div>
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-mono font-bold tracking-wider uppercase mb-1">
-                AICTE &amp; GATE MODEL SYLLABUS
+                SRI SAIRAM ENGINEERING COLLEGE
               </div>
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 font-serif">
                 Student Assessment Portal
               </h1>
+              <div className="text-[11px] font-medium text-blue-600 mt-0.5">
+                Dept. of Electronics and Instrumentation Engineering
+              </div>
             </div>
             <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-              Verify your student identity to take proctored course assessments or record semester scores.
+              Verify student credentials (SEC25EI091) to take proctored course assessments or record semester scores.
             </p>
           </div>
 

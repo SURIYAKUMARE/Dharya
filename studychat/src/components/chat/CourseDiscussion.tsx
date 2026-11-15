@@ -243,7 +243,7 @@ export const CourseDiscussion: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 min-h-[420px] max-h-[560px]">
         <div className="text-center">
           <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-slate-400 uppercase tracking-wider font-mono">
-            {isCamouflaged ? 'COURSE DISCUSSION ARCHIVE' : 'END-TO-END PRIVATE SPACE ✦ SURYA & SADHANA'}
+            {isCamouflaged ? 'COURSE DISCUSSION ARCHIVE' : 'END-TO-END PRIVATE SPACE ✦ SADHANA N (SEC25EI091)'}
           </span>
         </div>
 

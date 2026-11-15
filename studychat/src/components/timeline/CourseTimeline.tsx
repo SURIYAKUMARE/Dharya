@@ -143,7 +143,7 @@ export const CourseTimeline: React.FC = () => {
                       <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
                       <span>{m.tag}</span>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-mono">Surya &amp; Sadhana Milestone</span>
+                    <span className="text-[11px] text-slate-400 font-mono">SADHANA N Milestone</span>
                   </div>
                 )}
               </div>

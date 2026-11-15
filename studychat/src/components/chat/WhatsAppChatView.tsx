@@ -135,7 +135,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   // Active user and partner details
   const currentUser: 'surya' | 'sadhana' = student?.username === 'sadhana' ? 'sadhana' : 'surya';
   const partnerUser: 'surya' | 'sadhana' = currentUser === 'surya' ? 'sadhana' : 'surya';
-  const partnerName = partnerUser === 'sadhana' ? 'Sadhana' : 'Surya';
+  const partnerName = 'SADHANA N';
 
   // Active Conversation Routing & Identity
   const [activeChatId, setActiveChatId] = useState<string>(() => {
@@ -335,7 +335,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const triggerBrowserNotification = (msg: ExtendedChatMessage) => {
     if (isConversationMuted) return;
-    const senderDisplay = msg.sender === 'sadhana' ? 'Sadhana' : 'Surya';
+    const senderDisplay = msg.sender === 'sadhana' ? 'Sadhana' : 'Dhanya';
     smartNotificationService.processIncomingMessage(msg, senderDisplay);
   };
 
@@ -2580,7 +2580,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   // Export Chat to Text File
   const handleExportChat = () => {
     const lines = messages.map((m) => {
-      const senderName = m.sender === 'sadhana' ? 'Sadhana' : 'Surya';
+      const senderName = m.sender === 'sadhana' ? 'Sadhana' : 'Dhanya';
       const timeStr = m.time || new Date(m.timestamp).toLocaleTimeString();
       let content = m.text || '';
       if (m.type === 'image') content = '[Photo] ' + content;
@@ -3626,7 +3626,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         isOpenMobile={isNavSidebarOpen}
         onCloseMobile={() => setIsNavSidebarOpen(false)}
         isDark={isDark}
-        studentName={student?.name || 'Surya'}
+        studentName={student?.name || 'SADHANA N'}
         isPartnerOnline={isPartnerOnline}
         unreadCount={messages.filter((m) => !m.read && m.sender !== currentUser).length}
         onOpenProfile={() => setSidePanelMode((prev) => (prev === 'info' ? 'none' : 'info'))}
@@ -3664,16 +3664,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           /* Status & Live Presence View */
           <WhatsAppStatusView
             isDark={isDark}
-            studentName={student?.name || 'Surya'}
+            studentName={student?.name || 'SADHANA N'}
             partnerName={partnerName}
             partnerUser={partnerUser}
             isPartnerOnline={isPartnerOnline}
             partnerLastSeen={partnerLastSeen}
             dateCount={dateCount}
             onSwitchUser={() => {
-              const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
+              const nextUser = 'sadhana';
               quickLogin(nextUser);
-              showToast(`Switched account to ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
+              showToast('Active account: SADHANA N', 'info');
             }}
             onBackToChat={() => {
               setActiveMainView('chat');
@@ -3808,7 +3808,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             {isGroupChat ? (
               <p className={`text-[12px] text-[#8696a0] font-normal leading-tight truncate max-w-[200px] sm:max-w-xs ${fontClass}`}>
-                {activeConversation.participants.map((p) => (p === currentUser ? 'You' : p === 'sadhana' ? 'Sadhana' : 'Surya')).join(', ')}
+                {activeConversation.participants.map((p) => (p === currentUser ? 'You' : 'SADHANA N')).join(', ')}
               </p>
             ) : isPartnerTyping ? (
               <p className={`text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse ${fontClass}`}>
@@ -3848,20 +3848,18 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         {/* ── Active Account & 1-Click User Switcher ── */}
         <button
           onClick={() => {
-            const nextUser = currentUser === 'surya' ? 'sadhana' : 'surya';
-            quickLogin(nextUser);
-            showToast(`Switched account to ${nextUser === 'surya' ? 'Surya' : 'Sadhana'}`, 'info');
+            quickLogin('sadhana');
+            showToast('Active account: SADHANA N', 'info');
           }}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all shadow-xs cursor-pointer select-none ${
             isDark
               ? 'bg-[#182229] hover:bg-[#202c33] border-emerald-500/40 text-emerald-400'
               : 'bg-[#e7fce3] hover:bg-[#dcf8c6] border-[#00a884]/40 text-[#008069]'
           }`}
-          title={`Logged in as ${currentUser === 'surya' ? 'Surya' : 'Sadhana'}. Tap to switch to ${currentUser === 'surya' ? 'Sadhana' : 'Surya'}`}
+          title="Active profile: SADHANA N (SEC25EI091)"
         >
           <User className="w-3.5 h-3.5" />
-          <span className="capitalize">{currentUser}</span>
-          <span className="text-[10px] opacity-70 hidden md:inline">• Switch</span>
+          <span className="capitalize">{student?.name || 'SADHANA N'}</span>
         </button>
 
         {/* ── Secure Lock & Return to Academic Mode (ENGIHUB) ── */}
@@ -6532,7 +6530,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                                 color: th.bubbleOutgoingText,
                               }}
                             >
-                              Hey Surya! 💕
+                              Hey Sadhana! 💕
                             </span>
                           </div>
                           <div className="flex justify-start">

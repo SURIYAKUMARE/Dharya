@@ -36,7 +36,7 @@ export const AlgoTutorDashboardPage: React.FC<AlgoTutorDashboardPageProps> = ({
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'Surya'} />;
+        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'SADHANA N'} />;
       case 'courses':
         return <AcademicCoursesView onNavigate={setCurrentView} />;
       case 'coding':
@@ -56,7 +56,7 @@ export const AlgoTutorDashboardPage: React.FC<AlgoTutorDashboardPageProps> = ({
       case 'settings':
         return <SettingsView />;
       default:
-        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'Surya'} />;
+        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'SADHANA N'} />;
     }
   };
 

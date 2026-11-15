@@ -33,7 +33,7 @@ export const AlgoTutorHeader: React.FC<AlgoTutorHeaderProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const studentInitial = (student?.name || 'Surya').charAt(0).toUpperCase();
+  const studentInitial = (student?.name || 'SADHANA N').charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] h-16 px-4 sm:px-6 flex items-center justify-between shadow-2xs">
@@ -130,7 +130,7 @@ export const AlgoTutorHeader: React.FC<AlgoTutorHeaderProps> = ({
               {studentInitial}
             </div>
             <div className="text-left hidden sm:block">
-              <div className="text-xs font-bold text-[#172B4D] leading-tight">{student?.name || 'Surya'}</div>
+              <div className="text-xs font-bold text-[#172B4D] leading-tight">{student?.name || 'SADHANA N'}</div>
               <div className="text-[10px] text-[#64748B] font-medium leading-tight">Student</div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -139,8 +139,8 @@ export const AlgoTutorHeader: React.FC<AlgoTutorHeaderProps> = ({
           {isProfileMenuOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-[#E2E8F0] p-2 space-y-1 z-50 animate-in fade-in duration-150">
               <div className="px-3 py-2 border-b border-slate-100 text-xs">
-                <div className="font-bold text-[#172B4D]">{student?.name || 'Surya'}</div>
-                <div className="text-[10px] text-[#64748B] font-mono">{student?.studentId || 'ENG-2024-0910'}</div>
+                <div className="font-bold text-[#172B4D]">{student?.name || 'SADHANA N'}</div>
+                <div className="text-[10px] text-[#64748B] font-mono">{student?.studentId || 'SEC25EI091'}</div>
               </div>
 
               <button

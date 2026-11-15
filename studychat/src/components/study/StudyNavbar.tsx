@@ -129,10 +129,10 @@ export const StudyNavbar: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute" />
               </div>
               <span className="hidden sm:inline font-semibold">
-                {student?.name || 'Surya'} • {student?.semester || 'Sem 4'}
+                {student?.name || 'SADHANA N'} • {student?.semester || 'Sem 4'}
               </span>
               <span className="sm:hidden font-bold text-[11px]">
-                {student?.name || 'Surya'}
+                {student?.name || 'SADHANA N'}
               </span>
             </button>
           </div>

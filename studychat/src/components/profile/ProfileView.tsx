@@ -19,18 +19,20 @@ export const ProfileView: React.FC = () => {
   const { student, updateStudentProfile, assessmentRecord, isChatAuthenticated, logoutChat, tasks, switchTab } = useStudyApp();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(student?.name || 'Surya');
-  const [editStudentId, setEditStudentId] = useState(student?.studentId || 'ENG-2024-0910');
-  const [editDepartment, setEditDepartment] = useState(student?.department || 'Computer Science & Engineering');
+  const [editName, setEditName] = useState(student?.name || 'SADHANA N');
+  const [editStudentId, setEditStudentId] = useState(student?.studentId || 'SEC25EI091');
+  const [editDepartment, setEditDepartment] = useState(student?.department || 'Electronics and Instrumentation Engineering');
+  const [editCollege, setEditCollege] = useState(student?.college || 'Sri Sairam Engineering College');
   const [editSemester, setEditSemester] = useState(student?.semester || 'Semester 4');
 
   const completedTasks = tasks.filter((t) => t.status === 'Completed').length;
   const pendingTasks = tasks.filter((t) => t.status === 'Pending').length;
 
   const handleOpenEdit = () => {
-    setEditName(student?.name || 'Surya');
-    setEditStudentId(student?.studentId || 'ENG-2024-0910');
-    setEditDepartment(student?.department || 'Computer Science & Engineering');
+    setEditName(student?.name || 'SADHANA N');
+    setEditStudentId(student?.studentId || 'SEC25EI091');
+    setEditDepartment(student?.department || 'Electronics and Instrumentation Engineering');
+    setEditCollege(student?.college || 'Sri Sairam Engineering College');
     setEditSemester(student?.semester || 'Semester 4');
     setIsEditing(true);
   };
@@ -41,8 +43,9 @@ export const ProfileView: React.FC = () => {
 
     updateStudentProfile({
       name: editName.trim(),
-      studentId: editStudentId.trim() || 'ENG-2024-0910',
-      department: editDepartment.trim() || 'Computer Science & Engineering',
+      studentId: editStudentId.trim() || 'SEC25EI091',
+      department: editDepartment.trim() || 'Electronics and Instrumentation Engineering',
+      college: editCollege.trim() || 'Sri Sairam Engineering College',
       semester: editSemester.trim() || 'Semester 4',
     });
 
@@ -63,14 +66,17 @@ export const ProfileView: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] font-serif">
-                {student?.name || 'Surya'}
+                {student?.name || 'SADHANA N'}
               </h2>
               <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-medium bg-[#E8EFEA] text-[#2D4A3E] border border-[#CCD8CF]">
-                {student?.studentId || 'ENG-2024-0910'}
+                {student?.studentId || 'SEC25EI091'}
               </span>
             </div>
             <p className="text-xs text-[#64748B] font-mono">
-              {student?.department || 'Department of Computer Science & Engineering'} • {student?.semester || 'Semester 4'}
+              {student?.department || 'Electronics and Instrumentation Engineering'} • {student?.semester || 'Semester 4'}
+            </p>
+            <p className="text-[11px] text-[#2563EB] font-medium">
+              {student?.college || 'Sri Sairam Engineering College'}
             </p>
           </div>
         </div>
@@ -220,8 +226,21 @@ export const ProfileView: React.FC = () => {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Enter your name (e.g. Surya or Sadhana)"
+                  placeholder="Enter your name (e.g. SADHANA N)"
                   required
+                  className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm focus:outline-none focus:border-[#1273C4]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#334155] mb-1.5">
+                  Institution / College
+                </label>
+                <input
+                  type="text"
+                  value={editCollege}
+                  onChange={(e) => setEditCollege(e.target.value)}
+                  placeholder="e.g. Sri Sairam Engineering College"
                   className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm focus:outline-none focus:border-[#1273C4]"
                 />
               </div>
@@ -234,7 +253,7 @@ export const ProfileView: React.FC = () => {
                   type="text"
                   value={editStudentId}
                   onChange={(e) => setEditStudentId(e.target.value)}
-                  placeholder="e.g. ENG-2024-0910"
+                  placeholder="e.g. SEC25EI091"
                   className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm focus:outline-none focus:border-[#1273C4] font-mono"
                 />
               </div>
@@ -247,7 +266,7 @@ export const ProfileView: React.FC = () => {
                   type="text"
                   value={editDepartment}
                   onChange={(e) => setEditDepartment(e.target.value)}
-                  placeholder="e.g. Computer Science & Engineering"
+                  placeholder="e.g. Electronics and Instrumentation Engineering"
                   className="w-full px-4 py-2.5 rounded-2xl bg-[#FAF8F5] border border-[#CBD5E1] text-[#0F172A] text-sm focus:outline-none focus:border-[#1273C4]"
                 />
               </div>

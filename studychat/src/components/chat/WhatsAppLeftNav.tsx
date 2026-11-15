@@ -30,7 +30,7 @@ export const WhatsAppLeftNav: React.FC<WhatsAppLeftNavProps> = ({
   isOpenMobile = false,
   onCloseMobile,
   isDark = false,
-  studentName = 'Surya',
+  studentName = 'SADHANA N',
   isPartnerOnline = false,
   unreadCount = 0,
 }) => {

@@ -70,17 +70,19 @@ export const NotesView: React.FC = () => {
 // 2. Settings & Profile View connected to student state
 export const SettingsView: React.FC = () => {
   const { student, updateStudentProfile } = useStudyApp();
-  const [name, setName] = useState(student?.name || 'Surya');
+  const [name, setName] = useState(student?.name || 'SADHANA N');
   const [semester, setSemester] = useState(student?.semester || '4th Semester');
-  const [studentId] = useState(student?.studentId || 'ENG-2024-0910');
-  const [department, setDepartment] = useState(student?.department || 'Computer Science & Engineering');
+  const [studentId] = useState(student?.studentId || 'SEC25EI091');
+  const [department, setDepartment] = useState(student?.department || 'Electronics and Instrumentation Engineering');
+  const [college, setCollege] = useState(student?.college || 'Sri Sairam Engineering College');
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = () => {
     updateStudentProfile({
-      name: name.trim() || 'Surya',
+      name: name.trim() || 'SADHANA N',
       semester: semester.trim(),
-      department: department.trim()
+      department: department.trim(),
+      college: college.trim()
     });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
@@ -95,7 +97,7 @@ export const SettingsView: React.FC = () => {
           </div>
           <div>
             <h3 className="text-lg font-bold text-[#172B4D]">Student Profile &amp; Preferences</h3>
-            <p className="text-xs text-slate-500">Manage your identity and academic records across the portal</p>
+            <p className="text-xs text-slate-500">Manage your identity and institutional records across the portal</p>
           </div>
         </div>
 
@@ -107,6 +109,16 @@ export const SettingsView: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full p-2.5 rounded-xl border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-[#0875E1] focus:ring-1 focus:ring-[#0875E1]"
+            />
+          </div>
+
+          <div>
+            <label className="font-semibold text-slate-700 block mb-1.5">Institution / College</label>
+            <input
+              type="text"
+              value={college}
+              onChange={(e) => setCollege(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-slate-300 font-medium text-slate-800 focus:outline-none focus:border-[#0875E1]"
             />
           </div>
 
@@ -137,7 +149,7 @@ export const SettingsView: React.FC = () => {
                 type="text"
                 value={studentId}
                 disabled
-                className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-100 font-mono text-slate-500"
+                className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-100 font-mono text-slate-500 font-bold"
               />
             </div>
           </div>

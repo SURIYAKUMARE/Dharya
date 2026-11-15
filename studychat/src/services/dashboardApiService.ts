@@ -171,7 +171,7 @@ export const INITIAL_LEADERBOARD: LeaderboardStudent[] = [
   },
   {
     rank: 5,
-    name: 'Surya (You)',
+    name: 'SADHANA N (You)',
     points: 8019,
     solved: 380,
     accuracy: 85.6,

@@ -143,7 +143,7 @@ export const SecretArchiveModal: React.FC<SecretArchiveModalProps> = ({ isOpen, 
         <div className="mt-4 pt-3 border-t border-white/10 text-center w-full">
           <div className="flex items-center justify-center gap-1 text-[11px] text-slate-500 font-mono">
             <KeyRound className="w-3 h-3 text-purple-400" />
-            <span>Cleared for Surya &amp; Sadhana only</span>
+            <span>Cleared for SADHANA N only</span>
           </div>
         </div>
       </div>

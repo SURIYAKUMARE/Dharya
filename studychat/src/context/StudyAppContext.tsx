@@ -20,6 +20,7 @@ export interface StudentProfile {
   name: string;
   studentId: string;
   department: string;
+  college?: string;
   semester: string;
 }
 
@@ -110,13 +111,19 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [student, setStudent] = useState<StudentProfile | null>(() => {
     try {
       const saved = sessionStorage.getItem('study_student_profile') || localStorage.getItem('study_student_profile');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.name && !parsed.name.toLowerCase().includes('surya')) {
+          return parsed;
+        }
+      }
     } catch {}
     return {
-      username: 'surya',
-      name: 'Surya',
-      studentId: 'ENG-2024-0910',
-      department: 'Computer Science & Engineering',
+      username: 'sadhana',
+      name: 'SADHANA N',
+      studentId: 'SEC25EI091',
+      department: 'Electronics and Instrumentation Engineering',
+      college: 'Sri Sairam Engineering College',
       semester: 'Semester 4',
     };
   });
@@ -124,10 +131,11 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateStudentProfile = (updated: Partial<StudentProfile>) => {
     setStudent((prev) => {
       const next: StudentProfile = {
-        username: prev?.username || 'surya',
-        name: updated.name !== undefined ? updated.name : prev?.name || 'Surya',
-        studentId: updated.studentId !== undefined ? updated.studentId : prev?.studentId || 'ENG-2024-0910',
-        department: updated.department !== undefined ? updated.department : prev?.department || 'Computer Science & Engineering',
+        username: prev?.username || 'sadhana',
+        name: updated.name !== undefined ? updated.name : prev?.name || 'SADHANA N',
+        studentId: updated.studentId !== undefined ? updated.studentId : prev?.studentId || 'SEC25EI091',
+        department: updated.department !== undefined ? updated.department : prev?.department || 'Electronics and Instrumentation Engineering',
+        college: updated.college !== undefined ? updated.college : prev?.college || 'Sri Sairam Engineering College',
         semester: updated.semester !== undefined ? updated.semester : prev?.semester || 'Semester 4',
       };
       sessionStorage.setItem('study_student_profile', JSON.stringify(next));
@@ -237,47 +245,24 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
-    if (user === 'surya') {
-      const prof: StudentProfile = {
-        username: 'surya',
-        name: 'Surya',
-        studentId: 'ENG-2024-0910',
-        department: 'Computer Science & Engineering',
-        semester: '4th Semester',
-      };
-      setStudent(prof);
-      setIsChatAuthenticated(true);
-      // Session-only authentication: never store permanent login bypass in localStorage
-      sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
-      localStorage.setItem('study_student_profile', JSON.stringify(prof));
-      localStorage.setItem('studyportal_current_user', 'surya');
-      setAssessmentNotice(null);
-      setActiveTab('chat');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return true;
-    }
-
-    if (user === 'sadhana') {
-      const prof: StudentProfile = {
-        username: 'sadhana',
-        name: 'Sadhana',
-        studentId: 'ENG-2024-2902',
-        department: 'Information Technology',
-        semester: '4th Semester',
-      };
-      setStudent(prof);
-      setIsChatAuthenticated(true);
-      // Session-only authentication: never store permanent login bypass in localStorage
-      sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
-      localStorage.setItem('study_student_profile', JSON.stringify(prof));
-      localStorage.setItem('studyportal_current_user', 'sadhana');
-      setAssessmentNotice(null);
-      setActiveTab('chat');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return true;
-    }
-
-    return false;
+    const prof: StudentProfile = {
+      username: 'sadhana',
+      name: 'SADHANA N',
+      studentId: 'SEC25EI091',
+      department: 'Electronics and Instrumentation Engineering',
+      college: 'Sri Sairam Engineering College',
+      semester: '4th Semester',
+    };
+    setStudent(prof);
+    setIsChatAuthenticated(true);
+    // Session-only authentication: never store permanent login bypass in localStorage
+    sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
+    localStorage.setItem('study_student_profile', JSON.stringify(prof));
+    localStorage.setItem('studyportal_current_user', 'sadhana');
+    setAssessmentNotice(null);
+    setActiveTab('chat');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return true;
   };
 
   const loginToChat = (usernameInput: string, passwordInput: string): boolean => {
@@ -294,7 +279,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (isAuthorized) {
       if (p === '09/10/2007' || p === '09102007') {
-        return quickLogin('surya');
+        return quickLogin('sadhana');
       }
       if (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902') {
         return quickLogin('sadhana');
@@ -306,7 +291,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return quickLogin('sadhana');
     }
     if (p === '09/10/2007' || p === '09102007') {
-      return quickLogin('surya');
+      return quickLogin('sadhana');
     }
     if (p === '29/02/2008' || p === '29022008') {
       return quickLogin('sadhana');

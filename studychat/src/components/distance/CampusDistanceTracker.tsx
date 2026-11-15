@@ -69,7 +69,7 @@ export const CampusDistanceTracker: React.FC = () => {
             {distanceKm} km
           </div>
           <p className="text-xs font-mono text-slate-400 uppercase tracking-wider">
-            {isMasked ? 'Inter-Campus Network Telemetry Link' : `Inter-Campus Real-Time Telemetry Link`}
+            {isMasked ? 'Inter-Campus Network Telemetry Link' : `Distance Between Surya & Sadhana`}
           </p>
         </div>
 

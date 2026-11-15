@@ -205,8 +205,8 @@ function createMelodyWavDataUri(notes: number[], durationSec = 15): string {
 
 export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   isDark = false,
-  studentName = 'SADHANA N',
-  partnerName = 'Dhanya',
+  studentName = 'Sadhana',
+  partnerName = 'Surya',
   partnerUser,
   onBackToChat,
   onSwitchUser,
@@ -293,7 +293,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   // ── Record View on Open ──
   useEffect(() => {
     if (activeStoryItem && activeStoryGroup === 'partner') {
-      const viewerName = 'SADHANA N';
+      const viewerName = currentUser === 'surya' ? 'Surya' : 'Sadhana';
       const viewerAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
       statusService.recordView(activeStoryItem.id, {
         id: currentUser,
@@ -453,13 +453,13 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
       const cleanName = file.name.replace(/\.[^/.]+$/, '');
       const newSong: StatusSongInfo = {
         title: cleanName,
-        artist: 'SADHANA N',
+        artist: currentUser === 'surya' ? 'Surya' : 'Sadhana',
         audioUrl: dataUri,
-        coverUrl: DHANYA_SUNSET_AVATAR,
+        coverUrl: currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR,
       };
       setAttachedSong(newSong);
       setCustomSongTitle(cleanName);
-      setCustomSongArtist('SADHANA N');
+      setCustomSongArtist(currentUser === 'surya' ? 'Surya' : 'Sadhana');
       showToast?.(`Loaded audio: ${cleanName} 🎵`, 'success');
     };
     reader.readAsDataURL(file);
@@ -532,8 +532,8 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
       drawingData = canvasRef.current.toDataURL('image/png');
     }
 
-    const authorName = 'SADHANA N';
-    const authorAvatar = DHANYA_SUNSET_AVATAR;
+    const authorName = currentUser === 'surya' ? 'Surya' : 'Sadhana';
+    const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
 
     try {
       setUploadProgress(65);
@@ -1471,7 +1471,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     {activeStoryItem.songInfo?.title || 'Romantic Melody'}
                   </h3>
                   <p className="text-xs sm:text-sm font-semibold text-pink-300 drop-shadow-xs">
-                    {activeStoryItem.songInfo?.artist || 'SADHANA N'}
+                    {activeStoryItem.songInfo?.artist || 'Surya & Sadhana'}
                   </p>
                 </div>
 
@@ -2082,7 +2082,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     {customSongTitle || attachedSong?.title || 'Choose a Song Below'}
                   </h4>
                   <p className="text-xs text-pink-200 font-medium">
-                    {customSongArtist || attachedSong?.artist || 'SADHANA N'}
+                    {customSongArtist || attachedSong?.artist || 'Surya & Sadhana'}
                   </p>
 
                   {/* Audio Player preview if song is selected */}
@@ -2310,7 +2310,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   <div className="max-h-36 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
                     {[
                       { id: 'sadhana', name: 'Dhanya / Sadhana', role: 'Primary Contact' },
-                      { id: 'sadhana_sec', name: 'SADHANA N', role: 'EIE Student' },
+                      { id: 'surya', name: 'Surya', role: 'Partner' },
                       { id: 'aarav', name: 'Aarav Patel', role: 'Peer Student' },
                       { id: 'alex', name: 'Alex Kumar', role: 'Study Group' },
                       { id: 'rohan', name: 'Rohan Sharma', role: 'Peer Student' },

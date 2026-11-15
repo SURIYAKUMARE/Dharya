@@ -19,28 +19,28 @@ export interface UserProfile {
 export const USERS: Record<UserKey, UserProfile> = {
   surya: {
     id: 'surya',
-    name: 'SADHANA N',
-    partnerName: 'SADHANA N',
+    name: 'Surya',
+    partnerName: 'Sadhana',
     partnerKey: 'sadhana',
     emoji: '🌿',
     partnerEmoji: '❤️',
     theme: 'th-g',
     accentColor: '#10b981',
     accentGlow: 'rgba(16,185,129,0.25)',
-    greeting: 'Welcome back, SADHANA N ✨',
+    greeting: 'Welcome back, Surya 🌿',
     avatarLetter: 'S'
   },
   sadhana: {
     id: 'sadhana',
-    name: 'SADHANA N',
-    partnerName: 'SADHANA N',
+    name: 'Sadhana',
+    partnerName: 'Surya',
     partnerKey: 'surya',
     emoji: '❤️',
     partnerEmoji: '🌿',
     theme: 'th-p',
     accentColor: '#f43f5e',
     accentGlow: 'rgba(244,63,94,0.25)',
-    greeting: 'Welcome back, SADHANA N ✨',
+    greeting: 'Welcome back, Sadhana ❤️',
     avatarLetter: 'S'
   }
 };

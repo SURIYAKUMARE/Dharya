@@ -134,8 +134,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   // Active user and partner details
   const currentUser: 'surya' | 'sadhana' = student?.username === 'sadhana' ? 'sadhana' : 'surya';
-  const partnerUser: 'surya' | 'sadhana' = currentUser === 'surya' ? 'sadhana' : 'surya';
-  const partnerName = 'SADHANA N';
+  const partnerUser: 'surya' | 'sadhana' = currentUser === 'sadhana' ? 'surya' : 'sadhana';
+  const partnerName = partnerUser === 'surya' ? 'Surya' : 'Sadhana';
 
   // Active Conversation Routing & Identity
   const [activeChatId, setActiveChatId] = useState<string>(() => {
@@ -335,7 +335,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const triggerBrowserNotification = (msg: ExtendedChatMessage) => {
     if (isConversationMuted) return;
-    const senderDisplay = msg.sender === 'sadhana' ? 'Sadhana' : 'Dhanya';
+    const senderDisplay = msg.sender === 'sadhana' ? 'Sadhana' : 'Surya';
     smartNotificationService.processIncomingMessage(msg, senderDisplay);
   };
 
@@ -2580,7 +2580,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   // Export Chat to Text File
   const handleExportChat = () => {
     const lines = messages.map((m) => {
-      const senderName = m.sender === 'sadhana' ? 'Sadhana' : 'Dhanya';
+      const senderName = m.sender === 'sadhana' ? 'Sadhana' : 'Surya';
       const timeStr = m.time || new Date(m.timestamp).toLocaleTimeString();
       let content = m.text || '';
       if (m.type === 'image') content = '[Photo] ' + content;
@@ -3808,7 +3808,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
             {isGroupChat ? (
               <p className={`text-[12px] text-[#8696a0] font-normal leading-tight truncate max-w-[200px] sm:max-w-xs ${fontClass}`}>
-                {activeConversation.participants.map((p) => (p === currentUser ? 'You' : 'SADHANA N')).join(', ')}
+                {activeConversation.participants.map((p) => (p === currentUser ? 'You' : p === 'sadhana' ? 'Sadhana' : 'Surya')).join(', ')}
               </p>
             ) : isPartnerTyping ? (
               <p className={`text-[12px] text-[#00a884] font-semibold flex items-center gap-1 leading-tight animate-pulse ${fontClass}`}>
@@ -6530,7 +6530,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                                 color: th.bubbleOutgoingText,
                               }}
                             >
-                              Hey Sadhana! 💕
+                              Hey Surya! 💕
                             </span>
                           </div>
                           <div className="flex justify-start">

@@ -435,7 +435,7 @@ export const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
                 {isPartnerOnline ? 'Online now' : 'Private Connection'}
               </p>
               <p className="text-[11px] text-[#707A72] font-mono mt-1">
-                Student ID: SEC25EI091
+                {partnerUser === 'surya' ? 'Student ID: ENG-2024-0910' : 'Student ID: SEC25EI091'}
               </p>
             </div>
           </div>
@@ -480,7 +480,7 @@ export const ChatSidePanel: React.FC<ChatSidePanelProps> = ({
               <div>
                 <p className="font-semibold">Transport Security &amp; Isolation</p>
                 <p className="text-[#707A72] text-[11px] mt-0.5 leading-relaxed">
-                  Encrypted in transit via TLS 1.3 cryptographic ciphers. Database storage is protected by PostgreSQL Row-Level Security (RLS) guaranteeing access strictly for SADHANA N (SEC25EI091).
+                  Encrypted in transit via TLS 1.3 cryptographic ciphers. Database storage is protected by PostgreSQL Row-Level Security (RLS) guaranteeing access strictly between Surya and Sadhana.
                 </p>
               </div>
             </div>

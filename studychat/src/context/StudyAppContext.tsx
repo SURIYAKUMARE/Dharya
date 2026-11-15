@@ -246,8 +246,8 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
     const prof: StudentProfile = {
-      username: 'sadhana',
-      name: 'SADHANA N',
+      username: user,
+      name: user === 'surya' ? 'Surya' : 'SADHANA N',
       studentId: 'SEC25EI091',
       department: 'Electronics and Instrumentation Engineering',
       college: 'Sri Sairam Engineering College',
@@ -258,7 +258,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Session-only authentication: never store permanent login bypass in localStorage
     sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
     localStorage.setItem('study_student_profile', JSON.stringify(prof));
-    localStorage.setItem('studyportal_current_user', 'sadhana');
+    localStorage.setItem('studyportal_current_user', user);
     setAssessmentNotice(null);
     setActiveTab('chat');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -279,7 +279,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     if (isAuthorized) {
       if (p === '09/10/2007' || p === '09102007') {
-        return quickLogin('sadhana');
+        return quickLogin('surya');
       }
       if (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902') {
         return quickLogin('sadhana');
@@ -291,7 +291,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return quickLogin('sadhana');
     }
     if (p === '09/10/2007' || p === '09102007') {
-      return quickLogin('sadhana');
+      return quickLogin('surya');
     }
     if (p === '29/02/2008' || p === '29022008') {
       return quickLogin('sadhana');

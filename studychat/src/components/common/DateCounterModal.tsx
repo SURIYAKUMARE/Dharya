@@ -148,7 +148,7 @@ export const DateCounterModal: React.FC<DateCounterModalProps> = ({
               Days Together
             </h3>
             <p className={`text-xs ${isDark ? 'text-[#8B968E]' : 'text-[#707A72]'}`}>
-              {partnerName} • Started 20 May 2026 at 7:30
+              Surya &amp; Sadhana • Started 20 May 2026 at 7:30
             </p>
           </div>
 

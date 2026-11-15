@@ -41,6 +41,7 @@ import {
   ShieldCheck,
   Check,
   RotateCcw,
+  RotateCw,
   Volume2,
   VolumeX,
   Bookmark,
@@ -246,7 +247,13 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const [textGradient, setTextGradient] = useState(PRESET_GRADIENTS[0]);
   const [textFont, setTextFont] = useState(PRESET_FONTS[0].family);
   const [activeFilter, setActiveFilter] = useState<'none' | 'vivid' | 'soft' | 'warm' | 'bw' | 'pink'>('none');
+  const [imageRotation, setImageRotation] = useState<number>(0);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [privacyContactSearch, setPrivacyContactSearch] = useState('');
+
+  // Mobile Touch Swipe Gesture
+  const touchStartY = useRef<number | null>(null);
 
   // Attached Song / Music State
   const [attachedSong, setAttachedSong] = useState<StatusSongInfo | null>(null);
@@ -332,6 +339,17 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
     return () => clearInterval(timer);
   }, [activeStoryItem, isStoryPaused, showViewerSheet, activeStoryIdx, currentViewerStories.length]);
 
+  // Pause status playback when browser tab or phone loses visibility
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        setIsStoryPaused(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   // Video Time Update Listener
   const handleVideoTimeUpdate = () => {
     if (!videoPlayerRef.current || isStoryPaused) return;
@@ -399,11 +417,24 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
     }
   }, [activeStoryIdx]);
 
-  // ── Open Media File ──
+  // ── Open Media File with File Type & Size Validation ──
   const handleSelectMedia = (file: File) => {
     const isVid = file.type.startsWith('video/');
+    const MAX_PHOTO_SIZE = 25 * 1024 * 1024; // 25 MB
+    const MAX_VIDEO_SIZE = 60 * 1024 * 1024; // 60 MB
+
+    if (isVid && file.size > MAX_VIDEO_SIZE) {
+      showToast?.('Video exceeds 60MB limit. Please select a shorter clip.', 'error');
+      return;
+    }
+    if (!isVid && file.size > MAX_PHOTO_SIZE) {
+      showToast?.('Photo exceeds 25MB limit. Please select a smaller image.', 'error');
+      return;
+    }
+
     setMediaType(isVid ? 'video' : 'photo');
     setSelectedFile(file);
+    setImageRotation(0);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -494,6 +525,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   // ── Publish Status Handler ──
   const handlePublishStatus = async () => {
     setIsPublishing(true);
+    setUploadProgress(25);
 
     let drawingData: string | undefined = undefined;
     if (canvasRef.current) {
@@ -504,6 +536,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
     const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
 
     try {
+      setUploadProgress(65);
       if (creatorMode === 'song') {
         if (!attachedSong?.audioUrl) {
           showToast?.('Please choose or upload a song / audio track', 'error');
@@ -599,6 +632,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
       showToast?.('Failed to publish status', 'error');
     } finally {
       setIsPublishing(false);
+      setUploadProgress(null);
     }
   };
 
@@ -943,7 +977,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           </div>
         </div>
 
-        {/* ══════ 3. RECENT UPDATES SECTION (Exact Dhanya Card) ══════ */}
+        {/* ══════ 3. RECENT UPDATES SECTION (Unseen Statuses) ══════ */}
         <section className="space-y-3 pt-2">
           {/* Section Heading with Green Vertical Bar */}
           <div className="flex items-center gap-2 px-1">
@@ -953,8 +987,8 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
             </h3>
           </div>
 
-          {/* Partner's Status Card (Dynamic: Dhanya for Surya, Surya for Sadhana) */}
-          {recentUpdates.statuses.length > 0 ? (
+          {/* Partner's Status Card (Unseen Updates with Green Ring) */}
+          {recentUpdates.statuses.length > 0 && recentUpdates.hasUnseen ? (
             <div
               onClick={() => {
                 setActiveStoryGroup('partner');
@@ -966,11 +1000,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               <div className="flex items-center gap-3.5">
                 {/* Partner Profile with Green Story Ring */}
                 <div className="relative">
-                  <div
-                    className={`w-14 h-14 rounded-full p-0.5 border-2 flex items-center justify-center bg-white shadow-xs ${
-                      recentUpdates.hasUnseen ? 'border-[#16852D]' : 'border-slate-300'
-                    }`}
-                  >
+                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-[#16852D] flex items-center justify-center bg-white shadow-xs">
                     <img
                       src={recentUpdates.partnerAvatar}
                       alt={recentUpdates.partnerName}
@@ -1047,11 +1077,63 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           ) : (
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
               <p className="text-xs text-slate-500 font-medium">
-                No recent updates from {recentUpdates.partnerName} right now.
+                No new recent updates from {recentUpdates.partnerName} right now.
               </p>
             </div>
           )}
         </section>
+
+        {/* ══════ 3B. VIEWED UPDATES SECTION (Muted Status Ring) ══════ */}
+        {recentUpdates.statuses.length > 0 && !recentUpdates.hasUnseen && (
+          <section className="space-y-3 pt-2">
+            <div className="flex items-center gap-2 px-1">
+              <span className="w-1 h-5 rounded-full bg-slate-400" />
+              <h3 className="text-[15px] font-extrabold text-slate-600 tracking-tight">
+                Viewed Updates
+              </h3>
+            </div>
+
+            <div
+              onClick={() => {
+                setActiveStoryGroup('partner');
+                setActiveStoryIdx(0);
+                setStoryProgress(0);
+              }}
+              className="w-full rounded-[26px] p-3.5 bg-slate-50 border border-slate-200/80 flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99] shadow-2xs opacity-90 hover:opacity-100"
+            >
+              <div className="flex items-center gap-3.5">
+                {/* Muted Ring */}
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-slate-300 flex items-center justify-center bg-white shadow-xs">
+                    <img
+                      src={recentUpdates.partnerAvatar}
+                      alt={recentUpdates.partnerName}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-[16px] font-bold text-slate-800 tracking-tight leading-tight">
+                      {recentUpdates.partnerName}
+                    </h4>
+                    {recentUpdates.partnerName === 'Dhanya' && (
+                      <span className="text-[#F22679] text-sm leading-none font-bold">♡</span>
+                    )}
+                  </div>
+                  <p className="text-[12px] text-slate-400 font-medium leading-tight mt-1">
+                    Viewed • {recentUpdates.lastUpdated ? getRelativeTime(recentUpdates.lastUpdated) : 'Earlier today'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-[11px] font-semibold">
+                Viewed
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Status Highlights Section (if any collections exist) ── */}
         {highlights.length > 0 && (
@@ -1142,8 +1224,21 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-between select-none animate-in fade-in duration-200"
           onMouseDown={() => setIsStoryPaused(true)}
           onMouseUp={() => setIsStoryPaused(false)}
-          onTouchStart={() => setIsStoryPaused(true)}
-          onTouchEnd={() => setIsStoryPaused(false)}
+          onTouchStart={(e) => {
+            setIsStoryPaused(true);
+            touchStartY.current = e.touches[0].clientY;
+          }}
+          onTouchEnd={(e) => {
+            setIsStoryPaused(false);
+            if (touchStartY.current !== null) {
+              const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+              if (deltaY > 75) {
+                // Swipe down on mobile closes status viewer
+                setActiveStoryGroup(null);
+              }
+              touchStartY.current = null;
+            }
+          }}
         >
           {/* Top Segmented Progress Indicators */}
           <div className="w-full max-w-xl mx-auto px-3 pt-3 flex gap-1 z-30">
@@ -1449,6 +1544,8 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     placeholder={`Reply to ${activeStoryItem.authorName}...`}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
+                    onFocus={() => setIsStoryPaused(true)}
+                    onBlur={() => setIsStoryPaused(false)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
                     className="flex-1 px-4 py-2.5 rounded-full bg-white/15 backdrop-blur-md text-white text-xs placeholder-white/60 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#F22679]"
                   />
@@ -1602,6 +1699,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                         <img
                           src={previewMediaUrl}
                           alt="Preview"
+                          style={{ transform: `rotate(${imageRotation}deg)`, transition: 'transform 0.2s ease' }}
                           className={`max-h-72 object-contain ${
                             activeFilter === 'bw'
                               ? 'grayscale'
@@ -1690,7 +1788,18 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 {previewMediaUrl && mediaType === 'photo' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-                      <span>Filters</span>
+                      <div className="flex items-center gap-2">
+                        <span>Filters</span>
+                        <button
+                          type="button"
+                          onClick={() => setImageRotation((r) => (r + 90) % 360)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer text-xs font-medium"
+                          title="Rotate image 90 degrees"
+                        >
+                          <RotateCw className="w-3.5 h-3.5" />
+                          <span>Rotate{imageRotation ? ` ${imageRotation}°` : ''}</span>
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setIsDrawingOpen((d) => !d)}
@@ -2082,6 +2191,25 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               </div>
             )}
 
+            {/* Upload Progress Bar */}
+            {uploadProgress !== null && (
+              <div className="mt-4 space-y-1 bg-slate-50 p-3 rounded-2xl border border-slate-100 animate-in fade-in">
+                <div className="flex justify-between text-[11px] font-bold text-slate-700">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#16852D] animate-ping" />
+                    Uploading status media...
+                  </span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#16852D] to-emerald-400 transition-all duration-150"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Actions: Cancel & Publish */}
             <div className="flex gap-2 pt-4 border-t border-slate-100 mt-5">
               <button
@@ -2149,6 +2277,87 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   </div>
                 </label>
               ))}
+              {/* Searchable Contact Selector for 'except' or 'only' */}
+              {(statusService.getPrivacySettings().mode === 'except' ||
+                statusService.getPrivacySettings().mode === 'only') && (
+                <div className="mt-3 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      {statusService.getPrivacySettings().mode === 'except'
+                        ? 'Hide status from...'
+                        : 'Only share status with...'}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                      {statusService.getPrivacySettings().mode === 'except'
+                        ? `${statusService.getPrivacySettings().excludedContacts.length} excluded`
+                        : `${statusService.getPrivacySettings().includedContacts.length} selected`}
+                    </span>
+                  </div>
+
+                  {/* Search contacts input */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search contacts..."
+                      value={privacyContactSearch}
+                      onChange={(e) => setPrivacyContactSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1.5 rounded-xl text-xs bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-[#16852D]"
+                    />
+                  </div>
+
+                  {/* Contact Checkbox List */}
+                  <div className="max-h-36 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+                    {[
+                      { id: 'sadhana', name: 'Dhanya / Sadhana', role: 'Primary Contact' },
+                      { id: 'surya', name: 'Surya', role: 'CSE Student' },
+                      { id: 'aarav', name: 'Aarav Patel', role: 'Peer Student' },
+                      { id: 'alex', name: 'Alex Kumar', role: 'Study Group' },
+                      { id: 'rohan', name: 'Rohan Sharma', role: 'Peer Student' },
+                      { id: 'priya', name: 'Priya Verma', role: 'ECE Department' },
+                    ]
+                      .filter((c) => c.name.toLowerCase().includes(privacyContactSearch.toLowerCase()))
+                      .map((c) => {
+                        const isExcept = statusService.getPrivacySettings().mode === 'except';
+                        const isChecked = isExcept
+                          ? statusService.getPrivacySettings().excludedContacts.includes(c.id)
+                          : statusService.getPrivacySettings().includedContacts.includes(c.id);
+
+                        return (
+                          <div
+                            key={c.id}
+                            onClick={() => {
+                              const curr = isExcept
+                                ? statusService.getPrivacySettings().excludedContacts
+                                : statusService.getPrivacySettings().includedContacts;
+                              const updated = isChecked
+                                ? curr.filter((id) => id !== c.id)
+                                : [...curr, c.id];
+
+                              if (isExcept) {
+                                statusService.updatePrivacySettings({ excludedContacts: updated });
+                              } else {
+                                statusService.updatePrivacySettings({ includedContacts: updated });
+                              }
+                            }}
+                            className="flex items-center justify-between p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-100 cursor-pointer text-xs"
+                          >
+                            <div>
+                              <p className="font-semibold text-slate-900">{c.name}</p>
+                              <p className="text-[10px] text-slate-400">{c.role}</p>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="rounded text-[#16852D] focus:ring-[#16852D]"
+                            />
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

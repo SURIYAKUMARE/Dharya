@@ -46,29 +46,53 @@ enum ProjectStatus {
   REJECTED
 }
 
+enum StatusType {
+  PHOTO
+  VIDEO
+  TEXT
+  AUDIO
+}
+
+enum PrivacyType {
+  CONTACTS
+  EXCEPT
+  ONLY
+  PRIVATE
+}
+
 // 1. Users Model
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  passwordHash    String
-  name            String
-  studentId       String?          @unique
-  role            Role             @default(STUDENT)
-  avatarUrl       String?
-  batch           String?
-  totalPoints     Int              @default(8019)
-  rank            Int              @default(54)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  passwordHash        String
+  name                String
+  studentId           String?            @unique
+  role                Role               @default(STUDENT)
+  avatarUrl           String?
+  batch               String?
+  totalPoints         Int                @default(8019)
+  rank                Int                @default(54)
+  readReceiptsEnabled Boolean            @default(true)
+  privacySettings     Json?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
-  enrollments     Enrollment[]
-  attendances     Attendance[]
-  submissions     CodingSubmission[]
-  quizAttempts    QuizAttempt[]
-  projectSubs     Project[]
-  rewards         Reward[]
-  leaderboard     LeaderboardScore?
-  notifications   Notification[]
+  enrollments         Enrollment[]
+  attendances         Attendance[]
+  submissions         CodingSubmission[]
+  quizAttempts        QuizAttempt[]
+  projectSubs         Project[]
+  rewards             Reward[]
+  leaderboard         LeaderboardScore?
+  notifications       Notification[]
+
+  // Status & Contacts Relations
+  statuses            Status[]
+  statusViews         StatusView[]
+  statusRepliesSent   StatusReply[]      @relation("StatusSender")
+  statusRepliesRecv   StatusReply[]      @relation("StatusReceiver")
+  contacts            Contact[]          @relation("UserContacts")
+  contactOf           Contact[]          @relation("ContactUser")
 
   @@map("users")
 }
@@ -281,4 +305,86 @@ model Notification {
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
+}
+
+// 14. Contact Model
+model Contact {
+  id                  String       @id @default(uuid())
+  userId              String
+  contactUserId       String
+  relationshipStatus  String       @default("FRIEND")
+  createdAt           DateTime     @default(now())
+
+  user                User         @relation("UserContacts", fields: [userId], references: [id], onDelete: Cascade)
+  contactUser         User         @relation("ContactUser", fields: [contactUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contactUserId])
+  @@map("contacts")
+}
+
+// 15. Statuses Model (WhatsApp-style 24h temporary updates)
+model Status {
+  id                  String       @id @default(uuid())
+  userId              String
+  type                StatusType   @default(PHOTO)
+  mediaUrl            String?
+  thumbnailUrl        String?
+  audioUrl            String?
+  songTitle           String?
+  songArtist          String?
+  textContent         String?
+  caption             String?
+  backgroundColor     String?
+  fontFamily          String?
+  filter              String?
+  drawingDataUrl      String?
+  privacy             PrivacyType  @default(CONTACTS)
+  excludedContacts    String[]     @default([])
+  includedContacts    String[]     @default([])
+  createdAt           DateTime     @default(now())
+  expiresAt           DateTime
+  deletedAt           DateTime?
+  isArchived          Boolean      @default(false)
+
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  views               StatusView[]
+  replies             StatusReply[]
+
+  @@index([userId, expiresAt])
+  @@map("statuses")
+}
+
+// 16. Status Views Model (Unique viewers with timestamps & reactions)
+model StatusView {
+  id                  String       @id @default(uuid())
+  statusId            String
+  viewerId            String
+  reaction            String?
+  viewedAt            DateTime     @default(now())
+
+  status              Status       @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  viewer              User         @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([statusId, viewerId])
+  @@index([statusId])
+  @@map("status_views")
+}
+
+// 17. Status Replies Model (Dispatched to private chat)
+model StatusReply {
+  id                  String       @id @default(uuid())
+  statusId            String
+  senderId            String
+  receiverId          String
+  messageId           String?
+  messageText         String
+  previewMediaUrl     String?
+  createdAt           DateTime     @default(now())
+
+  status              Status       @relation(fields: [statusId], references: [id], onDelete: Cascade)
+  sender              User         @relation("StatusSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver            User         @relation("StatusReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([statusId])
+  @@map("status_replies")
 }

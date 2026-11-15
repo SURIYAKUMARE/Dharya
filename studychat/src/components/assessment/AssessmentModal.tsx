@@ -28,6 +28,7 @@ import {
   Sparkles,
   Filter,
   CheckSquare,
+  ShieldCheck,
   ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -329,6 +330,15 @@ export const AssessmentModal: React.FC = () => {
               <span>Completed in {formatTime(totalExamTime - timeLeft)}</span>
             </div>
           )}
+
+          <button
+            onClick={openChatLogin}
+            className="px-3 py-2 rounded-2xl bg-white hover:bg-[#F6F3EE] border border-[#DDD5C7] text-[#1273C4] hover:text-[#0D62A5] text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+            title="Student Verification Login"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Verification Login</span>
+          </button>
 
           <button
             onClick={() => switchTab('home')}

@@ -34,7 +34,7 @@ import {
 import confetti from 'canvas-confetti';
 
 export const EvaluationView: React.FC = () => {
-  const { student, switchTab, openAssessmentQuiz } = useStudyApp();
+  const { student, switchTab, openAssessmentQuiz, openDharyaLogin } = useStudyApp();
   const [history, setHistory] = useState<EvaluationRecord[]>(() => getEvaluationHistory());
   const [activeFilter, setActiveFilter] = useState<'all' | 'timed' | 'practice' | 'high_score'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,13 +107,21 @@ export const EvaluationView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
               onClick={() => openAssessmentQuiz()}
               className="px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-sm hover:shadow-md cursor-pointer active:scale-95"
             >
               <Award className="w-4 h-4" />
               <span>Take New Assessment</span>
+            </button>
+            <button
+              onClick={() => openDharyaLogin()}
+              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#1E293B] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
+              title="Student Assessment Verification Login"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#1273C4]" />
+              <span>Assessment Login</span>
             </button>
             <button
               onClick={handleClearHistory}

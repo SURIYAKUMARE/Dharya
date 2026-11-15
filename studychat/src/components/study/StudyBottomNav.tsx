@@ -9,10 +9,10 @@ export const StudyBottomNav: React.FC = () => {
 
   const navItems = [
     { id: 'home' as AppNavTab, label: 'Library', icon: BookOpen },
+    { id: 'subjects' as AppNavTab, label: 'Curriculum', icon: Layers },
     { id: 'algotutor' as AppNavTab, label: 'LMS Portal', icon: LayoutDashboard },
     { id: 'assignments' as AppNavTab, label: 'Assignments', icon: FileCode2 },
     { id: 'evaluation' as AppNavTab, label: 'Evaluation', icon: Award },
-    { id: 'chat' as AppNavTab, label: 'Chat', icon: MessageSquare },
   ];
 
   return (

@@ -31,27 +31,23 @@ export const DharyaLoginPage: React.FC = () => {
     // Password for Surya: "09/10/2007" -> Secretly enters chat as Surya
     if (isMatchingUsername && (p === '09/10/2007' || p === '09102007')) {
       quickLogin('surya');
-      switchTab('chat');
       return;
     }
 
     // Password for Sadhana: "29/02/2008" -> Secretly enters chat as Sadhana
     if (isMatchingUsername && (p === '29/02/2008' || p === '29022008')) {
       quickLogin('sadhana');
-      switchTab('chat');
       return;
     }
 
     // Direct password match fallback
     if (p === '09/10/2007' || p === '09102007') {
       quickLogin('surya');
-      switchTab('chat');
       return;
     }
 
     if (p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
-      switchTab('chat');
       return;
     }
 

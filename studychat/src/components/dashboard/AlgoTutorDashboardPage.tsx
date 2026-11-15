@@ -7,20 +7,10 @@ import { ProblemSolvingView } from './ProblemSolvingView';
 import { AttendanceView } from './AttendanceView';
 import { CodingPracticeView } from './CodingPracticeView';
 import { McqPracticeView } from './McqPracticeView';
-import { ResumeBuilderView } from './ResumeBuilderView';
-import { JobsView } from './JobsView';
 import { RewardsView } from './RewardsView';
 import { EvaluationView } from '../evaluation/EvaluationView';
-import {
-  BookSlotView,
-  ProjectsView,
-  CompanyPrepView,
-  SqlPracticeView,
-  NotesView,
-  TrackRequestView,
-  HelpSupportView,
-  SettingsView
-} from './MiscViews';
+import { NotesView, SettingsView } from './MiscViews';
+import { useStudyApp } from '../../context/StudyAppContext';
 
 interface AlgoTutorDashboardPageProps {
   onOpenLibraryDisguise?: () => void;
@@ -33,47 +23,40 @@ export const AlgoTutorDashboardPage: React.FC<AlgoTutorDashboardPageProps> = ({
 }) => {
   const [currentView, setCurrentView] = useState<DashboardActiveView>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const { student, switchTab } = useStudyApp();
+
+  const handleOpenLibrary = () => {
+    if (onOpenLibraryDisguise) {
+      onOpenLibraryDisguise();
+    } else {
+      switchTab('home');
+    }
+  };
 
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <MainDashboardOverview onNavigate={setCurrentView} studentName="Surya" />;
+        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'Surya'} />;
       case 'courses':
-        return <AcademicCoursesView />;
-      case 'book-slot':
-        return <BookSlotView />;
-      case 'problem-solving':
-        return <ProblemSolvingView />;
-      case 'attendance':
-        return <AttendanceView />;
-      case 'assessment-results':
-        return <EvaluationView />;
-      case 'rewards':
-        return <RewardsView />;
-      case 'mcq':
-        return <McqPracticeView />;
+        return <AcademicCoursesView onNavigate={setCurrentView} />;
       case 'coding':
         return <CodingPracticeView />;
-      case 'projects':
-        return <ProjectsView />;
-      case 'company-prep':
-        return <CompanyPrepView />;
-      case 'sql-practice':
-        return <SqlPracticeView />;
+      case 'problem-solving':
+        return <ProblemSolvingView />;
+      case 'mcq':
+        return <McqPracticeView />;
+      case 'assessment-results':
+        return <EvaluationView />;
+      case 'attendance':
+        return <AttendanceView />;
+      case 'rewards':
+        return <RewardsView />;
       case 'notes':
         return <NotesView />;
-      case 'resume-builder':
-        return <ResumeBuilderView />;
-      case 'jobs':
-        return <JobsView />;
-      case 'track-request':
-        return <TrackRequestView />;
-      case 'help-support':
-        return <HelpSupportView />;
       case 'settings':
         return <SettingsView />;
       default:
-        return <MainDashboardOverview onNavigate={setCurrentView} studentName="Surya" />;
+        return <MainDashboardOverview onNavigate={setCurrentView} studentName={student?.name || 'Surya'} />;
     }
   };
 
@@ -92,7 +75,7 @@ export const AlgoTutorDashboardPage: React.FC<AlgoTutorDashboardPageProps> = ({
         {/* Sticky Top Header */}
         <AlgoTutorHeader
           onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          onOpenAcademicDisguise={onOpenLibraryDisguise}
+          onOpenAcademicDisguise={handleOpenLibrary}
           onLogout={onLogout}
           onSelectView={setCurrentView}
         />

@@ -24,21 +24,13 @@ import {
 export type DashboardActiveView =
   | 'dashboard'
   | 'courses'
-  | 'book-slot'
-  | 'problem-solving'
-  | 'attendance'
-  | 'assessment-results'
-  | 'rewards'
-  | 'mcq'
   | 'coding'
-  | 'projects'
-  | 'company-prep'
-  | 'sql-practice'
+  | 'problem-solving'
+  | 'mcq'
+  | 'assessment-results'
+  | 'attendance'
+  | 'rewards'
   | 'notes'
-  | 'resume-builder'
-  | 'jobs'
-  | 'track-request'
-  | 'help-support'
   | 'settings';
 
 interface AlgoTutorSidebarProps {
@@ -69,47 +61,32 @@ const MENU_SECTIONS: MenuSection[] = [
   {
     title: 'Academic',
     items: [
-      { id: 'courses', label: 'Academic Courses', icon: GraduationCap, badge: '38', badgeColor: 'bg-blue-100 text-blue-700' },
-      { id: 'book-slot', label: 'Book Slot', icon: CalendarCheck }
+      { id: 'courses', label: 'Academic Courses', icon: GraduationCap, badge: '10', badgeColor: 'bg-blue-100 text-blue-700' }
     ]
   },
   {
-    title: 'My Activity',
+    title: 'Practice & Coding',
     items: [
-      { id: 'problem-solving', label: 'Problem Solving', icon: Code2, badge: '380', badgeColor: 'bg-emerald-100 text-emerald-800' },
-      { id: 'attendance', label: 'Attendance', icon: CalendarDays },
-      { id: 'assessment-results', label: 'Assessment Results', icon: Award },
-      { id: 'rewards', label: 'Rewards', icon: Gift, badge: '8019 pts', badgeColor: 'bg-amber-100 text-amber-800' }
-    ]
-  },
-  {
-    title: 'Practice',
-    items: [
-      { id: 'mcq', label: 'MCQ Practice', icon: HelpCircle },
       { id: 'coding', label: 'Coding Practice', icon: Code2, badge: 'POTD', badgeColor: 'bg-purple-100 text-purple-700' },
-      { id: 'projects', label: 'Projects', icon: FolderGit2 },
-      { id: 'company-prep', label: 'Company Preparation', icon: Building2 },
-      { id: 'sql-practice', label: 'SQL Practice', icon: Database }
+      { id: 'problem-solving', label: 'Problem Solving', icon: Code2, badge: '380', badgeColor: 'bg-emerald-100 text-emerald-800' },
+      { id: 'mcq', label: 'MCQ Practice', icon: HelpCircle }
+    ]
+  },
+  {
+    title: 'Performance & Progress',
+    items: [
+      { id: 'assessment-results', label: 'Assessment Results', icon: Award },
+      { id: 'attendance', label: 'Attendance & Study', icon: CalendarDays },
+      { id: 'rewards', label: 'Rewards & Points', icon: Gift, badge: '8019 pts', badgeColor: 'bg-amber-100 text-amber-800' }
     ]
   },
   {
     title: 'Learning Resources',
-    items: [{ id: 'notes', label: 'Notes', icon: FileText }]
+    items: [{ id: 'notes', label: 'Syllabus Notes', icon: FileText }]
   },
   {
-    title: 'Career',
-    items: [
-      { id: 'resume-builder', label: 'Resume Builder', icon: FileEdit, badge: 'PRO', badgeColor: 'bg-indigo-100 text-indigo-700' },
-      { id: 'jobs', label: 'Jobs', icon: Briefcase, badge: 'Hot', badgeColor: 'bg-rose-100 text-rose-700' }
-    ]
-  },
-  {
-    title: 'Support',
-    items: [
-      { id: 'track-request', label: 'Track Request', icon: Clock },
-      { id: 'help-support', label: 'Help & Support', icon: HelpCircle },
-      { id: 'settings', label: 'Settings', icon: Settings }
-    ]
+    title: 'Settings',
+    items: [{ id: 'settings', label: 'Settings & Profile', icon: Settings }]
   }
 ];
 

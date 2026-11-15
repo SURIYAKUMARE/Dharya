@@ -3032,6 +3032,372 @@ export const SUBJECT_QUESTION_BANKS: Record<string, AssessmentQuestion[]> = {
       "correctIndex": 1,
       "explanation": "The Bellman Optimality Equation breaks value functions into two components: the immediate reward R(s, a) and the discounted value of optimal future states \u03b3 max_{a'} Q(s', a'), enabling dynamic programming RL algorithms."
     }
+  ],
+  "python_datascience": [
+    {
+      "id": "pyds-q1",
+      "question": "In Python NumPy, what is the key difference between a view and a copy of an ndarray?",
+      "options": [
+        "A view shares the underlying data buffer with the original array; modifications to the view mutate the original array.",
+        "A copy always executes in O(1) time while a view executes in O(n) time.",
+        "A view allocates separate memory while a copy does not.",
+        "NumPy arrays cannot create copies, only deep views."
+      ],
+      "correctIndex": 0,
+      "explanation": "NumPy slicing returns a view that references the original array's memory buffer without duplicating data. Modifying a slice directly modifies the original array, unlike copy()."
+    },
+    {
+      "id": "pyds-q2",
+      "question": "In Pandas, what is the time complexity of selecting a row using .loc[label] vs integer-indexed .iloc[pos] on a sorted index?",
+      "options": [
+        "O(n) for both",
+        "O(1) average lookup using hash or B-tree index structures in Pandas index tables",
+        "O(n log n) because binary search must re-sort the table",
+        "O(n^2) for large DataFrames"
+      ],
+      "correctIndex": 1,
+      "explanation": "Pandas Index objects maintain hash tables or search trees for O(1) average key lookups in .loc and direct array indexing in .iloc."
+    },
+    {
+      "id": "pyds-q3",
+      "question": "What is broadcasting in NumPy and what rule dictates whether two dimensions are compatible?",
+      "options": [
+        "Transmitting data over network sockets",
+        "Two dimensions are compatible if they are equal, or one of them is equal to 1",
+        "Both arrays must have identical total byte sizes",
+        "Broadcasting only works for 1-dimensional vectors"
+      ],
+      "correctIndex": 1,
+      "explanation": "Under NumPy broadcasting rules, trailing dimensions are compared backward. Two dimensions are compatible if they match or if either is 1."
+    },
+    {
+      "id": "pyds-q4",
+      "question": "What is the purpose of the Python GIL (Global Interpreter Lock) in CPython?",
+      "options": [
+        "To speed up multi-threaded CPU-bound calculations",
+        "A mutex mechanism that ensures only one thread executes Python bytecode at any instant, simplifying memory management and reference counting",
+        "To prevent network packet collision",
+        "To lock system files against unauthorized writes"
+      ],
+      "correctIndex": 1,
+      "explanation": "CPython uses the GIL to prevent race conditions during memory allocation and reference counting. As a result, pure Python multi-threading does not achieve parallel speedup for CPU-bound tasks without multiprocessing."
+    },
+    {
+      "id": "pyds-q5",
+      "question": "Which scikit-learn preprocessing tool scales features so each feature has zero mean and unit variance?",
+      "options": [
+        "MinMaxScaler",
+        "StandardScaler",
+        "RobustScaler",
+        "Normalizer"
+      ],
+      "correctIndex": 1,
+      "explanation": "StandardScaler computes z = (x - \u03bc) / \u03c3, producing a distribution with zero mean and standard deviation of 1."
+    },
+    {
+      "id": "pyds-q6",
+      "question": "In Python generator functions, what happens when 'yield' is executed instead of 'return'?",
+      "options": [
+        "The function exits permanently and garbage collects its frame",
+        "The function suspends execution, yields the value to the caller, and preserves its entire execution stack state for the next call",
+        "It throws a StopIteration exception immediately",
+        "It converts the returned object to a NumPy array"
+      ],
+      "correctIndex": 1,
+      "explanation": "yield pauses the generator frame and returns a value. When __next__() is called again, execution resumes exactly where it stopped."
+    },
+    {
+      "id": "pyds-q7",
+      "question": "In statistical data science, what does p-value represent in hypothesis testing?",
+      "options": [
+        "The probability that the alternative hypothesis is true",
+        "The probability of observing test results at least as extreme as the actual results, assuming the null hypothesis (H0) is true",
+        "The measurement accuracy percentage of the model",
+        "The Pearson correlation coefficient"
+      ],
+      "correctIndex": 1,
+      "explanation": "The p-value is the probability under the null hypothesis of obtaining a result equal to or more extreme than what was observed. A p < 0.05 indicates statistical significance against H0."
+    },
+    {
+      "id": "pyds-q8",
+      "question": "In machine learning classification, when classes are heavily imbalanced (99% negative, 1% positive), why is Accuracy a misleading metric?",
+      "options": [
+        "Accuracy cannot be calculated on binary labels",
+        "A naive model predicting 'negative' for every sample scores 99% accuracy while failing to detect a single positive instance; Precision, Recall, and PR-AUC are required",
+        "Accuracy is only applicable to regression problems",
+        "Accuracy requires equal variance across all features"
+      ],
+      "correctIndex": 1,
+      "explanation": "Class imbalance causes accuracy paradox: predicting only the majority class gives high accuracy but zero utility. Recall, Precision, F1-score, and AUC-ROC are the required evaluation metrics."
+    },
+    {
+      "id": "pyds-q9",
+      "question": "What is the primary role of Principal Component Analysis (PCA) in data science?",
+      "options": [
+        "Supervised classification of categorical labels",
+        "Linear unsupervised dimensionality reduction that projects data onto orthogonal axes of maximum variance",
+        "Clustering data points into k Voronoi cells",
+        "Generating synthetic missing values"
+      ],
+      "correctIndex": 1,
+      "explanation": "PCA diagonalizes the empirical covariance matrix to find principal eigenvectors corresponding to directions of highest statistical variance."
+    },
+    {
+      "id": "pyds-q10",
+      "question": "In deep learning with PyTorch, what is the role of 'optimizer.zero_grad()' before 'loss.backward()'?",
+      "options": [
+        "To reset the learning rate to zero",
+        "To clear previously accumulated gradients in tensor .grad attributes because PyTorch gradients accumulate by default on backward passes",
+        "To initialize model weights with Gaussian noise",
+        "To free GPU VRAM memory buffers"
+      ],
+      "correctIndex": 1,
+      "explanation": "PyTorch accumulates gradients upon each backward() invocation. Without calling zero_grad(), new gradients would add to prior batch gradients, corrupting weight updates."
+    }
+  ],
+  "cyber_security": [
+    {
+      "id": "sec-q1",
+      "question": "What is the fundamental mathematical basis of RSA asymmetric public-key cryptography?",
+      "options": [
+        "Difficulty of finding discrete logarithms in finite fields",
+        "Computational hardness of factoring large composite semiprime numbers (n = p \u00d7 q)",
+        "Computing collision-resistant SHA-256 digests",
+        "Solving systems of linear diophantine equations"
+      ],
+      "correctIndex": 1,
+      "explanation": "RSA relies on the prime factorization problem: multiplying two large prime numbers p and q is easy, but factoring their product n is computationally intractable for classical algorithms."
+    },
+    {
+      "id": "sec-q2",
+      "question": "What is the key difference between symmetric (e.g., AES-256) and asymmetric (e.g., RSA-4096) encryption?",
+      "options": [
+        "Symmetric uses the same secret key for both encryption and decryption, whereas asymmetric uses mathematically paired public and private keys",
+        "Asymmetric encryption is 1000x faster than symmetric encryption",
+        "Symmetric encryption does not require any mathematical key",
+        "Asymmetric encryption can only encrypt 16-byte blocks"
+      ],
+      "correctIndex": 0,
+      "explanation": "Symmetric algorithms (AES) use one shared key for both operations and are very fast. Asymmetric algorithms use a public key for encryption and a private key for decryption."
+    },
+    {
+      "id": "sec-q3",
+      "question": "In web application security, what attack occurs when untrusted user input is directly concatenated into a backend database query?",
+      "options": [
+        "Cross-Site Scripting (XSS)",
+        "SQL Injection (SQLi), remediated using parameterized prepared statements",
+        "Cross-Site Request Forgery (CSRF)",
+        "Distributed Denial of Service (DDoS)"
+      ],
+      "correctIndex": 1,
+      "explanation": "SQL Injection allows attackers to manipulate database query logic. The definitive remediation is utilizing parameterized queries (Prepared Statements) or ORMs with strict variable binding."
+    },
+    {
+      "id": "sec-q4",
+      "question": "What security mechanism protects against Cross-Site Request Forgery (CSRF) in web sessions?",
+      "options": [
+        "Adding more CSS styles to forms",
+        "Synchronizer CSRF tokens validated per state-changing request and SameSite=Strict cookies",
+        "Using HTTP instead of HTTPS",
+        "Increasing the session timeout duration"
+      ],
+      "correctIndex": 1,
+      "explanation": "CSRF tokens are cryptographically random, unpredictable values associated with the user's session that an external attacker site cannot forge or read."
+    },
+    {
+      "id": "sec-q5",
+      "question": "In network security, what is the purpose of TLS (Transport Layer Security) Handshake?",
+      "options": [
+        "To route IP packets across autonomous systems",
+        "To authenticate the server identity via digital X.509 certificates, establish cipher suites, and securely exchange symmetric session keys via ECDHE",
+        "To compress HTTP images for mobile delivery",
+        "To assign DHCP IP addresses to client interfaces"
+      ],
+      "correctIndex": 1,
+      "explanation": "The TLS Handshake authenticates participating endpoints using certificates and negotiates ephemeral Diffie-Hellman keys to encrypt the transport stream."
+    },
+    {
+      "id": "sec-q6",
+      "question": "What is a Buffer Overflow vulnerability and what OS mitigation technique randomizes memory segment locations?",
+      "options": [
+        "Address Space Layout Randomization (ASLR)",
+        "Garbage Collection",
+        "Virtual Memory Paging",
+        "Thread Pool Scheduling"
+      ],
+      "correctIndex": 0,
+      "explanation": "ASLR randomizes stack, heap, and library base addresses in virtual memory upon every process launch, making return-oriented programming (ROP) and fixed jump exploits substantially harder."
+    },
+    {
+      "id": "sec-q7",
+      "question": "What is the CIA Triad in information security?",
+      "options": [
+        "Central Intelligence Agency guidelines",
+        "Confidentiality, Integrity, and Availability",
+        "Cryptographic Interchange Architecture",
+        "Certificate, Identity, and Authentication"
+      ],
+      "correctIndex": 1,
+      "explanation": "The CIA Triad forms the foundational model of information security: Confidentiality (secrecy), Integrity (data authenticity and prevention of tampering), and Availability (system uptime)."
+    },
+    {
+      "id": "sec-q8",
+      "question": "In cryptographic hash functions like SHA-256, what is 'Pre-image Resistance'?",
+      "options": [
+        "Given a digest h, it is computationally infeasible to find any original message m such that hash(m) = h",
+        "It is impossible for two hashes to have the same length",
+        "The hash function can be reversed using matrix division",
+        "Finding any two distinct messages with identical hashes"
+      ],
+      "correctIndex": 0,
+      "explanation": "Pre-image resistance (one-wayness) dictates that given an output hash, reversing the calculation to discover the input message is computationally impossible."
+    },
+    {
+      "id": "sec-q9",
+      "question": "What is the primary difference between a vulnerability assessment and a penetration test?",
+      "options": [
+        "Vulnerability assessment identifies and catalogs known flaws, whereas penetration testing actively exploits vulnerabilities to simulate real-world attacks and assess impact",
+        "Penetration testing is automated while vulnerability assessment is always manual",
+        "They are completely identical terms with no distinction",
+        "Vulnerability assessment only tests physical hardware"
+      ],
+      "correctIndex": 0,
+      "explanation": "Vulnerability scanning identifies potential security gaps using automated tools, while penetration testing involves ethical hackers actively attempting exploitation to determine compromise depth."
+    },
+    {
+      "id": "sec-q10",
+      "question": "What is Zero Trust Architecture (ZTA) in modern enterprise security?",
+      "options": [
+        "Blocking all external internet connections permanently",
+        "A security model requiring continuous verification of every user, device, and request regardless of whether they originate inside or outside the corporate perimeter ('Never Trust, Always Verify')",
+        "Eliminating passwords in favor of completely unauthenticated endpoints",
+        "Trusting all computers connected to the office Wi-Fi network"
+      ],
+      "correctIndex": 1,
+      "explanation": "Zero Trust rejects the legacy castle-and-moat perimeter paradigm. It mandates mutual TLS, least-privilege access, identity-based microsegmentation, and dynamic risk assessment."
+    }
+  ],
+  "cloud_computing": [
+    {
+      "id": "cloud-q1",
+      "question": "What is the fundamental difference between Horizontal Scaling (Scale-out) and Vertical Scaling (Scale-up)?",
+      "options": [
+        "Vertical scaling adds more machines into a distributed pool; horizontal scaling adds faster RAM to one server",
+        "Horizontal scaling adds more instances/nodes to handle load; vertical scaling increases the CPU, RAM, or storage of an existing single server",
+        "Horizontal scaling is only possible with relational databases",
+        "Vertical scaling eliminates the need for software load balancers"
+      ],
+      "correctIndex": 1,
+      "explanation": "Scale-up increases capacity on one instance (finite hardware limits). Scale-out distributes workload across multiple nodes behind a load balancer, providing near-infinite elastic scalability."
+    },
+    {
+      "id": "cloud-q2",
+      "question": "In Kubernetes architecture, what is the role of the Kubelet on each worker node?",
+      "options": [
+        "It acts as the central distributed etcd key-value storage engine",
+        "An agent running on each node that ensures container pods described in PodSpecs are running and healthy",
+        "It executes global cluster DNS resolution",
+        "It acts as the ingress HTTP reverse proxy"
+      ],
+      "correctIndex": 1,
+      "explanation": "Kubelet is the primary node agent that registers the node with the API server and oversees container runtimes (containerd/CRI-O) to ensure pod specifications are maintained."
+    },
+    {
+      "id": "cloud-q3",
+      "question": "According to the CAP Theorem for distributed systems, what can a system guarantee during network partition?",
+      "options": [
+        "Both Consistency (C) and Availability (A) simultaneously",
+        "Either Consistency (CP) or Availability (AP), but never both concurrently under an active network partition (P)",
+        "Zero latency and infinite throughput",
+        "Guaranteed partition-free hardware operation"
+      ],
+      "correctIndex": 1,
+      "explanation": "The CAP theorem states that in the event of network partition (P), a distributed data store must trade off between returning the latest consistent data (Consistency) or remaining responsive to every query (Availability)."
+    },
+    {
+      "id": "cloud-q4",
+      "question": "What is the function of a Content Delivery Network (CDN) like Cloudflare or AWS CloudFront?",
+      "options": [
+        "To compile TypeScript code into WebAssembly",
+        "To cache static and streaming assets across globally distributed edge Points of Presence (PoPs) close to end-users, minimizing latency and origin server load",
+        "To encrypt database tables at rest",
+        "To execute long-running background batch jobs"
+      ],
+      "correctIndex": 1,
+      "explanation": "CDNs terminate TLS connections near the client and serve cached static media from edge servers, reducing Round Trip Time (RTT) and preventing origin overloading."
+    },
+    {
+      "id": "cloud-q5",
+      "question": "In serverless computing (e.g., AWS Lambda, Google Cloud Functions), what is a 'Cold Start'?",
+      "options": [
+        "Rebooting a physical data center server following a power failure",
+        "The latency incurred when an execution environment must be newly provisioned, container initialized, and runtime code downloaded upon receiving a request after being idle",
+        "Compiling Python code ahead of time",
+        "Running code in cold sub-zero temperature server racks"
+      ],
+      "correctIndex": 1,
+      "explanation": "A cold start happens when no warm, idle container instance exists to serve an incoming event, forcing the serverless orchestrator to spin up a new container sandbox."
+    },
+    {
+      "id": "cloud-q6",
+      "question": "What is Infrastructure as Code (IaC) and what tool provides declarative cloud provisioning across multiple providers?",
+      "options": [
+        "Terraform",
+        "Postman",
+        "Docker Desktop",
+        "Nginx"
+      ],
+      "correctIndex": 0,
+      "explanation": "Terraform by HashiCorp allows engineers to define cloud infrastructure declaratively using HashiCorp Configuration Language (HCL) and state files across AWS, Azure, and GCP."
+    },
+    {
+      "id": "cloud-q7",
+      "question": "What is the primary difference between Docker Containers and Virtual Machines (VMs)?",
+      "options": [
+        "VMs share the host OS kernel; containers run dedicated guest operating systems",
+        "Containers share the host operating system kernel and isolate user space using cgroups and namespaces; VMs run a full guest OS on top of a hypervisor",
+        "Containers cannot run Linux applications",
+        "VMs consume significantly less RAM and boot in milliseconds"
+      ],
+      "correctIndex": 1,
+      "explanation": "Containers virtualize at the operating system level, sharing the host Linux kernel for lightweight efficiency. VMs virtualize hardware via Type-1 or Type-2 hypervisors."
+    },
+    {
+      "id": "cloud-q8",
+      "question": "What is the function of an Amazon S3 Bucket Policy vs IAM Policy?",
+      "options": [
+        "IAM policies attach to identities (users, roles); S3 bucket policies attach directly to the storage resource to govern who can access the bucket",
+        "S3 bucket policies can only deny access, never allow",
+        "IAM policies cannot interact with Amazon S3",
+        "Bucket policies only apply to EC2 instances"
+      ],
+      "correctIndex": 0,
+      "explanation": "IAM policies are identity-based (attached to users/groups/roles), whereas S3 bucket policies are resource-based JSON policies attached directly to the bucket."
+    },
+    {
+      "id": "cloud-q9",
+      "question": "In microservices architecture, what is the role of an API Gateway?",
+      "options": [
+        "A single entry point that handles request routing, API composition, SSL termination, rate limiting, and centralized authentication before traffic reaches downstream microservices",
+        "To replace all backend databases with JSON files",
+        "To compile backend source code into binaries",
+        "To store Docker container images"
+      ],
+      "correctIndex": 0,
+      "explanation": "An API Gateway provides reverse proxy routing, token verification, throttling, metrics collection, and protocol transformation at the system perimeter."
+    },
+    {
+      "id": "cloud-q10",
+      "question": "In cloud high availability, what is an Availability Zone (AZ)?",
+      "options": [
+        "A time zone defined for UTC server clocks",
+        "One or more discrete data centers within a geographical region with redundant power, networking, and connectivity, designed for fault isolation",
+        "A software firewall port range",
+        "A single rack in a server room"
+      ],
+      "correctIndex": 1,
+      "explanation": "An Availability Zone consists of isolated data centers connected by high-speed, low-latency private fiber networks, ensuring single-datacenter failure does not bring down multi-AZ workloads."
+    }
   ]
 };
 

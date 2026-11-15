@@ -4,6 +4,7 @@ import { SUBJECTS_DATA } from '../../data/curriculumData';
 import { getMediaResourcesForTopic, DocumentResource } from '../../data/bookMediaResources';
 import { BookVideoPlayer } from './BookVideoPlayer';
 import { DocumentViewerModal } from './DocumentViewerModal';
+import { TopicAssessmentWidget } from './TopicAssessmentWidget';
 import {
   ArrowLeft,
   BookOpen,
@@ -553,7 +554,18 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* 14. MANDATORY ASSESSMENT CALL TO ACTION */}
+      {/* 14. NEW: Interactive In-Page Topic Assessment Widget */}
+      <section id="topic-assessment-section" className="space-y-4">
+        <TopicAssessmentWidget
+          questions={currentTopic.assessmentQuestions}
+          topicTitle={currentTopic.title}
+          onComplete={(score, total) => {
+            // Assessment recorded
+          }}
+        />
+      </section>
+
+      {/* 15. MANDATORY ASSESSMENT CALL TO ACTION */}
       <div className="sticky bottom-[74px] md:bottom-5 z-30 p-4 sm:p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-[#E2D9CC] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="space-y-1 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-[#1273C4] font-mono">
@@ -567,18 +579,23 @@ export const TopicExplanationView: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full sm:w-auto">
           <button
-            onClick={openAssessmentQuiz}
+            onClick={() => {
+              const el = document.getElementById('topic-assessment-section');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
             className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white hover:bg-[#F8F6F1] border border-[#DDD5C7] text-[#334155] font-bold text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span>Practice MCQs</span>
+            <span>Practice MCQs Above</span>
           </button>
 
           <button
-            onClick={openAssessment}
+            onClick={openAssessmentQuiz}
             className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Award className="w-4 h-4 text-amber-300" />
-            <span>TAKE ASSESSMENT</span>
+            <span>FULL EXAM PORTAL</span>
             <span>→</span>
           </button>
         </div>

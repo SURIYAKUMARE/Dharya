@@ -12,6 +12,7 @@ import mqtt, { MqttClient } from 'mqtt';
 export const MQTT_PRIMARY_BROKER = 'wss://broker.hivemq.com:8884/mqtt';
 export const MQTT_BACKUP_BROKER = 'wss://broker.emqx.io:8084/mqtt';
 export const MQTT_TOPIC = 'dharya/sync/surya_sadhana_v3';
+export const MQTT_HISTORY_TOPIC = 'dharya/sync/surya_sadhana_bundle_v4';
 
 export const DEVICE_ID = typeof window !== 'undefined'
   ? (sessionStorage.getItem('dharya_device_id') || (() => {
@@ -170,9 +171,9 @@ class CrossDeviceSyncService {
           }
         }
 
-        client.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
+        client.subscribe([MQTT_TOPIC, MQTT_HISTORY_TOPIC], { qos: 1 }, (err) => {
           if (!err) {
-            console.log(`[CrossDeviceSync] Subscribed to ${MQTT_TOPIC}`);
+            console.log(`[CrossDeviceSync] Subscribed to ${MQTT_TOPIC} and ${MQTT_HISTORY_TOPIC}`);
             // Announce presence immediately
             this.broadcastPresence(typeof document !== 'undefined' ? document.visibilityState === 'visible' : true);
             // Request catch-up sync from partner device
@@ -182,17 +183,19 @@ class CrossDeviceSyncService {
       });
 
       client.on('message', (topic, buffer) => {
-        if (topic !== MQTT_TOPIC) return;
+        if (topic !== MQTT_TOPIC && topic !== MQTT_HISTORY_TOPIC) return;
         try {
           const raw = JSON.parse(buffer.toString('utf8'));
           if (raw && raw.event) {
-            // Deduplicate
-            const dedupeKey = `${raw.event}_${raw.payload?.id || ''}_${raw.timestamp}`;
-            if (this.processedMsgIds.has(dedupeKey)) return;
-            this.processedMsgIds.add(dedupeKey);
-            if (this.processedMsgIds.size > 2000) {
-              const arr = Array.from(this.processedMsgIds);
-              this.processedMsgIds = new Set(arr.slice(arr.length - 1000));
+            // Deduplicate live events (except retained history bundles which should always update if fresh)
+            if (raw.event !== 'sync_history_bundle') {
+              const dedupeKey = `${raw.event}_${raw.payload?.id || ''}_${raw.timestamp}`;
+              if (this.processedMsgIds.has(dedupeKey)) return;
+              this.processedMsgIds.add(dedupeKey);
+              if (this.processedMsgIds.size > 2000) {
+                const arr = Array.from(this.processedMsgIds);
+                this.processedMsgIds = new Set(arr.slice(arr.length - 1000));
+              }
             }
 
             this.notifyListeners(raw.event, raw.payload);
@@ -294,6 +297,43 @@ class CrossDeviceSyncService {
       return true;
     } catch (err) {
       console.warn(`[CrossDeviceSync] Failed to publish event "${event}":`, err);
+      return false;
+    }
+  }
+
+  /**
+   * Publish retained history bundle to broker so any device (laptop, phone)
+   * connecting even hours later instantly receives the up-to-date chat history.
+   */
+  public async publishHistoryBundle(messages: any[]): Promise<boolean> {
+    try {
+      if (!Array.isArray(messages) || messages.length === 0) return false;
+      const payload = {
+        deviceId: this.getDeviceId(),
+        messages: messages.slice(-100),
+        timestamp: Date.now(),
+      };
+      const data = {
+        event: 'sync_history_bundle',
+        payload,
+        timestamp: Date.now(),
+      };
+      const serialized = JSON.stringify(data);
+      if (this.client && this.isConnected) {
+        return new Promise<boolean>((resolve) => {
+          this.client!.publish(MQTT_HISTORY_TOPIC, serialized, { qos: 1, retain: true }, (err) => {
+            if (err) {
+              console.warn('[CrossDeviceSync] Publish history error:', err);
+              resolve(false);
+            } else {
+              resolve(true);
+            }
+          });
+        });
+      }
+      return false;
+    } catch (err) {
+      console.warn('[CrossDeviceSync] Failed to publish history bundle:', err);
       return false;
     }
   }

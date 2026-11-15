@@ -13,6 +13,7 @@ import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
 import { EvaluationView } from './components/evaluation/EvaluationView';
 import { AssignmentsView } from './components/assignments/AssignmentsView';
+import { AlgoTutorDashboardPage } from './components/dashboard/AlgoTutorDashboardPage';
 
 function AppContent() {
   const { activeTab, isChatAuthenticated, switchTab } = useStudyApp();
@@ -34,6 +35,16 @@ function AppContent() {
   // Full-screen Dharya Login (not wrapped in academic navbars)
   if (activeTab === 'chat-login' || (!isChatAuthenticated && (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline'))) {
     return <DharyaLoginPage />;
+  }
+
+  // Full-screen AlgoTutor Modern Student Learning Management Dashboard
+  if (activeTab === 'algotutor') {
+    return (
+      <AlgoTutorDashboardPage
+        onOpenLibraryDisguise={() => switchTab('home')}
+        onLogout={() => switchTab('home')}
+      />
+    );
   }
 
   const renderActiveView = () => {

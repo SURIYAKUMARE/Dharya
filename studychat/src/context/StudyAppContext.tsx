@@ -3,7 +3,7 @@ import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
 import { saveEvaluationRecord, calculateGrade, EvaluationRecord } from '../data/evaluationStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'evaluation' | 'assignments' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'evaluation' | 'assignments' | 'algotutor' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
 
 export interface AssessmentRecord {
   topicId: string;

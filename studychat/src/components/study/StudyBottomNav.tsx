@@ -1,15 +1,15 @@
 import React from 'react';
 import { useStudyApp, AppNavTab } from '../../context/StudyAppContext';
-import { BookOpen, Layers, Calendar, User, MessageSquare, FileCode2, Award } from 'lucide-react';
+import { BookOpen, Layers, Calendar, User, MessageSquare, FileCode2, Award, LayoutDashboard } from 'lucide-react';
 
 export const StudyBottomNav: React.FC = () => {
   const { activeTab, switchTab } = useStudyApp();
 
-  if (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline') return null;
+  if (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline' || activeTab === 'algotutor') return null;
 
   const navItems = [
     { id: 'home' as AppNavTab, label: 'Library', icon: BookOpen },
-    { id: 'subjects' as AppNavTab, label: 'Curriculum', icon: Layers },
+    { id: 'algotutor' as AppNavTab, label: 'LMS Portal', icon: LayoutDashboard },
     { id: 'assignments' as AppNavTab, label: 'Assignments', icon: FileCode2 },
     { id: 'evaluation' as AppNavTab, label: 'Evaluation', icon: Award },
     { id: 'chat' as AppNavTab, label: 'Chat', icon: MessageSquare },

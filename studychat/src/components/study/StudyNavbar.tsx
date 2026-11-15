@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, User, Layers, FileCode2, Award } from 'lucide-react';
+import { BookOpen, Calendar, User, Layers, FileCode2, Award, LayoutDashboard } from 'lucide-react';
 import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
@@ -81,6 +81,15 @@ export const StudyNavbar: React.FC = () => {
             >
               <Award className={`w-3.5 h-3.5 ${activeTab === 'evaluation' ? 'text-emerald-600' : 'text-[#64748B]'}`} />
               <span>Evaluation</span>
+            </button>
+
+            <button
+              onClick={() => switchTab('algotutor')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs hover:shadow-md hover:scale-105 active:scale-95"
+              title="Open AlgoTutor Student Learning Dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>LMS Dashboard</span>
             </button>
 
             <button

@@ -221,6 +221,30 @@ export const StudyHomePage: React.FC = () => {
         ))}
       </div>
 
+      {/* 3.3 Featured AlgoTutor LMS Student Learning Dashboard Launcher */}
+      <div
+        onClick={() => switchTab('algotutor')}
+        className="p-6 rounded-3xl bg-gradient-to-r from-[#0875E1] via-[#07549A] to-[#1E3A8A] text-white shadow-lg shadow-blue-900/10 border border-blue-400/30 hover:scale-[1.01] transition-all cursor-pointer group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5"
+      >
+        <div className="space-y-1.5 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-white/20 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            <span>AlgoTutor Learning Management System</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold font-serif">
+            Student Learning Dashboard
+          </h2>
+          <p className="text-xs text-blue-100 leading-relaxed">
+            Access 38 Enrolled Courses, 380 Solved Problems Analytics, 39,538 MCQ Question Bank, Saturday-to-Friday Weekly Progress Curve, Top-3 Student Leaderboard, and Problem of the Day.
+          </p>
+        </div>
+
+        <div className="px-5 py-3 rounded-2xl bg-white text-[#0875E1] font-bold text-xs flex items-center gap-2 shrink-0 group-hover:bg-blue-50 transition-colors shadow-sm">
+          <span>Open Full LMS Dashboard</span>
+          <ArrowRight className="w-4 h-4" />
+        </div>
+      </div>
+
       {/* 3.4 Quick Academic Portals Banner (Assignments & Evaluation) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div

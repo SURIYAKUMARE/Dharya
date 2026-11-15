@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { Lock, User, KeyRound, ArrowRight, ShieldCheck, X, Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { Lock, User, KeyRound, ArrowRight, ShieldCheck, X, Eye, EyeOff, GraduationCap, AlertCircle } from 'lucide-react';
 
 export const ChatAuthModal: React.FC = () => {
-  const { quickLogin, switchTab, setAssessmentNotice } = useStudyApp();
+  const { quickLogin, switchTab } = useStudyApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
     const u = username.trim().toUpperCase();
     const p = password.trim();
 
+    // 1. Authorized Set 1: SEC25EI091 & Sn@2902
+    if (u === 'SEC25EI091' && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
+      quickLogin('sadhana');
+      switchTab('chat');
+      return;
+    }
+
+    // 2. Authorized Set 2: Surya: "SURYA" / "DHARYA" & "09/10/2007"
     const isAuthorized = u === 'DHARYA' || u === 'SURYA' || u === 'SADHANA' || u === '';
 
     if (isAuthorized && (p === '09/10/2007' || p === '09102007')) {
@@ -22,28 +32,32 @@ export const ChatAuthModal: React.FC = () => {
       return;
     }
 
-    if (isAuthorized && (p === '29/02/2008' || p === '29022008')) {
+    // 3. Authorized Set 3: Sadhana: "SADHANA" / "DHARYA" & "29/02/2008" (or Sn@2902)
+    if (isAuthorized && (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
       quickLogin('sadhana');
       switchTab('chat');
       return;
     }
 
     // Direct password match fallback
+    if (p === 'Sn@2902' || p === 'sn@2902') {
+      quickLogin('sadhana');
+      switchTab('chat');
+      return;
+    }
     if (p === '09/10/2007' || p === '09102007') {
       quickLogin('surya');
       switchTab('chat');
       return;
     }
-
     if (p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
       switchTab('chat');
       return;
     }
 
-    // Wrong password / credentials -> redirect to assessment page
-    setAssessmentNotice('Identity verification required. Please complete the module examination to verify student status.');
-    switchTab('assessment');
+    // Wrong password / credentials -> Tell them it is wrong!
+    setErrorMessage('Wrong username and password');
   };
 
   return (
@@ -105,6 +119,14 @@ export const ChatAuthModal: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Error message */}
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <button
             type="submit"

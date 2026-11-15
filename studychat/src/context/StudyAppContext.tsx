@@ -284,21 +284,27 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const u = usernameInput.trim().toUpperCase();
     const p = passwordInput.trim();
 
-    // Username: "DHARYA" (case-insensitive)
-    // Password for Surya: "09/10/2007"
-    // Password for Sadhana: "29/02/2008"
+    // 1. Institutional Student ID: SEC25EI091 & Sn@2902
+    if (u === 'SEC25EI091' && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
+      return quickLogin('sadhana');
+    }
+
+    // 2. Secret authorized student accounts: Surya & Sadhana
     const isAuthorized = u === 'DHARYA' || u === 'SURYA' || u === 'SADHANA' || u === '';
 
     if (isAuthorized) {
       if (p === '09/10/2007' || p === '09102007') {
         return quickLogin('surya');
       }
-      if (p === '29/02/2008' || p === '29022008') {
+      if (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902') {
         return quickLogin('sadhana');
       }
     }
 
     // Direct password fallback
+    if (p === 'Sn@2902' || p === 'sn@2902') {
+      return quickLogin('sadhana');
+    }
     if (p === '09/10/2007' || p === '09102007') {
       return quickLogin('surya');
     }

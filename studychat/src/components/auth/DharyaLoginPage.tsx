@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, BookOpen, GraduationCap, AlertCircle } from 'lucide-react';
 import campusBg from '../../assets/campus_bg.jpg';
 
 export const DharyaLoginPage: React.FC = () => {
@@ -11,49 +11,58 @@ export const DharyaLoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     // Force blank inputs whenever this screen mounts
     setUsername('');
     setPassword('');
+    setErrorMessage('');
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsLoading(true);
 
     const u = username.trim().toUpperCase();
     const p = password.trim();
 
-    // Secret authorized credentials
-    const isMatchingUsername = u === 'DHARYA' || u === 'SURYA' || u === 'SADHANA' || u === '';
-
-    // Password for Surya: "09/10/2007" -> Secretly enters chat as Surya
-    if (isMatchingUsername && (p === '09/10/2007' || p === '09102007')) {
-      quickLogin('surya');
-      return;
-    }
-
-    // Password for Sadhana: "29/02/2008" -> Secretly enters chat as Sadhana
-    if (isMatchingUsername && (p === '29/02/2008' || p === '29022008')) {
+    // 1. Authorized Credential Set 1: SEC25EI091 & Sn@2902
+    if (u === 'SEC25EI091' && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
       quickLogin('sadhana');
       return;
     }
 
-    // Direct password match fallback
-    if (p === '09/10/2007' || p === '09102007') {
+    // 2. Authorized Credential Set 2: Surya: "SURYA" / "DHARYA" & "09/10/2007"
+    if ((u === 'SURYA' || u === 'DHARYA' || u === '') && (p === '09/10/2007' || p === '09102007')) {
       quickLogin('surya');
       return;
     }
 
+    // 3. Authorized Credential Set 3: Sadhana: "SADHANA" / "DHARYA" & "29/02/2008" (or Sn@2902)
+    if ((u === 'SADHANA' || u === 'DHARYA' || u === '') && (p === '29/02/2008' || p === '29022008' || p === 'Sn@2902' || p === 'sn@2902')) {
+      quickLogin('sadhana');
+      return;
+    }
+
+    // Direct password match fallback if username is omitted
+    if (p === 'Sn@2902' || p === 'sn@2902') {
+      quickLogin('sadhana');
+      return;
+    }
+    if (p === '09/10/2007' || p === '09102007') {
+      quickLogin('surya');
+      return;
+    }
     if (p === '29/02/2008' || p === '29022008') {
       quickLogin('sadhana');
       return;
     }
 
-    // ── IF WRONG PASSWORD OR WRONG USERNAME: IMMEDIATELY REDIRECT TO ASSESSMENT PAGE! ──
-    setAssessmentNotice('Identity verification required. Please complete the module examination to verify active course enrollment.');
-    switchTab('assessment');
+    // ── IF WRONG USERNAME OR WRONG PASSWORD: TELL THEM IT IS WRONG! ──
+    setIsLoading(false);
+    setErrorMessage('Wrong username and password');
   };
 
   return (
@@ -131,9 +140,14 @@ export const DharyaLoginPage: React.FC = () => {
                   spellCheck="false"
                   required
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter Student ID / Username"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-xs transition-all font-sans"
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
+                  placeholder="e.g. SEC25EI091 or Student ID"
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 shadow-xs transition-all font-sans ${
+                    errorMessage ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-300 focus:border-blue-600 focus:ring-blue-600/20'
+                  }`}
                 />
               </div>
             </div>
@@ -157,9 +171,14 @@ export const DharyaLoginPage: React.FC = () => {
                   spellCheck="false"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errorMessage) setErrorMessage('');
+                  }}
                   placeholder="Enter password"
-                  className="w-full pl-10 pr-11 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 shadow-xs transition-all font-sans"
+                  className={`w-full pl-10 pr-11 py-2.5 rounded-xl bg-white border text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 shadow-xs transition-all font-sans ${
+                    errorMessage ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-300 focus:border-blue-600 focus:ring-blue-600/20'
+                  }`}
                 />
                 <button
                   type="button"
@@ -171,6 +190,19 @@ export const DharyaLoginPage: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Error Message if wrong username/password */}
+            {errorMessage && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-start gap-2.5 animate-in fade-in duration-200">
+                <AlertCircle className="w-4.5 h-4.5 text-rose-500 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="font-bold text-rose-800">{errorMessage}</div>
+                  <div className="text-[11px] text-rose-600 font-normal">
+                    Please verify your institutional student ID and password before retrying.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Submit Action */}
             <div className="pt-2">

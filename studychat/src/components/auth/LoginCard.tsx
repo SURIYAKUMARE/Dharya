@@ -32,7 +32,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess, onOpenSecretMod
       });
       onSuccess();
     } else {
-      setError('Invalid academic credentials. Please verify your Student ID and Access Key.');
+      setError('Wrong username and password');
     }
   };
 
@@ -102,7 +102,7 @@ export const LoginCard: React.FC<LoginCardProps> = ({ onSuccess, onOpenSecretMod
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="e.g. sec2511xx"
+              placeholder="e.g. SEC25EI091"
               className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
             />
           </div>

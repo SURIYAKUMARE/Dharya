@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const u = username.trim().toLowerCase();
     const p = password.trim();
 
-    if (u === 'sadhana' || p === '29/02/2008' || (u === 'dharya' && p.startsWith('29'))) {
+    if (u === 'sadhana' || u === 'sec25ei091' || p === '29/02/2008' || p === 'Sn@2902' || p === 'sn@2902' || (u === 'dharya' && p.startsWith('29'))) {
       return 'sadhana';
     }
     if (u === 'surya' || p === '09/10/2007' || (u === 'dharya' && p.startsWith('09'))) {
@@ -111,6 +111,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const u = usernameInput.trim().toLowerCase();
     const p = passwordInput.trim();
 
+    // Check SEC25EI091 & Sn@2902 (or 29/02/2008)
+    if (u === 'sec25ei091' && (p === 'Sn@2902' || p === 'sn@2902' || p === '29/02/2008' || p === '29022008')) {
+      setCurrentUser(USERS.sadhana);
+      sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+      localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+      return true;
+    }
+
     // Check Surya
     if ((u === 'surya' || u === 'dharya') && (p === '09/10/2007' || p === '09102007' || p === 'surya')) {
       setCurrentUser(USERS.surya);
@@ -120,7 +128,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Check Sadhana
-    if ((u === 'sadhana' || u === 'dharya') && (p === '29/02/2008' || p === '29022008' || p === 'sadhana')) {
+    if ((u === 'sadhana' || u === 'dharya') && (p === '29/02/2008' || p === '29022008' || p === 'sn@2902' || p === 'Sn@2902' || p === 'sadhana')) {
+      setCurrentUser(USERS.sadhana);
+      sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+      localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
+      return true;
+    }
+
+    // Direct password match
+    if (p === 'Sn@2902' || p === 'sn@2902') {
       setCurrentUser(USERS.sadhana);
       sessionStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');
       localStorage.setItem(AUTH_STORAGE_KEY, 'sadhana');

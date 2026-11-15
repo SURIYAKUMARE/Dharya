@@ -10,9 +10,8 @@
     "cap": "cap"
   },
   "dependencies": {
-    "@capacitor/android": "^8.6.0",
-    "@capacitor/cli": "^8.6.0",
-    "@capacitor/core": "^8.6.0",
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/core": "^7.6.10",
     "@supabase/supabase-js": "^2.116.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -25,7 +24,7 @@
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.6.0",
+    "@capacitor/cli": "^7.6.10",
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

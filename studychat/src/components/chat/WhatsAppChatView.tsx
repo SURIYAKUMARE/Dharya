@@ -3864,18 +3864,19 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           <span className="text-[10px] opacity-70 hidden md:inline">• Switch</span>
         </button>
 
-        {/* ── Quick Switch to Academic Mode (ENGIHUB) ── */}
+        {/* ── Secure Lock & Return to Academic Mode (ENGIHUB) ── */}
         <button
-          onClick={() => switchTab('home')}
+          onClick={handleLogout}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium transition-all shadow-xs cursor-pointer select-none ${
             isDark
               ? 'bg-[#152433] hover:bg-[#1d3246] border-[#224466] text-[#78B2E8]'
               : 'bg-[#EFF6FF] hover:bg-[#DBEAFE] border-[#BFDBFE] text-[#1D4ED8]'
           }`}
-          title="Return to ENGIHUB Academic Mode (Ctrl+Shift+D)"
+          title="Secure Lock & Return to ENGIHUB Academic Mode (Ctrl+Shift+D)"
         >
-          <GraduationCap className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-          <span className="hidden sm:inline font-semibold">Academic Mode</span>
+          <Lock className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+          <span className="hidden sm:inline font-semibold">Lock &amp; Disguise</span>
+          <span className="sm:hidden font-semibold">Lock</span>
         </button>
 
         {/* Action Icons */}

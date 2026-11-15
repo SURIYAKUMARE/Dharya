@@ -1,9 +1,9 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { MessageSquare, Images, Clock, BookOpen } from 'lucide-react';
+import { MessageSquare, Images, Clock, Lock } from 'lucide-react';
 
 export const PrivatePortalNav: React.FC = () => {
-  const { activeTab, switchTab, student } = useStudyApp();
+  const { activeTab, switchTab, student, logoutChat } = useStudyApp();
 
   const isChat = activeTab === 'chat';
   const isGallery = activeTab === 'gallery';
@@ -21,15 +21,15 @@ export const PrivatePortalNav: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 bg-[#111b21]/95 backdrop-blur-xl border-b border-[#2a3942] px-3 sm:px-6 py-2 select-none">
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
-        {/* Left: Exit to Academic Study Portal */}
+        {/* Left: Lock Chat & Exit to Academic Study Portal */}
         <button
-          onClick={() => switchTab('home')}
+          onClick={logoutChat}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202c33] hover:bg-[#2a3942] text-[#8696a0] hover:text-white transition-all text-xs font-semibold border border-[#2a3942] cursor-pointer active:scale-95 shrink-0"
-          title="Exit to Open Library Study Portal"
+          title="Secure Lock & Exit to Study Library Portal"
         >
-          <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-          <span className="hidden sm:inline">Study Library</span>
-          <span className="sm:hidden">Library</span>
+          <Lock className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline">Lock &amp; Exit</span>
+          <span className="sm:hidden">Lock</span>
         </button>
 
         {/* Center: Dedicated Switcher (Chat vs Gallery vs Life Timeline) */}

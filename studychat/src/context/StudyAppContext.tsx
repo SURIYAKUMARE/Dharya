@@ -55,17 +55,32 @@ interface StudyAppContextType {
 const StudyAppContext = createContext<StudyAppContextType | undefined>(undefined);
 
 export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isChatAuthenticated, setIsChatAuthenticated] = useState<boolean>(() => {
+  // Chat security: ALWAYS false by default. Never default to true.
+  // Chat must always require login to access; without login do not go to chatpage.
+  const [isChatAuthenticated, setIsChatAuthenticated] = useState<boolean>(false);
+
+  // Clear any legacy persistent authentication on startup so login is always strictly enforced
+  useEffect(() => {
     try {
-      const sessionAuth = sessionStorage.getItem('study_chat_auth');
-      const localAuth = localStorage.getItem('study_chat_auth');
-      if (sessionAuth !== null) return sessionAuth === 'true';
-      if (localAuth !== null) return localAuth === 'true';
-      return true; // Default to authenticated for instant cross-device messenger
-    } catch {
-      return true;
-    }
-  });
+      localStorage.removeItem('study_chat_auth');
+      sessionStorage.removeItem('study_chat_auth');
+    } catch {}
+  }, []);
+
+  // Auto-lock security: when browser tab is hidden, minimized, or screen locked, immediately lock chat
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setIsChatAuthenticated(false);
+        try {
+          sessionStorage.removeItem('study_chat_auth');
+          localStorage.removeItem('study_chat_auth');
+        } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const [activeTab, setActiveTab] = useState<AppNavTab>(() => {
     try {
@@ -232,8 +247,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
       setStudent(prof);
       setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
-      localStorage.setItem('study_chat_auth', 'true');
+      // Session-only authentication: never store permanent login bypass in localStorage
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'surya');
@@ -253,8 +267,7 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
       setStudent(prof);
       setIsChatAuthenticated(true);
-      sessionStorage.setItem('study_chat_auth', 'true');
-      localStorage.setItem('study_chat_auth', 'true');
+      // Session-only authentication: never store permanent login bypass in localStorage
       sessionStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('study_student_profile', JSON.stringify(prof));
       localStorage.setItem('studyportal_current_user', 'sadhana');
@@ -300,24 +313,47 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const logoutChat = () => {
     setIsChatAuthenticated(false);
-    sessionStorage.removeItem('study_chat_auth');
-    localStorage.removeItem('study_chat_auth');
-    localStorage.removeItem('studyportal_current_user');
+    try {
+      sessionStorage.removeItem('study_chat_auth');
+      localStorage.removeItem('study_chat_auth');
+      localStorage.removeItem('studyportal_current_user');
+    } catch {}
     setActiveTab('home');
     if (window.location.hash) {
       try {
         window.history.replaceState(null, '', window.location.pathname);
       } catch {}
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const switchTab = (tab: AppNavTab) => {
+    // If leaving the private portal (chat, gallery, timeline) to a public academic view, lock chat immediately!
+    if (
+      (activeTab === 'chat' || activeTab === 'gallery' || activeTab === 'timeline') &&
+      (tab !== 'chat' && tab !== 'gallery' && tab !== 'timeline')
+    ) {
+      setIsChatAuthenticated(false);
+      try {
+        sessionStorage.removeItem('study_chat_auth');
+        localStorage.removeItem('study_chat_auth');
+      } catch {}
+    }
+
+    // Security check: attempting to go to private chat/gallery/timeline WITHOUT login must always redirect to chat-login
     if (tab === 'chat' || tab === 'gallery' || tab === 'timeline') {
       if (!isChatAuthenticated) {
-        openDharyaLogin();
+        setActiveTab('chat-login');
+        try {
+          if (window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        } catch {}
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
     }
+
     setActiveTab(tab);
     try {
       if (tab === 'home' || tab === 'chat' || tab === 'gallery' || tab === 'timeline' || tab === 'chat-login') {
@@ -368,8 +404,13 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           setActiveTab('planner');
         } else if (hash === '#profile') {
           setActiveTab('profile');
-        } else if (hash === '#chat') {
-          setActiveTab(isChatAuthenticated ? 'chat' : 'chat-login');
+        } else if (hash === '#chat' || hash === '#gallery' || hash === '#timeline') {
+          // ALWAYS require login before accessing chat, gallery, or timeline
+          if (isChatAuthenticated) {
+            setActiveTab(hash === '#gallery' ? 'gallery' : hash === '#timeline' ? 'timeline' : 'chat');
+          } else {
+            setActiveTab('chat-login');
+          }
           try {
             window.history.replaceState(null, '', window.location.pathname);
           } catch {}
@@ -378,10 +419,6 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           try {
             window.history.replaceState(null, '', window.location.pathname);
           } catch {}
-        } else if (hash === '#gallery') {
-          setActiveTab(isChatAuthenticated ? 'gallery' : 'chat-login');
-        } else if (hash === '#timeline') {
-          setActiveTab(isChatAuthenticated ? 'timeline' : 'chat-login');
         }
       } catch {}
     };
@@ -400,16 +437,23 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (window.location.hash) {
               window.history.pushState(null, '', window.location.pathname);
             }
+            // Disguise away: lock chat immediately!
+            setIsChatAuthenticated(false);
+            try {
+              sessionStorage.removeItem('study_chat_auth');
+              localStorage.removeItem('study_chat_auth');
+            } catch {}
             return 'home';
           } else {
-            return isChatAuthenticated ? 'chat' : 'chat-login';
+            // ALWAYS open login screen! Without login do not go to chatpage.
+            return 'chat-login';
           }
         });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isChatAuthenticated]);
+  }, []);
 
   const addTask = (task: Omit<StudyPlanTask, 'id' | 'createdAt'>) => {
     addStudyPlanTask(task);

@@ -1,0 +1,9 @@
+# Robots.txt for ENGIHUB Academic Learning Portal
+User-agent: *
+Allow: /
+Disallow: /#chat
+Disallow: /#login
+Disallow: /#gallery
+Disallow: /#timeline
+
+Sitemap: https://suriyakumare.github.io/Dharya/sitemap.xml

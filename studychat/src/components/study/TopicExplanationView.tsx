@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { SUBJECTS_DATA } from '../../data/curriculumData';
+import { getMediaResourcesForTopic, DocumentResource } from '../../data/bookMediaResources';
+import { BookVideoPlayer } from './BookVideoPlayer';
+import { DocumentViewerModal } from './DocumentViewerModal';
 import {
   ArrowLeft,
   BookOpen,
@@ -18,15 +21,30 @@ import {
   Check,
   BookMarked,
   Layers,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Download,
+  Eye,
+  Building2,
+  Cpu,
+  GraduationCap
 } from 'lucide-react';
 
 export const TopicExplanationView: React.FC = () => {
   const { selectedTopic, selectedSubject, openAssessment, openAssessmentQuiz, switchTab } = useStudyApp();
   const [copiedCode, setCopiedCode] = useState(false);
+  const [activeDocumentModal, setActiveDocumentModal] = useState<DocumentResource | null>(null);
 
   const currentTopic = selectedTopic || SUBJECTS_DATA[0].topics[0];
   const currentSubject = selectedSubject || SUBJECTS_DATA[0];
+
+  // Retrieve comprehensive curated media, video lectures, documents, and extended concepts for this book/topic
+  const mediaResources = getMediaResourcesForTopic(
+    currentTopic.id,
+    currentTopic.title,
+    currentSubject.title,
+    currentSubject.code
+  );
 
   const handleCopyCode = () => {
     if (!currentTopic.formulasOrCode?.content) return;
@@ -36,7 +54,7 @@ export const TopicExplanationView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-7 pb-36 md:pb-24 max-w-4xl mx-auto w-full -mt-1">
+    <div className="space-y-8 pb-36 md:pb-24 max-w-4xl mx-auto w-full -mt-1">
       {/* 1. Academic Breadcrumbs & Back Navigation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2D9CC] pb-4">
         <button
@@ -86,7 +104,7 @@ export const TopicExplanationView: React.FC = () => {
         </h1>
 
         <p className="text-xs font-mono text-[#64748B]">
-          {currentSubject.department} • Core Undergraduate Curriculum • 4 Credits
+          {currentSubject.department} • {mediaResources.bookTitle}
         </p>
 
         {currentTopic.referenceCitation && (
@@ -97,7 +115,154 @@ export const TopicExplanationView: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Simple Explanation (Intuitive Concept Overview) */}
+      {/* 3. NEW: Curated YouTube Video Lectures Component */}
+      <section className="space-y-3">
+        <BookVideoPlayer
+          videos={mediaResources.videos}
+          bookTitle={mediaResources.bookTitle}
+        />
+      </section>
+
+      {/* 4. NEW: Downloadable Documents, Handouts & Lecture Notes */}
+      <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E8E2D8] pb-3.5">
+          <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-blue-700 font-mono">
+            <FileText className="w-4.5 h-4.5 text-blue-600" />
+            <span>Authoritative Documents &amp; Reference Material ({mediaResources.documents.length})</span>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500">
+            PDF Handouts • Formula Sheets • 10-Yr Solved PYQs
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mediaResources.documents.map((doc) => (
+            <div
+              key={doc.id}
+              className="p-5 rounded-2xl bg-[#FAF8F5] hover:bg-[#F6F1E9] border border-[#E5DFD5] transition-all duration-200 flex flex-col justify-between space-y-4 shadow-2xs hover:shadow-xs group"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                    {doc.type}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-500">
+                    {doc.pages} Pages • {doc.fileSize}
+                  </span>
+                </div>
+
+                <h4 className="text-sm font-bold text-[#0F172A] font-serif leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
+                  {doc.title}
+                </h4>
+
+                <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                  {doc.description}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-[#E8E2D8] flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono text-slate-400 truncate max-w-[130px]">
+                  {doc.authorOrSource.split('•')[0]}
+                </span>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setActiveDocumentModal(doc)}
+                    className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold flex items-center gap-1 transition-all shadow-2xs cursor-pointer active:scale-95"
+                    title="Read Document Online"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Read</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveDocumentModal(doc)}
+                    className="p-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                    title="Download Document"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. NEW: Extended In-Depth Concepts & Real-World Case Studies */}
+      <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-5">
+        <div className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-wider text-purple-700 font-mono border-b border-[#E8E2D8] pb-3.5">
+          <Sparkles className="w-4.5 h-4.5 text-purple-600" />
+          <span>Advanced Conceptual Analysis &amp; Industrial Applications</span>
+        </div>
+
+        <div className="space-y-4">
+          {mediaResources.concepts.map((concept, idx) => (
+            <div
+              key={concept.id}
+              className="p-5 sm:p-6 rounded-2xl bg-[#FAF8F5] border border-[#E5DFD5] space-y-3.5 shadow-2xs"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                    C{idx + 1}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200">
+                    {concept.category}
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-slate-500">
+                  Concept Mastery Note
+                </span>
+              </div>
+
+              <h3 className="text-base sm:text-lg font-bold text-[#0F172A] font-serif">
+                {concept.title}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                {concept.summary}
+              </p>
+
+              <div className="p-4 rounded-xl bg-white border border-[#E8E2D8] text-xs sm:text-sm text-slate-800 leading-relaxed space-y-2">
+                <div className="text-[11px] font-bold font-mono text-purple-800 uppercase tracking-wide">
+                  Deep-Dive Engineering Analysis:
+                </div>
+                <p className="whitespace-pre-line">{concept.inDepthAnalysis}</p>
+              </div>
+
+              {concept.visualDiagram && (
+                <div className="p-3.5 rounded-xl bg-[#0F172A] border border-slate-700 text-emerald-300 font-mono text-xs overflow-x-auto shadow-inner">
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    System Architecture &amp; Data Flow
+                  </div>
+                  <pre className="whitespace-pre-wrap">{concept.visualDiagram}</pre>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-xs text-[#166534] space-y-1">
+                  <div className="font-bold font-mono uppercase text-[10px] text-[#15803D] flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Real-World Industrial Application</span>
+                  </div>
+                  <p>{concept.realWorldApplication}</p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#EFF6FF] border border-[#BFDBFE] text-xs text-[#1E40AF] space-y-1">
+                  <div className="font-bold font-mono uppercase text-[10px] text-[#1D4ED8] flex items-center gap-1">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    <span>Key Theoretical Takeaway</span>
+                  </div>
+                  <p>{concept.keyTakeaway}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. Simple Explanation (Intuitive Concept Overview) */}
       <section className="p-6 sm:p-7 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1273C4] font-mono">
           <Lightbulb className="w-4 h-4 text-[#1273C4]" />
@@ -110,7 +275,7 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Detailed Academic Explanation */}
+      {/* 7. Detailed Academic Explanation */}
       <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#475569] font-mono">
           <BookOpen className="w-4 h-4 text-[#1273C4]" />
@@ -121,7 +286,7 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. Core Concepts & Theorems */}
+      {/* 8. Core Concepts & Theorems */}
       <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0284C7] font-mono">
           <Sparkles className="w-4 h-4 text-[#0284C7]" />
@@ -142,7 +307,7 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. Formulas or Code Implementation with Terminal Window Frame */}
+      {/* 9. Formulas or Code Implementation */}
       <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#059669] font-mono">
@@ -169,7 +334,6 @@ export const TopicExplanationView: React.FC = () => {
           </div>
         </div>
 
-        {/* Code Terminal Box */}
         <div className="rounded-2xl overflow-hidden bg-[#0A0E1A] border border-[#1E293B] shadow-xl">
           <div className="px-4 py-2 bg-[#101726] border-b border-[#1E293B] flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
@@ -190,7 +354,7 @@ export const TopicExplanationView: React.FC = () => {
         </p>
       </section>
 
-      {/* 7. Step-by-Step Sequence */}
+      {/* 10. Step-by-Step Sequence */}
       <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0284C7] font-mono">
           <ListOrdered className="w-4 h-4 text-[#0284C7]" />
@@ -209,7 +373,7 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. Worked Problems */}
+      {/* 11. Worked Problems */}
       <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#7C3AED] font-mono">
           <ClipboardCheck className="w-4 h-4 text-[#7C3AED]" />
@@ -230,7 +394,7 @@ export const TopicExplanationView: React.FC = () => {
         ))}
       </section>
 
-      {/* 9. Key Points & Pitfalls */}
+      {/* 12. Key Points & Pitfalls */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <section className="p-6 sm:p-7 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#059669] font-mono">
@@ -263,7 +427,7 @@ export const TopicExplanationView: React.FC = () => {
         </section>
       </div>
 
-      {/* 10. Quick Revision Sheet */}
+      {/* 13. Quick Revision Sheet */}
       <section className="p-6 sm:p-7 rounded-3xl bg-white border border-[#E5DFD5] shadow-xs space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1273C4] font-mono">
           <Zap className="w-4 h-4 text-[#1273C4]" />
@@ -281,7 +445,7 @@ export const TopicExplanationView: React.FC = () => {
         </div>
       </section>
 
-      {/* MANDATORY ASSESSMENT CALL TO ACTION */}
+      {/* 14. MANDATORY ASSESSMENT CALL TO ACTION */}
       <div className="sticky bottom-[74px] md:bottom-5 z-30 p-4 sm:p-6 rounded-3xl bg-white/95 backdrop-blur-xl border border-[#E2D9CC] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="space-y-1 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-xs font-bold text-[#1273C4] font-mono">
@@ -311,6 +475,13 @@ export const TopicExplanationView: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* 15. In-App Interactive Document Viewer Modal */}
+      <DocumentViewerModal
+        document={activeDocumentModal}
+        bookTitle={mediaResources.bookTitle}
+        onClose={() => setActiveDocumentModal(null)}
+      />
     </div>
   );
 };

@@ -1,0 +1,18 @@
+{
+  "name": "ENGIHUB — Academic Learning Portal",
+  "short_name": "ENGIHUB",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FAF8F5",
+  "theme_color": "#FAF8F5",
+  "description": "Comprehensive engineering academic learning portal with curriculum, open textbook library, study planner, and assessments.",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%231D4ED8'/><stop offset='100%25' stop-color='%230F172A'/></linearGradient><linearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23FBBF24'/><stop offset='100%25' stop-color='%23F59E0B'/></linearGradient></defs><rect width='100' height='100' rx='24' fill='url(%23bg)'/><path d='M50 20 L82 34 L50 48 L18 34 Z' fill='url(%23gold)'/><path d='M50 52 L78 39.5 V58 C78 70 50 82 50 82 C50 82 22 70 22 58 V39.5 Z' fill='%23FFFFFF' opacity='0.9'/><path d='M82 36 V54' stroke='url(%23gold)' stroke-width='3' stroke-linecap='round'/><circle cx='82' cy='56' r='3.5' fill='url(%23gold)'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

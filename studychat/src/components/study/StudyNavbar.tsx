@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
-import { BookOpen, Calendar, User, Layers } from 'lucide-react';
+import { BookOpen, Calendar, User, Layers, FileCode2, Award } from 'lucide-react';
 import { EngineeringLogo } from '../common/EngineeringLogo';
 
 export const StudyNavbar: React.FC = () => {
@@ -49,7 +49,7 @@ export const StudyNavbar: React.FC = () => {
 
             <button
               onClick={() => switchTab('subjects')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'subjects' || activeTab === 'topic-explanation'
                   ? 'bg-white text-[#2D4A3E] shadow-sm font-semibold border border-black/5'
                   : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
@@ -57,6 +57,30 @@ export const StudyNavbar: React.FC = () => {
             >
               <Layers className={`w-3.5 h-3.5 ${activeTab === 'subjects' || activeTab === 'topic-explanation' ? 'text-[#2D4A3E]' : 'text-[#64748B]'}`} />
               <span>Curriculum</span>
+            </button>
+
+            <button
+              onClick={() => switchTab('assignments')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'assignments'
+                  ? 'bg-white text-[#2563EB] shadow-sm font-semibold border border-black/5'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
+              }`}
+            >
+              <FileCode2 className={`w-3.5 h-3.5 ${activeTab === 'assignments' ? 'text-[#2563EB]' : 'text-[#64748B]'}`} />
+              <span>Assignments</span>
+            </button>
+
+            <button
+              onClick={() => switchTab('evaluation')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'evaluation'
+                  ? 'bg-white text-emerald-700 shadow-sm font-semibold border border-black/5'
+                  : 'text-[#475569] hover:text-[#0F172A] hover:bg-white/50'
+              }`}
+            >
+              <Award className={`w-3.5 h-3.5 ${activeTab === 'evaluation' ? 'text-emerald-600' : 'text-[#64748B]'}`} />
+              <span>Evaluation</span>
             </button>
 
             <button

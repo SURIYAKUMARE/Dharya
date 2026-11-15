@@ -17,6 +17,7 @@ import {
   Award,
   ShieldCheck,
   FileText,
+  FileCode2,
   HelpCircle,
   Compass,
   ArrowRight
@@ -218,6 +219,57 @@ export const StudyHomePage: React.FC = () => {
         {LIBRARY_SHELVES.map((shelf) => (
           <OpenLibraryShelf key={shelf.id} shelf={shelf} />
         ))}
+      </div>
+
+      {/* 3.4 Quick Academic Portals Banner (Assignments & Evaluation) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          onClick={() => switchTab('assignments')}
+          className="p-6 rounded-3xl bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30 border border-blue-200/80 hover:border-blue-400 shadow-xs hover:shadow-md transition-all cursor-pointer group flex items-start justify-between gap-4"
+        >
+          <div className="space-y-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200">
+              Lab &amp; Course Projects
+            </span>
+            <h3 className="text-base font-bold text-[#0F172A] group-hover:text-blue-700 transition-colors">
+              Engineering Assignments Portal
+            </h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Work on kernel schedulers, BGP routing, B+ Tree databases &amp; AI attention projects. Receive automated AI rubric evaluation and model solutions.
+            </p>
+            <div className="pt-1 text-xs font-semibold text-blue-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              <span>View Assignments (8 Active)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+            <FileCode2 className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div
+          onClick={() => switchTab('evaluation')}
+          className="p-6 rounded-3xl bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30 border border-emerald-200/80 hover:border-emerald-400 shadow-xs hover:shadow-md transition-all cursor-pointer group flex items-start justify-between gap-4"
+        >
+          <div className="space-y-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+              Academic Transcripts
+            </span>
+            <h3 className="text-base font-bold text-[#0F172A] group-hover:text-emerald-700 transition-colors">
+              Assessment Evaluation &amp; Results
+            </h3>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Detailed scorecards, topic competency radar, question-by-question solution reviews, and downloadable GATE readiness transcripts.
+            </p>
+            <div className="pt-1 text-xs font-semibold text-emerald-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              <span>Open Evaluation Records</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+            <Award className="w-6 h-6" />
+          </div>
+        </div>
       </div>
 
       {/* 3.5 Academic Information Hub & Library Services Bulletin */}

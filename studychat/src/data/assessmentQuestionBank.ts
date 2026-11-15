@@ -13,6 +13,797 @@ export interface AssessmentQuestion {
 }
 
 export const SUBJECT_QUESTION_BANKS: Record<string, AssessmentQuestion[]> = {
+  "data_structures_algorithms": [
+      {
+          "id": "dsa-q1",
+          "question": "What is the worst-case time complexity of searching for an element in an AVL tree with n nodes?",
+          "options": [
+              "O(1)",
+              "O(log n)",
+              "O(n)",
+              "O(n log n)"
+          ],
+          "correctIndex": 1,
+          "explanation": "AVL trees are strictly height-balanced binary search trees where the height difference between left and right subtrees is at most 1. Hence height h <= 1.44 log2(n), guaranteeing O(log n) worst-case search."
+      },
+      {
+          "id": "dsa-q2",
+          "question": "Which data structure is optimal for implementing Dijkstra's single-source shortest path algorithm on a graph with V vertices and E edges?",
+          "options": [
+              "Unsorted Array: O(V^2)",
+              "Min-Heap / Fibonacci Heap: O(E + V log V)",
+              "Queue (FIFO): O(V * E)",
+              "Stack (LIFO): O(V + E)"
+          ],
+          "correctIndex": 1,
+          "explanation": "A Fibonacci Heap or Binary Min-Heap allows decrease-key operations in amortized O(1) time and extract-min in O(log V) time, yielding optimal O(E + V log V) complexity."
+      },
+      {
+          "id": "dsa-q3",
+          "question": "In a Red-Black Tree, what is the maximum possible height of a tree with n nodes?",
+          "options": [
+              "log2(n + 1)",
+              "2 * log2(n + 1)",
+              "n / 2",
+              "sqrt(n)"
+          ],
+          "correctIndex": 1,
+          "explanation": "By Red-Black Tree invariant 4 and 5 (no two consecutive red nodes, equal black-height on all root-to-leaf paths), the longest path is at most twice the shortest path, bounding height by 2 * log2(n + 1)."
+      },
+      {
+          "id": "dsa-q4",
+          "question": "What is the space complexity of Floyd-Warshall all-pairs shortest path algorithm?",
+          "options": [
+              "O(V)",
+              "O(V + E)",
+              "O(V^2)",
+              "O(V^3)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Floyd-Warshall maintains a 2D distance matrix of size V x V to store shortest distances between every vertex pair, requiring O(V^2) auxiliary space."
+      },
+      {
+          "id": "dsa-q5",
+          "question": "Which of the following problems exhibits both Optimal Substructure and Overlapping Subproblems properties?",
+          "options": [
+              "Binary Search",
+              "0/1 Knapsack Problem",
+              "Merge Sort",
+              "Quick Sort"
+          ],
+          "correctIndex": 1,
+          "explanation": "The 0/1 Knapsack problem exhibits optimal substructure (optimal solution to capacity W uses optimal solutions to subcapacities w < W) and overlapping subproblems (same capacity-item subproblems recomputed multiple times), making it classic Dynamic Programming."
+      },
+      {
+          "id": "dsa-q6",
+          "question": "What is the amortized cost of inserting an element into a dynamic array (like std::vector or ArrayList) that doubles its capacity when full?",
+          "options": [
+              "O(1)",
+              "O(log n)",
+              "O(n)",
+              "O(n^2)"
+          ],
+          "correctIndex": 0,
+          "explanation": "Although doubling capacity requires O(n) reallocation occasionally, across n insertions the total copy work is 1 + 2 + 4 + ... + n = 2n, giving an amortized cost of 2n/n = O(1) per insertion."
+      },
+      {
+          "id": "dsa-q7",
+          "question": "Which algorithm finds the Minimum Spanning Tree (MST) of an undirected edge-weighted graph using a Disjoint Set Union (Union-Find) data structure?",
+          "options": [
+              "Prim's Algorithm",
+              "Kruskal's Algorithm",
+              "Bellman-Ford Algorithm",
+              "Kosaraju's Algorithm"
+          ],
+          "correctIndex": 1,
+          "explanation": "Kruskal's algorithm sorts all edges by weight and greedily adds the smallest edge that does not form a cycle, using Union-Find with path compression in O(E log E) time."
+      },
+      {
+          "id": "dsa-q8",
+          "question": "What is the time complexity of building a Binary Heap containing n elements from an arbitrary unsorted array using Floyd's bottom-up heapify?",
+          "options": [
+              "O(n log n)",
+              "O(n)",
+              "O(n^2)",
+              "O(log n)"
+          ],
+          "correctIndex": 1,
+          "explanation": "Floyd's heap construction runs heapify from bottom to top. The sum of (h * n / 2^(h+1)) across levels evaluates to a convergent series bounded by O(n), much faster than n successive O(log n) insertions."
+      },
+      {
+          "id": "dsa-q9",
+          "question": "In a Trie (Prefix Tree) storing words composed of lowercase English letters, what is the time complexity to search for a word of length L?",
+          "options": [
+              "O(L)",
+              "O(n * L)",
+              "O(log n)",
+              "O(26^L)"
+          ],
+          "correctIndex": 0,
+          "explanation": "Searching in a Trie traverses one node per character of the word, taking O(L) time where L is word length, completely independent of total words n stored."
+      },
+      {
+          "id": "dsa-q10",
+          "question": "Which algorithmic technique is used in the Fast Fourier Transform (FFT) to reduce polynomial multiplication from O(n^2) to O(n log n)?",
+          "options": [
+              "Greedy Choice",
+              "Divide and Conquer with Complex Roots of Unity",
+              "Dynamic Programming memoization",
+              "Simulated Annealing"
+          ],
+          "correctIndex": 1,
+          "explanation": "The Cooley-Tukey FFT recursively divides a polynomial into even- and odd-indexed subpolynomials and evaluates them at complex roots of unity, achieving O(n log n) divide-and-conquer runtime."
+      },
+      {
+          "id": "dsa-q11",
+          "question": "What is the worst-case number of comparisons performed by QuickSelect to find the k-th smallest element when using Lomuto partitioning on a sorted array?",
+          "options": [
+              "O(n)",
+              "O(n log n)",
+              "O(n^2)",
+              "O(k log n)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Without random pivoting or Median-of-Medians, picking the last element as pivot on an already sorted array yields partitions of size (n-1) and 0, degenerating QuickSelect to O(n^2) comparisons."
+      },
+      {
+          "id": "dsa-q12",
+          "question": "Which graph algorithm can detect negative-weight cycles in a directed weighted graph?",
+          "options": [
+              "Dijkstra's Algorithm",
+              "Bellman-Ford Algorithm",
+              "Breadth-First Search (BFS)",
+              "Tarjan's SCC Algorithm"
+          ],
+          "correctIndex": 1,
+          "explanation": "Bellman-Ford relaxes all edges |V| - 1 times. If any edge can still be relaxed on the |V|-th iteration, a negative-weight cycle reachable from the source is detected."
+      },
+      {
+          "id": "dsa-q13",
+          "question": "In a B-Tree of order m (where m is max children), what is the minimum number of keys in any non-root internal node?",
+          "options": [
+              "m",
+              "ceil(m/2) - 1",
+              "floor(m/2)",
+              "1"
+          ],
+          "correctIndex": 1,
+          "explanation": "In a B-tree of order m, every internal node except the root must have at least ceil(m/2) children, which corresponds to at least ceil(m/2) - 1 keys."
+      },
+      {
+          "id": "dsa-q14",
+          "question": "What is the primary advantage of a Skip List over a balanced binary search tree?",
+          "options": [
+              "Strictly O(1) worst-case search",
+              "Simpler concurrent lock-free implementation with probabilistic balance",
+              "Requires zero auxiliary memory",
+              "Guarantees deterministic O(log n) tree depth"
+          ],
+          "correctIndex": 1,
+          "explanation": "Skip lists maintain probabilistic logarithmic height using random coin flips. They avoid complex tree rebalancing rotations, making concurrent lock-free reads and writes significantly simpler to implement."
+      },
+      {
+          "id": "dsa-q15",
+          "question": "Which of the following sorting algorithms is stable and achieves O(n log n) worst-case time complexity?",
+          "options": [
+              "Quick Sort",
+              "Heap Sort",
+              "Merge Sort",
+              "Selection Sort"
+          ],
+          "correctIndex": 2,
+          "explanation": "Merge Sort repeatedly divides the array and merges sorted halves while preserving the relative order of duplicate elements, ensuring both stability and guaranteed O(n log n) runtime."
+      }
+  ],
+  "computer_networks": [
+      {
+          "id": "net-q1",
+          "question": "During a TCP three-way handshake, what flags are set in the second packet transmitted from server to client?",
+          "options": [
+              "SYN",
+              "ACK",
+              "SYN + ACK",
+              "FIN + ACK"
+          ],
+          "correctIndex": 2,
+          "explanation": "The server responds to the client's initial SYN packet with a SYN-ACK packet containing both the SYN flag (synchronizing its own initial sequence number) and ACK flag (acknowledging the client's sequence number)."
+      },
+      {
+          "id": "net-q2",
+          "question": "What is the usable number of IPv4 host addresses in a subnet with a /27 CIDR mask?",
+          "options": [
+              "32",
+              "30",
+              "62",
+              "14"
+          ],
+          "correctIndex": 1,
+          "explanation": "A /27 subnet has 32 - 27 = 5 host bits. Total addresses = 2^5 = 32. Subtracting 2 for the Network Address and Directed Broadcast Address leaves 32 - 2 = 30 usable host addresses."
+      },
+      {
+          "id": "net-q3",
+          "question": "Which TCP congestion control algorithm uses packet loss as the primary signal to cut the congestion window (Additive Increase Multiplicative Decrease)?",
+          "options": [
+              "TCP BBR",
+              "TCP Reno",
+              "TCP Vegas",
+              "TCP Fast"
+          ],
+          "correctIndex": 1,
+          "explanation": "TCP Reno implements AIMD: it increases the congestion window linearly (by 1 MSS per RTT) during congestion avoidance and cuts it by half upon detecting packet loss via triple duplicate ACKs."
+      },
+      {
+          "id": "net-q4",
+          "question": "Which routing protocol is an Exterior Gateway Protocol (EGP) based on path-vector routing that interconnects Autonomous Systems on the global Internet?",
+          "options": [
+              "OSPF",
+              "BGP (Border Gateway Protocol)",
+              "RIP",
+              "IS-IS"
+          ],
+          "correctIndex": 1,
+          "explanation": "BGP is the de-facto standard path-vector inter-domain routing protocol used by ISPs and Autonomous Systems to exchange reachability information across the global Internet."
+      },
+      {
+          "id": "net-q5",
+          "question": "What is the primary function of the Address Resolution Protocol (ARP)?",
+          "options": [
+              "Translate domain names to IP addresses",
+              "Map an IPv4 logical address to a physical MAC hardware address",
+              "Route packets between different subnets",
+              "Assign dynamic IP addresses to clients"
+          ],
+          "correctIndex": 1,
+          "explanation": "ARP broadcasts on the local data link layer to resolve a target node's 32-bit IPv4 address into its corresponding 48-bit Ethernet MAC hardware address."
+      },
+      {
+          "id": "net-q6",
+          "question": "In TLS 1.3, how many round trips (RTT) are required for a standard full handshake before application data can be sent?",
+          "options": [
+              "0 RTT (always)",
+              "1 RTT",
+              "2 RTT",
+              "3 RTT"
+          ],
+          "correctIndex": 1,
+          "explanation": "TLS 1.3 optimizes the cryptographic negotiation by combining cipher suite selection and Diffie-Hellman key exchange parameters into the ClientHello, completing the full handshake in just 1 RTT (and 0-RTT on session resumption)."
+      },
+      {
+          "id": "net-q7",
+          "question": "What mechanism does IPv6 use instead of IPv4 broadcast to send packets to multiple interested hosts or locate default gateways?",
+          "options": [
+              "Anycast & Multicast (ICMPv6 Neighbor Discovery)",
+              "Hub-and-spoke polling",
+              "CSMA/CD collisions",
+              "Static routing tables only"
+          ],
+          "correctIndex": 0,
+          "explanation": "IPv6 eliminates broadcast completely. It utilizes Multicast and Anycast alongside ICMPv6 Neighbor Discovery Protocol (NDP) to discover neighbors and routers efficiently without waking uninterested hosts."
+      },
+      {
+          "id": "net-q8",
+          "question": "What is the maximum payload size of a standard Ethernet frame with Maximum Transmission Unit (MTU) of 1500 bytes?",
+          "options": [
+              "1460 bytes (TCP MSS over standard IPv4)",
+              "1500 bytes",
+              "1518 bytes",
+              "65535 bytes"
+          ],
+          "correctIndex": 1,
+          "explanation": "The standard Ethernet MTU is 1500 bytes, which represents the maximum Layer 3 IP packet size. A TCP segment inside an IPv4 packet leaves 1500 - 20 (IP header) - 20 (TCP header) = 1460 bytes for the MSS."
+      },
+      {
+          "id": "net-q9",
+          "question": "Which DNS record type specifies the mail server responsible for accepting incoming email messages on behalf of a domain?",
+          "options": [
+              "A Record",
+              "CNAME Record",
+              "MX Record",
+              "PTR Record"
+          ],
+          "correctIndex": 2,
+          "explanation": "MX (Mail Exchange) records indicate the preference order and domain names of SMTP mail servers designated to receive email for that domain."
+      },
+      {
+          "id": "net-q10",
+          "question": "In Link-State routing protocols like OSPF, which algorithm does each router execute to compute the shortest path tree to all network nodes?",
+          "options": [
+              "Bellman-Ford Algorithm",
+              "Dijkstra's Algorithm",
+              "Floyd-Warshall Algorithm",
+              "Kruskal's Algorithm"
+          ],
+          "correctIndex": 1,
+          "explanation": "OSPF routers flood Link-State Advertisements (LSAs) so every router possesses an identical network topology database, upon which each router runs Dijkstra's algorithm to compute the shortest path tree."
+      },
+      {
+          "id": "net-q11",
+          "question": "What field in the IPv4 header prevents packets from circulating indefinitely inside a routing loop?",
+          "options": [
+              "Checksum",
+              "Time to Live (TTL)",
+              "Identification",
+              "Differentiated Services (DiffServ)"
+          ],
+          "correctIndex": 1,
+          "explanation": "Each router decrements the 8-bit TTL field by at least 1 before forwarding. If TTL reaches 0, the router drops the packet and transmits an ICMP Time Exceeded message back to the sender."
+      },
+      {
+          "id": "net-q12",
+          "question": "What is the key advantage of QUIC (HTTP/3) over HTTP/2 running on standard TCP + TLS?",
+          "options": [
+              "Eliminates Head-of-Line (HoL) blocking across multiplexed streams using UDP",
+              "Does not encrypt payload data",
+              "Replaces DNS entirely",
+              "Requires no congestion control"
+          ],
+          "correctIndex": 0,
+          "explanation": "HTTP/2 suffered from TCP-level Head-of-Line blocking because a single lost packet stalled all multiplexed streams. QUIC runs over UDP with independent stream flow control, ensuring lost packets on one stream do not stall other streams."
+      },
+      {
+          "id": "net-q13",
+          "question": "Which protocol operates at the Transport Layer to provide connectionless, low-overhead datagram communication without delivery guarantees?",
+          "options": [
+              "TCP",
+              "UDP (User Datagram Protocol)",
+              "SCTP",
+              "IP"
+          ],
+          "correctIndex": 1,
+          "explanation": "UDP provides lightweight datagram transmission with an 8-byte header, without connection setup, flow control, retransmissions, or ordering guarantees, ideal for DNS queries and real-time media."
+      },
+      {
+          "id": "net-q14",
+          "question": "What does a NAT (Network Address Translation) router use to differentiate multiple internal hosts sharing a single public IPv4 address?",
+          "options": [
+              "VLAN Tags",
+              "Port Address Translation (PAT) using Layer 4 port numbers",
+              "MAC Address Spoofing",
+              "Subnet mask bit shifting"
+          ],
+          "correctIndex": 1,
+          "explanation": "Port Address Translation (PAT / NAPT) tracks sessions in a state table by rewriting the source IP to the public IP and mapping dynamic unique Layer 4 TCP/UDP port numbers."
+      },
+      {
+          "id": "net-q15",
+          "question": "What is the primary objective of the IEEE 802.1Q standard?",
+          "options": [
+              "Define Wi-Fi 6 wireless frequencies",
+              "Define VLAN (Virtual LAN) tagging for Ethernet frames",
+              "Standardize Bluetooth mesh networking",
+              "Specify 10-Gigabit optical fiber specs"
+          ],
+          "correctIndex": 1,
+          "explanation": "IEEE 802.1Q defines a 4-byte VLAN tag inserted into Ethernet frames, enabling multiple logical virtual networks to share the same physical trunk links safely."
+      }
+  ],
+  "operating_systems": [
+      {
+          "id": "os-q1",
+          "question": "In modern operating systems, which of the following operations requires transitioning from User Mode to Kernel Mode via a software interrupt or TRAP instruction?",
+          "options": [
+              "Evaluating an arithmetic expression",
+              "Calling malloc() for already mapped heap memory",
+              "Executing the write() or read() system call",
+              "Iterating through an array in memory"
+          ],
+          "correctIndex": 2,
+          "explanation": "System calls (such as read, write, fork) request privileged hardware services from the OS kernel, requiring a CPU privilege level transition (Ring 3 to Ring 0) via a trap or SYSCALL instruction."
+      },
+      {
+          "id": "os-q2",
+          "question": "Which CPU scheduling algorithm is non-preemptive and provably achieves the minimum average waiting time for a given set of stationary processes?",
+          "options": [
+              "First-Come, First-Served (FCFS)",
+              "Shortest Job First (SJF)",
+              "Round Robin (RR)",
+              "Multilevel Feedback Queue"
+          ],
+          "correctIndex": 1,
+          "explanation": "Shortest Job First (SJF) schedules the process with the shortest CPU burst first. Mathematically, sorting bursts in ascending order minimizes the cumulative sum of waiting times, giving the lowest average waiting time."
+      },
+      {
+          "id": "os-q3",
+          "question": "Which of the following is NOT one of the four Coffman conditions necessary for a deadlock to occur?",
+          "options": [
+              "Mutual Exclusion",
+              "Hold and Wait",
+              "Preemption of Resources",
+              "Circular Wait"
+          ],
+          "correctIndex": 2,
+          "explanation": "The fourth condition is 'No Preemption' (resources cannot be forcibly confiscated). If preemption is allowed, deadlock cannot persist because the OS can reclaim resources to break the cycle."
+      },
+      {
+          "id": "os-q4",
+          "question": "What is the phenomenon where increasing the number of allocated page frames results in an increased number of page faults under FIFO page replacement?",
+          "options": [
+              "Thrashing",
+              "Belady's Anomaly",
+              "Cache Invalidation",
+              "Convoy Effect"
+          ],
+          "correctIndex": 1,
+          "explanation": "Belady's Anomaly occurs with FIFO page replacement when adding more physical memory frames counter-intuitively causes more page faults due to poor locality alignment. Stack-based algorithms like LRU never suffer from it."
+      },
+      {
+          "id": "os-q5",
+          "question": "What hardware component is responsible for translating virtual memory addresses into physical memory addresses at execution time?",
+          "options": [
+              "Direct Memory Access (DMA) Controller",
+              "Memory Management Unit (MMU) with TLB",
+              "Instruction Pointer Register",
+              "Arithmetic Logic Unit (ALU)"
+          ],
+          "correctIndex": 1,
+          "explanation": "The MMU hardware intercepts virtual memory addresses generated by the CPU, looks up the Translation Lookaside Buffer (TLB) cache, and walks multi-level page tables to obtain the physical address."
+      },
+      {
+          "id": "os-q6",
+          "question": "What happens during a Process Context Switch?",
+          "options": [
+              "The kernel compiles process bytecode into native instructions",
+              "The CPU state (registers, program counter, stack pointer, page directory base) of the running process is saved, and the state of the scheduled process is restored",
+              "All cache memory is zeroed out and RAM is refreshed",
+              "The hard disk re-partitions the root filesystem"
+          ],
+          "correctIndex": 1,
+          "explanation": "A context switch saves the current CPU registers, PC, stack pointer, and memory management state into the Process Control Block (PCB) and loads the corresponding registers of the newly scheduled process."
+      },
+      {
+          "id": "os-q7",
+          "question": "In synchronization, what is the key difference between a Binary Semaphore and a Mutex?",
+          "options": [
+              "A Mutex has ownership semantics (only the thread that acquired the mutex can release it), whereas a semaphore can be signaled by any thread",
+              "A Semaphore can only be used on 32-bit machines",
+              "A Mutex can hold counts up to 255",
+              "They are 100% identical in all POSIX implementations"
+          ],
+          "correctIndex": 0,
+          "explanation": "A Mutex enforces thread ownership: the exact thread that locks the mutex must unlock it (enabling priority inheritance to prevent priority inversion). A semaphore is a signaling mechanism where one thread can signal (V) a semaphore waited on (P) by another."
+      },
+      {
+          "id": "os-q8",
+          "question": "What is the cause of 'Thrashing' in virtual memory systems?",
+          "options": [
+              "The CPU clock speed is too high for the RAM bus",
+              "The total working sets of active processes exceed available physical memory, causing continuous page swapping and near-zero CPU throughput",
+              "Too many background threads accessing the same file descriptor",
+              "Hard drive sector corruption"
+          ],
+          "correctIndex": 1,
+          "explanation": "Thrashing occurs when memory demand outstrips physical RAM. The OS spends virtually all its CPU time servicing page faults and waiting on disk I/O rather than executing useful user instructions."
+      },
+      {
+          "id": "os-q9",
+          "question": "Which algorithm is used by operating systems for deadlock avoidance by verifying whether granting a resource request leaves the system in a 'Safe State'?",
+          "options": [
+              "Dijkstra's Banker's Algorithm",
+              "Kruskal's Algorithm",
+              "Peterson's Algorithm",
+              "Lamport's Bakery Algorithm"
+          ],
+          "correctIndex": 0,
+          "explanation": "Banker's Algorithm tests resource allocations by simulating the maximum possible remaining requests of all processes to guarantee at least one execution sequence exists where all processes complete without deadlocking."
+      },
+      {
+          "id": "os-q10",
+          "question": "What is an Inode in Unix/Linux filesystems?",
+          "options": [
+              "A network socket identifier",
+              "A data structure containing file metadata (size, permissions, timestamps, owner, block pointers) excluding the filename",
+              "A user password hash in /etc/shadow",
+              "The root directory mount point"
+          ],
+          "correctIndex": 1,
+          "explanation": "An inode (index node) stores all metadata of a filesystem object (file size, access rights, ownership, pointers to storage disk blocks). Directory entries map filenames to inode numbers."
+      },
+      {
+          "id": "os-q11",
+          "question": "What is the primary role of the 'fork()' system call in Unix-like operating systems?",
+          "options": [
+              "To terminate the calling process",
+              "To create an exact duplicate child process with an independent address space",
+              "To compile a C program into a binary",
+              "To execute a new binary image in the current process space"
+          ],
+          "correctIndex": 1,
+          "explanation": "fork() creates a new child process that is an identical clone of the parent, duplicating file descriptors and registers. In modern kernels, Copy-on-Write (COW) optimizes page duplication until written."
+      },
+      {
+          "id": "os-q12",
+          "question": "How does Copy-on-Write (COW) improve process creation performance during fork()?",
+          "options": [
+              "It skips allocating physical memory pages until either the parent or child attempts to modify the page",
+              "It writes data directly to optical disks",
+              "It prevents processes from writing to any files",
+              "It executes child processes in kernel mode"
+          ],
+          "correctIndex": 0,
+          "explanation": "Rather than copying megabytes of parent memory during fork(), COW marks all pages read-only and shares them. Only when a process executes a write operation does the MMU trigger a page fault, duplicating that specific 4KB page."
+      },
+      {
+          "id": "os-q13",
+          "question": "Which RAID configuration provides block-level striping with distributed parity, tolerating the failure of any single drive?",
+          "options": [
+              "RAID 0",
+              "RAID 1",
+              "RAID 5",
+              "RAID 10"
+          ],
+          "correctIndex": 2,
+          "explanation": "RAID 5 stripes data and parity blocks across three or more disks. Parity is distributed across all drives so no single parity bottleneck exists, tolerating 1 drive failure with (N-1)/N usable capacity."
+      },
+      {
+          "id": "os-q14",
+          "question": "What is the Completely Fair Scheduler (CFS) used in the Linux kernel based on?",
+          "options": [
+              "Priority-based round robin with static tick timers",
+              "Red-Black Tree tracking process 'virtual runtime' (vruntime)",
+              "First-In-First-Out FIFO queue with aging",
+              "Random lottery scheduling"
+          ],
+          "correctIndex": 1,
+          "explanation": "Linux CFS models an 'ideal multi-tasking CPU' on hardware. It tracks the normalized CPU execution time (vruntime) of runnable tasks in a time-ordered Red-Black Tree, always selecting the task with the smallest vruntime."
+      },
+      {
+          "id": "os-q15",
+          "question": "In memory management, what is the difference between Internal and External Fragmentation?",
+          "options": [
+              "Internal fragmentation is unused memory within an allocated fixed block; external fragmentation is total free memory broken into small disjoint chunks unusable by large requests",
+              "Internal occurs on hard disks; external occurs in CPU registers",
+              "Internal only happens in Linux; external only happens in Windows",
+              "There is no difference"
+          ],
+          "correctIndex": 0,
+          "explanation": "Internal fragmentation happens when allocated fixed-size partitions (like 4KB pages) exceed the requested bytes. External fragmentation happens when dynamic contiguous allocations leave scattered free holes too small for new requests."
+      }
+  ],
+  "database_systems": [
+      {
+          "id": "dbms-q1",
+          "question": "Why are B+ Trees predominantly preferred over Binary Search Trees or AVL Trees for relational database indexes on disk storage?",
+          "options": [
+              "B+ Trees have a high branching factor (fan-out), minimizing the number of disk I/O operations to traverse the tree",
+              "B+ Trees require zero RAM",
+              "B+ Trees only store integers",
+              "B+ Trees eliminate the need for SQL queries"
+          ],
+          "correctIndex": 0,
+          "explanation": "Disk seeks are orders of magnitude slower than CPU memory access. A B+ Tree node matches the disk page size (4KB-16KB) with fan-out of 100-500, keeping tree height to 3-4 levels for millions of records and minimizing disk I/O."
+      },
+      {
+          "id": "dbms-q2",
+          "question": "Which ACID property guarantees that all operations within a transaction either succeed completely or have their effects completely rolled back upon failure?",
+          "options": [
+              "Atomicity",
+              "Consistency",
+              "Isolation",
+              "Durability"
+          ],
+          "correctIndex": 0,
+          "explanation": "Atomicity (the 'All or Nothing' property) ensures that if any part of a multi-statement transaction fails, the Write-Ahead Log (WAL) undoes all intermediate modifications, leaving the database in its prior state."
+      },
+      {
+          "id": "dbms-q3",
+          "question": "Under the ANSI SQL standard, which isolation level prevents Dirty Reads and Non-Repeatable Reads, but may still permit Phantom Reads?",
+          "options": [
+              "Read Uncommitted",
+              "Read Committed",
+              "Repeatable Read",
+              "Serializable"
+          ],
+          "correctIndex": 2,
+          "explanation": "Repeatable Read locks all rows read by a query so concurrent transactions cannot modify or delete them. However, concurrent transactions may insert new rows matching the WHERE clause range, producing Phantom Reads unless range locks are used."
+      },
+      {
+          "id": "dbms-q4",
+          "question": "In database transaction concurrency control, what is Two-Phase Locking (2PL)?",
+          "options": [
+              "A protocol with an expanding Growing Phase (locks acquired) followed by a shrinking Contraction Phase (locks released), guaranteeing conflict serializability",
+              "Running queries twice to check consistency",
+              "Locking the entire database table for every SELECT",
+              "Encrypting data with two private keys"
+          ],
+          "correctIndex": 0,
+          "explanation": "2PL ensures conflict-serializable schedules by forbidding any transaction from acquiring new locks once it releases its first lock. In Strict 2PL (S2PL), all exclusive locks are held until commit/abort to prevent cascading aborts."
+      },
+      {
+          "id": "dbms-q5",
+          "question": "What is the primary rule for a relational table to satisfy Boyce-Codd Normal Form (BCNF)?",
+          "options": [
+              "Every non-prime attribute must depend on the primary key",
+              "For every non-trivial functional dependency X -> Y, X must be a superkey",
+              "All attributes must be multi-valued",
+              "The table must have exactly three columns"
+          ],
+          "correctIndex": 1,
+          "explanation": "BCNF is a stricter version of 3NF. A relation R is in BCNF if for every non-trivial functional dependency X -> Y, the determinant X is a candidate key or superkey, eliminating all redundancy from functional dependencies."
+      },
+      {
+          "id": "dbms-q6",
+          "question": "What is the purpose of Write-Ahead Logging (WAL) in database crash recovery algorithms like ARIES?",
+          "options": [
+              "To compress log files before saving to flash storage",
+              "To ensure log records describing changes are written to persistent disk storage BEFORE the corresponding dirty data pages are flushed from buffer cache to disk",
+              "To log user passwords for security audits",
+              "To speed up JavaScript rendering in web apps"
+          ],
+          "correctIndex": 1,
+          "explanation": "The WAL protocol dictates that log records containing redo/undo information must reach non-volatile disk before the modified data page itself is written to disk, ensuring that crashes can be fully recovered via redo/undo passes."
+      },
+      {
+          "id": "dbms-q7",
+          "question": "What is the difference between a Clustered Index and a Non-Clustered (Secondary) Index?",
+          "options": [
+              "A clustered index dictates the physical on-disk storage order of the actual table rows; a non-clustered index stores pointers/keys referencing row locations",
+              "A table can have up to 10 clustered indexes",
+              "Clustered indexes are stored in RAM; non-clustered are on tape",
+              "Non-clustered indexes cannot be used in WHERE queries"
+          ],
+          "correctIndex": 0,
+          "explanation": "Since table records can only be stored physically in one sorted order on disk, a table can possess only ONE clustered index. Secondary indexes contain leaf nodes with index keys and row pointers (RID or primary key)."
+      },
+      {
+          "id": "dbms-q8",
+          "question": "Which SQL query optimization strategy replaces a subquery with an equivalent JOIN operation to allow the query optimizer to pick better join algorithms (e.g. Hash Join)?",
+          "options": [
+              "Subquery Flattening / Decorrelation",
+              "Index fragmentation",
+              "Deadlock detection",
+              "Page splitting"
+          ],
+          "correctIndex": 0,
+          "explanation": "Subquery decorrelation (unnesting) transforms correlated subqueries into relational joins or semi-joins, allowing the query planner to evaluate join order, leverage hash joins, and use existing indexes efficiently."
+      },
+      {
+          "id": "dbms-q9",
+          "question": "In a distributed database, what does the CAP theorem state regarding Consistency (C), Availability (A), and Partition Tolerance (P)?",
+          "options": [
+              "A distributed data store can simultaneously provide at most two of the three guarantees in the presence of a network partition",
+              "All three can be guaranteed 100% of the time",
+              "Only consistency matters; availability is irrelevant",
+              "Partitions never occur on fiber optic networks"
+          ],
+          "correctIndex": 0,
+          "explanation": "Eric Brewer's CAP Theorem proves that across an asynchronous network where partitions (P) are inevitable, a system must choose between returning consistent latest data (CP) or guaranteeing responsive availability at the cost of stale data (AP)."
+      },
+      {
+          "id": "dbms-q10",
+          "question": "What is the main benefit of using a Bloom Filter in distributed key-value stores (like Apache Cassandra or RocksDB)?",
+          "options": [
+              "It quickly tests whether an element is definitely NOT present in an on-disk SSTable, avoiding expensive disk reads",
+              "It encrypts stored values with AES-256",
+              "It sorts database records alphabetically",
+              "It replaces the primary key index completely"
+          ],
+          "correctIndex": 0,
+          "explanation": "A Bloom filter is a space-efficient probabilistic data structure that never returns false negatives. If it reports an item is absent from an SSTable file, the database skips the disk I/O entirely."
+      }
+  ],
+  "system_design": [
+      {
+          "id": "sd-q1",
+          "question": "In distributed systems, what problem does Consistent Hashing solve when dynamically adding or removing cache servers?",
+          "options": [
+              "It minimizes key re-mapping: on average only K/N keys need to be relocated when a node joins or leaves, rather than rehashing almost all keys",
+              "It guarantees zero memory usage on cache servers",
+              "It replaces TCP/IP with UDP packets",
+              "It provides cryptographic blockchain consensus"
+          ],
+          "correctIndex": 0,
+          "explanation": "Traditional modulo hashing (hash(key) % N) relocates almost all keys whenever server count N changes. Consistent hashing places nodes and keys on a circular ring, moving only keys belonging to adjacent ranges."
+      },
+      {
+          "id": "sd-q2",
+          "question": "Which consensus algorithm uses leader election, log replication, and randomized election timeouts to ensure linearizable distributed state machine replication?",
+          "options": [
+              "Raft Consensus Algorithm",
+              "Dijkstra's Shortest Path",
+              "Simulated Annealing",
+              "MD5 Hash Algorithm"
+          ],
+          "correctIndex": 0,
+          "explanation": "Raft decomposes consensus into explicit leader election, log replication, and safety invariants, using randomized election timers to avoid split votes, powering etcd, Consul, and Kafka KRaft."
+      },
+      {
+          "id": "sd-q3",
+          "question": "What is the primary architectural principle behind the CQRS (Command Query Responsibility Segregation) pattern?",
+          "options": [
+              "Separating read models (queries) from write models (commands) into distinct data representations optimized for their respective workloads",
+              "Combining all business logic into one monolithic database table",
+              "Eliminating database transactions entirely",
+              "Compiling backend services into WebAssembly"
+          ],
+          "correctIndex": 0,
+          "explanation": "CQRS separates write operations (commands that mutate state with business validation) from read operations (queries that return denormalized views), allowing each side to scale and optimize independently."
+      },
+      {
+          "id": "sd-q4",
+          "question": "What is the function of a Circuit Breaker pattern in microservices architectures?",
+          "options": [
+              "To fail fast when a downstream dependency is unhealthy, preventing cascading timeouts and giving the failing service time to recover",
+              "To power off physical servers during night hours",
+              "To throttle user web browser page scrolling",
+              "To compress HTTP responses with gzip"
+          ],
+          "correctIndex": 0,
+          "explanation": "A Circuit Breaker tracks failures. Once an error threshold is crossed, it trips open to immediately return fallbacks without invoking the downstream service, preventing thread pool exhaustion and cascading system failure."
+      },
+      {
+          "id": "sd-q5",
+          "question": "Which database scaling technique divides a massive single table horizontally across multiple database instances based on a shard key?",
+          "options": [
+              "Horizontal Database Sharding",
+              "Vertical Indexing",
+              "Database Normalization",
+              "Foreign Key Cascading"
+          ],
+          "correctIndex": 0,
+          "explanation": "Sharding partitions data horizontally across independent server nodes based on a partition hash or range of the shard key, distributing both storage volume and query load across clusters."
+      },
+      {
+          "id": "sd-q6",
+          "question": "In message queues like Apache Kafka, what enables high-throughput sequential disk writes and zero-copy data transfer to consumer network sockets?",
+          "options": [
+              "Append-only commit log storage architecture combined with the sendfile() OS system call",
+              "Storing all messages exclusively in volatile CPU L1 cache",
+              "Translating all messages into raw assembly instructions",
+              "Deleting messages immediately after publication"
+          ],
+          "correctIndex": 0,
+          "explanation": "Kafka writes messages sequentially to an append-only commit log (which approaches sequential disk write speeds of hundreds of MB/s) and uses the Linux sendfile() zero-copy system call to stream directly from page cache to NIC socket."
+      },
+      {
+          "id": "sd-q7",
+          "question": "What is the primary difference between Strong Consistency and Eventual Consistency in distributed data stores?",
+          "options": [
+              "Strong consistency guarantees any read returns the most recent write; eventual consistency guarantees replicas will converge to the same value over time given no new updates",
+              "Eventual consistency never updates data",
+              "Strong consistency does not support networks",
+              "Eventual consistency only works on single-core laptops"
+          ],
+          "correctIndex": 0,
+          "explanation": "Strong consistency enforces synchronous coordination (e.g. 2PC or Paxos/Raft) so all reads see the latest write. Eventual consistency prioritizes latency and availability, asynchronously propagating updates across replicas."
+      },
+      {
+          "id": "sd-q8",
+          "question": "What is a Reverse Proxy used for in modern web architectures?",
+          "options": [
+              "Positioned in front of backend servers to handle SSL termination, load balancing, compression, caching, and IP masking",
+              "To proxy user outgoing requests to the dark web",
+              "To execute database migrations",
+              "To convert HTML to PDF documents"
+          ],
+          "correctIndex": 0,
+          "explanation": "A reverse proxy (e.g. Nginx, Envoy, HAProxy) sits between clients and internal server farms, routing requests, offloading TLS cryptographic handshakes, and caching static assets."
+      },
+      {
+          "id": "sd-q9",
+          "question": "What caching strategy writes data simultaneously to both the cache and the backing database before acknowledging completion to the client?",
+          "options": [
+              "Write-Through Caching",
+              "Write-Back (Write-Behind) Caching",
+              "Cache-Aside Caching",
+              "Refresh-Ahead Caching"
+          ],
+          "correctIndex": 0,
+          "explanation": "Write-Through caching writes to the cache and the primary datastore synchronously before returning success. This ensures cache consistency and zero data loss on crash, at the cost of higher write latency."
+      },
+      {
+          "id": "sd-q10",
+          "question": "Which rate limiting algorithm allows bursts of traffic up to a bucket capacity while replenishing tokens at a constant rate?",
+          "options": [
+              "Token Bucket Algorithm",
+              "Simple Linear Search",
+              "First-In-First-Out Queue",
+              "Bubble Sort Rate Limiter"
+          ],
+          "correctIndex": 0,
+          "explanation": "The Token Bucket algorithm accumulates tokens at a fixed fill rate up to bucket capacity. Requests consume tokens immediately upon arrival, accommodating short traffic bursts while enforcing strict sustained average rate limits."
+      }
+  ],
+
   "mathematics": [
     {
       "id": "math-q1",

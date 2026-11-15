@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { SUBJECTS_DATA, Subject, TopicExplanation } from '../data/curriculumData';
 import { StudyPlanTask, getStoredTasks, addStudyPlanTask, updateTaskStatus, deleteTask, PlanStatus } from '../data/plannerStorage';
+import { saveEvaluationRecord, calculateGrade, EvaluationRecord } from '../data/evaluationStorage';
 
-export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
+export type AppNavTab = 'home' | 'subjects' | 'topic-explanation' | 'assessment' | 'evaluation' | 'assignments' | 'chat-login' | 'chat' | 'gallery' | 'timeline' | 'planner' | 'profile';
 
 export interface AssessmentRecord {
   topicId: string;
@@ -183,17 +184,37 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const completeAssessment = (score: number, total: number) => {
     if (!selectedTopic || !selectedSubject) return;
+    const pct = Math.round((score / total) * 100);
     const record: AssessmentRecord = {
       topicId: selectedTopic.id,
       topicTitle: selectedTopic.title,
       subjectTitle: selectedSubject.title,
       score,
       total,
-      percentage: Math.round((score / total) * 100),
+      percentage: pct,
       completedAt: Date.now(),
     };
     setAssessmentRecord(record);
     sessionStorage.setItem('study_assessment_record', JSON.stringify(record));
+
+    // Save into persistent evaluation history
+    const evalRecord: EvaluationRecord = {
+      id: `eval-topic-${Date.now()}`,
+      title: `${selectedTopic.title} Topic Assessment`,
+      subjectTitle: selectedSubject.title,
+      subjectId: selectedSubject.id,
+      mode: 'topic-quiz',
+      score,
+      total,
+      percentage: pct,
+      grade: calculateGrade(pct),
+      passed: pct >= 50,
+      durationSeconds: Math.max(60, total * 35),
+      completedAt: Date.now(),
+      domain: selectedSubject.title,
+      questions: []
+    };
+    saveEvaluationRecord(evalRecord);
   };
 
   const openChatLogin = () => {

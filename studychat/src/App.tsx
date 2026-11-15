@@ -11,6 +11,8 @@ import { DharyaLoginPage } from './components/auth/DharyaLoginPage';
 import { WhatsAppChatView } from './components/chat/WhatsAppChatView';
 import { PlannerView } from './components/planner/PlannerView';
 import { ProfileView } from './components/profile/ProfileView';
+import { EvaluationView } from './components/evaluation/EvaluationView';
+import { AssignmentsView } from './components/assignments/AssignmentsView';
 
 function AppContent() {
   const { activeTab, isChatAuthenticated, switchTab } = useStudyApp();
@@ -44,6 +46,10 @@ function AppContent() {
         return <TopicExplanationView />;
       case 'assessment':
         return <AssessmentModal />;
+      case 'evaluation':
+        return <EvaluationView />;
+      case 'assignments':
+        return <AssignmentsView />;
       case 'planner':
         return <PlannerView />;
       case 'profile':

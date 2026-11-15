@@ -31,6 +31,11 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import {
+  saveEvaluationRecord,
+  calculateGrade,
+  EvaluationRecord
+} from '../../data/evaluationStorage';
 
 type ExamMode = 'timed' | 'practice';
 type ReviewFilter = 'all' | 'wrong' | 'correct';
@@ -129,6 +134,34 @@ export const AssessmentModal: React.FC = () => {
     setScore(correctCount);
     setIsSubmitted(true);
     completeAssessment(correctCount, questions.length);
+
+    // Save comprehensive evaluation record with question breakdown
+    const pct = Math.round((correctCount / Math.max(1, questions.length)) * 100);
+    const evalRecord: EvaluationRecord = {
+      id: `eval-${Date.now()}`,
+      title: activeSubjectFilter === 'all' ? `GATE Comprehensive Engineering Mock (${questions.length}Q)` : `${currentSubject.title} Proctored Evaluation`,
+      subjectTitle: currentSubject.title,
+      subjectId: activeSubjectFilter,
+      mode: examMode,
+      score: correctCount,
+      total: questions.length,
+      percentage: pct,
+      grade: calculateGrade(pct),
+      passed: pct >= 50,
+      durationSeconds: Math.max(30, totalExamTime - timeLeft),
+      completedAt: Date.now(),
+      domain: currentSubject.title,
+      questions: questions.map((q) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        userAnswerIndex: answers[q.id],
+        correctAnswerIndex: q.correctIndex,
+        isCorrect: answers[q.id] === q.correctIndex,
+        explanation: q.explanation
+      }))
+    };
+    saveEvaluationRecord(evalRecord);
 
     confetti({
       particleCount: 80,
@@ -510,6 +543,14 @@ export const AssessmentModal: React.FC = () => {
 
           {/* Action CTAs */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              onClick={() => switchTab('evaluation')}
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Award className="w-4 h-4" />
+              <span>View In Evaluation Transcript</span>
+            </button>
+
             <button
               onClick={openChatLogin}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-sm shadow-md transition-all hover:scale-105 active:scale-95 inline-flex items-center justify-center gap-2 cursor-pointer"

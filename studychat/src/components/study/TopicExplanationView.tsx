@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 export const TopicExplanationView: React.FC = () => {
-  const { selectedTopic, selectedSubject, openAssessment, openAssessmentQuiz, switchTab } = useStudyApp();
+  const { selectedTopic, selectedSubject, openAssessment, openAssessmentQuiz, openDharyaLogin, switchTab } = useStudyApp();
   const [copiedCode, setCopiedCode] = useState(false);
   const [activeDocumentModal, setActiveDocumentModal] = useState<DocumentResource | null>(null);
   const [docCategory, setDocCategory] = useState<string>('all');
@@ -591,7 +591,7 @@ export const TopicExplanationView: React.FC = () => {
           </button>
 
           <button
-            onClick={openAssessmentQuiz}
+            onClick={openDharyaLogin}
             className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-[#1273C4] hover:bg-[#0D62A5] text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Award className="w-4 h-4 text-amber-300" />

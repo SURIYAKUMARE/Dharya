@@ -91,6 +91,7 @@ import {
   Circle,
   GitBranch,
   Menu,
+  CircleDot,
   Bell,
   BellRing
 } from 'lucide-react';
@@ -3738,13 +3739,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         isDark ? 'bg-[#1f2c34] md:bg-[#202c33] border-[#2a3942]' : 'bg-[#f0f2f5] border-[#d1d7db]'
       }`}>
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 mr-2">
-          {/* Back button on mobile */}
+          {/* Mobile Navigation Menu Drawer Button */}
           <button
-            onClick={() => setMobileView('list')}
-            className="p-1 -ml-1 rounded-full hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center md:hidden shrink-0 cursor-pointer"
-            title="Back to Chats List"
+            onClick={() => setIsNavSidebarOpen(true)}
+            className="p-1 -ml-1 rounded-xl hover:bg-white/10 text-[#aebac1] hover:text-white transition-colors flex items-center gap-1 md:hidden shrink-0 cursor-pointer active:scale-95"
+            title="Open Chat Navigation (Chat, Status, Gallery, Timeline)"
+            aria-label="Open Navigation Menu"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-current" />
+            <div className="w-7 h-7 rounded-lg overflow-hidden border border-white/20 bg-white flex items-center justify-center p-0.5 shadow-2xs shrink-0">
+              <img
+                src={DHARYA_LOGO_DATA_URI}
+                alt="Dhanya Logo"
+                className="w-full h-full object-contain rounded-md"
+              />
+            </div>
           </button>
 
           {/* Contact or Group Avatar */}
@@ -3920,6 +3929,43 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   {menuLevel === 'main' ? (
                     /* MAIN MENU (Picture 2) */
                     <div className="py-0.5">
+                      {/* Direct Navigation Links */}
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setActiveMainView('status');
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center justify-between tracking-wide text-emerald-600 dark:text-emerald-400 font-medium"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <CircleDot className="w-4 h-4" />
+                          <span>Status Stories</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-mono">Live</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setActiveMainView('gallery');
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-2.5 tracking-wide text-indigo-600 dark:text-indigo-400 font-medium"
+                      >
+                        <Images className="w-4 h-4" />
+                        <span>Gallery &amp; Vault</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setActiveMainView('timeline');
+                        }}
+                        className="w-full text-left px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center gap-2.5 tracking-wide text-amber-600 dark:text-amber-400 font-medium border-b border-black/5 dark:border-white/5 pb-3 mb-1"
+                      >
+                        <GitBranch className="w-4 h-4" />
+                        <span>Milestone Timeline</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           setShowMenu(false);

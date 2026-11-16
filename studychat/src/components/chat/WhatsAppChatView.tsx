@@ -521,7 +521,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       }
     }
 
-    const visibleMessages = convMessages.filter((m) => !m.deletedFor?.includes(currentUser));
+    let deletedForMeSet = new Set<string>();
+    try {
+      const saved = JSON.parse(localStorage.getItem(`dharya_deleted_for_me_${currentUser}`) || '[]');
+      if (Array.isArray(saved)) deletedForMeSet = new Set(saved);
+    } catch {}
+
+    const visibleMessages = convMessages.filter((m) => !deletedForMeSet.has(m.id) && !m.deletedFor?.includes(currentUser));
     const lastMsg = visibleMessages[visibleMessages.length - 1];
     const unreadCount = visibleMessages.filter((m) => m.sender !== currentUser && !m.read && m.status !== 'read').length;
 
@@ -3186,12 +3192,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
 
     if (mode === 'for-me') {
-      // Hide locally and record in Supabase deleted_for array
+      // 1. Record persistent deleted-for-me ID so it never resurfaces for this user
+      try {
+        const key = `dharya_deleted_for_me_${currentUser}`;
+        const saved = JSON.parse(localStorage.getItem(key) || '[]');
+        if (!saved.includes(msgId)) {
+          localStorage.setItem(key, JSON.stringify([...saved, msgId]));
+        }
+      } catch {}
+
+      // 2. Hide locally & update state immediately
       const updatedDeletedFor = [...(targetMsg.deletedFor || []), currentUser];
       const next = messages.map((m) => (m.id === msgId ? { ...m, deletedFor: updatedDeletedFor } : m));
+      setMessages(next);
       persistMessages(next);
       deleteRemoteMessageForMe(msgId, targetMsg.deletedFor || [], currentUser).catch(() => {});
-      showToast('Message deleted for you (saved in Recycle Bin)', 'info');
+      showToast('Message deleted for you', 'info');
     } else if (mode === 'for-everyone' && targetMsg.sender === currentUser) {
       // Delete for everyone: replaces message text with "This message was deleted"
       const next = messages.map((m) =>
@@ -3206,7 +3222,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
             }
           : m
       );
+      setMessages(next);
       persistMessages(next);
+      crossDeviceSync.publishHistoryBundle(next).catch(() => {});
       deleteRemoteMessageForEveryone(msgId, currentUser).catch((err) => {
         console.warn('Failed to delete remote message for everyone:', err);
       });
@@ -3275,7 +3293,14 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   };
 
   // Pinned Messages list
-  const pinnedMessages = useMemo(() => messages.filter((m) => m.isPinned).slice(0, 3), [messages]);
+  const pinnedMessages = useMemo(() => {
+    let deletedForMeSet = new Set<string>();
+    try {
+      const saved = JSON.parse(localStorage.getItem(`dharya_deleted_for_me_${currentUser}`) || '[]');
+      if (Array.isArray(saved)) deletedForMeSet = new Set(saved);
+    } catch {}
+    return messages.filter((m) => m.isPinned && !deletedForMeSet.has(m.id) && !m.deletedFor?.includes(currentUser)).slice(0, 3);
+  }, [messages, currentUser]);
 
   // Storage calculation for Targeted Manage Storage Utility
   const storageStats = useMemo(() => {
@@ -3425,7 +3450,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   // Filtered messages: respects "Delete for me", search query, and media filter
   const displayedMessages = useMemo(() => {
-    let list = messages.filter((m) => !m.deletedFor?.includes(currentUser));
+    let deletedForMeSet = new Set<string>();
+    try {
+      const saved = JSON.parse(localStorage.getItem(`dharya_deleted_for_me_${currentUser}`) || '[]');
+      if (Array.isArray(saved)) deletedForMeSet = new Set(saved);
+    } catch {}
+
+    let list = messages.filter((m) => !deletedForMeSet.has(m.id) && !m.deletedFor?.includes(currentUser));
     if (mediaFilter !== 'all') {
       if (mediaFilter === 'starred') {
         list = list.filter((m) => m.isStarred);

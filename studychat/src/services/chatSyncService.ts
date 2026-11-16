@@ -572,6 +572,13 @@ export function mergeMessages(
         ...(lm.reactions || {}),
       };
 
+      // Merge deletedFor and deletedForAll
+      const mergedDeletedFor = Array.from(new Set([
+        ...(existing.deletedFor || []),
+        ...(lm.deletedFor || []),
+      ]));
+      const isDeletedForAll = !!(existing.deletedForAll || lm.deletedForAll);
+
       map.set(lm.id, {
         ...existing,
         status: higherStatus,
@@ -584,9 +591,14 @@ export function mergeMessages(
         replyTo: existing.replyTo || lm.replyTo,
         documentName: existing.documentName || lm.documentName,
         documentSize: existing.documentSize || lm.documentSize,
-        documentUrl: existing.documentUrl || lm.documentUrl,
-        audioUrl: existing.audioUrl || lm.audioUrl,
+        documentUrl: isDeletedForAll ? undefined : (existing.documentUrl || lm.documentUrl),
+        audioUrl: isDeletedForAll ? undefined : (existing.audioUrl || lm.audioUrl),
         audioDuration: existing.audioDuration || lm.audioDuration,
+        mediaUrl: isDeletedForAll ? undefined : (existing.mediaUrl || lm.mediaUrl),
+        mediaUrls: isDeletedForAll ? undefined : (existing.mediaUrls || lm.mediaUrls),
+        deletedFor: mergedDeletedFor,
+        deletedForAll: isDeletedForAll,
+        text: isDeletedForAll ? 'This message was deleted' : (existing.text || lm.text),
       });
     }
   }

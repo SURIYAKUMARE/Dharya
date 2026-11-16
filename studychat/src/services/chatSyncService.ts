@@ -1,4 +1,5 @@
 import { getSupabase, ExtendedChatMessage } from './supabaseClient';
+import { crossDeviceSync } from './crossDeviceSyncService';
 
 export const CHAT_ID = 'dharya-surya-sadhana';
 export const STUDY_GROUP_CHAT_ID = 'engineering-study-circle';
@@ -196,9 +197,20 @@ export async function fetchRemoteMessages(
     const { data, error } = await query;
     if (error) {
       console.warn('[chatSync] fetchRemoteMessages error:', error.message);
+      // Fallback to high-speed Port-443 retained history bundle
+      const cloudBundle = await crossDeviceSync.fetchHistoryBundle();
+      if (Array.isArray(cloudBundle) && cloudBundle.length > 0) {
+        return { messages: cloudBundle, hasMore: false };
+      }
       return { messages: [], hasMore: false };
     }
-    if (!data || !Array.isArray(data)) return { messages: [], hasMore: false };
+    if (!data || !Array.isArray(data)) {
+      const cloudBundle = await crossDeviceSync.fetchHistoryBundle();
+      if (Array.isArray(cloudBundle) && cloudBundle.length > 0) {
+        return { messages: cloudBundle, hasMore: false };
+      }
+      return { messages: [], hasMore: false };
+    }
 
     const hasMore = data.length > limit;
     const rows = hasMore ? data.slice(0, limit) : data;

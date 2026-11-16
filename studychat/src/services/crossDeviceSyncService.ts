@@ -383,11 +383,14 @@ class CrossDeviceSyncService {
       for (let i = lines.length - 1; i >= 0; i--) {
         try {
           const item = JSON.parse(lines[i]);
-          if (item.message) {
-            const parsed = JSON.parse(item.message);
-            if (parsed.event === 'sync_history_bundle' && Array.isArray(parsed.payload?.messages)) {
-              return parsed.payload.messages;
-            }
+          let parsed = item;
+          if (typeof item.message === 'string') {
+            try { parsed = JSON.parse(item.message); } catch {}
+          } else if (item.message && typeof item.message === 'object') {
+            parsed = item.message;
+          }
+          if (parsed && parsed.event === 'sync_history_bundle' && Array.isArray(parsed.payload?.messages)) {
+            return parsed.payload.messages;
           }
         } catch {}
       }

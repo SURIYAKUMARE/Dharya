@@ -908,17 +908,17 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [activeChatId]);
 
-  // Continuous bi-directional synchronization with Supabase backend
+  // Continuous bi-directional synchronization with cloud cache
   const syncWithRemote = useRef<() => Promise<void>>(async () => {});
 
   syncWithRemote.current = async () => {
     try {
       const currentId = activeChatIdRef.current;
-      const res = await fetchRemoteMessages(currentId, 50);
-      if (res.messages && res.messages.length > 0) {
-        setHasMoreMessages(res.hasMore);
+      const remoteMsgs = await crossDeviceSync.fetchHistoryBundle();
+      if (Array.isArray(remoteMsgs) && remoteMsgs.length > 0) {
+        setHasMoreMessages(false);
         setMessages((prev) => {
-          const merged = mergeMessages(prev, res.messages);
+          const merged = mergeMessages(prev, remoteMsgs);
           // Check if any change exists
           if (
             merged.length !== prev.length ||
@@ -1651,26 +1651,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                 payload: { reader: currentUser, readUpTo: Date.now() },
               });
             }
-
-            // Sync with Supabase on connect
-            syncWithRemote.current();
-            // Start continuous background remote sync every 3s
-            const bgSyncTimer = setInterval(() => {
-              syncWithRemote.current();
-              crossDeviceSync.pollMissedEvents();
-            }, 3000);
-            const onWinFocus = () => {
-              syncWithRemote.current();
-              crossDeviceSync.pollMissedEvents();
-            };
-            window.addEventListener('focus', onWinFocus);
-            document.addEventListener('visibilitychange', () => {
-              if (document.visibilityState === 'visible') onWinFocus();
-            });
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            setConnectionStatus('offline');
-          } else {
-            setConnectionStatus('connecting');
           }
         });
 
@@ -1707,6 +1687,27 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
       // Initialize Cross-Device Real-Time Sync across Phones, Laptops & Networks
       crossDeviceSync.init(currentUser);
+      const unsubStatus = crossDeviceSync.onConnectionStatusChange((status) => {
+        setConnectionStatus(status);
+      });
+
+      // Immediate cloud catch-up and continuous background sync
+      syncWithRemote.current();
+      crossDeviceSync.pollMissedEvents();
+      const bgSyncTimer = setInterval(() => {
+        syncWithRemote.current();
+        crossDeviceSync.pollMissedEvents();
+      }, 2500);
+
+      const onWinFocus = () => {
+        syncWithRemote.current();
+        crossDeviceSync.pollMissedEvents();
+      };
+      window.addEventListener('focus', onWinFocus);
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible') onWinFocus();
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange);
 
       const unsubCrossDevice = crossDeviceSync.subscribe((event, payload) => {
         if (!payload) return;
@@ -2024,6 +2025,12 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       window.addEventListener('storage', onChatStorage);
 
       return () => {
+        clearInterval(bgSyncTimer);
+        window.removeEventListener('focus', onWinFocus);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        try {
+          unsubStatus();
+        } catch {}
         window.removeEventListener('gallery_broadcast_photo_added', onBroadcastPhotoAdded);
         window.removeEventListener('gallery_broadcast_photo_deleted', onBroadcastPhotoDeleted);
         window.removeEventListener('storage', onChatStorage);

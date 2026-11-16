@@ -4,6 +4,8 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({
   base: './',
+  // Scan the web entry only; Android assets contain a separate generated bundle.
+  optimizeDeps: { entries: ['index.html'] },
   plugins: [react(), viteSingleFile()],
   server: {
     port: 3000,

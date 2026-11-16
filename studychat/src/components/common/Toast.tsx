@@ -23,7 +23,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => [...prev.slice(-4), { id, text, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 2800);
+    }, type === 'error' ? 6000 : 3500);
   }, []);
 
   const removeToast = (id: string) => {
@@ -38,6 +38,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 rounded-2xl shadow-xl text-xs font-semibold backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${
               toast.type === 'success'
                 ? 'bg-emerald-950/90 text-emerald-200 border border-emerald-500/30'
@@ -51,6 +52,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             {toast.type === 'info' && <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />}
             <span className="flex-1 text-left leading-tight">{toast.text}</span>
             <button
+              aria-label="Dismiss notification"
               onClick={() => removeToast(toast.id)}
               className="p-1 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
             >

@@ -149,22 +149,10 @@ export async function performFullCleanSlateReset(): Promise<void> {
 }
 
 /**
- * Automatically invoked on application boot.
- * If the clean slate version has not yet been applied on this browser, run the purge once.
+ * Legacy startup hook retained as a safe no-op.
+ * Destructive resets must only be initiated explicitly.
  */
 export function autoRunCleanSlateOnBoot(): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const isApplied = localStorage.getItem(CLEAN_SLATE_VERSION_KEY);
-    if (isApplied !== 'true') {
-      console.log('[cleanSlate] Applying clean-slate fresh user reset...');
-      purgeAllLocalDataSync();
-      // Background remote wipe
-      performFullCleanSlateReset().catch(() => {});
-      localStorage.setItem(CLEAN_SLATE_VERSION_KEY, 'true');
-    }
-  } catch (e) {
-    console.warn('[cleanSlate] Auto-run error:', e);
-  }
+  // Kept for compatibility. Opening the app must never delete user data.
+  // Resets are available only through an explicit user action.
 }

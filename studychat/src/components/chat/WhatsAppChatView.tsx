@@ -434,7 +434,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [showChatLists, setShowChatLists] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
   const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video'; offer?: any } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video'; offer?: any; callId?: string } | null>(null);
+  const activeCallRef = useRef(false);
+  activeCallRef.current = Boolean(showCallModal || incomingCall);
+  const seenOffersRef = useRef(new Set<string>());
+  const receiveCallOffer = (data: any) => {
+    if (!data || data.from !== partnerUser || data.to !== currentUser || !data.offer?.sdp) return;
+    if (data.timestamp && Date.now() - data.timestamp > 35000) return;
+    const id = data.callId || data.offer.sdp;
+    if (seenOffersRef.current.has(id)) return;
+    seenOffersRef.current.add(id);
+    if (seenOffersRef.current.size > 100) seenOffersRef.current.delete(seenOffersRef.current.values().next().value!);
+    if (activeCallRef.current) {
+      const payload = { from: currentUser, to: partnerUser, callId: data.callId };
+      crossDeviceSync.publish('call_declined', payload);
+      channelRef.current?.send({ type: 'broadcast', event: 'call_declined', payload });
+      return;
+    }
+    activeCallRef.current = true;
+    setIncomingCall({ caller: data.from, type: data.callType === 'audio' ? 'audio' : 'video', offer: data.offer, callId: data.callId });
+  };
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
 
@@ -1503,11 +1522,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         .on('broadcast', { event: 'call_offer' }, (payload) => {
           const data = payload?.payload;
           if (data && (data.recipient === currentUser || data.to === currentUser)) {
-            setIncomingCall({
-              caller: data.caller || data.from,
-              type: data.callType || data.type || 'video',
-              offer: data.offer,
-            });
+            receiveCallOffer(data);
             window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_offer', payload: data } }));
           }
         })
@@ -1525,14 +1540,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         })
         .on('broadcast', { event: 'call_declined' }, (payload) => {
           const data = payload?.payload;
-          setShowCallModal(null);
-          setIncomingCall(null);
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_declined', payload: data } }));
         })
         .on('broadcast', { event: 'call_ended' }, (payload) => {
           const data = payload?.payload;
-          setShowCallModal(null);
-          setIncomingCall(null);
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event: 'call_ended', payload: data } }));
         })
         .on('broadcast', { event: 'gallery_photo_added' }, (payload) => {
@@ -1866,16 +1877,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
               ? payload.deviceId !== crossDeviceSync.getDeviceId()
               : payload.from !== currentUser;
 
-            if (isFromOtherDevice) {
-              setIncomingCall({
-                caller: payload.caller || payload.from || partnerUser,
-                type: payload.callType || payload.type || 'video',
-                offer: payload.offer,
-              });
+            if (isFromOtherDevice && payload.from === partnerUser && payload.to === currentUser) {
+              receiveCallOffer(payload);
             }
-          } else if (event === 'call_declined' || event === 'call_ended') {
-            setShowCallModal(null);
-            setIncomingCall(null);
+
           }
           window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event, payload } }));
         } else if (event === 'sync_request') {
@@ -1964,24 +1969,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           const data = e.data?.payload;
           if ((ev === 'call_offer' || ev === 'call:offer') && data) {
             if (data.recipient === currentUser || data.to === currentUser) {
-              setIncomingCall({
-                caller: data.caller || data.from,
-                type: data.callType || data.type || 'video',
-                offer: data.offer,
-              });
+              receiveCallOffer(data);
               window.dispatchEvent(
                 new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
               );
             }
           } else if (ev === 'call_declined' || ev === 'call:rejected') {
-            setShowCallModal(null);
-            setIncomingCall(null);
             window.dispatchEvent(
               new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
             );
           } else if (ev === 'call_ended' || ev === 'call:ended' || ev === 'call:cancelled') {
-            setShowCallModal(null);
-            setIncomingCall(null);
             window.dispatchEvent(
               new CustomEvent('whatsapp_call_signal', { detail: { event: ev, payload: data } })
             );
@@ -3261,6 +3258,15 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setDeleteDialogMsg(null);
   };
 
+  const startCall = (type: 'audio' | 'video') => {
+    if (!isOnline) { showToast('Connect to the internet to make a call.', 'error'); return; }
+    if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+      showToast('Calling needs a secure browser with microphone support.', 'error'); return;
+    }
+    if (showCallModal || incomingCall) return;
+    setShowCallModal(type);
+  };
+
   // Handle call completion / close and log call summary message into chat
   const handleCallFinished = (durationSecs: number, status: 'completed' | 'missed' | 'declined') => {
     const activeType = showCallModal || incomingCall?.type || 'video';
@@ -3905,7 +3911,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           {/* Video Call */}
           <button
-            onClick={() => setShowCallModal('video')}
+            onClick={() => startCall('video')}
             className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors cursor-pointer shrink-0"
             title="Video call"
           >
@@ -3914,7 +3920,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
           {/* Voice Call */}
           <button
-            onClick={() => setShowCallModal('audio')}
+            onClick={() => startCall('audio')}
             className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors cursor-pointer shrink-0"
             title="Voice call"
           >
@@ -5244,7 +5250,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
                   e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
                     e.preventDefault();
                     if (editingMessage) {
                       handleConfirmEdit();
@@ -6708,6 +6714,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           currentUser={currentUser}
           isIncoming={Boolean(incomingCall)}
           incomingOffer={incomingCall?.offer}
+          callId={incomingCall?.callId}
           onClose={handleCallFinished}
           channelRef={channelRef}
         />

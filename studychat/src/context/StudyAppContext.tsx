@@ -113,16 +113,17 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = sessionStorage.getItem('study_student_profile') || localStorage.getItem('study_student_profile');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.name && !parsed.name.toLowerCase().includes('surya')) {
+        if (parsed && (parsed.username === 'surya' || parsed.username === 'sadhana')) {
           return parsed;
         }
       }
     } catch {}
+    const defaultUser = (typeof localStorage !== 'undefined' && localStorage.getItem('studyportal_current_user') === 'surya') ? 'surya' : 'sadhana';
     return {
-      username: 'sadhana',
-      name: 'SADHANA N',
-      studentId: 'SEC25EI091',
-      department: 'Electronics and Instrumentation Engineering',
+      username: defaultUser,
+      name: defaultUser === 'surya' ? 'SURYA' : 'SADHANA N',
+      studentId: defaultUser === 'surya' ? 'SURYA001' : 'SEC25EI091',
+      department: defaultUser === 'surya' ? 'Computer Science & Engineering' : 'Electronics and Instrumentation Engineering',
       college: 'Sri Sairam Engineering College',
       semester: 'Semester 4',
     };
@@ -245,11 +246,12 @@ export const StudyAppProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const quickLogin = (user: 'surya' | 'sadhana'): boolean => {
+    const isSurya = user === 'surya';
     const prof: StudentProfile = {
       username: user,
-      name: 'SADHANA N',
-      studentId: 'SEC25EI091',
-      department: 'Electronics and Instrumentation Engineering',
+      name: isSurya ? 'SURYA' : 'SADHANA N',
+      studentId: isSurya ? 'SURYA001' : 'SEC25EI091',
+      department: isSurya ? 'Computer Science & Engineering' : 'Electronics and Instrumentation Engineering',
       college: 'Sri Sairam Engineering College',
       semester: '4th Semester',
     };

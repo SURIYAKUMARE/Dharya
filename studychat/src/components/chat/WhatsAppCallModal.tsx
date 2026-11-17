@@ -17,7 +17,10 @@ import {
 } from 'lucide-react';
 
 interface WhatsAppCallModalProps {
-  callType: 'audio' | 'video';
+  callType: 'audio' | 'video' | 'screen';
+  displayStream?: MediaStream | null;
+  minimized?: boolean;
+  onShowMessages?: () => void;
   partnerName: string;
   partnerUser: 'surya' | 'sadhana';
   currentUser: 'surya' | 'sadhana';
@@ -92,6 +95,7 @@ export function waitForIceGathering(pc: RTCPeerConnection): Promise<void> {
 
 export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   callType,
+  displayStream, minimized = false, onShowMessages,
   partnerName,
   partnerUser,
   currentUser,
@@ -109,6 +113,8 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   }, []);
   const generationRef = useRef(0);
   const acceptingRef = useRef(false);
+  const offerRetryRef = useRef<number | null>(null);
+  const answerPayloadRef = useRef<any>(null);
   const answerAppliedRef = useRef(false);
   const flippingRef = useRef(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
@@ -138,6 +144,9 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const remoteAudioStreamRef = useRef<MediaStream | null>(null);
+  const speakerOnRef = useRef(true);
+  const playbackAttemptRef = useRef(0);
 
   const durationTimerRef = useRef<number | null>(null);
   const ringtoneTimerRef = useRef<number | null>(null);
@@ -145,6 +154,43 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const isCleaningUpRef = useRef<boolean>(false);
   const callBroadcastRef = useRef<BroadcastChannel | null>(null);
+
+  // Keep voice on an audio-only stream. Rebind it when the incoming/active UI changes.
+  const resumeRemoteAudio = useCallback(() => {
+    const element = remoteAudioRef.current;
+    const stream = remoteAudioStreamRef.current;
+    if (!element || !stream?.getAudioTracks().length || isCleaningUpRef.current) return;
+    const attempt = ++playbackAttemptRef.current;
+    if (element.srcObject !== stream) element.srcObject = stream;
+    element.defaultMuted = false;
+    element.muted = !speakerOnRef.current;
+    element.volume = 1;
+    void element.play().then(() => {
+      if (attempt === playbackAttemptRef.current) setPlaybackBlocked(false);
+    }).catch((error: unknown) => {
+      if (attempt !== playbackAttemptRef.current || isCleaningUpRef.current) return;
+      // A newer playback request can interrupt an older one while tracks arrive.
+      if ((error as { name?: string })?.name !== 'AbortError') setPlaybackBlocked(true);
+    });
+  }, []);
+
+  const bindRemoteAudio = useCallback((element: HTMLAudioElement | null) => {
+    playbackAttemptRef.current += 1;
+    remoteAudioRef.current = element;
+    if (element) resumeRemoteAudio();
+  }, [resumeRemoteAudio]);
+
+  const enableCallAudio = () => {
+    speakerOnRef.current = true;
+    setIsSpeakerOn(true);
+    resumeRemoteAudio();
+  };
+
+  const handleToggleSpeaker = () => {
+    speakerOnRef.current = !speakerOnRef.current;
+    setIsSpeakerOn(speakerOnRef.current);
+    resumeRemoteAudio();
+  };
 
   // High-reliability signaling sender
   const sendSignal = useCallback((event: string, payload: any) => {
@@ -221,15 +267,18 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     isCleaningUpRef.current = true;
 
     generationRef.current += 1;
+    if (offerRetryRef.current) clearInterval(offerRetryRef.current);
     if (durationTimerRef.current) clearInterval(durationTimerRef.current);
     durationTimerRef.current = null;
     if (ringtoneTimerRef.current) clearInterval(ringtoneTimerRef.current);
     if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
     if (disconnectTimerRef.current) clearTimeout(disconnectTimerRef.current);
+    playbackAttemptRef.current += 1;
+    remoteAudioStreamRef.current = null;
     remoteStreamRef.current = null;
     pendingCandidatesRef.current = [];
     [remoteAudioRef.current, remoteVideoRef.current, localVideoRef.current].forEach(element => {
-      if (element) element.srcObject = null;
+      if (element) { element.pause(); element.srcObject = null; }
     });
 
     if (localStreamRef.current) {
@@ -251,6 +300,17 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
   // Never substitute silent/generated tracks for denied microphone access.
   const getLocalMedia = async (mode: 'user' | 'environment'): Promise<MediaStream> => {
+    if (callType === 'screen') {
+      const stream = isIncoming ? new MediaStream() : displayStream;
+      if (!stream || (!isIncoming && !stream.getVideoTracks().some(track => track.readyState === 'live'))) throw new Error('Screen sharing stopped. Start sharing again.');
+      localStreamRef.current = stream;
+      if (!isIncoming) {
+        stream.getVideoTracks().forEach(track => { track.onended = () => handleEndCall(false); });
+        if (!stream.getAudioTracks().length) setNotice('No screen audio was shared. Choose a browser tab and enable Share tab audio to include sound.');
+      }
+      setHasCameraAccess(stream.getVideoTracks().length > 0);
+      return stream;
+    }
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Calling requires HTTPS and a browser with microphone support.');
     }
@@ -335,16 +395,19 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       if (!rStream.getTracks().some(track => track.id === event.track.id)) rStream.addTrack(event.track);
       remoteStreamRef.current = rStream;
 
-      if (remoteVideoRef.current && callType === 'video') {
+      if (remoteVideoRef.current && callType !== 'audio') {
         remoteVideoRef.current.srcObject = rStream;
         remoteVideoRef.current.play().catch(() => {});
         if (event.track.kind === 'video') {
           setHasRemoteVideo(true);
         }
       }
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = rStream;
-        remoteAudioRef.current.play().then(() => setPlaybackBlocked(false)).catch(() => setPlaybackBlocked(true));
+      if (event.track.kind === 'audio') {
+        const audioStream = remoteAudioStreamRef.current || new MediaStream();
+        if (!audioStream.getTracks().some(track => track.id === event.track.id)) audioStream.addTrack(event.track);
+        remoteAudioStreamRef.current = audioStream;
+        event.track.onunmute = resumeRemoteAudio;
+        resumeRemoteAudio();
       }
     };
 
@@ -369,7 +432,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
   // Attach local stream to self-camera video element whenever mounted
   useEffect(() => {
-    if (localVideoRef.current && localStreamRef.current && callType === 'video') {
+    if (localVideoRef.current && localStreamRef.current && callType !== 'audio') {
       localVideoRef.current.srcObject = localStreamRef.current;
       localVideoRef.current.play().catch(() => {});
     }
@@ -378,16 +441,13 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   // Ensure remote stream is consistently attached whenever connected or stream updates
   useEffect(() => {
     if (remoteStreamRef.current) {
-      if (remoteVideoRef.current && callType === 'video') {
+      if (remoteVideoRef.current && callType !== 'audio') {
         remoteVideoRef.current.srcObject = remoteStreamRef.current;
         remoteVideoRef.current.play().catch(() => {});
       }
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStreamRef.current;
-        remoteAudioRef.current.play().then(() => setPlaybackBlocked(false)).catch(() => setPlaybackBlocked(true));
-      }
+      resumeRemoteAudio();
     }
-  }, [callStatus, callType, hasRemoteVideo]);
+  }, [callStatus, callType, hasRemoteVideo, resumeRemoteAudio]);
 
   // ── CALL LIFECYCLE ──
   useEffect(() => {
@@ -423,7 +483,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           if (!isMounted || isCleaningUpRef.current) return;
 
           // Broadcast call offer with explicit SDP object
-          sendSignal('call_offer', {
+          const offerPayload = {
             from: currentUser,
             to: partnerUser,
             caller: currentUser,
@@ -434,8 +494,11 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
               sdp: pc.localDescription?.sdp || offer.sdp,
             },
             timestamp: Date.now(),
-          });
-          setCallStatus('ringing');
+          };
+          sendSignal('call_offer', offerPayload);
+          offerRetryRef.current = window.setInterval(() => {
+            if (!isCleaningUpRef.current && !answerAppliedRef.current) sendSignal('call_offer', offerPayload);
+          }, 3000);
         } catch (err) {
           if (isMounted) failCall(err);
         }
@@ -458,6 +521,12 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     const handleSignal = async (event: string, payload: any) => {
       if (!payload || isCleaningUpRef.current || payload.from !== partnerUser || payload.to !== currentUser || (payload.callId && payload.callId !== callIdRef.current)) return;
 
+      if (event === 'call_ringing' && !isIncoming && !answerAppliedRef.current) setCallStatus('ringing');
+      // The caller retries a lost offer/answer exchange until it receives the answer.
+      if (event === 'call_offer' && isIncoming && answerPayloadRef.current) {
+        sendSignal('call_accepted', answerPayloadRef.current);
+      }
+
       // 1. Call accepted / answer by recipient
       if (
         (event === 'call_accepted' || event === 'call:accepted' || event === 'call:answer') &&
@@ -465,6 +534,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
       ) {
         if (isIncoming || !payload.answer || answerAppliedRef.current) return;
         answerAppliedRef.current = true;
+        if (offerRetryRef.current) clearInterval(offerRetryRef.current);
         if (ringtoneTimerRef.current) clearInterval(ringtoneTimerRef.current);
         if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
 
@@ -613,7 +683,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
         await waitForIceGathering(pc);
         if (generation !== generationRef.current || isCleaningUpRef.current) return;
 
-        sendSignal('call_accepted', {
+        answerPayloadRef.current = {
           from: currentUser,
           to: partnerUser,
           caller: partnerUser,
@@ -623,7 +693,8 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
             sdp: pc.localDescription?.sdp || answer.sdp,
           },
           timestamp: Date.now(),
-        });
+        };
+        sendSignal('call_accepted', answerPayloadRef.current);
       } else {
         sendSignal('call_accepted', {
           from: currentUser,
@@ -732,9 +803,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     }
   };
 
-  const noticeBanner = notice || playbackBlocked ? <div role="status" className="absolute top-36 inset-x-4 z-40 rounded-xl bg-black/80 p-3 text-center text-sm text-white">{notice}{playbackBlocked && <button className="block mx-auto rounded-full bg-[#00a884] px-4 py-2 mt-2" onClick={() => {
-    remoteAudioRef.current?.play().then(() => setPlaybackBlocked(false)).catch(() => setPlaybackBlocked(true));
-  }}>Tap to hear the call</button>}<button aria-label="Dismiss notification" className="ml-3 underline" onClick={() => setNotice(null)}>Dismiss</button></div> : null;
+  const noticeBanner = notice || playbackBlocked ? <div role="status" className="absolute top-36 inset-x-4 z-40 rounded-xl bg-black/80 p-3 text-center text-sm text-white">{notice}{playbackBlocked && <button className="block mx-auto rounded-full bg-[#00a884] px-4 py-2 mt-2" onClick={enableCallAudio}>Tap to hear the call</button>}<button aria-label="Dismiss notification" className="ml-3 underline" onClick={() => setNotice(null)}>Dismiss</button></div> : null;
 
   const formatDuration = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -757,7 +826,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
     return (
       <div className="fixed inset-0 z-50 bg-[#091516] flex flex-col justify-between p-6 sm:p-10 text-center text-white select-none animate-in fade-in duration-200 overflow-hidden">
         {/* Permanent audio & video tags so refs are never null */}
-        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        <audio ref={bindRemoteAudio} onLoadedMetadata={resumeRemoteAudio} autoPlay playsInline className="hidden" />
         <video ref={remoteVideoRef} muted autoPlay playsInline className="hidden" />
 
         {noticeBanner}
@@ -778,7 +847,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">{partnerName}</h2>
           <p className="text-sm font-medium text-[#25d366] animate-pulse flex items-center justify-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#25d366] animate-ping" />
-            <span>Incoming {callType === 'video' ? 'Video' : 'Voice'} Call...</span>
+            <span>Incoming {callType === 'screen' ? 'Screen Share' : callType === 'video' ? 'Video Call' : 'Voice Call'}...</span>
           </p>
         </div>
 
@@ -825,12 +894,27 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
   }
 
   // ── 2. ACTIVE VIDEO CALL SCREEN ──
+  if (callType === 'screen') {
+    return <section aria-label="Screen sharing" className={minimized ? 'hidden' : 'fixed inset-0 z-50 bg-[#070e10] text-white flex flex-col'}>
+      <audio ref={bindRemoteAudio} onLoadedMetadata={resumeRemoteAudio} autoPlay playsInline />
+      <nav aria-label="Chat navigation" className="flex items-center gap-3 p-4 bg-[#202c33]">
+        <button onClick={onShowMessages} className="rounded-lg px-4 py-2 bg-white/10">Messages</button>
+        <span className="rounded-lg px-4 py-2 bg-[#008069]" aria-current="page">Screen Share</span>
+        <button onClick={() => handleEndCall(false)} className="ml-auto rounded-lg px-4 py-2 bg-red-600">Stop</button>
+      </nav>
+      <p className="p-3 text-center text-sm">{isIncoming ? partnerName + ' is sharing their screen' : 'Your screen is shared'} · Screen sound only · Microphone off</p>
+      <p role="status" className="text-center text-sm text-gray-300">{callStatus === 'connected' ? 'Connected' : 'Waiting for connection…'}</p>
+      {noticeBanner}
+      <video ref={isIncoming ? remoteVideoRef : localVideoRef} autoPlay playsInline muted className="w-full flex-1 min-h-0 object-contain" />
+    </section>;
+  }
+
   if (callType === 'video') {
     return (
       <div className="fixed inset-0 z-50 bg-[#070e10] flex flex-col justify-between overflow-hidden select-none">
         {noticeBanner}
         {/* Hidden permanent audio element for remote stream */}
-        <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        <audio ref={bindRemoteAudio} onLoadedMetadata={resumeRemoteAudio} autoPlay playsInline className="hidden" />
 
         {/* Full-Screen Remote Video Stream or High-Tech Avatar Screen */}
         <div className="absolute inset-0 z-0 bg-[#070e10] flex items-center justify-center">
@@ -912,7 +996,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
         {/* Bottom Call Control Action Pill Bar */}
         <div className="relative z-20 pb-8 sm:pb-10 pt-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col items-center gap-4">
-          <div className="flex items-center gap-3 sm:gap-5 bg-[#182229]/90 backdrop-blur-xl border border-white/15 px-6 py-3 rounded-full shadow-2xl">
+          <div className="flex items-center gap-2 sm:gap-5 bg-[#182229]/90 backdrop-blur-xl border border-white/15 px-3 sm:px-6 py-3 rounded-full shadow-2xl">
             {/* Flip Camera */}
             <button
               onClick={handleFlipCamera}
@@ -944,6 +1028,16 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
               {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
 
+            <button
+              onClick={handleToggleSpeaker}
+              aria-label={isSpeakerOn ? 'Mute call audio' : 'Enable call audio'}
+              aria-pressed={isSpeakerOn}
+              title={isSpeakerOn ? 'Mute call audio' : 'Enable call audio'}
+              className="w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center"
+            >
+              {isSpeakerOn ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+
             {/* Red End Call Button */}
             <button
               onClick={() => handleEndCall(false)}
@@ -971,7 +1065,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
       {noticeBanner}
       {/* Hidden media elements for remote stream */}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+      <audio ref={bindRemoteAudio} onLoadedMetadata={resumeRemoteAudio} autoPlay playsInline />
       <video ref={remoteVideoRef} muted autoPlay playsInline className="hidden" />
 
       {/* Top Header Bar */}
@@ -1036,12 +1130,7 @@ export const WhatsAppCallModal: React.FC<WhatsAppCallModalProps> = ({
 
           {/* Speaker On/Off */}
           <button
-            onClick={() => {
-              if (remoteAudioRef.current) {
-                remoteAudioRef.current.muted = isSpeakerOn;
-              }
-              setIsSpeakerOn(!isSpeakerOn);
-            }}
+            onClick={handleToggleSpeaker}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
               !isSpeakerOn ? 'bg-amber-600 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
             }`}

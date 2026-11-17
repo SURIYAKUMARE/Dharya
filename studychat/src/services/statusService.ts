@@ -16,6 +16,11 @@
 
 import { crossDeviceSync } from './crossDeviceSyncService';
 import { DHARYA_LOGO_DATA_URI } from '../assets/dharyaLogoDataUri';
+import suryaFaceImg from '../assets/faces/surya.jpg';
+import sadhanaFaceImg from '../assets/faces/sadhana.jpg';
+
+export const SURYA_DEFAULT_AVATAR = suryaFaceImg || DHARYA_LOGO_DATA_URI;
+export const SADHANA_DEFAULT_AVATAR = sadhanaFaceImg;
 
 export type StatusMediaType = 'photo' | 'video' | 'text' | 'audio';
 export type PrivacyMode = 'contacts' | 'except' | 'only' | 'private';
@@ -306,6 +311,45 @@ class StatusService {
       } else if (event === 'status_delete' && payload?.statusId) {
         this.statuses = this.statuses.filter((s) => s.id !== payload.statusId);
         this.persistStatuses();
+      } else if (event === 'sync_request') {
+        // Send active statuses to peer device
+        const active = this.statuses.filter((s) => s.expiresAt > Date.now());
+        if (active.length > 0) {
+          crossDeviceSync.publish('status_sync_bundle', {
+            statuses: active,
+            views: this.views,
+            reactions: this.reactions,
+          });
+        }
+      } else if (event === 'status_sync_bundle' && Array.isArray(payload?.statuses)) {
+        let changed = false;
+        const now = Date.now();
+        payload.statuses.forEach((st: StatusItem) => {
+          if (st && st.id && st.expiresAt > now && !this.statuses.some((s) => s.id === st.id)) {
+            this.statuses.push(st);
+            changed = true;
+          }
+        });
+        if (Array.isArray(payload.views)) {
+          payload.views.forEach((v: StatusViewRecord) => {
+            if (v && v.id && !this.views.some((existing) => existing.id === v.id)) {
+              this.views.push(v);
+            }
+          });
+        }
+        if (Array.isArray(payload.reactions)) {
+          payload.reactions.forEach((r: StatusReaction) => {
+            if (r && r.id && !this.reactions.some((existing) => existing.id === r.id)) {
+              this.reactions.push(r);
+            }
+          });
+        }
+        if (changed) {
+          this.statuses.sort((a, b) => a.createdAt - b.createdAt);
+          this.persistStatuses();
+          this.persistViews();
+          this.persistReactions();
+        }
       }
     });
   }
@@ -341,13 +385,22 @@ class StatusService {
         }
         return owner === uid;
       })
+      .map((s) => {
+        if ((s.owner === 'sadhana' || s.owner === 'dhanya') && (s.authorName === 'Dhanya' || !s.authorName)) {
+          return { ...s, authorName: 'Sadhana', authorAvatar: s.authorAvatar || SADHANA_DEFAULT_AVATAR };
+        }
+        if (s.owner === 'surya' && (!s.authorAvatar || s.authorAvatar === DHARYA_LOGO_DATA_URI)) {
+          return { ...s, authorName: 'Surya', authorAvatar: SURYA_DEFAULT_AVATAR };
+        }
+        return s;
+      })
       .sort((a, b) => a.createdAt - b.createdAt);
   }
 
   // ── Get Recent Updates (Partner's Status) ──
-  // If Surya views: shows Dhanya's status updates
+  // If Surya views: shows Sadhana's status updates
   // If Sadhana views: shows Surya's status updates
-  public getRecentUpdates(currentUserId: string): {
+  public getRecentUpdates(currentUserId: string, fallbackPartnerName?: string): {
     partnerId: string;
     partnerName: string;
     partnerAvatar: string;
@@ -360,28 +413,38 @@ class StatusService {
     const uid = currentUserId.toLowerCase();
     const isSurya = uid === 'surya';
     const partnerId = isSurya ? 'sadhana' : 'surya';
-    const partnerName = isSurya ? 'Dhanya' : 'Surya';
-    const defaultAvatar = isSurya ? DHANYA_SUNSET_AVATAR : DHARYA_LOGO_DATA_URI;
+    const partnerName = fallbackPartnerName || (isSurya ? 'Sadhana' : 'Surya');
+    const defaultAvatar = isSurya ? SADHANA_DEFAULT_AVATAR : SURYA_DEFAULT_AVATAR;
 
-    const partnerStatuses = this.statuses.filter((s) => {
-      if (s.expiresAt <= now) return false;
-      const owner = s.owner.toLowerCase();
+    const partnerStatuses = this.statuses
+      .filter((s) => {
+        if (s.expiresAt <= now) return false;
+        const owner = s.owner.toLowerCase();
 
-      // If viewing as Surya: display partner's (Sadhana/Dhanya) statuses
-      if (isSurya) {
-        if (owner === 'surya') return false;
-      } else {
-        // If viewing as Sadhana/Dhanya: display partner's (Surya) statuses
-        if (owner === 'sadhana' || owner === 'dhanya') return false;
-      }
+        // If viewing as Surya: display partner's (Sadhana/Dhanya) statuses
+        if (isSurya) {
+          if (owner === 'surya') return false;
+        } else {
+          // If viewing as Sadhana/Dhanya: display partner's (Surya) statuses
+          if (owner === 'sadhana' || owner === 'dhanya') return false;
+        }
 
-      // Check privacy settings
-      if (s.privacy === 'private') return false;
-      if (s.privacy === 'except' && s.excludedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
-      if (s.privacy === 'only' && !s.includedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
+        // Check privacy settings
+        if (s.privacy === 'private') return false;
+        if (s.privacy === 'except' && s.excludedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
+        if (s.privacy === 'only' && !s.includedContacts?.map((c) => c.toLowerCase()).includes(uid)) return false;
 
-      return true;
-    });
+        return true;
+      })
+      .map((s) => {
+        if ((s.owner === 'sadhana' || s.owner === 'dhanya') && (s.authorName === 'Dhanya' || !s.authorName)) {
+          return { ...s, authorName: 'Sadhana', authorAvatar: s.authorAvatar || SADHANA_DEFAULT_AVATAR };
+        }
+        if (s.owner === 'surya' && (!s.authorAvatar || s.authorAvatar === DHARYA_LOGO_DATA_URI)) {
+          return { ...s, authorName: 'Surya', authorAvatar: SURYA_DEFAULT_AVATAR };
+        }
+        return s;
+      });
 
     partnerStatuses.sort((a, b) => a.createdAt - b.createdAt);
 

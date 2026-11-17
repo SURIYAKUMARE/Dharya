@@ -58,6 +58,13 @@ import {
   Music,
   Disc,
   FileAudio,
+  Pencil,
+  ChevronUp,
+  ChevronDown,
+  MessageSquare,
+  CircleDot,
+  Users,
+  Phone,
 } from 'lucide-react';
 import {
   statusService,
@@ -68,6 +75,8 @@ import {
   StatusSongInfo,
   PrivacyMode,
   DHANYA_SUNSET_AVATAR,
+  SURYA_DEFAULT_AVATAR,
+  SADHANA_DEFAULT_AVATAR,
 } from '../../services/statusService';
 import { saveRemoteMessage } from '../../services/chatSyncService';
 import { crossDeviceSync } from '../../services/crossDeviceSyncService';
@@ -203,6 +212,94 @@ function createMelodyWavDataUri(notes: number[], durationSec = 15): string {
   return 'data:audio/wav;base64,' + btoa(binary);
 }
 
+export interface SampleContact {
+  id: string;
+  name: string;
+  avatar: string;
+  time: string;
+  initialGroup: 'recent' | 'viewed';
+  status: {
+    type: 'photo' | 'text';
+    mediaUrl: string;
+    caption: string;
+  };
+}
+
+const SAMPLE_CONTACTS: SampleContact[] = [
+  {
+    id: 'c_shanthosh',
+    name: 'shanthosh Frd',
+    avatar: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=400&q=80',
+    time: '1:57 PM',
+    initialGroup: 'recent',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
+      caption: 'Blessings from temple festival 🙏✨',
+    },
+  },
+  {
+    id: 'c_giri',
+    name: 'Giri Anna',
+    avatar: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=400&q=80',
+    time: '6 minutes ago',
+    initialGroup: 'recent',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80',
+      caption: 'Evening celebration with family 🌺',
+    },
+  },
+  {
+    id: 'c_dhivya',
+    name: '💝Dhivya Sister🥰🌸',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    time: 'Yesterday',
+    initialGroup: 'viewed',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+      caption: 'College memories and celebrations 💕',
+    },
+  },
+  {
+    id: 'c_mahes',
+    name: '💖Mahes💍',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80',
+    time: 'Yesterday',
+    initialGroup: 'viewed',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+      caption: 'Traditional family day out 🌸',
+    },
+  },
+  {
+    id: 'c_amma',
+    name: '💖Amma ✨',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    time: '8:31 AM',
+    initialGroup: 'viewed',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+      caption: 'Morning prayer & peaceful moments ✨',
+    },
+  },
+  {
+    id: 'c_yogesh',
+    name: 'Yogesh',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    time: 'Yesterday',
+    initialGroup: 'viewed',
+    status: {
+      type: 'photo',
+      mediaUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+      caption: 'Weekend beach vibes 🏖️🌊',
+    },
+  },
+];
+
 export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   isDark = false,
   studentName = 'Sadhana',
@@ -212,7 +309,16 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   onSwitchUser,
   showToast,
 }) => {
-  const currentUser = studentName.toLowerCase() === 'sadhana' ? 'sadhana' : 'surya';
+  const currentUser: 'surya' | 'sadhana' =
+    partnerUser === 'surya'
+      ? 'sadhana'
+      : partnerUser === 'sadhana'
+      ? 'surya'
+      : studentName.toLowerCase().includes('surya')
+      ? 'surya'
+      : 'sadhana';
+
+  const partnerDisplayName = partnerName || (currentUser === 'surya' ? 'Sadhana' : 'Surya');
 
   // ── Reactive Subscriptions ──
   const [, setTick] = useState(0);
@@ -222,12 +328,20 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
 
   // ── Data Queries ──
   const myStatuses = useMemo(() => statusService.getMyStatuses(currentUser), [currentUser]);
-  const recentUpdates = useMemo(() => statusService.getRecentUpdates(currentUser), [currentUser]);
+  const recentUpdates = useMemo(
+    () => statusService.getRecentUpdates(currentUser, partnerDisplayName),
+    [currentUser, partnerDisplayName]
+  );
   const highlights = useMemo(() => statusService.getHighlights(), []);
   const archivedStatuses = useMemo(() => statusService.getArchivedStatuses(currentUser), [currentUser]);
 
   // ── UI Modals & Navigation States ──
-  const [activeStoryGroup, setActiveStoryGroup] = useState<'partner' | 'my' | null>(null);
+  const [activeStoryGroup, setActiveStoryGroup] = useState<'partner' | 'my' | 'contact' | null>(null);
+  const [activeContactStories, setActiveContactStories] = useState<StatusItem[]>([]);
+  const [isViewedOpen, setIsViewedOpen] = useState(true);
+  const [viewedContactIds, setViewedContactIds] = useState<Set<string>>(
+    () => new Set(['c_dhivya', 'c_mahes', 'c_amma', 'c_yogesh'])
+  );
   const [showAddModal, setShowAddModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -285,8 +399,37 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   const currentViewerStories = useMemo(() => {
     if (activeStoryGroup === 'partner') return recentUpdates.statuses;
     if (activeStoryGroup === 'my') return myStatuses;
+    if (activeStoryGroup === 'contact') return activeContactStories;
     return [];
-  }, [activeStoryGroup, recentUpdates.statuses, myStatuses]);
+  }, [activeStoryGroup, recentUpdates.statuses, myStatuses, activeContactStories]);
+
+  const recentContactList = useMemo(() => {
+    return SAMPLE_CONTACTS.filter((c) => !viewedContactIds.has(c.id));
+  }, [viewedContactIds]);
+
+  const viewedContactList = useMemo(() => {
+    return SAMPLE_CONTACTS.filter((c) => viewedContactIds.has(c.id));
+  }, [viewedContactIds]);
+
+  const handleOpenContactStatus = (contact: SampleContact) => {
+    const item: StatusItem = {
+      id: `contact_${contact.id}`,
+      owner: contact.id,
+      authorName: contact.name,
+      authorAvatar: contact.avatar,
+      type: contact.status.type,
+      mediaUrl: contact.status.mediaUrl,
+      caption: contact.status.caption,
+      createdAt: Date.now() - 3600000,
+      expiresAt: Date.now() + 86400000,
+      privacy: 'contacts',
+    };
+    setActiveContactStories([item]);
+    setActiveStoryGroup('contact');
+    setActiveStoryIdx(0);
+    setStoryProgress(0);
+    setViewedContactIds((prev) => new Set([...prev, contact.id]));
+  };
 
   const activeStoryItem = currentViewerStories[activeStoryIdx] || null;
 
@@ -294,7 +437,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   useEffect(() => {
     if (activeStoryItem && activeStoryGroup === 'partner') {
       const viewerName = currentUser === 'surya' ? 'Surya' : 'Sadhana';
-      const viewerAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
+      const viewerAvatar = currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR;
       statusService.recordView(activeStoryItem.id, {
         id: currentUser,
         name: viewerName,
@@ -455,7 +598,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
         title: cleanName,
         artist: currentUser === 'surya' ? 'Surya' : 'Sadhana',
         audioUrl: dataUri,
-        coverUrl: currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR,
+        coverUrl: currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR,
       };
       setAttachedSong(newSong);
       setCustomSongTitle(cleanName);
@@ -533,7 +676,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
     }
 
     const authorName = currentUser === 'surya' ? 'Surya' : 'Sadhana';
-    const authorAvatar = currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR;
+    const authorAvatar = currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR;
 
     try {
       setUploadProgress(65);
@@ -705,104 +848,61 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white overflow-y-auto font-sans select-none relative">
-      {/* ══════ 1. HEADER (Exact replica of Reference Image) ══════ */}
-      <header className="w-full max-w-xl mx-auto px-4 pt-4 pb-3 flex items-center justify-between z-20 shrink-0">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-[#111b21] overflow-y-auto font-sans select-none relative">
+      {/* ══════ 1. HEADER (Exact Replica of WhatsApp Android Updates Tab) ══════ */}
+      <header className="w-full max-w-xl mx-auto px-4 pt-4 pb-2 flex items-center justify-between z-20 shrink-0 bg-white dark:bg-[#111b21] sticky top-0 border-b border-transparent">
         <div className="flex items-center gap-3">
-          {/* Circular Pink Back Arrow Button */}
-          {onBackToChat && (
-            <button
-              onClick={onBackToChat}
-              className="w-10 h-10 rounded-full bg-[#FFF0F5] border border-pink-100 flex items-center justify-center text-slate-800 hover:bg-pink-100/70 transition-colors cursor-pointer shadow-2xs"
-              title="Back to Chat"
-            >
-              <ArrowLeft className="w-5 h-5 text-slate-700" />
-            </button>
-          )}
-
-          {/* Green Double-Ring Status Brand Icon */}
-          <div className="relative w-8 h-8 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8" viewBox="0 0 36 36">
-              <circle
-                cx="18"
-                cy="18"
-                r="15"
-                fill="none"
-                stroke={BRAND_GREEN}
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                className="opacity-90"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="10.5"
-                fill="none"
-                stroke={BRAND_GREEN}
-                strokeWidth="2.2"
-                strokeDasharray="4,4"
-              />
-            </svg>
-          </div>
-
-          {/* Title & Subtitle */}
-          <div>
-            <h1 className="text-[22px] font-extrabold text-slate-900 tracking-tight leading-none">
-              Status
-            </h1>
-            <p className="text-[12px] font-semibold text-slate-500 flex items-center gap-1 mt-0.5">
-              <span>Share your moments</span>
-              <span className="text-[#F22679] font-bold">♡</span>
-            </p>
-          </div>
+          <h1 className="text-[24px] font-bold text-[#111b21] dark:text-[#e9edef] tracking-tight leading-tight">
+            Updates
+          </h1>
         </div>
 
-        {/* Right Action Icons: Switch Account, Search & Three-Dots Menu */}
+        {/* Right Action Icons: Profile Switcher, Search & Three-Dots Menu */}
         <div className="flex items-center gap-2 relative">
           {onSwitchUser && (
             <button
               onClick={onSwitchUser}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] font-bold transition-all shadow-2xs cursor-pointer select-none ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all shadow-2xs cursor-pointer select-none ${
                 currentUser === 'surya'
                   ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
                   : 'bg-pink-50 hover:bg-pink-100 border-pink-300 text-pink-700'
               }`}
-              title={`Active profile: ${currentUser === 'surya' ? 'Surya' : 'Sadhana'} • Click to switch`}
+              title={`Active account: ${currentUser === 'surya' ? 'Surya' : 'Sadhana'} • Click to switch`}
             >
               <User className="w-3.5 h-3.5" />
               <span>{currentUser === 'surya' ? 'Surya' : 'Sadhana'}</span>
-              <span className="text-[10px] opacity-70 hidden sm:inline">⇄ Switch</span>
+              <span className="text-[10px] opacity-70">⇄</span>
             </button>
           )}
 
           <button
             onClick={() => setIsSearchActive((prev) => !prev)}
-            className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-100 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-            title="Search Statuses"
+            className="p-2 text-[#54656f] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors cursor-pointer"
+            title="Search"
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-5 h-5" />
           </button>
 
           <button
             onClick={() => setShowMenuDropdown((prev) => !prev)}
-            className="w-10 h-10 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-100 flex items-center justify-center text-slate-700 transition-colors cursor-pointer"
-            title="Status Options"
+            className="p-2 text-[#54656f] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors cursor-pointer"
+            title="More options"
           >
-            <MoreVertical className="w-4 h-4" />
+            <MoreVertical className="w-5 h-5" />
           </button>
 
           {/* Header Dropdown Menu */}
           {showMenuDropdown && (
-            <div className="absolute top-12 right-0 w-52 rounded-2xl bg-white border border-slate-200/90 shadow-xl py-1.5 z-50 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95 duration-100">
+            <div className="absolute top-12 right-0 w-52 rounded-2xl bg-white dark:bg-[#202c33] border border-slate-200/90 dark:border-[#2a3942] shadow-xl py-1.5 z-50 text-xs font-semibold text-slate-700 dark:text-[#e9edef] animate-in fade-in zoom-in-95 duration-100">
               <button
                 onClick={() => {
                   setShowPrivacyModal(true);
                   setShowMenuDropdown(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-[#111b21] flex items-center gap-2.5 cursor-pointer"
               >
-                <Lock className="w-4 h-4 text-[#16852D]" />
-                <span>Status Privacy</span>
+                <Lock className="w-4 h-4 text-[#00a884]" />
+                <span>Status privacy</span>
               </button>
 
               <button
@@ -810,10 +910,10 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   setShowArchiveModal(true);
                   setShowMenuDropdown(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
+                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-[#111b21] flex items-center gap-2.5 cursor-pointer"
               >
-                <Clock className="w-4 h-4 text-[#F22679]" />
-                <span>Status Archive</span>
+                <Clock className="w-4 h-4 text-[#00a884]" />
+                <span>Status archive</span>
               </button>
 
               <button
@@ -821,7 +921,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   setShowHighlightModal(true);
                   setShowMenuDropdown(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer border-t border-slate-100"
+                className="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-[#111b21] flex items-center gap-2.5 cursor-pointer border-t border-slate-100 dark:border-[#2a3942]"
               >
                 <Sparkles className="w-4 h-4 text-amber-500" />
                 <span>Highlights</span>
@@ -839,10 +939,10 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
             <input
               type="text"
               autoFocus
-              placeholder="Search status updates..."
+              placeholder="Search updates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-100 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-100 dark:bg-[#202c33] text-xs text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#00a884]"
             />
             {searchQuery && (
               <button
@@ -856,9 +956,16 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
         </div>
       )}
 
-      {/* ══════ MAIN CONTENT STAGE ══════ */}
-      <main className="w-full max-w-xl mx-auto px-4 py-2 space-y-5 flex-1 relative z-10 pb-32">
-        {/* ══════ 2. MY STATUS CARD (Exact Replica with Green Leaves & Pink Heart Flourish) ══════ */}
+      {/* ══════ MAIN UPDATES LIST (Exact Replica of WhatsApp Android Screenshot) ══════ */}
+      <main className="w-full max-w-xl mx-auto flex-1 relative z-10 pb-28 divide-y divide-transparent">
+        {/* ── SECTION TITLE: Status ── */}
+        <div className="px-4 pt-3 pb-1">
+          <h2 className="text-[19px] font-bold text-[#111b21] dark:text-[#e9edef] tracking-tight">
+            Status
+          </h2>
+        </div>
+
+        {/* ── 1. MY STATUS ROW (Authentic WhatsApp Android List Item) ── */}
         <div
           onClick={() => {
             if (myStatuses.length > 0) {
@@ -869,285 +976,227 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
               setShowAddModal(true);
             }
           }}
-          className="relative w-full rounded-[28px] p-4 bg-white border border-emerald-100/70 shadow-[0_6px_25px_rgba(22,133,45,0.06)] flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99] overflow-hidden"
-          style={{
-            background: 'linear-gradient(105deg, #FFFFFF 0%, #F5FBF6 55%, #FFF0F6 100%)',
-          }}
+          className="w-full px-4 py-2 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-[#202c33]/70 transition-colors"
         >
-          {/* Left: Avatar with Ring & + Badge */}
-          <div className="flex items-center gap-3.5 z-10">
-            <div className="relative">
-              {/* Outer Green Ring */}
-              <div className="w-16 h-16 rounded-full p-0.5 border-2 border-[#16852D] flex items-center justify-center bg-white shadow-xs">
-                <img
-                  src={currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR}
-                  alt="My Profile"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              </div>
-
-              {/* Green Plus Badge */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddModal(true);
-                }}
-                className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#16852D] text-white flex items-center justify-center border-2 border-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
-                title="Add New Status"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              </button>
+          <div className="flex items-center gap-3.5">
+            {/* Avatar with Ring or Green Plus Badge */}
+            <div className="relative shrink-0">
+              {myStatuses.length > 0 ? (
+                /* Active Status Ring */
+                <div className="w-[56px] h-[56px] rounded-full p-[2.5px] border-2 border-[#8696a0] flex items-center justify-center bg-white dark:bg-[#111b21]">
+                  <img
+                    src={currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR}
+                    alt="My status"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                </div>
+              ) : (
+                /* No Status: Profile with Green Plus Badge */
+                <div className="relative w-[52px] h-[52px]">
+                  <img
+                    src={currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR}
+                    alt="My status"
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAddModal(true);
+                    }}
+                    className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#00a884] text-white flex items-center justify-center border-2 border-white dark:border-[#111b21] shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                    title="Add status update"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Labels */}
-            <div>
-              <h2 className="text-[17px] font-bold text-slate-900 tracking-tight leading-tight">
-                My Status
-              </h2>
-              <p className="text-[13px] text-slate-500 font-medium leading-tight mt-1">
+            {/* Title & Subtitle */}
+            <div className="min-w-0">
+              <h3 className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef] leading-snug">
+                My status
+              </h3>
+              <p className="text-[13.5px] text-[#667781] dark:text-[#8696a0] leading-snug mt-0.5 truncate">
                 {myStatuses.length > 0
-                  ? `${myStatuses.length} update${myStatuses.length > 1 ? 's' : ''} • Tap to view`
-                  : 'Tap to add a status'}
+                  ? getRelativeTime(myStatuses[myStatuses.length - 1].createdAt)
+                  : 'Tap to add status update'}
               </p>
             </div>
           </div>
 
-          {/* Right: Exact Organic Flourish (Sprouting Green Leaves + Pink Heart) */}
-          <div className="relative w-28 h-20 shrink-0 pointer-events-none">
-            <svg
-              viewBox="0 0 110 80"
-              className="w-full h-full"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+          {/* Right Action: Menu for My Status */}
+          {myStatuses.length > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStoryGroup('my');
+                setActiveStoryIdx(0);
+                setShowViewerSheet(true);
+              }}
+              className="p-2 text-[#667781] hover:text-[#111b21] dark:hover:text-white cursor-pointer"
+              title="Status Options"
             >
-              {/* Soft pink hill backdrop */}
-              <path
-                d="M 20 80 C 45 45, 80 40, 110 55 L 110 80 Z"
-                fill="url(#cardPinkGrad)"
-                opacity="0.35"
-              />
-              {/* Soft green hill backdrop */}
-              <path
-                d="M 0 80 C 30 55, 65 50, 100 80 Z"
-                fill="url(#cardGreenGrad)"
-                opacity="0.4"
-              />
-
-              {/* Green Branch Stem */}
-              <path
-                d="M 68 75 C 72 55, 78 40, 88 28"
-                stroke="#16852D"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-
-              {/* Leaf 1 (Left Upper) */}
-              <path
-                d="M 72 50 C 60 48, 62 38, 70 36 C 73 42, 73 46, 72 50 Z"
-                fill="#16852D"
-              />
-
-              {/* Leaf 2 (Right Lower) */}
-              <path
-                d="M 74 60 C 84 58, 84 48, 76 46 C 74 52, 74 56, 74 60 Z"
-                fill="#22C55E"
-              />
-
-              {/* Pink Floating Heart at Stem Tip */}
-              <path
-                d="M 88 28 C 84 22, 77 22, 77 27 C 77 32, 88 42, 88 42 C 88 42, 99 32, 99 27 C 99 22, 92 22, 88 28 Z"
-                stroke="#F22679"
-                strokeWidth="2.2"
-                fill="none"
-                strokeLinejoin="round"
-              />
-
-              <defs>
-                <linearGradient id="cardPinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#F22679" />
-                  <stop offset="100%" stopColor="#FDA4AF" />
-                </linearGradient>
-                <linearGradient id="cardGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#16852D" />
-                  <stop offset="100%" stopColor="#BBF7D0" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
+              <MoreVertical className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        {/* ══════ 3. RECENT UPDATES SECTION (Unseen Statuses) ══════ */}
-        <section className="space-y-3 pt-2">
-          {/* Section Heading with Green Vertical Bar */}
-          <div className="flex items-center gap-2 px-1">
-            <span className="w-1 h-5 rounded-full bg-[#16852D]" />
-            <h3 className="text-[16px] font-extrabold text-slate-900 tracking-tight">
-              Recent Updates
-            </h3>
-          </div>
+        {/* ── 2. RECENT UPDATES SECTION (Exact from Screenshot) ── */}
+        {(recentUpdates.statuses.length > 0 && recentUpdates.hasUnseen || recentContactList.length > 0) && (
+          <div className="w-full pt-3 pb-1">
+            <h4 className="px-4 text-[13px] font-semibold text-[#667781] dark:text-[#8696a0] uppercase tracking-wide mb-1">
+              Recent updates
+            </h4>
 
-          {/* Partner's Status Card (Unseen Updates with Green Ring) */}
-          {recentUpdates.statuses.length > 0 && recentUpdates.hasUnseen ? (
-            <div
-              onClick={() => {
-                setActiveStoryGroup('partner');
-                setActiveStoryIdx(0);
-                setStoryProgress(0);
-              }}
-              className="w-full rounded-[26px] p-3.5 bg-[#F3FAF5] border border-[#D1EBD9]/70 flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99] shadow-2xs"
-            >
-              <div className="flex items-center gap-3.5">
-                {/* Partner Profile with Green Story Ring */}
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-[#16852D] flex items-center justify-center bg-white shadow-xs">
+            {/* Partner's Status: If Surya logged in -> shows Sadhana; If Sadhana logged in -> shows Surya */}
+            {recentUpdates.statuses.length > 0 && recentUpdates.hasUnseen && (
+              <div
+                onClick={() => {
+                  setActiveStoryGroup('partner');
+                  setActiveStoryIdx(0);
+                  setStoryProgress(0);
+                }}
+                className="w-full px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-[#202c33]/70 transition-colors"
+              >
+                <div className="flex items-center gap-3.5">
+                  {/* Vivid Green Story Ring */}
+                  <div className="w-[56px] h-[56px] rounded-full p-[2.5px] border-2 border-[#25D366] flex items-center justify-center bg-white dark:bg-[#111b21] shrink-0">
                     <img
                       src={recentUpdates.partnerAvatar}
                       alt={recentUpdates.partnerName}
                       className="w-full h-full rounded-full object-cover"
                     />
                   </div>
-                </div>
-
-                {/* Name & Time */}
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-[17px] font-bold text-slate-900 tracking-tight leading-tight">
+                  <div>
+                    <h5 className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef] leading-snug">
                       {recentUpdates.partnerName}
-                    </h4>
-                    {recentUpdates.partnerName === 'Dhanya' && (
-                      <span className="text-[#F22679] text-base leading-none font-bold">♡</span>
-                    )}
+                    </h5>
+                    <p className="text-[13.5px] text-[#667781] dark:text-[#8696a0] leading-snug mt-0.5">
+                      {recentUpdates.lastUpdated
+                        ? getRelativeTime(recentUpdates.lastUpdated)
+                        : 'Just now'}
+                    </p>
                   </div>
-                  <p className="text-[12.5px] text-slate-500 font-medium leading-tight mt-1">
-                    {recentUpdates.lastUpdated
-                      ? getRelativeTime(recentUpdates.lastUpdated)
-                      : 'Just now'}
-                    {recentUpdates.statuses.length > 1 && ` • ${recentUpdates.statuses.length} updates`}
-                  </p>
                 </div>
               </div>
+            )}
 
-              {/* Three-dot menu button with View & Delete options */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPartnerMenuOpen((prev) => !prev);
-                  }}
-                  className="p-2 rounded-full hover:bg-black/5 text-slate-600 transition-colors cursor-pointer"
-                  title="Status Options"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </button>
+            {/* Contacts from Screenshot with Green Ring */}
+            {recentContactList.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => handleOpenContactStatus(c)}
+                className="w-full px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-[#202c33]/70 transition-colors"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-[56px] h-[56px] rounded-full p-[2.5px] border-2 border-[#25D366] flex items-center justify-center bg-white dark:bg-[#111b21] shrink-0">
+                    <img src={c.avatar} alt={c.name} className="w-full h-full rounded-full object-cover" />
+                  </div>
+                  <div>
+                    <h5 className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef] leading-snug">
+                      {c.name}
+                    </h5>
+                    <p className="text-[13.5px] text-[#667781] dark:text-[#8696a0] leading-snug mt-0.5">
+                      {c.time}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-                {partnerMenuOpen && (
-                  <div className="absolute right-0 top-10 w-44 rounded-2xl bg-white border border-slate-200 shadow-xl py-1 z-50 text-xs font-semibold text-slate-700 animate-in fade-in zoom-in-95">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPartnerMenuOpen(false);
-                        setActiveStoryGroup('partner');
-                        setActiveStoryIdx(0);
-                      }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-[#16852D]" />
-                      <span>View Status</span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPartnerMenuOpen(false);
-                        if (recentUpdates.statuses[0]) {
-                          statusService.deleteStatus(recentUpdates.statuses[0].id, currentUser);
-                          showToast?.('Status cleared 🗑️', 'info');
-                        }
-                      }}
-                      className="w-full px-3.5 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2 cursor-pointer border-t border-slate-100"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Delete Status</span>
-                    </button>
+        {/* ── 3. VIEWED UPDATES SECTION (Exact from Screenshot with Chevron) ── */}
+        {(recentUpdates.statuses.length > 0 && !recentUpdates.hasUnseen || viewedContactList.length > 0) && (
+          <div className="w-full pt-2 pb-2">
+            <div
+              onClick={() => setIsViewedOpen((prev) => !prev)}
+              className="w-full px-4 py-2 flex items-center justify-between cursor-pointer select-none"
+            >
+              <h4 className="text-[13px] font-semibold text-[#667781] dark:text-[#8696a0] uppercase tracking-wide">
+                Viewed updates
+              </h4>
+              {isViewedOpen ? (
+                <ChevronUp className="w-5 h-5 text-[#667781] dark:text-[#8696a0]" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-[#667781] dark:text-[#8696a0]" />
+              )}
+            </div>
+
+            {isViewedOpen && (
+              <div>
+                {/* Partner in Viewed Updates if already viewed */}
+                {recentUpdates.statuses.length > 0 && !recentUpdates.hasUnseen && (
+                  <div
+                    onClick={() => {
+                      setActiveStoryGroup('partner');
+                      setActiveStoryIdx(0);
+                      setStoryProgress(0);
+                    }}
+                    className="w-full px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-[#202c33]/70 transition-colors opacity-90"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-[56px] h-[56px] rounded-full p-[2.5px] border-2 border-[#8696a0] flex items-center justify-center bg-white dark:bg-[#111b21] shrink-0">
+                        <img
+                          src={recentUpdates.partnerAvatar}
+                          alt={recentUpdates.partnerName}
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h5 className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef] leading-snug">
+                          {recentUpdates.partnerName}
+                        </h5>
+                        <p className="text-[13.5px] text-[#8696a0] leading-snug mt-0.5">
+                          {recentUpdates.lastUpdated
+                            ? getRelativeTime(recentUpdates.lastUpdated)
+                            : 'Yesterday'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-              <p className="text-xs text-slate-500 font-medium">
-                No new recent updates from {recentUpdates.partnerName} right now.
-              </p>
-            </div>
-          )}
-        </section>
 
-        {/* ══════ 3B. VIEWED UPDATES SECTION (Muted Status Ring) ══════ */}
-        {recentUpdates.statuses.length > 0 && !recentUpdates.hasUnseen && (
-          <section className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 px-1">
-              <span className="w-1 h-5 rounded-full bg-slate-400" />
-              <h3 className="text-[15px] font-extrabold text-slate-600 tracking-tight">
-                Viewed Updates
-              </h3>
-            </div>
-
-            <div
-              onClick={() => {
-                setActiveStoryGroup('partner');
-                setActiveStoryIdx(0);
-                setStoryProgress(0);
-              }}
-              className="w-full rounded-[26px] p-3.5 bg-slate-50 border border-slate-200/80 flex items-center justify-between cursor-pointer transition-transform duration-150 hover:scale-[1.01] active:scale-[0.99] shadow-2xs opacity-90 hover:opacity-100"
-            >
-              <div className="flex items-center gap-3.5">
-                {/* Muted Ring */}
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-slate-300 flex items-center justify-center bg-white shadow-xs">
-                    <img
-                      src={recentUpdates.partnerAvatar}
-                      alt={recentUpdates.partnerName}
-                      className="w-full h-full rounded-full object-cover"
-                    />
+                {/* Viewed Contacts from Screenshot with Grey Ring */}
+                {viewedContactList.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => handleOpenContactStatus(c)}
+                    className="w-full px-4 py-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-[#202c33]/70 transition-colors opacity-90"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-[56px] h-[56px] rounded-full p-[2.5px] border-2 border-[#8696a0] flex items-center justify-center bg-white dark:bg-[#111b21] shrink-0">
+                        <img src={c.avatar} alt={c.name} className="w-full h-full rounded-full object-cover" />
+                      </div>
+                      <div>
+                        <h5 className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef] leading-snug">
+                          {c.name}
+                        </h5>
+                        <p className="text-[13.5px] text-[#8696a0] leading-snug mt-0.5">
+                          {c.time}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-[16px] font-bold text-slate-800 tracking-tight leading-tight">
-                      {recentUpdates.partnerName}
-                    </h4>
-                    {recentUpdates.partnerName === 'Dhanya' && (
-                      <span className="text-[#F22679] text-sm leading-none font-bold">♡</span>
-                    )}
-                  </div>
-                  <p className="text-[12px] text-slate-400 font-medium leading-tight mt-1">
-                    Viewed • {recentUpdates.lastUpdated ? getRelativeTime(recentUpdates.lastUpdated) : 'Earlier today'}
-                  </p>
-                </div>
+                ))}
               </div>
-
-              <div className="px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-[11px] font-semibold">
-                Viewed
-              </div>
-            </div>
-          </section>
+            )}
+          </div>
         )}
 
         {/* ── Status Highlights Section (if any collections exist) ── */}
         {highlights.length > 0 && (
-          <section className="space-y-2 pt-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="w-1 h-5 rounded-full bg-[#F22679]" />
-                <h3 className="text-[15px] font-extrabold text-slate-900 tracking-tight">
-                  Highlights
-                </h3>
-              </div>
+          <section className="space-y-2 px-4 pt-3 pb-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[14px] font-bold text-[#111b21] dark:text-[#e9edef]">
+                Highlights
+              </h3>
               <button
                 onClick={() => setShowHighlightModal(true)}
-                className="text-xs font-bold text-[#F22679] hover:opacity-80"
+                className="text-xs font-bold text-[#00a884] hover:opacity-80 cursor-pointer"
               >
                 Manage
               </button>
@@ -1159,10 +1208,10 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   key={hl.id}
                   className="flex flex-col items-center gap-1.5 shrink-0 cursor-pointer group"
                 >
-                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-[#F22679] bg-white overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
+                  <div className="w-14 h-14 rounded-full p-0.5 border-2 border-[#00a884] bg-white overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
                     <img src={hl.coverUrl} alt={hl.title} className="w-full h-full rounded-full object-cover" />
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[64px]">
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[64px]">
                     {hl.title}
                   </span>
                 </div>
@@ -1172,51 +1221,88 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
         )}
       </main>
 
-      {/* ══════ 4. BOTTOM FLOWING WAVE DECORATION (Exact from Reference Image) ══════ */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-0">
-        <svg
-          viewBox="0 0 400 120"
-          className="w-full h-auto drop-shadow-sm"
-          preserveAspectRatio="none"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+      {/* ══════ 4. FLOATING ACTION BUTTONS (Exact Replica of Screenshot) ══════ */}
+      <div className="fixed bottom-20 right-4 z-40 flex flex-col items-center gap-3">
+        {/* Pencil Button for Text Status */}
+        <button
+          type="button"
+          onClick={() => {
+            setCreatorMode('text');
+            setShowAddModal(true);
+          }}
+          className="w-10 h-10 rounded-full bg-[#f0f2f5] dark:bg-[#202c33] shadow-md hover:shadow-lg flex items-center justify-center text-[#54656f] dark:text-[#aebac1] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          title="Create text status"
         >
-          {/* Subtle green wave ribbon */}
-          <path
-            d="M 0 60 C 100 40, 240 110, 400 70 L 400 120 L 0 120 Z"
-            fill="url(#bottomGreenRibbon)"
-            opacity="0.3"
-          />
+          <Pencil className="w-5 h-5" />
+        </button>
 
-          {/* Soft pink wave ribbon */}
-          <path
-            d="M 0 85 C 120 70, 280 120, 400 90 L 400 120 L 0 120 Z"
-            fill="url(#bottomPinkRibbon)"
-            opacity="0.45"
-          />
-
-          {/* Sprouting Green Leaves in Bottom Left Corner */}
-          <g transform="translate(14, 60)">
-            {/* Stem */}
-            <path d="M 0 40 C 10 30, 22 15, 34 0" stroke="#16852D" strokeWidth="2.2" strokeLinecap="round" />
-            {/* Leaf 1 */}
-            <path d="M 12 32 C 6 22, 10 10, 24 16 C 22 24, 18 28, 12 32 Z" fill="#16852D" />
-            {/* Leaf 2 */}
-            <path d="M 22 22 C 32 18, 36 6, 26 2 C 22 8, 22 16, 22 22 Z" fill="#22C55E" />
-          </g>
-
-          <defs>
-            <linearGradient id="bottomGreenRibbon" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#16852D" />
-              <stop offset="100%" stopColor="#86EFAC" />
-            </linearGradient>
-            <linearGradient id="bottomPinkRibbon" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#F22679" />
-              <stop offset="100%" stopColor="#FDA4AF" />
-            </linearGradient>
-          </defs>
-        </svg>
+        {/* Green Camera Button for Photo/Video Status */}
+        <button
+          type="button"
+          onClick={() => {
+            setCreatorMode('media');
+            setShowAddModal(true);
+          }}
+          className="w-14 h-14 rounded-2xl bg-[#00a884] hover:bg-[#008f6f] text-white shadow-lg hover:shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer relative"
+          title="Add photo or video status"
+        >
+          <div className="relative">
+            <Camera className="w-6 h-6" />
+            <Plus className="w-3 h-3 stroke-[3] absolute -top-1 -right-1 text-white" />
+          </div>
+        </button>
       </div>
+
+      {/* ══════ 5. BOTTOM NAVIGATION BAR (Exact Replica of Screenshot) ══════ */}
+      <nav className="sticky bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#111b21] border-t border-slate-100 dark:border-[#202c33] py-2 px-6 flex items-center justify-around select-none">
+        {/* 1. Chats */}
+        <button
+          onClick={() => onBackToChat?.()}
+          className="flex flex-col items-center gap-1 text-[#54656f] dark:text-[#8696a0] hover:text-[#111b21] dark:hover:text-white transition-colors cursor-pointer group"
+        >
+          <div className="px-5 py-0.5 rounded-full group-hover:bg-slate-100 dark:group-hover:bg-[#202c33] transition-colors">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <span className="text-[11px] font-medium leading-none">Chats</span>
+        </button>
+
+        {/* 2. Updates (Active with Green Pill Highlight) */}
+        <button
+          onClick={() => {}}
+          className="flex flex-col items-center gap-1 text-[#111b21] dark:text-white cursor-pointer"
+        >
+          <div className="px-5 py-0.5 rounded-full bg-[#d9fdd3] dark:bg-[#103629] text-[#0a3323] dark:text-[#25D366] transition-colors">
+            <CircleDot className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className="text-[11px] font-bold leading-none">Updates</span>
+        </button>
+
+        {/* 3. Communities */}
+        <button
+          onClick={() => {
+            showToast?.('Engineering Study Circle active 👥', 'info');
+          }}
+          className="flex flex-col items-center gap-1 text-[#54656f] dark:text-[#8696a0] hover:text-[#111b21] dark:hover:text-white transition-colors cursor-pointer group"
+        >
+          <div className="px-5 py-0.5 rounded-full group-hover:bg-slate-100 dark:group-hover:bg-[#202c33] transition-colors">
+            <Users className="w-5 h-5" />
+          </div>
+          <span className="text-[11px] font-medium leading-none">Communities</span>
+        </button>
+
+        {/* 4. Calls */}
+        <button
+          onClick={() => {
+            showToast?.('WhatsApp Calling active 📞', 'info');
+          }}
+          className="flex flex-col items-center gap-1 text-[#54656f] dark:text-[#8696a0] hover:text-[#111b21] dark:hover:text-white transition-colors cursor-pointer group"
+        >
+          <div className="px-5 py-0.5 rounded-full group-hover:bg-slate-100 dark:group-hover:bg-[#202c33] transition-colors">
+            <Phone className="w-5 h-5" />
+          </div>
+          <span className="text-[11px] font-medium leading-none">Calls</span>
+        </button>
+      </nav>
 
       {/* ══════ 5. FULL-SCREEN STATUS VIEWER MODAL ══════ */}
       {activeStoryGroup && activeStoryItem && (
@@ -1263,14 +1349,19 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
           <div className="w-full max-w-xl mx-auto px-4 py-3 flex items-center justify-between text-white z-30 bg-gradient-to-b from-black/80 to-transparent">
             <div className="flex items-center gap-3">
               <img
-                src={activeStoryItem.authorAvatar || DHARYA_LOGO_DATA_URI}
+                src={
+                  activeStoryItem.authorAvatar ||
+                  (activeStoryItem.owner === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR)
+                }
                 alt={activeStoryItem.authorName}
                 className="w-10 h-10 rounded-full object-cover border border-white/40"
               />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-sm tracking-tight">{activeStoryItem.authorName}</span>
-                  {activeStoryItem.authorName === 'Dhanya' && <span className="text-[#F22679]">♡</span>}
+                  {(activeStoryItem.authorName === 'Sadhana' || activeStoryItem.authorName === 'Dhanya') && (
+                    <span className="text-[#F22679]">♡</span>
+                  )}
                 </div>
                 <span className="text-[11px] text-white/75">{getRelativeTime(activeStoryItem.createdAt)}</span>
               </div>
@@ -1598,7 +1689,10 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                     <div key={vr.id} className="py-2.5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
-                          src={vr.viewerAvatar || DHARYA_LOGO_DATA_URI}
+                          src={
+                            vr.viewerAvatar ||
+                            (vr.viewerId === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR)
+                          }
                           alt={vr.viewerName}
                           className="w-10 h-10 rounded-full object-cover border border-slate-200"
                         />
@@ -2069,7 +2163,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                       <img
                         src={
                           attachedSong?.coverUrl ||
-                          (currentUser === 'surya' ? DHARYA_LOGO_DATA_URI : DHANYA_SUNSET_AVATAR)
+                          (currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR)
                         }
                         alt="Album Art"
                         className="w-full h-full object-cover"
@@ -2309,7 +2403,7 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                   {/* Contact Checkbox List */}
                   <div className="max-h-36 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
                     {[
-                      { id: 'sadhana', name: 'Dhanya / Sadhana', role: 'Primary Contact' },
+                      { id: 'sadhana', name: 'Sadhana', role: 'Primary Contact' },
                       { id: 'surya', name: 'Surya', role: 'Partner' },
                       { id: 'aarav', name: 'Aarav Patel', role: 'Peer Student' },
                       { id: 'alex', name: 'Alex Kumar', role: 'Study Group' },
@@ -2462,7 +2556,8 @@ export const WhatsAppStatusView: React.FC<WhatsAppStatusViewProps> = ({
                 if (title?.trim()) {
                   statusService.createHighlight(
                     title.trim(),
-                    myStatuses[0]?.mediaUrl || DHANYA_SUNSET_AVATAR,
+                    myStatuses[0]?.mediaUrl ||
+                      (currentUser === 'surya' ? SURYA_DEFAULT_AVATAR : SADHANA_DEFAULT_AVATAR),
                     myStatuses.map((s) => s.id)
                   );
                   showToast?.('Highlight collection created ✨', 'success');

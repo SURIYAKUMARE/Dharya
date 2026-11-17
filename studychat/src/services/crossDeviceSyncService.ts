@@ -9,16 +9,19 @@
 
 export const SMEE_SYNC_URL = 'https://smee.io/dharya_surya_sadhana_v6';
 
-export const DEVICE_ID = typeof window !== 'undefined'
-  ? (sessionStorage.getItem('dharya_device_id') || (() => {
-      const id = 'dev_' + Math.random().toString(36).slice(2, 9);
-      try { sessionStorage.setItem('dharya_device_id', id); } catch {}
-      return id;
-    })())
-  : 'dev_server';
+export const DEVICE_ID = (() => {
+  if (typeof window === 'undefined') return 'dev_server';
+  const fallback = 'dev_' + Math.random().toString(36).slice(2);
+  try {
+    const id = sessionStorage.getItem('dharya_device_id') || fallback;
+    sessionStorage.setItem('dharya_device_id', id);
+    return id;
+  } catch { return fallback; }
+})();
 
 export interface CrossDeviceEvent {
   event: string;
+  id?: string;
   payload: any;
   sender?: string;
   deviceId?: string;
@@ -39,40 +42,36 @@ class CrossDeviceSyncService {
   private heartbeatInterval: any = null;
   private reconnectTimeout: any = null;
   private isDestroyed = false;
+  private removeBrowserListeners: (() => void) | null = null;
 
   /**
    * Initialize real-time channel
    */
   public init(user: 'surya' | 'sadhana') {
+    this.removeBrowserListeners?.();
+    if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.currentUser = user;
     this.isDestroyed = false;
     this.startHeartbeat();
     this.connectSse();
 
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', () => {
-        if (!this.isConnected) this.connectSse();
-      });
-
-      window.addEventListener('focus', () => {
-        this.broadcastPresence(true);
-        this.requestSync();
-      });
-
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          this.broadcastPresence(true);
-          this.requestSync();
-        } else {
-          this.broadcastPresence(false);
-        }
-      });
-
-      const handleUnload = () => {
-        this.broadcastPresence(false);
+      const onOnline = () => { if (!this.isConnected && !this.isDestroyed) this.connectSse(); };
+      const onFocus = () => { this.broadcastPresence(document.visibilityState === 'visible'); this.requestSync(); };
+      const onVisibility = () => { this.broadcastPresence(document.visibilityState === 'visible'); if (document.visibilityState === 'visible') this.requestSync(); };
+      const onUnload = () => { this.broadcastPresence(false); };
+      window.addEventListener('online', onOnline);
+      window.addEventListener('focus', onFocus);
+      document.addEventListener('visibilitychange', onVisibility);
+      window.addEventListener('beforeunload', onUnload);
+      window.addEventListener('pagehide', onUnload);
+      this.removeBrowserListeners = () => {
+        window.removeEventListener('online', onOnline);
+        window.removeEventListener('focus', onFocus);
+        document.removeEventListener('visibilitychange', onVisibility);
+        window.removeEventListener('beforeunload', onUnload);
+        window.removeEventListener('pagehide', onUnload);
       };
-      window.addEventListener('beforeunload', handleUnload);
-      window.addEventListener('pagehide', handleUnload);
     }
   }
 
@@ -136,12 +135,15 @@ class CrossDeviceSyncService {
   private connectSse() {
     if (typeof EventSource === 'undefined' || this.isDestroyed) return;
     this.cleanupConnections();
+    this.notifyStatus('connecting');
 
     try {
       const sse = new EventSource(SMEE_SYNC_URL);
       this.sse = sse;
 
       sse.onopen = () => {
+        if (this.isDestroyed || this.sse !== sse) return;
+        if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
         this.isConnected = true;
         this.notifyStatus('connected');
         console.log('[CrossDeviceSync] Smee SSE connected successfully to:', SMEE_SYNC_URL);
@@ -182,7 +184,7 @@ class CrossDeviceSyncService {
 
         // Deduplicate live events
         if (packet.event !== 'sync_history_bundle' && packet.event !== 'sync_response') {
-          const dedupeKey = `${packet.event}_${packet.payload?.id || ''}_${packet.payload?.msgId || ''}_${packet.timestamp || ''}`;
+          const dedupeKey = packet.id || JSON.stringify([packet.deviceId, packet.event, packet.timestamp, packet.payload]);
           if (this.processedMsgIds.has(dedupeKey)) return;
           this.processedMsgIds.add(dedupeKey);
           if (this.processedMsgIds.size > 2000) {
@@ -199,6 +201,7 @@ class CrossDeviceSyncService {
   }
 
   private cleanupConnections() {
+    this.isConnected = false;
     if (this.sse) {
       try {
         this.sse.onopen = null;
@@ -261,6 +264,7 @@ class CrossDeviceSyncService {
       }
 
       const data: CrossDeviceEvent = {
+        id: crypto.randomUUID(),
         event,
         payload,
         sender: this.currentUser || undefined,
@@ -269,6 +273,7 @@ class CrossDeviceSyncService {
       };
 
       const res = await fetch(SMEE_SYNC_URL, {
+        signal: AbortSignal.timeout(12000),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -332,6 +337,9 @@ class CrossDeviceSyncService {
 
   public destroy() {
     this.isDestroyed = true;
+    this.removeBrowserListeners?.();
+    this.removeBrowserListeners = null;
+    this.currentUser = null;
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     if (this.reconnectTimeout) clearTimeout(this.reconnectTimeout);
     this.cleanupConnections();

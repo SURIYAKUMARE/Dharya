@@ -1,3 +1,4 @@
+import { confirmDelivery } from '../../services/deliveryService';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStudyApp } from '../../context/StudyAppContext';
 import { getSupabase, ChatMessage, ExtendedChatMessage, LOCAL_MESSAGES_KEY } from '../../services/supabaseClient';
@@ -433,8 +434,11 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [showChatLists, setShowChatLists] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'unread' | 'favorites' | 'groups'>('all');
-  const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video'; offer?: any; callId?: string } | null>(null);
+  const [showCallModal, setShowCallModal] = useState<'audio' | 'video' | 'screen' | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ caller: string; type: 'audio' | 'video' | 'screen'; offer?: any; callId?: string } | null>(null);
+  const callChannelRef = useRef<any>(null);
+  const incomingCallIdRef = useRef<string | null>(null);
+  incomingCallIdRef.current = incomingCall ? incomingCall.callId || incomingCall.offer?.sdp : null;
   const activeCallRef = useRef(false);
   activeCallRef.current = Boolean(showCallModal || incomingCall);
   const seenOffersRef = useRef(new Set<string>());
@@ -442,18 +446,41 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     if (!data || data.from !== partnerUser || data.to !== currentUser || !data.offer?.sdp) return;
     if (data.timestamp && Date.now() - data.timestamp > 35000) return;
     const id = data.callId || data.offer.sdp;
-    if (seenOffersRef.current.has(id)) return;
+    const acknowledge = () => {
+      const payload = { from: currentUser, to: partnerUser, callId: data.callId };
+      void crossDeviceSync.publish('call_ringing', payload);
+      void callChannelRef.current?.send({ type: 'broadcast', event: 'call_ringing', payload });
+    };
+    if (seenOffersRef.current.has(id)) {
+      if (incomingCallIdRef.current === id) acknowledge();
+      return;
+    }
     seenOffersRef.current.add(id);
     if (seenOffersRef.current.size > 100) seenOffersRef.current.delete(seenOffersRef.current.values().next().value!);
     if (activeCallRef.current) {
       const payload = { from: currentUser, to: partnerUser, callId: data.callId };
       crossDeviceSync.publish('call_declined', payload);
-      channelRef.current?.send({ type: 'broadcast', event: 'call_declined', payload });
+      callChannelRef.current?.send({ type: 'broadcast', event: 'call_declined', payload });
       return;
     }
     activeCallRef.current = true;
-    setIncomingCall({ caller: data.from, type: data.callType === 'audio' ? 'audio' : 'video', offer: data.offer, callId: data.callId });
+    incomingCallIdRef.current = id;
+    acknowledge();
+    setIncomingCall({ caller: data.from, type: data.callType === 'screen' ? 'screen' : data.callType === 'audio' ? 'audio' : 'video', offer: data.offer, callId: data.callId });
   };
+  // Calls use one shared room even when the two users view different chats.
+  useEffect(() => {
+    const supabase = getSupabase();
+    const channel = supabase.channel('dharya-private-calls-v1', { config: { broadcast: { self: false } } });
+    callChannelRef.current = channel;
+    channel.on('broadcast', { event: '*' }, ({ event, payload }: any) => {
+      if (payload?.from !== partnerUser || payload?.to !== currentUser) return;
+      if (event === 'call_offer') receiveCallOffer(payload);
+      window.dispatchEvent(new CustomEvent('whatsapp_call_signal', { detail: { event, payload } }));
+    }).subscribe();
+    return () => { callChannelRef.current = null; void supabase.removeChannel(channel); };
+  }, [currentUser, partnerUser]);
+
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [reactionTargetMsgId, setReactionTargetMsgId] = useState<string | null>(null);
 
@@ -683,8 +710,26 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   const [recordingTimeSecs, setRecordingTimeSecs] = useState<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingGenerationRef = useRef(0);
+  const recordingRequestRef = useRef(false);
   const recordingIntervalRef = useRef<number | null>(null);
   const [audioPlaybackRates, setAudioPlaybackRates] = useState<Record<string, number>>({});
+
+  useEffect(() => () => {
+    recordingGenerationRef.current += 1;
+    const recorder = mediaRecorderRef.current;
+    if (recorder) {
+      recorder.onstop = null;
+      recorder.ondataavailable = null;
+      if (recorder.state !== 'inactive') recorder.stop();
+      recorder.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current = null;
+    }
+    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    audioPreviewAudioRef.current?.pause();
+    audioPreviewAudioRef.current = null;
+  }, []);
+  useEffect(() => () => { if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl); }, [recordedAudioUrl]);
 
   // Document file input ref
   const docInputRef = useRef<HTMLInputElement | null>(null);
@@ -993,65 +1038,45 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   // Dispatch outgoing message with honest initial 'sending' -> 'sent' state and cross-device push
   const dispatchSendMessage = async (msg: ExtendedChatMessage) => {
-    const sentMsg: ExtendedChatMessage = {
-      ...msg,
-      chatId: activeChatId,
-      status: 'sent',
-    };
-
-    setMessages((prev) => {
-      const next = [...prev, sentMsg];
+    const chatId = msg.chatId || activeChatId;
+    const sentMsg: ExtendedChatMessage = { ...msg, chatId, status: 'sending' };
+    setMessages(prev => {
+      const next = prev.some(m => m.id === msg.id)
+        ? prev.map(m => m.id === msg.id ? sentMsg : m) : [...prev, sentMsg];
       persistMessages(next);
-      // Retain message history bundle so laptop/phone receives it immediately even if opening later
-      crossDeviceSync.publishHistoryBundle(next).catch(() => {});
       return next;
     });
-
-    // 1. Cross-Device Guaranteed Push (reaches the other device anywhere on the internet in <50ms)
-    crossDeviceSync.publish('new_message', sentMsg).catch((e) => {
-      console.warn('[CrossDeviceSync] Publish failed:', e);
-    });
-
-    // 2. Same-device multi-tab synchronization
-    try {
-      chatBroadcastRef.current?.postMessage({
-        type: 'new_message',
-        payload: sentMsg,
-      });
-    } catch {}
-
-    // 3. Supabase Realtime channel broadcast (if connected)
-    try {
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: sentMsg,
-      });
-    } catch {}
-
-    // 4. Remote PostgreSQL DB backup (non-blocking)
-    saveRemoteMessage(sentMsg, activeChatId).catch((err) => {
-      console.warn('[Supabase] Background save fallback:', err);
-    });
+    // The pending local copy is sending; remote copies represent accepted messages.
+    const outgoing: ExtendedChatMessage = { ...sentMsg, status: 'sent' };
+    try { chatBroadcastRef.current?.postMessage({ type: 'new_message', payload: outgoing }); } catch {}
+    const attempts: Promise<boolean>[] = [
+      crossDeviceSync.publish('new_message', outgoing),
+      saveRemoteMessage(outgoing, chatId),
+    ];
+    const channel = channelRef.current;
+    if (channel) {
+      attempts.push(Promise.resolve().then(() => channel.send({
+        type: 'broadcast', event: 'new_message', payload: outgoing,
+      })).then(result => result === 'ok'));
+    }
+    const success = await confirmDelivery(attempts);
+    const update = (messages: ExtendedChatMessage[]): ExtendedChatMessage[] => messages.map(m =>
+      m.id === msg.id && m.status === 'sending'
+        ? { ...m, status: success ? 'sent' : 'failed' } : m);
+    if (activeChatIdRef.current === chatId) {
+      setMessages(prev => { const next = update(prev); persistMessages(next); return next; });
+    } else {
+      try {
+        const key = getChatStorageKey(chatId);
+        const cached = JSON.parse(localStorage.getItem(key) || '[]');
+        if (Array.isArray(cached)) localStorage.setItem(key, JSON.stringify(update(cached)));
+      } catch {}
+    }
+    if (!success) showToast('Message could not be sent. Tap the failed message to retry.', 'error');
   };
 
-  // Retry sending a previously failed message
   const handleRetrySendMessage = async (msg: ExtendedChatMessage) => {
-    const sentMsg: ExtendedChatMessage = { ...msg, status: 'sent' };
-    setMessages((prev) => {
-      const next = prev.map((m) => (m.id === msg.id ? sentMsg : m));
-      persistMessages(next);
-      return next;
-    });
-    crossDeviceSync.publish('new_message', sentMsg).catch(() => {});
-    try {
-      channelRef.current?.send({
-        type: 'broadcast',
-        event: 'new_message',
-        payload: sentMsg,
-      });
-    } catch {}
-    saveRemoteMessage(sentMsg, activeChatId).catch(() => {});
+    await dispatchSendMessage(msg);
   };
 
   // Edit Message Action
@@ -1872,7 +1897,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           if (payload?.itemId) {
             window.dispatchEvent(new CustomEvent('gallery_item_deleted_remotely', { detail: { itemId: payload.itemId } }));
           }
-        } else if (event === 'call_offer' || event === 'call_accepted' || event === 'webrtc_ice_candidate' || event === 'call_declined' || event === 'call_ended') {
+        } else if (event === 'call_ringing' || event === 'call_offer' || event === 'call_accepted' || event === 'webrtc_ice_candidate' || event === 'call_declined' || event === 'call_ended') {
           if (event === 'call_offer') {
             const isFromOtherDevice = payload.deviceId
               ? payload.deviceId !== crossDeviceSync.getDeviceId()
@@ -2422,13 +2447,21 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   // ── VOICE RECORDING WITH PREVIEW BEFORE SENDING ──
   const handleStartAudioRecording = async () => {
+    if (recordingRequestRef.current || mediaRecorderRef.current?.state === 'recording') return;
+    recordingRequestRef.current = true;
+    const generation = recordingGenerationRef.current;
+    let acquiredStream: MediaStream | null = null;
     try {
+      if (audioPreviewAudioRef.current) { audioPreviewAudioRef.current.pause(); audioPreviewAudioRef.current = null; }
+      setIsPlayingAudioPreview(false);
       if (recordedAudioUrl) {
         URL.revokeObjectURL(recordedAudioUrl);
         setRecordedAudioUrl(null);
         setRecordedAudioBlob(null);
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      acquiredStream = stream;
+      if (generation !== recordingGenerationRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
       audioChunksRef.current = [];
       const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
@@ -2447,13 +2480,22 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
         setRecordingTimeSecs((prev) => prev + 1);
       }, 1000);
     } catch (err) {
+      acquiredStream?.getTracks().forEach(track => track.stop());
+      if (generation !== recordingGenerationRef.current) return;
       console.warn('[Audio] Mic access denied', err);
-      showToast('Microphone access denied. Please allow microphone permissions in your browser.', 'error');
+      showToast('Could not record audio. Check microphone permissions and browser support.', 'error');
+    } finally {
+      if (generation === recordingGenerationRef.current) recordingRequestRef.current = false;
     }
   };
 
   const handleCancelAudioRecording = () => {
+    recordingGenerationRef.current += 1;
+    recordingRequestRef.current = false;
     if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.ondataavailable = null;
+      if (mediaRecorderRef.current.state !== 'inactive') mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
       mediaRecorderRef.current = null;
     }
@@ -2465,12 +2507,13 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
 
   const handleStopAndReviewAudioRecording = () => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder) return;
+    if (!recorder || recorder.state !== 'recording') return;
 
     if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
 
     recorder.onstop = () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || audioChunksRef.current[0]?.type || 'audio/webm' });
+      mediaRecorderRef.current = null;
       const previewUrl = URL.createObjectURL(audioBlob);
       setRecordedAudioBlob(audioBlob);
       setRecordedAudioUrl(previewUrl);
@@ -2487,6 +2530,8 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     }
     if (audioPreviewAudioRef.current) {
       audioPreviewAudioRef.current.pause();
+      audioPreviewAudioRef.current.onended = null;
+      audioPreviewAudioRef.current = null;
     }
     setRecordedAudioBlob(null);
     setRecordedAudioUrl(null);
@@ -2504,8 +2549,10 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       audioPreviewAudioRef.current.pause();
       setIsPlayingAudioPreview(false);
     } else {
-      audioPreviewAudioRef.current.play().catch(() => {});
-      setIsPlayingAudioPreview(true);
+      audioPreviewAudioRef.current.play().then(() => setIsPlayingAudioPreview(true)).catch(() => {
+        setIsPlayingAudioPreview(false);
+        showToast('Could not play this recording. Please try recording again.', 'error');
+      });
     }
   };
 
@@ -3265,7 +3312,30 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
     setDeleteDialogMsg(null);
   };
 
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const screenRequestRef = useRef(false);
+  const screenMountedRef = useRef(true);
+  const [screenMinimized, setScreenMinimized] = useState(false);
+  useEffect(() => { screenMountedRef.current = true; return () => { screenMountedRef.current = false; screenStreamRef.current?.getTracks().forEach(track => track.stop()); }; }, []);
+  const startScreenShare = async () => {
+    if (showCallModal === 'screen' || incomingCall?.type === 'screen') { setScreenMinimized(false); return; }
+    if (showCallModal || incomingCall || screenRequestRef.current) return;
+    if (!navigator.mediaDevices?.getDisplayMedia) { showToast('Screen sharing is unavailable in this browser. Try a desktop browser.', 'error'); return; }
+    if (!isOnline) { showToast('Connect to the internet to share your screen.', 'error'); return; }
+    screenRequestRef.current = true;
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      if (!screenMountedRef.current || incomingCallIdRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
+      screenStreamRef.current = stream;
+      setScreenMinimized(false);
+      setShowCallModal('screen');
+    } catch (error) {
+      showToast(error instanceof Error && error.name === 'NotAllowedError' ? 'Screen sharing cancelled or permission denied.' : 'Could not start screen sharing.', 'info');
+    } finally { screenRequestRef.current = false; }
+  };
+
   const startCall = (type: 'audio' | 'video') => {
+    if (screenRequestRef.current) return;
     if (!isOnline) { showToast('Connect to the internet to make a call.', 'error'); return; }
     if (!navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
       showToast('Calling needs a secure browser with microphone support.', 'error'); return;
@@ -3277,6 +3347,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
   // Handle call completion / close and log call summary message into chat
   const handleCallFinished = (durationSecs: number, status: 'completed' | 'missed' | 'declined') => {
     const activeType = showCallModal || incomingCall?.type || 'video';
+    screenStreamRef.current?.getTracks().forEach(track => track.stop());
+    screenStreamRef.current = null;
+    setScreenMinimized(false);
     setShowCallModal(null);
     setIncomingCall(null);
 
@@ -3285,9 +3358,9 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       const mins = Math.floor(durationSecs / 60);
       const secs = durationSecs % 60;
       const durStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-      callText = `📞 WhatsApp ${activeType === 'video' ? 'Video' : 'Voice'} Call • ${durStr}`;
+      callText = `📞 WhatsApp ${activeType === 'screen' ? 'Screen Share' : activeType === 'video' ? 'Video' : 'Voice'} Call • ${durStr}`;
     } else if (status === 'missed') {
-      callText = `📞 Missed WhatsApp ${activeType === 'video' ? 'Video' : 'Voice'} Call`;
+      callText = `📞 Missed WhatsApp ${activeType === 'screen' ? 'Screen Share' : activeType === 'video' ? 'Video' : 'Voice'} Call`;
     }
 
     if (callText) {
@@ -6713,9 +6786,16 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       )}
 
       {/* ── WHATSAPP AUDIO & VIDEO CALL MODAL ── */}
+      <nav aria-label="Messages and screen sharing" className="flex shrink-0 items-center justify-center gap-3 border-t border-white/10 bg-[#202c33] p-2 text-white">
+        <button onClick={() => setScreenMinimized(true)} className="rounded-lg px-4 py-2 bg-white/10">Messages</button>
+        <button onClick={startScreenShare} className="rounded-lg px-4 py-2 bg-[#008069]">{showCallModal === 'screen' || incomingCall?.type === 'screen' ? 'Return to Screen Share' : 'Share Screen'}</button>
+      </nav>
       {(showCallModal || incomingCall) && (
         <WhatsAppCallModal
           callType={incomingCall ? incomingCall.type : (showCallModal || 'video')}
+          displayStream={screenStreamRef.current}
+          minimized={screenMinimized}
+          onShowMessages={() => setScreenMinimized(true)}
           partnerName={partnerName}
           partnerUser={partnerUser}
           currentUser={currentUser}
@@ -6723,7 +6803,7 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
           incomingOffer={incomingCall?.offer}
           callId={incomingCall?.callId}
           onClose={handleCallFinished}
-          channelRef={channelRef}
+          channelRef={callChannelRef}
         />
       )}
 

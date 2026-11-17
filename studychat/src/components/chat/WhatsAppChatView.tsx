@@ -6786,10 +6786,6 @@ export const WhatsAppChatView: React.FC<WhatsAppChatViewProps> = ({ initialTab =
       )}
 
       {/* ── WHATSAPP AUDIO & VIDEO CALL MODAL ── */}
-      <nav aria-label="Messages and screen sharing" className="flex shrink-0 items-center justify-center gap-3 border-t border-white/10 bg-[#202c33] p-2 text-white">
-        <button onClick={() => setScreenMinimized(true)} className="rounded-lg px-4 py-2 bg-white/10">Messages</button>
-        <button onClick={startScreenShare} className="rounded-lg px-4 py-2 bg-[#008069]">{showCallModal === 'screen' || incomingCall?.type === 'screen' ? 'Return to Screen Share' : 'Share Screen'}</button>
-      </nav>
       {(showCallModal || incomingCall) && (
         <WhatsAppCallModal
           callType={incomingCall ? incomingCall.type : (showCallModal || 'video')}
